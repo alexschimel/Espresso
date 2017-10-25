@@ -1,4 +1,4 @@
-function main(varargin)
+function Espresso(varargin)
 
 
 %% Debug
@@ -18,9 +18,9 @@ p = inputParser;
 addOptional(p,'Filenames',{},@(x) ischar(x)|iscell(x));
 parse(p,varargin{:});
 
-%% Do not Relaunch ESP3 if already open (in Matlab)...
+%% Do not relaunch window if already open (in Matlab)...
 if ~isdeployed()
-    wc_win = findobj(groot,'tag','WcProject');
+    wc_win = findobj(groot,'tag','Espresso');
     if~isempty(wc_win)
         figure(wc_win);
         return;
@@ -34,8 +34,8 @@ size_max = get(0, 'MonitorPositions');
 main_figure = figure('Units','pixels',...
                      'Position',[size_max(1,1) size_max(1,2)+1/8*size_max(1,4) size_max(1,3)/4*3 size_max(1,4)/4*3],... %Position and size normalized to the screen size ([left, bottom, width, height])
                      'Color','White',...
-                     'Name','WC Project',...
-                     'Tag','WcProject',...
+                     'Name','Espresso',...
+                     'Tag','Espresso',...
                      'NumberTitle','off',...   
                      'Resize','on',...
                      'MenuBar','none',...
@@ -51,10 +51,9 @@ iptPointerManager(main_figure);
 if ispc
     javaFrame = get(main_figure,'JavaFrame');
     javaFrame.fHG2Client.setClientDockable(true);
-    set(javaFrame,'GroupName','WcProject');
-    javaFrame.setFigureIcon(javax.swing.ImageIcon(fullfile(whereisroot(),'icons','wcproject.png')));
+    set(javaFrame,'GroupName','Espresso');
+    javaFrame.setFigureIcon(javax.swing.ImageIcon(fullfile(whereisroot(),'icons','Espresso.png')));
 end
-
 
 %% Default font size for Controls and Panels
 set(0,'DefaultUicontrolFontSize',10);
@@ -65,7 +64,6 @@ main_path = whereisroot();
 if ~isdeployed
     update_path(main_path);
 end
-
 
 %% Initialize the display and the interactions with the user
 initialize_display(main_figure);
