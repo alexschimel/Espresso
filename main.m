@@ -52,7 +52,7 @@ if ispc
     javaFrame = get(main_figure,'JavaFrame');
     javaFrame.fHG2Client.setClientDockable(true);
     set(javaFrame,'GroupName','WcProject');
-    javaFrame.setFigureIcon(javax.swing.ImageIcon(fullfile(whereisEcho(),'icons','wcproject.png')));
+    javaFrame.setFigureIcon(javax.swing.ImageIcon(fullfile(whereisroot(),'icons','wcproject.png')));
 end
 
 
