@@ -92,6 +92,9 @@ set(gui_elt.table_main,'ColumnWidth',...
 
 setappdata(load_file_fig,'gui_elt',gui_elt)
 
+setappdata(load_file_fig,'selected_files',[]);
+setappdata(file_fig,'files',{});
+
 centerfig(load_file_fig)
 set(load_file_fig,'visible','on');
 
@@ -101,7 +104,7 @@ end
 %% Subfunctions
 
 function select_folder_callback(src,~)
-list_fig = ancestor(src,'figure');
+file_fig = ancestor(src,'figure');
 gui_elt = getappdata(ancestor(src,'figure'),'gui_elt');
 path_ori = get(gui_elt.path_box,'string');
 new_path = uigetdir(path_ori);
@@ -111,14 +114,14 @@ end
 booldir = check_path_callback(gui_elt.path_box,[]);
 
 if booldir
-    update_file_table(list_fig);
+    update_file_table(file_fig);
 end
 
 end
 
-function update_file_table(list_fig)
+function update_file_table(file_fig)
 
-gui_elt = getappdata(list_fig,'gui_elt');
+gui_elt = getappdata(file_fig,'gui_elt');
 path_ori = get(gui_elt.path_box,'string');
 [folders,files,processed] = list_files_in_dir(path_ori);
 
@@ -132,9 +135,20 @@ new_entry(~processed,1) = cellfun(@(x) strcat('<html><FONT color="Red"><b>',x,'<
 new_entry(processed,1) = cellfun(@(x) strcat('<html><FONT color="Green"><b>',x,'</b></html>'),new_entry(processed,1),'UniformOutput',0);
 
 gui_elt.table_main.Data = new_entry;
-
+setappdata(file_fig,'files',fullfile(folders,files));
 end
 
+function cell_select_cback(src,evt)
+file_fig=ancestor(src,'figure');
+filenames_ori=getappdata(file_fig,'files');
+if ~isempty(evt.Indices)
+    selected_files=filenames_ori(evt.Indices(:,1));
+else
+    selected_files={};
+end
+%selected_files'
+setappdata(file_fig,'selected_files',selected_files);
+end
 
 function booldir = check_path_callback(src,~)
 
