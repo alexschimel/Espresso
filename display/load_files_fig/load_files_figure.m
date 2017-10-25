@@ -37,10 +37,9 @@ gui_elt.path_choose=uicontrol(load_file_fig,'Style','pushbutton','units','normal
 survDataSummary={};
     
     
-    
     % Column names and column format
-    columnname = {'' 'File' 'Folder'};
-    columnformat = {'logical' 'char','char'};
+    columnname = {'File' 'Folder'};
+    columnformat = {'char','char'};
     
     
     % Create the uitable
@@ -48,19 +47,17 @@ survDataSummary={};
         'Data', survDataSummary,...
         'ColumnName', columnname,...
         'ColumnFormat', columnformat,...
-        'CellSelectionCallback',{@cell_select_cback,main_figure},...
-        'ColumnEditable', [true false false],...
+        'CellSelectionCallback',@cell_select_cback,...
+        'ColumnEditable', [false false],...
         'Units','Normalized','Position',[0.05 0.2 0.9 0.7],...
-        'KeyPressFcn',{@logbook_keypress_fcn,main_figure},...
         'RowName',[]);
     
     
     pos_t = getpixelposition(gui_elt.table_main);
     set(gui_elt.table_main,'ColumnWidth',...
-        num2cell(pos_t(3)*[1/20 5/20 14/20]));
+        num2cell(pos_t(3)*[10/20 10/20]));
     %set(gui_elt.table_main,'CellEditCallback',{@edit_surv_data_db,surv_data_tab,main_figure});
   
-
 setappdata(load_file_fig,'gui_elt',gui_elt)
 
 centerfig(load_file_fig)
@@ -70,25 +67,50 @@ end
 
 
 function select_folder_callback(src,~)
+list_fig=ancestor(src,'figure');
 gui_elt=getappdata(ancestor(src,'figure'),'gui_elt');
 path_ori=get(gui_elt.path_box,'string');
 new_path = uigetdir(path_ori);
 if new_path~=0
     set(gui_elt.path_box,'string',new_path);
-    [~,folder_out_name,~]=fileparts(new_path);
-    set(gui_elt.file_out_box,'string',fullfile(new_path,[folder_out_name '.shp']));
 end
-check_path_callback(gui_elt.path_box,[]);
+booldir=check_path_callback(gui_elt.path_box,[]);
+
+if booldir
+    update_file_table(list_fig);
+end
+
+end
+
+function update_file_table(list_fig)
+
+gui_elt=getappdata(list_fig,'gui_elt');
+path_ori=get(gui_elt.path_box,'string');
+[folders,files,processed]=list_files_in_dir(path_ori);
+
+nb_files=numel(folders);
+
+new_entry=cell(nb_files,2);
+new_entry(:,1)=files;
+new_entry(:,2)=folders;
+
+new_entry(~processed,1)=cellfun(@(x) strcat('<html><FONT color="Red"><b>',x,'</b></html>'),new_entry(~processed,1),'UniformOutput',0);
+new_entry(processed,1)=cellfun(@(x) strcat('<html><FONT color="Green"><b>',x,'</b></html>'),new_entry(processed,1),'UniformOutput',0);
+
+gui_elt.table_main.Data=new_entry;
+
 end
 
 
-
-function check_path_callback(src,~)
+function booldir=check_path_callback(src,~)
 
 new_path=get(src,'string');
 new_path=fileparts(new_path);
 if ~isdir(new_path)
     set(src,'string','');
+    booldir=0;
+else
+    booldir=1; 
 end
 
 end

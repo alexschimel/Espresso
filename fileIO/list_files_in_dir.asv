@@ -10,12 +10,17 @@ WCDFilename_cell={WCDFilename_list([WCDFilename_list(:).isdir]==0).name};
 [wcd_folders,wcd_files,~]=cellfun(@fileparts,WCDFilename_cell,'UniformOutput',0);
 [all_folders,all_files,~]=cellfun(@fileparts,AllFilename_cell,'UniformOutput',0);
 
-wcd_files=cellfun(@fileparts,WCDFilename_cell,'UniformOutput',0);
+wcd_files=fullfile(wcd_folders,wcd_files);
+all_files=fullfile(all_folders,all_files);
 
-files=cell(1,numel(AllFilename_cell));
-for ifi=1:numel(AllFilename_cell)
-    
-    
-end
+[files_full,~]=intersect(all_files,wcd_files);
+
+[folders,files,~]=cellfun(@fileparts,files_full,'UniformOutput',0);
+
+
+mat_all_files=fullfile(all_folders,all_files);
+
+
+
 
 end
