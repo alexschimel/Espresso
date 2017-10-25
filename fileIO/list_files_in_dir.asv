@@ -1,0 +1,21 @@
+function [files,folders,processed]=list_files_in_dir(folder_init)
+
+
+AllFilename_list=subdir(fullfile(folder_init,'*.all'));
+AllFilename_cell={AllFilename_list([AllFilename_list(:).isdir]==0).name};
+
+WCDFilename_list=subdir(fullfile(folder_init,'*.wcd'));
+WCDFilename_cell={WCDFilename_list([WCDFilename_list(:).isdir]==0).name};
+
+[wcd_folders,wcd_files,~]=cellfun(@fileparts,WCDFilename_cell,'UniformOutput',0);
+[all_folders,all_files,~]=cellfun(@fileparts,AllFilename_cell,'UniformOutput',0);
+
+wcd_files=cellfun(@fileparts,WCDFilename_cell,'UniformOutput',0);
+
+files=cell(1,numel(AllFilename_cell));
+for ifi=1:numel(AllFilename_cell)
+    
+    
+end
+
+end
