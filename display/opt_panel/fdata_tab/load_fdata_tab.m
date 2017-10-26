@@ -21,7 +21,7 @@ fdata_tab_comp.table= uitable('Parent',fdata_tab_comp.fdata_tab,...
 pos_t = getpixelposition(fdata_tab_comp.table);
 set(fdata_tab_comp.table,'ColumnWidth',{3*pos_t(3)/10,6*pos_t(3)/10,pos_t(3)/10, 0});
 
-set(fdata_tab_comp.fdata_tab,'SizeChangedFcn',{@resize_table,main_figure});
+set(fdata_tab_comp.fdata_tab,'SizeChangedFcn',{@resize_table,fdata_tab_comp.table});
 setappdata(main_figure,'fdata_tab',fdata_tab_comp);
 
 update_fdata_tab(main_figure);

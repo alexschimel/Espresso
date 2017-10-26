@@ -87,8 +87,8 @@ file_tab_comp.table_main = uitable('Parent',file_tab_comp.file_tab,...
 pos_t = getpixelposition(file_tab_comp.table_main);
 set(file_tab_comp.table_main,'ColumnWidth',...
     num2cell(pos_t(3)*[9/20 10/20 1/20]));
+set(file_tab_comp.file_tab,'SizeChangedFcn',{@resize_table,file_tab_comp.table_main});
 
-set(file_tab_comp.table_main,'SizeChangedFcn',{@resize_table,main_figure});
 %set(file_tab_comp.table_main,'CellEditCallback',{@edit_surv_data_db,surv_data_tab,main_figure});
 
 uicontrol(file_tab_comp.file_tab,'Style','pushbutton','units','normalized',...

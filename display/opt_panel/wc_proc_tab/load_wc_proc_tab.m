@@ -78,9 +78,6 @@ angle_mask=str2double(get(wc_proc_tab_comp.angle_mask,'String'));
 r_min=str2double(get(wc_proc_tab_comp.r_min,'String'));
 r_bot=str2double(get(wc_proc_tab_comp.r_bot,'String'));
 
-wc_proc_tab_comp.r_min
-wc_proc_tab_comp.r_min
-wc_proc_tab_comp.r_min
 for i=idx_zoom(:)'
     fprintf('\nProcessing file %s\n',fData_tot{i}.MET_MATfilename{1})
     disp('Processing Watercolumn...');
