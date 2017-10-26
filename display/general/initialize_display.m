@@ -47,11 +47,16 @@ setappdata(main_figure,'options_panel',options_panel);
 setappdata(main_figure,'wc_panel',wc_panel);
 setappdata(main_figure,'infos_panel',infos_panel);
 
-% create menu in main window
-create_menu(main_figure);
+load_files_tab(main_figure,options_panel)
+load_fdata_tab(main_figure,options_panel);
+load_wc_proc_tab(main_figure,options_panel)
 
-obj_enable = findobj(main_figure,'Enable','on','-not','Type','uimenu');
-set(obj_enable,'Enable','off');
+load_map_tab(main_figure,map_panel);
+% create menu in main window
+%create_menu(main_figure);
+
+% obj_enable = findobj(main_figure,'Enable','on','-not','Type','uimenu');
+% set(obj_enable,'Enable','off');
 
 % center main window and make visible
 centerfig(main_figure);

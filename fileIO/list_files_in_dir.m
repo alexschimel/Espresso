@@ -68,9 +68,7 @@ all_files = fullfile(all_folders,all_files);
 [files_full,~] = intersect(all_files,wcd_files);
 [folders,files,~] = cellfun(@fileparts,files_full,'UniformOutput',0);
 
-% default names for mat versions of those files
-mat_all_files = fullfile(folders,'wc_mat',strcat(files,'_all.mat'));
-mat_wcd_files = fullfile(folders,'wc_mat',strcat(files,'_wcd.mat'));
+[mat_all_files,mat_wcd_files]=matfilenames_from_all_filenames(files_full);
 
 % boolean for whether these mat files exist
 converted = cellfun(@(x) exist(x,'file')>0,mat_all_files)&...

@@ -80,9 +80,15 @@ end
 %% Memory Map flag
 if isobject(fData.WC_SBP_SampleAmplitudes)
     memoryMapFlag = 1;
+    [tmpdir,~,~]=fileparts(fData.WC_SBP_SampleAmplitudes.Filename);
 else
     memoryMapFlag = 0;
 end
+
+if isfield(fData,'X_SBP_L1')
+     memoryMapFlag = 0;
+end
+
 
 % MAIN PROCESSING SWITCH
 switch method_spec
@@ -92,7 +98,8 @@ switch method_spec
         % No filtering. Keep original
         if memoryMapFlag
             % create binary file
-            file_X_SBP_L1 = ['.' filesep 'temp' filesep 'X_SBP_L1.dat'];
+            
+            file_X_SBP_L1 = fullfile(tmpdir,'X_SBP_L1.dat');
             % open
             fileID_X_SBP_L1 = fopen(file_X_SBP_L1,'w+');
             % write
@@ -102,7 +109,7 @@ switch method_spec
             % Dimensions
             [nSamples,nBeams,nPings] = size(fData.WC_SBP_SampleAmplitudes.Data.val);
             % re-open as memmapfile
-            fData.X_SBP_L1 = memmapfile(file_X_SBP_L1, 'Format',{'single' [nSamples nBeams nPings] 'val'},'repeat',1,'writable',false);
+            fData.X_SBP_L1 = memmapfile(file_X_SBP_L1, 'Format',{'single' [nSamples nBeams nPings] 'val'},'repeat',1,'writable',true);
         else
             fData.X_SBP_L1.Data.val = fData.WC_SBP_SampleAmplitudes.Data.val./2;
         end
@@ -118,7 +125,7 @@ switch method_spec
         % init arrays
         if memoryMapFlag
             % create binary file
-            file_X_SBP_L1 = ['.' filesep 'temp' filesep 'X_SBP_L1.dat'];
+            file_X_SBP_L1 = fullfile(tmpdir,'X_SBP_L1.dat');
             fileID_X_SBP_L1 = fopen(file_X_SBP_L1,'w+');
         else
             % initialize numerical arrays
@@ -164,7 +171,7 @@ switch method_spec
             fclose(fileID_X_SBP_L1);
             
             % re-open files as memmapfile
-            fData.X_SBP_L1 = memmapfile(file_X_SBP_L1, 'Format',{'single' [nSamples nBeams nPings] 'val'},'repeat',1,'writable',false);
+            fData.X_SBP_L1 = memmapfile(file_X_SBP_L1, 'Format',{'single' [nSamples nBeams nPings] 'val'},'repeat',1,'writable',true);
             
         end
         
@@ -178,7 +185,7 @@ switch method_spec
         % init arrays
         if memoryMapFlag
             % create binary file
-            file_X_SBP_L1 = ['.' filesep 'temp' filesep 'X_SBP_L1.dat'];
+            file_X_SBP_L1 = fullfile(tmpdir,'X_SBP_L1.dat');
             fileID_X_SBP_L1 = fopen(file_X_SBP_L1,'w+');
         else
             % initialize numerical arrays
@@ -246,7 +253,7 @@ switch method_spec
             fclose(fileID_X_SBP_L1);
             
             % re-open files as memmapfile
-            fData.X_SBP_L1 = memmapfile(file_X_SBP_L1, 'Format',{'single' [nSamples nBeams nPings] 'val'},'repeat',1,'writable',false);
+            fData.X_SBP_L1 = memmapfile(file_X_SBP_L1, 'Format',{'single' [nSamples nBeams nPings] 'val'},'repeat',1,'writable',true);
             
         end
         
@@ -260,11 +267,11 @@ switch method_spec
          % init arrays
         if memoryMapFlag
             % create binary file
-            file_X_SBP_L1 = ['.' filesep 'temp' filesep 'X_SBP_L1.dat'];
+            file_X_SBP_L1 = fullfile(tmpdir,'X_SBP_L1.dat');
             fileID_X_SBP_L1 = fopen(file_X_SBP_L1,'w+');
         else
             % initialize numerical arrays
-            fData.X_SBP_L1.Data.val = nan(nSamples,nBeams,nPings);
+            fData.X_SBP_L1.Data.val = nan(nSamples,nBeams,nPings,'single');
         end
         
         % per-ping processing
@@ -302,7 +309,7 @@ switch method_spec
             fclose(fileID_X_SBP_L1);
             
             % re-open files as memmapfile
-            fData.X_SBP_L1 = memmapfile(file_X_SBP_L1, 'Format',{'single' [nSamples nBeams nPings] 'val'},'repeat',1,'writable',false);
+            fData.X_SBP_L1 = memmapfile(file_X_SBP_L1, 'Format',{'single' [nSamples nBeams nPings] 'val'},'repeat',1,'writable',true);
             
         end
         

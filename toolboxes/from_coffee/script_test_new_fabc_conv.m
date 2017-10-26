@@ -2,12 +2,12 @@
 clear all
 close all
 
-addpath(genpath('D:\MATLAB\REPOS\CoFFee\'));
+addpath(genpath('D:\Docs\MATLAB\CoFFee\'));
 
 
 %% convert all files still to be converted
 
-datarootfolder = 'D:\DATA\0033';
+datarootfolder = 'S:\schimela\Watercolumn data for Alex and Yoann';
 folder = {'150', '152', '154', '160', '165'};
 file = {};
 % list files to convert
@@ -158,7 +158,7 @@ figure; CFF_watercolumn_display_v2(fData,'displayType','wedge','bottomDetectDisp
 %     fData = CFF_filter_WC_bottom_detect(fData,'method','filter');
 %     fData = CFF_filter_WC_bottom_detect(fData,'method','flag');
 %     fData = CFF_filter_WC_bottom_detect(fData,'method','test');
-flagParams.type = 'all';
+flagParams.type = 'all';%''
 flagParams.variable = 'slope';
 flagParams.threshold = 30;
 tic

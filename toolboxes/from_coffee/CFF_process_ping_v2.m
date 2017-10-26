@@ -137,8 +137,8 @@ posLongitude = fData.Po_1D_Longitude./10000000; % now in decimal degrees
 posHeading   = fData.Po_1D_HeadingOfVessel./100; % now in degrees relative to north
 posTSMIM     = fData.Po_1D_TimeSinceMidnightInMilliseconds; % in ms
 
-heiHeight    = fData.He_1D_Height./100; % now m
-heiTSMIM     = fData.He_1D_TimeSinceMidnightInMilliseconds; % in ms
+
+
 
 
 %% 3. PROCESS PING TIME
@@ -152,6 +152,13 @@ pingSecond  = pingTSMIM./1000;
 pingSDN     = datenum(pingYear, pingMonth, pingDay, 0, 0, pingSecond) + navLat./(1000.*60.*60.*24);
 pingTSMIM   = pingTSMIM + navLat;
 
+if isfield(fData,'He_1D_Height')
+    heiHeight    = fData.He_1D_Height./100; % now m
+    heiTSMIM     = fData.He_1D_TimeSinceMidnightInMilliseconds; % in ms
+else
+    heiHeight=zeros(size(pingTSMIM));
+    heiTSMIM =pingTSMIM;
+end
 
 %% 4. PROCESS NAVIGATION AND HEADING:
 % Position and heading were recorded at the sensor's time so we need to

@@ -65,6 +65,8 @@ if ~isdeployed
     update_path(main_path);
 end
 
+setappdata(main_figure,'fData',{});
+
 %% Initialize the display and the interactions with the user
 initialize_display(main_figure);
 %initialize_interactions(main_figure);%TODO

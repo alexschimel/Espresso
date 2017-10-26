@@ -1,0 +1,33 @@
+function load_fdata_tab(main_figure,parent_tab_group)
+
+switch parent_tab_group.Type
+    case 'uitabgroup'
+        fdata_tab_comp.fdata_tab=uitab(parent_tab_group,'Title','Lines','Tag','fdata_tab','BackGroundColor','w');
+    case 'figure'
+        fdata_tab_comp.fdata_tab=parent_tab_group;
+end
+
+fdata_tab_comp.table= uitable('Parent',fdata_tab_comp.fdata_tab,...
+    'Data', [],...
+    'ColumnName', {'Lines' 'Folder' 'Disp' 'ID'},...
+    'ColumnFormat', {'char' 'char' 'logical' 'numeric'},...
+    'ColumnEditable',[false false true false],...
+    'Units','Normalized',...
+    'Position',[0.01 0 0.98 1],...
+    'RowName',[],...
+    'CellSelectionCallback','',...
+    'CellEditCallback',{@update_map_cback,main_figure},...
+    'BusyAction','cancel');
+pos_t = getpixelposition(fdata_tab_comp.table);
+set(fdata_tab_comp.table,'ColumnWidth',{3*pos_t(3)/10,6*pos_t(3)/10,pos_t(3)/10, 0});
+
+set(fdata_tab_comp.fdata_tab,'SizeChangedFcn',{@resize_table,main_figure});
+setappdata(main_figure,'fdata_tab',fdata_tab_comp);
+
+update_fdata_tab(main_figure);
+
+end
+
+function update_map_cback(src,~,main_figure)
+update_map_tab(main_figure,0);
+end

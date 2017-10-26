@@ -182,6 +182,7 @@ for iF = 1:nFiles
     file = MATfilename{iF};
     load(file);
     
+    [dir_data,fname,~]=fileparts(file);
     % EM_InstallationStart (v2 VERIFIED)
     if exist('EM_InstallationStart','var')
         
@@ -623,7 +624,7 @@ for iF = 1:nFiles
             FABCdata.WC_BP_BeamNumber             = nan(maxNBeams_sub,nPings);
             
             % decide whether to save in memory or as memmapfile
-            if nPings*maxNBeams_sub*maxNSamples_sub < 10^8
+            if nPings*maxNBeams_sub*maxNSamples_sub < 10^6
                 
                 % use simple 3D data array
                 
@@ -636,11 +637,12 @@ for iF = 1:nFiles
                 % use memmap file
                 
                 % initialize binary file for writing
-                if exist('temp','dir')==0
-                    mkdir('temp');
+                tmpdir=fullfile(dir_data,'temp',fname);
+                if exist(tmpdir,'dir')==0
+                    mkdir(tmpdir);
                 end
                 
-                file_binary = ['.' filesep 'temp' filesep 'X_SBP_SampleAmplitudes.dat'];
+                file_binary = fullfile(tmpdir,'WC_SBP_SampleAmplitudes.dat');
                 fileID = fopen(file_binary,'w+');
                 
             end
@@ -714,7 +716,7 @@ for iF = 1:nFiles
                 % close binary file
                 fclose(fileID);
                 % re-open as memmapfile
-                FABCdata.WC_SBP_SampleAmplitudes = memmapfile(file_binary,'Format',{'single' [maxNSamples_sub maxNBeams_sub nPings] 'val'},'repeat',1,'writable',false);
+                FABCdata.WC_SBP_SampleAmplitudes = memmapfile(file_binary,'Format',{'single' [maxNSamples_sub maxNBeams_sub nPings] 'val'},'repeat',1,'writable',true);
             end
             
         end

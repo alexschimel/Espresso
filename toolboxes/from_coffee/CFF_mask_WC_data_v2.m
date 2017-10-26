@@ -83,15 +83,20 @@ else
     memoryMapFlag = 0;
 end
 
+if isfield(fData,'X_SBP_Mask')
+     memoryMapFlag = 0;
+end
+
 %% init arrays
 
 if memoryMapFlag
     % create binary file
-    file_X_SBP_Mask = ['.' filesep 'temp' filesep 'X_SBP_Mask.dat'];
+    [tmpdir,~,~]=fileparts(fData.WC_SBP_SampleAmplitudes.Filename);
+    file_X_SBP_Mask = fullfile(tmpdir,'X_SBP_Mask.dat');
     fileID_X_SBP_Mask = fopen(file_X_SBP_Mask,'w+');
 else
     % initialize numerical arrays
-    fData.X_SBP_Mask.Data.val      = nan(nSamples,nBeams,nPings);
+    fData.X_SBP_Mask.Data.val      = nan(nSamples,nBeams,nPings,'single');
 end
 
 
@@ -223,6 +228,6 @@ if memoryMapFlag
     fclose(fileID_X_SBP_Mask);
 
     % re-open files as memmapfile
-    fData.X_SBP_Mask = memmapfile(file_X_SBP_Mask, 'Format',{'single' [nSamples nBeams nPings] 'val'},'repeat',1,'writable',false);
+    fData.X_SBP_Mask = memmapfile(file_X_SBP_Mask, 'Format',{'single' [nSamples nBeams nPings] 'val'},'repeat',1,'writable',true);
 
 end

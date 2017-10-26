@@ -117,31 +117,40 @@ end
 
 %% init arrays
 
+if isfield(fData,'X_SBP_sampleRange')
+     memoryMapFlag = 0;
+end
+
+
 if memoryMapFlag
     
+
+    [tmpdir,~,~]=fileparts(fData.WC_SBP_SampleAmplitudes.Filename);
+    
+
     % create binary files for each variable of interest
-    file_X_SBP_sampleRange = ['.' filesep 'temp' filesep 'X_SBP_sampleRange.dat'];
+    file_X_SBP_sampleRange = fullfile(tmpdir,'X_SBP_sampleRange.dat');  
     fileID_X_SBP_sampleRange = fopen(file_X_SBP_sampleRange,'w+');
-    file_X_SBP_sampleUpDist = ['.' filesep 'temp' filesep 'X_SBP_sampleUpDist.dat'];
+    file_X_SBP_sampleUpDist = fullfile(tmpdir,'X_SBP_sampleUpDist.dat');
     fileID_X_SBP_sampleUpDist = fopen(file_X_SBP_sampleUpDist,'w+');
-    file_X_SBP_sampleAcrossDist = ['.' filesep 'temp' filesep 'X_SBP_sampleAcrossDist.dat'];
+    file_X_SBP_sampleAcrossDist = fullfile(tmpdir,'X_SBP_sampleAcrossDist.dat');
     fileID_X_SBP_sampleAcrossDist = fopen(file_X_SBP_sampleAcrossDist,'w+');
-    file_X_SBP_sampleEasting = ['.' filesep 'temp' filesep 'X_SBP_sampleEasting.dat'];
+    file_X_SBP_sampleEasting = fullfile(tmpdir,'X_SBP_sampleEasting.dat');
     fileID_X_SBP_sampleEasting = fopen(file_X_SBP_sampleEasting,'w+');
-    file_X_SBP_sampleNorthing = ['.' filesep 'temp' filesep 'X_SBP_sampleNorthing.dat'];
+    file_X_SBP_sampleNorthing = fullfile(tmpdir,'X_SBP_sampleNorthing.dat');
     fileID_X_SBP_sampleNorthing = fopen(file_X_SBP_sampleNorthing,'w+');
-    file_X_SBP_sampleHeight = ['.' filesep 'temp' filesep 'X_SBP_sampleHeight.dat'];
+    file_X_SBP_sampleHeight = fullfile(tmpdir,'X_SBP_sampleHeight.dat');
     fileID_X_SBP_sampleHeight = fopen(file_X_SBP_sampleHeight,'w+');
     
 else
     
     % initialize numerical arrays
-    fData.X_SBP_sampleRange.Data.val      = nan(nSamples,nBeams,nPings);
-    fData.X_SBP_sampleUpDist.Data.val     = nan(nSamples,nBeams,nPings);
-    fData.X_SBP_sampleAcrossDist.Data.val = nan(nSamples,nBeams,nPings);
+    fData.X_SBP_sampleRange.Data.val      = nan(nSamples,nBeams,nPings,'single');
+    fData.X_SBP_sampleUpDist.Data.val     = nan(nSamples,nBeams,nPings,'single');
+    fData.X_SBP_sampleAcrossDist.Data.val = nan(nSamples,nBeams,nPings,'single');
     fData.X_SBP_sampleEasting.Data.val    = nan(nSamples,nBeams,nPings);
     fData.X_SBP_sampleNorthing.Data.val   = nan(nSamples,nBeams,nPings);
-    fData.X_SBP_sampleHeight.Data.val     = nan(nSamples,nBeams,nPings);
+    fData.X_SBP_sampleHeight.Data.val     = nan(nSamples,nBeams,nPings,'single');
     
 end
 
@@ -223,12 +232,12 @@ if memoryMapFlag
     fclose(fileID_X_SBP_sampleHeight);
     
     % re-open files as memmapfile
-    fData.X_SBP_sampleRange      = memmapfile(file_X_SBP_sampleRange,      'Format',{'single' [nSamples nBeams nPings] 'val'},'repeat',1,'writable',false);
-    fData.X_SBP_sampleUpDist     = memmapfile(file_X_SBP_sampleUpDist,     'Format',{'single' [nSamples nBeams nPings] 'val'},'repeat',1,'writable',false);
-    fData.X_SBP_sampleAcrossDist = memmapfile(file_X_SBP_sampleAcrossDist, 'Format',{'single' [nSamples nBeams nPings] 'val'},'repeat',1,'writable',false);
-    fData.X_SBP_sampleEasting    = memmapfile(file_X_SBP_sampleEasting,    'Format',{'double' [nSamples nBeams nPings] 'val'},'repeat',1,'writable',false);
-    fData.X_SBP_sampleNorthing   = memmapfile(file_X_SBP_sampleNorthing,   'Format',{'double' [nSamples nBeams nPings] 'val'},'repeat',1,'writable',false);
-    fData.X_SBP_sampleHeight     = memmapfile(file_X_SBP_sampleHeight,     'Format',{'single' [nSamples nBeams nPings] 'val'},'repeat',1,'writable',false);
+    fData.X_SBP_sampleRange      = memmapfile(file_X_SBP_sampleRange,      'Format',{'single' [nSamples nBeams nPings] 'val'},'repeat',1,'writable',true);
+    fData.X_SBP_sampleUpDist     = memmapfile(file_X_SBP_sampleUpDist,     'Format',{'single' [nSamples nBeams nPings] 'val'},'repeat',1,'writable',true);
+    fData.X_SBP_sampleAcrossDist = memmapfile(file_X_SBP_sampleAcrossDist, 'Format',{'single' [nSamples nBeams nPings] 'val'},'repeat',1,'writable',true);
+    fData.X_SBP_sampleEasting    = memmapfile(file_X_SBP_sampleEasting,    'Format',{'double' [nSamples nBeams nPings] 'val'},'repeat',1,'writable',true);
+    fData.X_SBP_sampleNorthing   = memmapfile(file_X_SBP_sampleNorthing,   'Format',{'double' [nSamples nBeams nPings] 'val'},'repeat',1,'writable',true);
+    fData.X_SBP_sampleHeight     = memmapfile(file_X_SBP_sampleHeight,     'Format',{'single' [nSamples nBeams nPings] 'val'},'repeat',1,'writable',true);
     
 end
 
