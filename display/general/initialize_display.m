@@ -47,11 +47,13 @@ setappdata(main_figure,'options_panel',options_panel);
 setappdata(main_figure,'wc_panel',wc_panel);
 setappdata(main_figure,'infos_panel',infos_panel);
 
-load_files_tab(main_figure,options_panel)
+load_files_tab(main_figure,options_panel);
 load_fdata_tab(main_figure,options_panel);
-load_wc_proc_tab(main_figure,options_panel)
+load_wc_proc_tab(main_figure,options_panel);
+load_wc_tab(main_figure,wc_panel);
 
 load_map_tab(main_figure,map_panel);
+
 % create menu in main window
 %create_menu(main_figure);
 

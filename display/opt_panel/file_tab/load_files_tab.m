@@ -142,6 +142,8 @@ files_loaded=cell(1,numel(fData));
 for nF=1:numel(fData)
     files_loaded{nF}=fData{nF}.MET_MATfilename{1};
 end
+disp_config=getappdata(main_figure,'disp_config');
+
 
 for nF = 1:numel(mat_all_files)
         
@@ -157,7 +159,14 @@ for nF = 1:numel(mat_all_files)
     disp('CFF_convert_mat_to_fabc_v2...');    
     fData_temp = CFF_convert_mat_to_fabc_v2({mat_all_files{nF};mat_wcd_files{nF}},dr,db);
     disp('CFF_process_ping_v2...');
-    fData_temp = CFF_process_ping_v2(fData_temp,'WC');   
+
+    if ~strcmp(disp_config.MET_tmproj,'')
+         fData_temp = CFF_process_ping_v2(fData_temp,'datagramSource','WC','tmproj',disp_config.MET_tmproj);          
+    else
+         fData_temp = CFF_process_ping_v2(fData_temp,'WC');  
+         disp_config.MET_tmproj=fData_temp.MET_tmproj;
+    end
+    
     fData_temp.ID=str2double(datestr(now,'yyyymmddHHMMSSFFF'));
     pause(1e-3);
     fData{numel(fData)+1}=fData_temp;
@@ -281,7 +290,7 @@ file_tab_comp = getappdata(main_figure,'file_tab');
 if ~isempty(evt.Indices)
     selected_idx=(evt.Indices(:,1));
 else
-    selected_idx={};
+    selected_idx=[];
 end
 %selected_idx'
 file_tab_comp.selected_idx=selected_idx;
@@ -291,9 +300,7 @@ end
 
 function booldir = check_path(new_path)
 
-new_path = fileparts(new_path);
 if ~isdir(new_path)
-    set(src,'string','');
     booldir = 0;
 else
     booldir = 1;

@@ -40,5 +40,6 @@ addpath(genpath(fullfile(path,'display')));
 addpath(genpath(fullfile(path,'icons')));
 addpath(genpath(fullfile(path,'fileIO')));
 addpath(genpath(fullfile(path,'toolboxes')));
+addpath(genpath(fullfile(path,'classes')));
 
 end

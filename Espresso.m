@@ -65,11 +65,15 @@ if ~isdeployed
     update_path(main_path);
 end
 
+disp_config=display_config_cl();
+setappdata(main_figure,'disp_config',disp_config);
 setappdata(main_figure,'fData',{});
+setappdata(main_figure,'ext_figs',[]);
 
 %% Initialize the display and the interactions with the user
 initialize_display(main_figure);
-%initialize_interactions(main_figure);%TODO
+init_listeners(main_figure);
+initialize_interactions_v2(main_figure);
 
 %update_cursor_tool(main_figure)%TODO
 %init_listeners(main_figure);%TODO

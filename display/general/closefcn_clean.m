@@ -35,6 +35,8 @@
 %% Function
 function closefcn_clean(main_figure,~)
 fData=getappdata(main_figure,'fData');
+ext_figs=getappdata(main_figure,'ext_figs');
+delete(ext_figs);
 j=0;
 dname={};
 for i=1:numel(fData)
