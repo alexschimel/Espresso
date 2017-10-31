@@ -34,10 +34,10 @@ interactions.WindowButtonDownFcn(1)=iptaddcallback(main_figure,'WindowButtonDown
 interactions.KeyPressFcn(1)=iptaddcallback(main_figure,'KeyPressFcn',' ');
 
 % Set wheel mouse scroll cback
-interactions.WindowScrollWheelFcn(1)=iptaddcallback(main_figure,'WindowScrollWheelFcn',' ');
+interactions.WindowScrollWheelFcn(1)=iptaddcallback(main_figure,'WindowScrollWheelFcn',{@scroll_fcn_callback,main_figure});
 
 % Set pointer motion cback
-interactions.WindowButtonMotionFcn(1)=iptaddcallback(main_figure,'WindowButtonMotionFcn',' ');
+interactions.WindowButtonMotionFcn(1)=iptaddcallback(main_figure,'WindowButtonMotionFcn',{@disp_cursor_info,main_figure});
 
 setappdata(main_figure,'interactions_id',interactions);
 

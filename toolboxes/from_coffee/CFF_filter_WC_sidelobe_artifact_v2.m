@@ -103,13 +103,13 @@ switch method_spec
             % open
             fileID_X_SBP_L1 = fopen(file_X_SBP_L1,'w+');
             % write
-            fwrite(fileID_X_SBP_L1,fData.WC_SBP_SampleAmplitudes.Data.val./2,'single');
+            fwrite(fileID_X_SBP_L1,fData.WC_SBP_SampleAmplitudes.Data.val./2,'int8');
             % close
             fclose(fileID_X_SBP_L1);
             % Dimensions
             [nSamples,nBeams,nPings] = size(fData.WC_SBP_SampleAmplitudes.Data.val);
             % re-open as memmapfile
-            fData.X_SBP_L1 = memmapfile(file_X_SBP_L1, 'Format',{'single' [nSamples nBeams nPings] 'val'},'repeat',1,'writable',true);
+            fData.X_SBP_L1 = memmapfile(file_X_SBP_L1, 'Format',{'int8' [nSamples nBeams nPings] 'val'},'repeat',1,'writable',true);
         else
             fData.X_SBP_L1.Data.val = fData.WC_SBP_SampleAmplitudes.Data.val./2;
         end
@@ -129,7 +129,7 @@ switch method_spec
             fileID_X_SBP_L1 = fopen(file_X_SBP_L1,'w+');
         else
             % initialize numerical arrays
-            fData.X_SBP_L1.Data.val = nan(nSamples,nBeams,nPings);
+            fData.X_SBP_L1.Data.val = zeros(nSamples,nBeams,nPings,'int8');
         end
         
         % Compute mean level across beams:
@@ -171,7 +171,7 @@ switch method_spec
             fclose(fileID_X_SBP_L1);
             
             % re-open files as memmapfile
-            fData.X_SBP_L1 = memmapfile(file_X_SBP_L1, 'Format',{'single' [nSamples nBeams nPings] 'val'},'repeat',1,'writable',true);
+            fData.X_SBP_L1 = memmapfile(file_X_SBP_L1, 'Format',{'int8' [nSamples nBeams nPings] 'val'},'repeat',1,'writable',true);
             
         end
         
@@ -189,7 +189,7 @@ switch method_spec
             fileID_X_SBP_L1 = fopen(file_X_SBP_L1,'w+');
         else
             % initialize numerical arrays
-            fData.X_SBP_L1.Data.val = nan(nSamples,nBeams,nPings);
+            fData.X_SBP_L1.Data.val = zeros(nSamples,nBeams,nPings,'int8');
         end
         
         % define 11 middle beams for reference level
@@ -199,7 +199,8 @@ switch method_spec
         for ip = 1:nPings
             
             % grab data
-            thisPing = fData.WC_SBP_SampleAmplitudes.Data.val(:,:,ip)./2;
+            thisPing = double(fData.WC_SBP_SampleAmplitudes.Data.val(:,:,ip))./2;
+            thisPing(thisPing<=-127/2)=nan;
             thisBottom = fData.X_BP_bottomSample(:,ip);
             
             % mean level across all beams for each range (and each ping)
@@ -214,7 +215,7 @@ switch method_spec
             % reference level, like everyone does (correction "a" in
             % Parnum's thesis)
             X_SBP_L1 = bsxfun(@minus,thisPing,meanAcrossBeams) + meanRefLevel;
-            
+            X_SBP_L1(isnan(X_SBP_L1))=-128/2;
             % note that other compensations of that style are possible (to
             % be tested for performance
             
@@ -236,7 +237,7 @@ switch method_spec
             % saving result
             if memoryMapFlag
                 % write into binary files:
-                fwrite(fileID_X_SBP_L1,X_SBP_L1,'single');
+                fwrite(fileID_X_SBP_L1,X_SBP_L1,'int8');
             else
                 % save in array
                 fData.X_SBP_L1.Data.val(:,:,ip) = X_SBP_L1;
@@ -253,7 +254,7 @@ switch method_spec
             fclose(fileID_X_SBP_L1);
             
             % re-open files as memmapfile
-            fData.X_SBP_L1 = memmapfile(file_X_SBP_L1, 'Format',{'single' [nSamples nBeams nPings] 'val'},'repeat',1,'writable',true);
+            fData.X_SBP_L1 = memmapfile(file_X_SBP_L1, 'Format',{'int8' [nSamples nBeams nPings] 'val'},'repeat',1,'writable',true);
             
         end
         
@@ -271,15 +272,15 @@ switch method_spec
             fileID_X_SBP_L1 = fopen(file_X_SBP_L1,'w+');
         else
             % initialize numerical arrays
-            fData.X_SBP_L1.Data.val = nan(nSamples,nBeams,nPings,'single');
+            fData.X_SBP_L1.Data.val = zeros(nSamples,nBeams,nPings,'int8');
         end
         
         % per-ping processing
         for ip = 1:nPings
             
             % grab data
-            thisPing = fData.WC_SBP_SampleAmplitudes.Data.val(:,:,ip)./2;
-
+            thisPing = double(fData.WC_SBP_SampleAmplitudes.Data.val(:,:,ip)./2);
+            thisPing(thisPing==-128/2)=nan;
             % calculate 75th percentile
             sevenfiveperc = nan(nSamples,1);
             for ismp = 1:nSamples
@@ -293,7 +294,7 @@ switch method_spec
             % saving result
             if memoryMapFlag
                 % write into binary files:
-                fwrite(fileID_X_SBP_L1,X_SBP_L1,'single');
+                fwrite(fileID_X_SBP_L1,X_SBP_L1,'int8');
             else
                 % save in array
                 fData.X_SBP_L1.Data.val(:,:,ip) = X_SBP_L1;
@@ -309,7 +310,7 @@ switch method_spec
             fclose(fileID_X_SBP_L1);
             
             % re-open files as memmapfile
-            fData.X_SBP_L1 = memmapfile(file_X_SBP_L1, 'Format',{'single' [nSamples nBeams nPings] 'val'},'repeat',1,'writable',true);
+            fData.X_SBP_L1 = memmapfile(file_X_SBP_L1, 'Format',{'int8' [nSamples nBeams nPings] 'val'},'repeat',1,'writable',true);
             
         end
         

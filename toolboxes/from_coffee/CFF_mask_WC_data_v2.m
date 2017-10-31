@@ -96,7 +96,7 @@ if memoryMapFlag
     fileID_X_SBP_Mask = fopen(file_X_SBP_Mask,'w+');
 else
     % initialize numerical arrays
-    fData.X_SBP_Mask.Data.val      = nan(nSamples,nBeams,nPings,'single');
+    fData.X_SBP_Mask.Data.val      = zeros(nSamples,nBeams,nPings,'int8');
 end
 
 
@@ -211,7 +211,7 @@ for iB = 1:nBlocks
     % saving
     if memoryMapFlag
         % write into binary files:
-        fwrite(fileID_X_SBP_Mask,X_SBP_Mask,'single');
+        fwrite(fileID_X_SBP_Mask,X_SBP_Mask,'int8');
     else
         % save in data
         fData.X_SBP_Mask.Data.val(:,:,blockPings) = X_SBP_Mask;
@@ -228,6 +228,6 @@ if memoryMapFlag
     fclose(fileID_X_SBP_Mask);
 
     % re-open files as memmapfile
-    fData.X_SBP_Mask = memmapfile(file_X_SBP_Mask, 'Format',{'single' [nSamples nBeams nPings] 'val'},'repeat',1,'writable',true);
+    fData.X_SBP_Mask = memmapfile(file_X_SBP_Mask, 'Format',{'int8' [nSamples nBeams nPings] 'val'},'repeat',1,'writable',true);
 
 end

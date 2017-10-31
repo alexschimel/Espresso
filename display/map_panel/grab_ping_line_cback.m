@@ -4,7 +4,7 @@ fData_tot=getappdata(main_figure,'fData');
 if isempty(fData_tot);
     return;
 end
-
+disp_config=getappdata(main_figure,'disp_config');
 map_tab_comp=getappdata(main_figure,'Map_tab');
 
 ip=map_tab_comp.ping_line.UserData.ip;
@@ -18,7 +18,7 @@ end
 idx_fData=(IDs_tot==ID);
 fData=fData_tot{idx_fData};
 ah=map_tab_comp.map_axes;
-
+disp_config.Fdata_idx=find(idx_fData);
 
 current_fig=gcf;
 
@@ -36,11 +36,16 @@ end
         N=fData.X_1P_pingN;
 
         [across_dist,ip]=min(sqrt((E-pt(1,1)).^2+(N-pt(1,2)).^2));
+    
+%       z=E(ip)*pt(1,1)+ N(ip)*pt(1,2);
+        z=cross([E(ip) N(ip) 0], [pt(1,1) pt(1,2) 0]);
+        z=z(3);
+        across_dist=sign(z)*across_dist;
         
-        z=cross([E(ip) N(ip) 0],[pt(1,1) pt(1,2) 0]);
-        across_dist=sign(z(3))*across_dist;
+        disp_config.Iping=ip;
+        disp_config.AcrossDist=across_dist;
         
-        update_wc_tab(main_figure,fData,across_dist,ip);
+        update_wc_tab(main_figure)
         
     end
 

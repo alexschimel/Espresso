@@ -7,6 +7,9 @@ classdef display_config_cl <handle
         Cax_bs
         Cax_bathy
         Cmap
+        Fdata_idx
+        Iping
+        AcrossDist
         MET_tmproj
     end
     
@@ -16,11 +19,15 @@ classdef display_config_cl <handle
             p = inputParser;
             addParameter(p,'Var_disp','wc_int',@(x) ismember(x,{'wc_int' 'bs' 'bathy'}));
             addParameter(p,'Cmap','ek60',@(x) ismember(x,{'jet' 'parula' 'ek60' 'gray'}));
-            addParameter(p,'Cax_wc_int',[-10 30],@isnumeric);
+            addParameter(p,'Cax_wc_int',[-60 0],@isnumeric);
             addParameter(p,'Cax_wc',[-60 0],@isnumeric);
             addParameter(p,'Cax_bs',[-60 0],@isnumeric);
             addParameter(p,'Cax_bathy',[-60 0],@isnumeric);
             addParameter(p,'MET_tmproj','',@ischar);
+            
+            addParameter(p,'Fdata_idx',1,@isnumeric);
+            addParameter(p,'Iping',1,@isnumeric);
+            addParameter(p,'AcrossDist',1,@isnumeric);
             
             parse(p,varargin{:});
             results=p.Results;
@@ -29,7 +36,6 @@ classdef display_config_cl <handle
             for i=1:length(props)
                 obj.(props{i})=results.(props{i});
             end
-            
             
         end
     end
@@ -58,7 +64,6 @@ classdef display_config_cl <handle
             end
             
         end
-        
         function zone=get_zone(obj)
             tmp=textscan(obj.MET_tmproj,'utm%2d%c');
             zone=double(tmp{1});
@@ -67,6 +72,7 @@ classdef display_config_cl <handle
                     zone=-zone;
             end
         end
+        
     end
 end
 

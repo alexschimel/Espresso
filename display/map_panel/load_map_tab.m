@@ -21,6 +21,7 @@ map_tab_comp.map_axes=axes('Parent',map_tab,'FontSize',10,'Units','normalized',.
     'NextPlot','add',...
     'visible','on',...
     'Tag','main');
+map_tab_comp.map_axes.XTickLabelRotation=90;
 [cmap,col_ax,col_lab,col_grid,col_bot,col_txt]=init_cmap(disp_config.Cmap);
 
 colorbar(map_tab_comp.map_axes);
@@ -28,8 +29,8 @@ colormap(map_tab_comp.map_axes,cmap);
 
 axis(map_tab_comp.map_axes,'equal');
 grid(map_tab_comp.map_axes,'on');
-xlabel(map_tab_comp.map_axes,'Easting (m)')
-ylabel(map_tab_comp.map_axes,'Northing (m)')
+xlabel(map_tab_comp.map_axes,'Longitude (^\circ)')
+ylabel(map_tab_comp.map_axes,'Latitude (^\circ)')
 
 map_tab_comp.ping_line=plot(map_tab_comp.map_axes,nan,nan,'k','linewidth',2,'ButtonDownFcn',{@grab_ping_line_cback,main_figure});
 

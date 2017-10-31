@@ -630,7 +630,7 @@ for iF = 1:nFiles
                 
                 % initialize data per decimated samples, decimated beams,
                 % and pings
-                FABCdata.WC_SBP_SampleAmplitudes.Data.val = nan(maxNSamples_sub,maxNBeams_sub,nPings);
+                FABCdata.WC_SBP_SampleAmplitudes.Data.val = zeros(maxNSamples_sub,maxNBeams_sub,nPings,'int8')-int8(128);
                 
             else
                 
@@ -669,7 +669,7 @@ for iF = 1:nFiles
                 FABCdata.WC_TP_TransmitSectorNumber(1:nTransmitSectors,iP) = EM_WaterColumn.TransmitSectorNumber{iDatagrams(1)};
                 
                 % initialize the decimated samples / decimated beams matrix (Watercolumn data)
-                SB_temp = nan(maxNSamples_sub,maxNBeams_sub,'single');
+                SB_temp = zeros(maxNSamples_sub,maxNBeams_sub,'int8')-128;
                 
                 % and then read the data in each datagram
                 for iD = 1:nDatagrams
@@ -695,7 +695,7 @@ for iF = 1:nFiles
                         % number of samples we're going to record:
                         Ns_sub = ceil(Ns/dr_sub);
                         % get the data:
-                        SB_temp(1:Ns_sub,iBeams(iB)) = EM_WaterColumn.SampleAmplitude{iDatagrams(iD)}{idx_beams(iB)}(1:dr_sub:end)';
+                        SB_temp(1:Ns_sub,iBeams(iB)) = EM_WaterColumn.SampleAmplitude{iDatagrams(iD)}{idx_beams(iB)}(1:dr_sub:Ns_sub*dr_sub)';
                     end
                     
                 end
@@ -703,7 +703,7 @@ for iF = 1:nFiles
                 % store data
                 if exist('fileID','var')
                     % write on binary file
-                    fwrite(fileID,SB_temp,'single');
+                    fwrite(fileID,SB_temp,'int8');
                 else
                     % store as data
                     FABCdata.WC_SBP_SampleAmplitudes.Data.val(1:maxNSamples_sub,1:maxNBeams_sub,iP) = SB_temp;
@@ -716,7 +716,7 @@ for iF = 1:nFiles
                 % close binary file
                 fclose(fileID);
                 % re-open as memmapfile
-                FABCdata.WC_SBP_SampleAmplitudes = memmapfile(file_binary,'Format',{'single' [maxNSamples_sub maxNBeams_sub nPings] 'val'},'repeat',1,'writable',true);
+                FABCdata.WC_SBP_SampleAmplitudes = memmapfile(file_binary,'Format',{'int8' [maxNSamples_sub maxNBeams_sub nPings] 'val'},'repeat',1,'writable',true);
             end
             
         end

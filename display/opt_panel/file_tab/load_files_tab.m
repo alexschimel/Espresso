@@ -46,9 +46,9 @@ fData=getappdata(main_figure,'fData');
 if isempty(fData)
     path_init=whereisroot();
 else
-   [path_init,~,~]=fileparts(fData{end}.MET_MATfilename{1});
-   i=strfind(path_init,filesep);
-   path_init=path_init(1:i(end-1));
+    [path_init,~,~]=fileparts(fData{end}.MET_MATfilename{1});
+    i=strfind(path_init,filesep);
+    path_init=path_init(1:i(end-1));
 end
 
 
@@ -71,8 +71,8 @@ file_tab_comp.path_choose = uicontrol(file_tab_comp.file_tab,'Style','pushbutton
 survDataSummary = {};
 
 % Column names and column format
-columnname = {'File' 'Folder','Ld'};
-columnformat = {'char','char','logical'};
+columnname = {'File' 'Folder'};
+columnformat = {'char','char'};
 
 % Create the uitable
 file_tab_comp.table_main = uitable('Parent',file_tab_comp.file_tab,...
@@ -80,21 +80,25 @@ file_tab_comp.table_main = uitable('Parent',file_tab_comp.file_tab,...
     'ColumnName', columnname,...
     'ColumnFormat', columnformat,...
     'CellSelectionCallback',{@cell_select_cback,main_figure},...
-    'ColumnEditable', [false false false],...
+    'ColumnEditable', [false false],...
     'Units','Normalized','Position',[0 0.1 1 0.8],...
     'RowName',[]);
 
 pos_t = getpixelposition(file_tab_comp.table_main);
 set(file_tab_comp.table_main,'ColumnWidth',...
-    num2cell(pos_t(3)*[9/20 10/20 1/20]));
+    num2cell(pos_t(3)*[10/20 10/20]));
 set(file_tab_comp.file_tab,'SizeChangedFcn',{@resize_table,file_tab_comp.table_main});
 
 %set(file_tab_comp.table_main,'CellEditCallback',{@edit_surv_data_db,surv_data_tab,main_figure});
 
 uicontrol(file_tab_comp.file_tab,'Style','pushbutton','units','normalized',...
+    'pos',[0.35 0.01 0.2 0.08],...
+    'String','Convert',...
+    'callback',{@convert_files_callback,main_figure,0});
+uicontrol(file_tab_comp.file_tab,'Style','pushbutton','units','normalized',...
     'pos',[0.55 0.01 0.2 0.08],...
-    'String','Preprocess',...
-    'callback',{@preprocess_files_callback,main_figure});
+    'String','Re-Convert',...
+    'callback',{@convert_files_callback,main_figure,1});
 uicontrol(file_tab_comp.file_tab,'Style','pushbutton','units','normalized',...
     'pos',[0.75 0.01 0.15 0.08],...
     'String','Load',...
@@ -107,7 +111,7 @@ file_tab_comp.processedd=[];
 setappdata(main_figure,'file_tab',file_tab_comp);
 
 
-update_file_table(main_figure);
+update_file_tab(main_figure);
 
 end
 
@@ -146,43 +150,45 @@ disp_config=getappdata(main_figure,'disp_config');
 
 
 for nF = 1:numel(mat_all_files)
-        
+    
     %% Start Display
-    fprintf('Loading file "%s" - started on: %s\n',files_to_load{nF}, datestr(now));    
+    fprintf('Loading file "%s" - started on: %s\n',files_to_load{nF}, datestr(now));
     
     if ismember(mat_all_files{nF},files_loaded)
-        fprintf('%s already loaded\n',files_to_load{nF});  
-        continue;      
+        fprintf('%s already loaded\n',files_to_load{nF});
+        continue;
     end
     %% convert mat to fabc format
-    tic
-    disp('CFF_convert_mat_to_fabc_v2...');    
+    
+    disp('CFF_convert_mat_to_fabc_v2...');
     fData_temp = CFF_convert_mat_to_fabc_v2({mat_all_files{nF};mat_wcd_files{nF}},dr,db);
     disp('CFF_process_ping_v2...');
+    
 
-    if ~strcmp(disp_config.MET_tmproj,'')
-         fData_temp = CFF_process_ping_v2(fData_temp,'datagramSource','WC','tmproj',disp_config.MET_tmproj);          
-    else
-         fData_temp = CFF_process_ping_v2(fData_temp,'WC');  
-         disp_config.MET_tmproj=fData_temp.MET_tmproj;
-    end
+        fData_temp = CFF_process_ping_v2(fData_temp,'WC');
+        if strcmp(disp_config.MET_tmproj,'')
+            disp_config.MET_tmproj=fData_temp.MET_tmproj;
+        elseif ~strcmp(disp_config.MET_tmproj,fData_temp.MET_tmproj)
+            disp('Data using another UTM zone for pojection. You cannot load them in the current project.');
+             clean_fdata(fData_temp);
+           return; 
+        end
     
     fData_temp.ID=str2double(datestr(now,'yyyymmddHHMMSSFFF'));
     pause(1e-3);
     fData{numel(fData)+1}=fData_temp;
-    toc
-    
     
     
 end
 setappdata(main_figure,'fData',fData);
-update_file_table(main_figure);
+update_file_tab(main_figure);
 update_display(main_figure);
 
 end
 
-function preprocess_files_callback(src,~,main_figure)
+function convert_files_callback(src,~,main_figure,re)
 file_tab_comp = getappdata(main_figure,'file_tab');
+
 
 selected_idx=file_tab_comp.selected_idx;
 processed=file_tab_comp.processed;
@@ -191,8 +197,9 @@ files=file_tab_comp.files;
 files_to_process=files(selected_idx);
 
 processed_selected=processed(selected_idx);
-
-files_to_process=files_to_process(~processed_selected);
+if re==0
+    files_to_process=files_to_process(~processed_selected);
+end
 
 if isempty(files_to_process)
     return;
@@ -206,18 +213,24 @@ if numel(mat_all_files)==0
     disp('All selected files are already pre-processed.')
     return;
 end
+enabled_on=findobj(file_tab_comp.file_tab,'Enable','on','-and','Style','pushbutton');
+
+set(enabled_on,'Enable','off');
+
 
 for nF = 1:numel(mat_all_files)
-        txt = sprintf('Converting file "%s" - started on: %s', all_files_to_process{nF}, datestr(now));
-        disp(txt);
-        CFF_convert_all_to_mat_v2(all_files_to_process{nF},mat_all_files{nF});
-        
-        txt = sprintf('Converting file "%s" - started on: %s', wcd_files_to_process{nF}, datestr(now));
-        disp(txt);
-        CFF_convert_all_to_mat_v2(wcd_files_to_process{nF},mat_wcd_files{nF});
+    txt = sprintf('Converting file "%s" - started on: %s', all_files_to_process{nF}, datestr(now));
+    disp(txt);
+    CFF_convert_all_to_mat_v2(all_files_to_process{nF},mat_all_files{nF},'datagrams',[73 80 107]);
+    
+    txt = sprintf('Converting file "%s" - started on: %s', wcd_files_to_process{nF}, datestr(now));
+    disp(txt);
+    CFF_convert_all_to_mat_v2(wcd_files_to_process{nF},mat_wcd_files{nF},'datagrams',[107]);
 end
 
-update_file_table(main_figure);
+
+update_file_tab(main_figure);
+set(enabled_on,'Enable','on');
 end
 
 
@@ -238,51 +251,16 @@ end
 
 if new_path~=0
     booldir = check_path(new_path);
-else 
+else
     return;
 end
 
 if booldir
-    update_file_table(main_figure);
+    update_file_tab(main_figure);
 end
 
 end
 
-function update_file_table(main_figure)
-
-fData=getappdata(main_figure,'fData');
-files_loaded=cell(1,numel(fData));
-
-for nF=1:numel(fData)
-    files_loaded{nF}=fData{nF}.MET_MATfilename{1};
-end
-
-file_tab_comp = getappdata(main_figure,'file_tab');
-
-path_ori = get(file_tab_comp.path_box,'string');
-
-[folders,files,processed] = list_files_in_dir(path_ori);
-
-
-[mat_all_files,~]=matfilenames_from_all_filenames(fullfile(folders,files));
-
-
-nb_files = numel(folders);
-
-new_entry = cell(nb_files,3);
-new_entry(:,1) = files;
-new_entry(:,2) = folders;
-new_entry(:,3) = num2cell(ismember(mat_all_files,files_loaded));
-
-new_entry(~processed,1) = cellfun(@(x) strcat('<html><FONT color="Red"><b>',x,'</b></html>'),new_entry(~processed,1),'UniformOutput',0);
-new_entry(processed,1) = cellfun(@(x) strcat('<html><FONT color="Green"><b>',x,'</b></html>'),new_entry(processed,1),'UniformOutput',0);
-
-file_tab_comp.table_main.Data = new_entry;
-file_tab_comp.files=fullfile(folders,files);
-file_tab_comp.processed=processed;
-
-setappdata(main_figure,'file_tab',file_tab_comp);
-end
 
 function cell_select_cback(~,evt,main_figure)
 file_tab_comp = getappdata(main_figure,'file_tab');

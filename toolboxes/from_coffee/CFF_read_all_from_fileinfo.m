@@ -1,5 +1,5 @@
 %% CFF_read_all_from_fileinfo.m
-% 
+%
 % Reads contents of one Kongsberg EM series binary .all or .wcd data file,
 % using ALLfileinfo to indicate which datagrams to be parsed.
 %
@@ -9,7 +9,7 @@
 %
 % ALLdata = CFF_read_all_from_fileinfo(ALLfilename, ALLfileinfo) reads all
 % datagrams in ALLfilename for which ALLfileinfo.parsed equals 1, and store
-% them in ALLdata. 
+% them in ALLdata.
 %
 % *INPUT VARIABLES*
 %
@@ -17,7 +17,7 @@
 % * |ALLfilename|: string filename to parse (extension in .all or .wcd)
 %
 % * |ALLfileinfo|: structure containing informaton about datagrams in
-% ALLfilename, as outputted by CFF_all_file_info.m. It contains fields: 
+% ALLfilename, as outputted by CFF_all_file_info.m. It contains fields:
 %   * |ALLfilename|: input file name
 %   * |filesize|: file size in bytes
 %   * |datagsizeformat|: endianness of the datagram size field 'b' or 'l'
@@ -33,8 +33,8 @@
 %   * |syncCounter|: for each datagram, the number of bytes founds between this datagram and the previous one (any number different than zero indicates a sync error)
 %   * |emNumber|: EM Model number (eg 2045 for EM2040c)
 %   * |date|: datagram date in YYYMMDD
-%   * |timeSinceMidnightInMilliseconds|: time since midnight in msecs 
-% 
+%   * |timeSinceMidnightInMilliseconds|: time since midnight in msecs
+%
 % *OUTPUT VARIABLES*
 %
 % * |ALLdata|: structure containing the data. Each field corresponds a
@@ -633,7 +633,7 @@ for iDatag = datagToParse'
             fseek(fid,temp+4,'bof'); % to next data type
             ALLdata.EM_SeabedImage.CentreSampleNumber{i83}          = fread(fid,N,'uint16',6-2);
             fseek(fid,2-6,'cof'); % we need to come back after last jump
-
+            
             % reading image data
             Ns = [ALLdata.EM_SeabedImage.NumberOfSamplesPerBeam{i83}];
             tmp = fread(fid,sum(Ns),'int8');
@@ -799,7 +799,7 @@ for iDatag = datagToParse'
             Ns = [ALLdata.EM_SeabedImage89.NumberOfSamplesPerBeam{i89}];
             tmp = fread(fid,sum(Ns),'int16');
             ALLdata.EM_SeabedImage89.SampleAmplitudes(i89).beam = mat2cell(tmp,Ns);
-          
+            
             ALLdata.EM_SeabedImage89.Spare(i89)                           = fread(fid,1,'uint8');
             ALLdata.EM_SeabedImage89.ETX(i89)                             = fread(fid,1,'uint8');
             ALLdata.EM_SeabedImage89.CheckSum(i89)                        = fread(fid,1,'uint16');
@@ -890,7 +890,12 @@ for iDatag = datagToParse'
             try i107=i107+1; catch, i107=1; end
             
             % parsing
+            
+            
+            
             ALLdata.EM_WaterColumn.NumberOfBytesInDatagram(i107)           = nbDatag;
+            pos_1=ftell(fid);
+            
             ALLdata.EM_WaterColumn.STX(i107)                               = stxDatag;
             ALLdata.EM_WaterColumn.TypeOfDatagram(i107)                    = datagTypeNumber;
             ALLdata.EM_WaterColumn.EMModelNumber(i107)                     = emNumber;
@@ -929,30 +934,49 @@ for iDatag = datagToParse'
             
             % repeat cycle #2: Nrx entries of a possibly variable number of bits. Using a for loop
             Nrx = ALLdata.EM_WaterColumn.NumberOfBeamsInThisDatagram(i107);
-            Ns = nan(1,Nrx);
-            for jj=1:Nrx
-                ALLdata.EM_WaterColumn.BeamPointingAngle{i107}(jj)             = fread(fid,1,'int16');
-                ALLdata.EM_WaterColumn.StartRangeSampleNumber{i107}(jj)        = fread(fid,1,'uint16');
-                ALLdata.EM_WaterColumn.NumberOfSamples{i107}(jj)               = fread(fid,1,'uint16'); %Ns
-                ALLdata.EM_WaterColumn.DetectedRangeInSamples{i107}(jj)        = fread(fid,1,'uint16'); %DR
-                ALLdata.EM_WaterColumn.TransmitSectorNumber2{i107}(jj)         = fread(fid,1,'uint8');
-                ALLdata.EM_WaterColumn.BeamNumber{i107}(jj)                    = fread(fid,1,'uint8');
-                Ns(jj) = ALLdata.EM_WaterColumn.NumberOfSamples{i107}(jj);
-                ALLdata.EM_WaterColumn.SampleAmplitude{i107}{jj}               = fread(fid,Ns(jj),'int8');
-            end
             
-            % "spare byte if required to get even length (always 0 if used)"
-            if floor((Nrx*10+sum(Ns))/2) == (Nrx*10+sum(Ns))/2
-                % even so far, since ETX is 1 byte, add a spare here
-                ALLdata.EM_WaterColumn.Spare4(i107)                            = fread(fid,1,'uint8');
-            else
-                % odd so far, since ETX is 1 bytes, no spare
-                ALLdata.EM_WaterColumn.Spare4(i107) = NaN;
-            end
-            
-            ALLdata.EM_WaterColumn.ETX(i107)                               = fread(fid,1,'uint8');
-            ALLdata.EM_WaterColumn.CheckSum(i107)                          = fread(fid,1,'uint16');
-            
+            pos_2=ftell(fid);
+            %
+           
+                
+                Ns = zeros(1,Nrx);
+                tmp=fread(fid,nbDatag-(pos_2-pos_1+1)-15,'int8');
+                tmp=int8(tmp');
+                id=0;
+                ALLdata.EM_WaterColumn.BeamPointingAngle{i107}=nan(1,Nrx);
+                ALLdata.EM_WaterColumn.StartRangeSampleNumber{i107}=nan(1,Nrx);
+                ALLdata.EM_WaterColumn.NumberOfSamples{i107}=nan(1,Nrx);
+                ALLdata.EM_WaterColumn.DetectedRangeInSamples{i107}=nan(1,Nrx);
+                ALLdata.EM_WaterColumn.TransmitSectorNumber2{i107}=nan(1,Nrx);
+                ALLdata.EM_WaterColumn.BeamNumber{i107}=nan(1,Nrx);
+                
+                for jj=1:Nrx
+                    
+                    ALLdata.EM_WaterColumn.BeamPointingAngle{i107}(jj)             = typecast(tmp(1+id:2+id),'int16');
+                    ALLdata.EM_WaterColumn.StartRangeSampleNumber{i107}(jj)        = typecast(tmp(3+id:4+id),'uint16');
+                    ALLdata.EM_WaterColumn.NumberOfSamples{i107}(jj)               = typecast(tmp(5+id:6+id),'uint16');
+                    ALLdata.EM_WaterColumn.DetectedRangeInSamples{i107}(jj)        = typecast(tmp(7+id:8+id),'uint16');
+                    ALLdata.EM_WaterColumn.TransmitSectorNumber2{i107}(jj)         = typecast(tmp(9+id),'uint8');
+                    ALLdata.EM_WaterColumn.BeamNumber{i107}(jj)                    = typecast(tmp(10+id),'uint8');
+                    Ns(jj) = ALLdata.EM_WaterColumn.NumberOfSamples{i107}(jj);
+                    ALLdata.EM_WaterColumn.SampleAmplitude{i107}{jj}               = tmp((11+id):(11+id+Ns(jj)-1));
+                    id=10*jj+sum(Ns);
+                end
+                
+                % "spare byte if required to get even length (always 0 if used)"
+                if floor((Nrx*10+sum(Ns))/2) == (Nrx*10+sum(Ns))/2
+                    % even so far, since ETX is 1 byte, add a spare here
+                    ALLdata.EM_WaterColumn.Spare4(i107)                            = double(typecast(tmp(1+id),'uint8'));
+                    id=id+1;
+                else
+                    % odd so far, since ETX is 1 bytes, no spare
+                    ALLdata.EM_WaterColumn.Spare4(i107) = NaN;
+                end
+                
+                ALLdata.EM_WaterColumn.ETX(i107)                               = typecast(tmp(id+1),'uint8');
+                ALLdata.EM_WaterColumn.CheckSum(i107)                          = typecast(tmp(2+id:3+id),'uint16');
+                
+          
             % ETX check
             if ALLdata.EM_WaterColumn.ETX(i107)~=3
                 error('wrong ETX value (ALLdata.EM_WaterColumn)');

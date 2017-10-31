@@ -39,13 +39,14 @@ function initialize_display(main_figure)
 map_panel     = uitabgroup(main_figure,'Position',[0.3  .05  0.7 .95]);
 options_panel = uitabgroup(main_figure,'Position',[0    .525 0.3 .475]);
 wc_panel      = uitabgroup(main_figure,'Position',[0    .05  0.3 .475]);
-infos_panel   = uitabgroup(main_figure,'Position',[0   0     1   .05]);
+
 
 % add panels to appdata
 setappdata(main_figure,'map_panel',map_panel);
 setappdata(main_figure,'options_panel',options_panel);
 setappdata(main_figure,'wc_panel',wc_panel);
-setappdata(main_figure,'infos_panel',infos_panel);
+
+load_info_panel(main_figure);
 
 load_files_tab(main_figure,options_panel);
 load_fdata_tab(main_figure,options_panel);
@@ -53,6 +54,7 @@ load_wc_proc_tab(main_figure,options_panel);
 load_wc_tab(main_figure,wc_panel);
 
 load_map_tab(main_figure,map_panel);
+load_info_panel(main_figure);
 
 % create menu in main window
 %create_menu(main_figure);

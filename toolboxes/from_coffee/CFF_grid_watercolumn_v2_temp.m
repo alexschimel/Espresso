@@ -151,21 +151,19 @@ for iB = 1:nBlocks
     % get field to grid
     switch dataToGrid
         case 'original'
-            blockL = fData.WC_SBP_SampleAmplitudes.Data.val(1:dr:nSamples,1:db:nBeams,blockPings)./2;
+            blockL = double(fData.WC_SBP_SampleAmplitudes.Data.val(1:dr:nSamples,1:db:nBeams,blockPings))./2;           
         case 'masked original'
-            blockL = fData.WC_SBP_SampleAmplitudes.Data.val(1:dr:nSamples,1:db:nBeams,blockPings)./2 .* ...
-                fData.X_SBP_Mask.Data.val(1:dr:nSamples,1:db:nBeams,blockPings);
+            blockL = double(fData.WC_SBP_SampleAmplitudes.Data.val(1:dr:nSamples,1:db:nBeams,blockPings))./2;
+            blockL(fData.X_SBP_Mask.Data.val(1:dr:nSamples,1:db:nBeams,blockPings)==0)=nan;
         case 'L1'
-            blockL = fData.X_SBP_L1.Data.val(1:dr:nSamples,1:db:nBeams,blockPings);
+            blockL = double(fData.X_SBP_L1.Data.val(1:dr:nSamples,1:db:nBeams,blockPings));
         case 'masked L1'
-            blockL = fData.X_SBP_L1.Data.val(1:dr:nSamples,1:db:nBeams,blockPings) .* ...
-                fData.X_SBP_Mask.Data.val(1:dr:nSamples,1:db:nBeams,blockPings);
-        otherwise
-            error('field not recognized')
+            blockL = double(fData.X_SBP_L1.Data.val(1:dr:nSamples,1:db:nBeams,blockPings));
+            blockL(fData.X_SBP_Mask.Data.val(1:dr:nSamples,1:db:nBeams,blockPings)==0)=nan;
     end
     
     clear blockPings
-    
+    blockL(blockL==-128/2)=nan;
     % remove nans:
     indNan = isnan(blockL);
     blockE(indNan) = [];
@@ -175,6 +173,7 @@ for iB = 1:nBlocks
     clear indNan
     
     % grid Level in natural before gridding
+
     blockL = double(10.^(blockL./10));
     
     % data indices in full grid

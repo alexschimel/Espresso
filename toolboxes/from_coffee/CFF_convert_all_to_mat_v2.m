@@ -139,7 +139,6 @@ ALLfilename = p.Results.ALLfilename;
 MATfilename = p.Results.MATfilename;
 datagrams   = p.Results.datagrams;
 
-
 %% Read data
 ALLdata = CFF_read_all(ALLfilename,'datagrams',datagrams);
 
@@ -152,5 +151,8 @@ end
 
 
 %% Save the result into a MAT file
+
 ALLfileinfo = CFF_save_mat_from_all(ALLdata, MATfilename);
+
+
 

@@ -3,6 +3,7 @@ function update_fdata_tab(main_figure)
     fdata=getappdata(main_figure,'fData');
       
     if isempty(fdata)
+        fdata_tab_comp.table.Data={};
         return;
     end
     data_new=cell(numel(fdata),3);

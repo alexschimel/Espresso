@@ -24,17 +24,18 @@ N=fData.X_1P_pingN;
 pt=evt.IntersectionPoint;
 [across_dist,ip]=min(sqrt((E-pt(1)).^2+(N-pt(2)).^2));
 
-z=cross([E(ip) N(ip) 0],[pt(1) pt(2) 0]);
-across_dist=sign(z(3))*across_dist;
-
-update_wc_tab(main_figure,fData,across_dist,ip);
+ %z=E(ip)*pt(1)+ N(ip)*pt(2);
+ 
+ z=cross([E(ip) N(ip) 0], [pt(1) pt(2) 0]);
+ z=z(3);
 
 disp_config=getappdata(main_figure,'disp_config');
 
-zone=disp_config.get_zone();
+disp_config.AcrossDist=sign(z)*across_dist;
+disp_config.Iping=ip;
+disp_config.Fdata_idx=find(idx_fData);
 
-
-[lat,lon]=utm2ll(N,E,double(zone));
+update_wc_tab(main_figure);
 
 
 end

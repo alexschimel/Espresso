@@ -4,7 +4,7 @@ disp_config=getappdata(main_figure,'disp_config');
 
 switch src.Name
     case {'Cax_wc_int' 'Cax_bathy' 'Cax_bs'}
-        update_map_tab(main_figure,0);
+        update_map_tab(main_figure,0,0);
     case 'Cax_wc'        
         wc_tab_comp=getappdata(main_figure,'wc_tab');
         caxis(wc_tab_comp.wc_axes,disp_config.Cax_wc);        

@@ -23,14 +23,52 @@ set(fdata_tab_comp.table,'ColumnWidth',{3*pos_t(3)/10,6*pos_t(3)/10,pos_t(3)/10,
 
 set(fdata_tab_comp.fdata_tab,'SizeChangedFcn',{@resize_table,fdata_tab_comp.table});
 fdata_tab_comp.selected_idx=[];
+
+rc_menu = uicontextmenu(ancestor(fdata_tab_comp.table,'figure'));
+fdata_tab_comp.table.UIContextMenu =rc_menu;
+uimenu(rc_menu,'Label','Remove Selected Lines','Callback',{@remove_lines_cback,main_figure});
+
 setappdata(main_figure,'fdata_tab',fdata_tab_comp);
 
 update_fdata_tab(main_figure);
 
 end
 
+function remove_lines_cback(~,~,main_figure)
+fdata_tab_comp = getappdata(main_figure,'fdata_tab');
+map_tab_comp=getappdata(main_figure,'Map_tab');
+ax=map_tab_comp.map_axes;
+
+fdata=getappdata(main_figure,'fData');
+idx_rem=fdata_tab_comp.selected_idx;
+for i=idx_rem
+    id=fdata{i}.ID;
+%     times2 = datestr(fData.X_1P_pingSDN,'HH:MM:SS.FFF');
+    tag_id=num2str(id,'%.0f');
+    tag_id_wc=num2str(id,'wc%.0f');
+    
+    obj=findobj(ax,'Tag',tag_id,'-or','Tag',tag_id_wc);
+    delete(obj);
+end
+
+clean_fdata(fdata(idx_rem));
+fdata(idx_rem)=[];
+setappdata(main_figure,'fData',fdata);
+if isempty(fdata)
+    disp_config=getappdata(main_figure,'disp_config');
+    disp_config.MET_tmproj='';
+end
+
+update_fdata_tab(main_figure);
+update_file_tab(main_figure);
+update_map_tab(main_figure,0,1);
+
+
+
+end
+
 function update_map_cback(src,~,main_figure)
-update_map_tab(main_figure,0);
+update_map_tab(main_figure,0,1);
 end
 
 
@@ -45,6 +83,6 @@ end
 
 fdata_tab_comp.selected_idx=selected_idx;
 setappdata(main_figure,'fdata_tab',fdata_tab_comp);
-update_map_tab(main_figure,1);
+update_map_tab(main_figure,1,0);
 
 end

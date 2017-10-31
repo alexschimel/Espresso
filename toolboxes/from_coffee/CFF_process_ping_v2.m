@@ -246,7 +246,7 @@ pingH = nan(size(pingTSMIM));
 % interpolate Height at ping times
 for jj = 1:length(pingTSMIM)
     A = heiTSMIM-pingTSMIM(jj);
-    iA = find (A == 0);
+    iA = find (A == 0,1);
     if A > 0
         % the ping time is older than any height time, extrapolate from the first items in height array.
         pingH(jj) = heiHeight(2) + (heiHeight(2)-heiHeight(1)).*(pingTSMIM(jj)-heiTSMIM(2))./(heiTSMIM(2)-heiTSMIM(1));

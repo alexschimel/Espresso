@@ -1,4 +1,4 @@
-function update_map_tab(main_figure,new_res)
+function update_map_tab(main_figure,new_res,new_zoom)
 
 map_tab_comp=getappdata(main_figure,'Map_tab');
 fData_tot=getappdata(main_figure,'fData');
@@ -34,7 +34,9 @@ for i=1:length(fData_tot)
 %     times2 = datestr(fData.X_1P_pingSDN,'HH:MM:SS.FFF');
     tag_id=num2str(fData.ID,'%.0f');
     tag_id_wc=num2str(fData.ID,'wc%.0f');
-    
+    tag_id_line=num2str(fData.ID,'%.0f_line');
+    obj_line=findobj(ax,'Tag',tag_id_line);
+    set(obj_line,'Visible',vis);
     obj=findobj(ax,'Tag',tag_id);
     
     if isempty(obj)   
@@ -123,11 +125,12 @@ if~any(idx_zoom)
     return;
 end
 
-xlim=xlim+[-diff(xlim)/20 +diff(xlim)/20];
-set(ax,'XLim',xlim);
-ylim=ylim+[-diff(ylim)/20 +diff(ylim)/20];
-set(ax,'YLim',ylim);
-
+if new_zoom>0
+    xlim=xlim+[-diff(xlim)/20 +diff(xlim)/20];
+    set(ax,'XLim',xlim);
+    ylim=ylim+[-diff(ylim)/20 +diff(ylim)/20];
+    set(ax,'YLim',ylim);
+end
 
 % get current ticks position
 ytick=get(ax,'ytick');
@@ -137,13 +140,14 @@ disp_config=getappdata(main_figure,'disp_config');
 
 zone=disp_config.get_zone();
 
-[lat,~]=utm2ll(ytick,xlim(1)*ones(size(ytick)),zone);
-[~,lon]=utm2ll(ylim(1)*ones(size(xtick)),xtick,zone);
+[lat,~]=utm2ll(xtick,ylim(1)*ones(size(xtick)),zone);
+[~,lon]=utm2ll(xlim(1)*ones(size(ytick)),ytick,zone);
 lon(lon>180)=lon(lon>180)-360;
 
-fmt='%.4f';
-y_labels=cellfun(@(x) num2str(x,fmt),num2cell(lat),'UniformOutput',0);
-x_labels=cellfun(@(x) num2str(x,fmt),num2cell(lon),'UniformOutput',0);
+fmt='%.2f';
+[~,x_labels]=cellfun(@(x,y) latlon2str(x,y,fmt),num2cell(lon),num2cell(lon),'un',0);
+[y_labels,~]=cellfun(@(x,y) latlon2str(x,y,fmt),num2cell(lat),num2cell(lat),'un',0);
+
 % update strings
 set(ax,'yticklabel',y_labels);
 set(ax,'xticklabel',x_labels);

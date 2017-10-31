@@ -151,10 +151,12 @@ end
 
 setappdata(main_figure,'fData',fData_tot);
 
-update_map_tab(main_figure,1);
-if~isempty(idx_zoom)
-    update_wc_proc_tab(main_figure,fData_tot{idx_zoom(1)},0,1);
-end
+disp_config=getappdata(main_figure,'disp_config');
+
+disp_config.Fdata_idx=idx_zoom(end);
+
+update_map_tab(main_figure,1,0);
+
 end
 
 function update_str_disp_cback(~,~,main_figure)
@@ -169,6 +171,7 @@ end
 if wc_proc_tab_comp.sidelobe.Value>0
     str_disp='L1';
 end
+
 wc_proc_tab_comp.str_disp=[str_disp_m str_disp];
 
 setappdata(main_figure,'wc_proc_tab',wc_proc_tab_comp);
@@ -222,7 +225,7 @@ for i=idx_zoom(:)'
     
     if wc_proc_tab_comp.sidelobe.Value>0
         disp('Filtering Sidelobe Artifacts...');
-        fData_tot{i} = CFF_filter_WC_sidelobe_artifact_v2(fData_tot{i},3);
+        fData_tot{i} = CFF_filter_WC_sidelobe_artifact_v2(fData_tot{i},2);
     end
     
     disp('Gridding Water Column...');
@@ -232,8 +235,14 @@ end
 
 setappdata(main_figure,'fData',fData_tot);
 
-update_map_tab(main_figure,1)
+disp_config=getappdata(main_figure,'disp_config');
+
+disp_config.Fdata_idx=idx_zoom(end);
+
+update_map_tab(main_figure,1,1)
+
 if~isempty(idx_zoom)
-    update_wc_tab(main_figure,fData_tot{idx_zoom(1)},0,1);
+    update_wc_tab(main_figure);
 end
+
 end

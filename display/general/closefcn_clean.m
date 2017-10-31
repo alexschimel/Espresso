@@ -37,25 +37,10 @@ function closefcn_clean(main_figure,~)
 fData=getappdata(main_figure,'fData');
 ext_figs=getappdata(main_figure,'ext_figs');
 delete(ext_figs);
-j=0;
-dname={};
-for i=1:numel(fData)
-    fields=fieldnames(fData{i});
-    for ifi=1:numel(fields)
-        if isa(fData{i}.(fields{ifi}),'memmapfile')
-            j=j+1;
-            [dname{j},~,~]=fileparts(fData{i}.(fields{ifi}).Filename);
-        end
-    end
-end
 
-clear fData;
 
-for k=1:numel(dname)
-    try
-        rmdir(dname{k},'s');
-    end
-end
+clean_fdata(fData);
+
 delete(main_figure);
 
 end

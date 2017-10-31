@@ -3,6 +3,6 @@ function cmap=ek60_colormap()
 % used in ESP2
 
 %      Red Green Blue
-load(fullfile(whereisEcho,'private','ek60_cmap.mat'));
+load(fullfile(whereisroot,'private','ek60_cmap.mat'));
 
 cmap=double(ek60_cmap)/255;
