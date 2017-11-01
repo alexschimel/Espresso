@@ -35,41 +35,64 @@ set([text_angle text_rmin text_bot],'HorizontalAlignment','left','fontangle','it
 wc_proc_tab_comp.sidelobe=uicontrol(wc_proc_tab_comp.wc_proc_tab,'style','checkbox',...
     'BackgroundColor','White','units','normalized','position',[0.05 0.6 0.4 0.05],'String','Sidelobe removal','Value',1);
 
+uicontrol(wc_proc_tab_comp.wc_proc_tab,'Style','pushbutton','units','normalized',...
+    'pos',[0.2 0.51 0.25 0.08],...
+    'String','Process WC',...
+    'callback',{@compute_masks_cback,main_figure});
+
+
 uicontrol(wc_proc_tab_comp.wc_proc_tab,'style','text',...
-    'BackgroundColor','White','units','normalized','position',[0.05 0.5 0.3 0.05],'String','Grid resolution (m)');
+    'BackgroundColor','White','units','normalized','position',[0.05 0.35 0.3 0.05],'String','Grid resolution (m)');
+uicontrol(wc_proc_tab_comp.wc_proc_tab,'style','text',...
+    'BackgroundColor','White','units','normalized','position',[0.35 0.45 0.1 0.05],'String','Horz');
+uicontrol(wc_proc_tab_comp.wc_proc_tab,'style','text',...
+    'BackgroundColor','White','units','normalized','position',[0.45 0.45 0.1 0.05],'String','Vert');
+
+
 wc_proc_tab_comp.grid_val=uicontrol(wc_proc_tab_comp.wc_proc_tab,'style','edit',...
-    'BackgroundColor','White','units','normalized','position',[0.35 0.5 0.1 0.05],'String','0.25','Callback',{@check_fmt_box,0.1,100,1,'%.2f'});
+    'BackgroundColor','White','units','normalized','position',[0.35 0.35 0.1 0.05],'String','0.25','Callback',{@check_fmt_box,0.1,100,1,'%.2f'});
+wc_proc_tab_comp.vert_grid_val=uicontrol(wc_proc_tab_comp.wc_proc_tab,'style','edit',...
+    'BackgroundColor','White','units','normalized','position',[0.45 0.35 0.1 0.05],'String','1','Callback',{@check_fmt_box,0.1,100,1,'%.2f'});
+
+wc_proc_tab_comp.dim_grid=uicontrol(wc_proc_tab_comp.wc_proc_tab,'style','popup','Units','normalized','position',[0.6 0.35 0.15 0.05],...
+    'String',{'2D' '3D'},'Value',1);
+
+uicontrol(wc_proc_tab_comp.wc_proc_tab,'Style','pushbutton','units','normalized',...
+    'pos',[0.2 0.26 0.25 0.08],...
+    'String','Grid',...
+    'callback',{@re_grid_cback,main_figure});
 
 set([wc_proc_tab_comp.masking wc_proc_tab_comp.bot_filter wc_proc_tab_comp.sidelobe],'callback',{@update_str_disp_cback,main_figure})
 
+
 cax=disp_config.get_cax();
 uicontrol(wc_proc_tab_comp.wc_proc_tab,'style','text',...
-    'BackgroundColor','White','units','normalized','position',[0.05 0.4 0.3 0.05],'String','CLim Map (dB)');
+    'BackgroundColor','White','units','normalized','position',[0.05 0.1 0.3 0.05],'String','CLim Map (dB)');
 wc_proc_tab_comp.clim_min=uicontrol(wc_proc_tab_comp.wc_proc_tab,'style','edit',...
-    'BackgroundColor','White','units','normalized','position',[0.35 0.4 0.1 0.05],'String',num2str(cax(1)),'Callback',{@change_cax_cback,main_figure});
+    'BackgroundColor','White','units','normalized','position',[0.35 0.1 0.1 0.05],'String',num2str(cax(1)),'Callback',{@change_cax_cback,main_figure});
 wc_proc_tab_comp.clim_max=uicontrol(wc_proc_tab_comp.wc_proc_tab,'style','edit',...
-    'BackgroundColor','White','units','normalized','position',[0.45 0.4 0.1 0.05],'String',num2str(cax(2)),'Callback',{@change_cax_cback,main_figure});
+    'BackgroundColor','White','units','normalized','position',[0.45 0.1 0.1 0.05],'String',num2str(cax(2)),'Callback',{@change_cax_cback,main_figure});
+
+
+
 
 cax=disp_config.Cax_wc;
 uicontrol(wc_proc_tab_comp.wc_proc_tab,'style','text',...
-    'BackgroundColor','White','units','normalized','position',[0.05 0.35 0.3 0.05],'String','CLim WC (dB)');
+    'BackgroundColor','White','units','normalized','position',[0.05 0.15 0.3 0.05],'String','CLim WC (dB)');
 
 wc_proc_tab_comp.clim_min_wc=uicontrol(wc_proc_tab_comp.wc_proc_tab,'style','edit',...
-    'BackgroundColor','White','units','normalized','position',[0.35 0.35 0.1 0.05],'String',num2str(cax(1)),'Callback',{@change_wc_cax_cback,main_figure});
+    'BackgroundColor','White','units','normalized','position',[0.35 0.15 0.1 0.05],'String',num2str(cax(1)),'Callback',{@change_wc_cax_cback,main_figure});
 wc_proc_tab_comp.clim_max_wc=uicontrol(wc_proc_tab_comp.wc_proc_tab,'style','edit',...
-    'BackgroundColor','White','units','normalized','position',[0.45 0.35 0.1 0.05],'String',num2str(cax(2)),'Callback',{@change_wc_cax_cback,main_figure});
+    'BackgroundColor','White','units','normalized','position',[0.45 0.15 0.1 0.05],'String',num2str(cax(2)),'Callback',{@change_wc_cax_cback,main_figure});
 
 
+% 
+% uicontrol(wc_proc_tab_comp.wc_proc_tab,'Style','pushbutton','units','normalized',...
+%     'pos',[0.2 0.01 0.25 0.08],...
+%     'String','Process WC',...
+%     'callback',{@process_wc_cback,main_figure});
 
-uicontrol(wc_proc_tab_comp.wc_proc_tab,'Style','pushbutton','units','normalized',...
-    'pos',[0.45 0.01 0.25 0.08],...
-    'String','Process WC',...
-    'callback',{@process_wc_cback,main_figure});
 
-uicontrol(wc_proc_tab_comp.wc_proc_tab,'Style','pushbutton','units','normalized',...
-    'pos',[0.7 0.01 0.25 0.08],...
-    'String','Re-Grid only',...
-    'callback',{@re_grid_cback,main_figure});
 
 wc_proc_tab_comp.str_disp='original';
 setappdata(main_figure,'wc_proc_tab',wc_proc_tab_comp);
@@ -89,7 +112,7 @@ cax_min=str2double(wc_proc_tab_comp.clim_min_wc.String);
 cax_max=str2double(wc_proc_tab_comp.clim_max_wc.String);
 
 if cax_min<cax_max
-   disp_config.Cax_wc=[cax_min cax_max];
+    disp_config.Cax_wc=[cax_min cax_max];
     
 else
     wc_proc_tab_comp.clim_min_wc.String=num2str(cax(1));
@@ -139,16 +162,18 @@ end
 wc_proc_tab_comp=getappdata(main_figure,'wc_proc_tab');
 
 res=str2double(get(wc_proc_tab_comp.grid_val,'String'));
-
+vert_res=str2double(get(wc_proc_tab_comp.vert_grid_val,'String'));
+tic
 for i=idx_zoom(:)'
-    if isfield(fData_tot{i},'X_SBP_sampleEasting')
-        disp('Gridding Water Column...');
-        fData_tot{i} = CFF_grid_watercolumn_v2_temp(fData_tot{i},wc_proc_tab_comp.str_disp,res);
-    else
-        fprintf('\nWater Column for file %s has never been processed.\n You need to run the full process at least once\n',fData_tot{i}.MET_MATfilename{1})
-    end
+        if ~isfield(fData_tot{i},'X_SBP_L1')||~isfield(fData_tot{i},'X_SBP_Mask')
+            fprintf('\nMasks for file %s has never been processed.\n',fData_tot{i}.MET_MATfilename{1})
+        else
+            disp('Gridding Water Column...');
+            fData_tot{i} = CFF_grid_watercolumn_v2_temp(fData_tot{i},wc_proc_tab_comp.str_disp,res,vert_res,wc_proc_tab_comp.dim_grid.String{wc_proc_tab_comp.dim_grid.Value});
+        end
 end
-
+disp('Done');
+toc
 setappdata(main_figure,'fData',fData_tot);
 
 disp_config=getappdata(main_figure,'disp_config');
@@ -161,7 +186,9 @@ end
 
 function update_str_disp_cback(~,~,main_figure)
 wc_proc_tab_comp=getappdata(main_figure,'wc_proc_tab');
+
 str_disp='original';
+
 if wc_proc_tab_comp.masking.Value>0
     str_disp_m='masked ';
 else
@@ -177,8 +204,46 @@ wc_proc_tab_comp.str_disp=[str_disp_m str_disp];
 setappdata(main_figure,'wc_proc_tab',wc_proc_tab_comp);
 
 end
+% 
+% function process_wc_cback(~,~,main_figure)
+% fData_tot=getappdata(main_figure,'fData');
+% if isempty(fData_tot)
+%     return;
+% end
+% fdata_tab_comp=getappdata(main_figure,'fdata_tab');
+% 
+% idx_zoom=find(cell2mat(fdata_tab_comp.table.Data(:,end-1)));
+% 
+% if isempty(idx_zoom)
+%     disp('No lines selected');
+%     return;
+% end
+% 
+% for i=idx_zoom(:)'
+%     if ~isfield(fData_tot{i},'X_SBP_sampleEasting')
+%         fprintf('\nProcessing file %s\n',fData_tot{i}.MET_MATfilename{1})
+%         disp('Processing Watercolumn...');
+%         fData_tot{i} = CFF_process_watercolumn_v2(fData_tot{i});
+%         disp('Detecting Bottom...');
+%         fData_tot{i} = CFF_process_WC_bottom_detect_v2(fData_tot{i});
+%     else
+%         fprintf('\nWater Column for file %s already processed.\n',fData_tot{i}.MET_MATfilename{1})
+%     end
+% end
+% disp('Done');
+% 
+% setappdata(main_figure,'fData',fData_tot);
+% 
+% disp_config=getappdata(main_figure,'disp_config');
+% 
+% disp_config.Fdata_idx=idx_zoom(end);
+% 
+% update_wc_tab(main_figure);
+% 
+% end
 
-function process_wc_cback(~,~,main_figure)
+
+function compute_masks_cback(~,~,main_figure)
 fData_tot=getappdata(main_figure,'fData');
 if isempty(fData_tot)
     return;
@@ -198,51 +263,33 @@ flagParams.type = 'all';%''
 flagParams.variable = 'slope';
 flagParams.threshold = 30;
 
-res=str2double(get(wc_proc_tab_comp.grid_val,'String'));
 
 angle_mask=str2double(get(wc_proc_tab_comp.angle_mask,'String'));
 r_min=str2double(get(wc_proc_tab_comp.r_min,'String'));
 r_bot=str2double(get(wc_proc_tab_comp.r_bot,'String'));
 
 for i=idx_zoom(:)'
-    fprintf('\nProcessing file %s\n',fData_tot{i}.MET_MATfilename{1})
-    disp('Processing Watercolumn...');
-    fData_tot{i} = CFF_process_watercolumn_v2(fData_tot{i});
     
-    disp('Detecting Bottom...');
-    fData_tot{i} = CFF_process_WC_bottom_detect_v2(fData_tot{i});
-    
-    if wc_proc_tab_comp.bot_filter.Value>0
+
         disp('Filtering Bottom Detect...');
         fData_tot{i} = CFF_filter_WC_bottom_detect_v2(fData_tot{i},...
             'method','flag','pingBeamWindowSize',[3 3],'maxHorizDist',inf,'flagParams',flagParams,'interpolate','yes');
-    end
-    
-    if wc_proc_tab_comp.masking.Value>0
+        
         disp('Creating Mask...');
         fData_tot{i} = CFF_mask_WC_data_v2(fData_tot{i},angle_mask,r_min,-r_bot);
-    end
-    
-    if wc_proc_tab_comp.sidelobe.Value>0
+        
         disp('Filtering Sidelobe Artifacts...');
         fData_tot{i} = CFF_filter_WC_sidelobe_artifact_v2(fData_tot{i},2);
-    end
-    
-    disp('Gridding Water Column...');
-    fData_tot{i} = CFF_grid_watercolumn_v2_temp(fData_tot{i},wc_proc_tab_comp.str_disp,res);
     
 end
+disp('Done');
 
 setappdata(main_figure,'fData',fData_tot);
 
 disp_config=getappdata(main_figure,'disp_config');
 
 disp_config.Fdata_idx=idx_zoom(end);
+update_wc_tab(main_figure);
 
-update_map_tab(main_figure,1,1)
-
-if~isempty(idx_zoom)
-    update_wc_tab(main_figure);
-end
 
 end

@@ -1,4 +1,4 @@
-function clean_fdata(fData)
+function dname=clean_fdata(fData)
 if~iscell(fData)
     fData={fData};
 end
@@ -14,11 +14,4 @@ for i=1:numel(fData)
         end
     end
 end
-
-fData=[];
-
-for k=1:numel(dname)
-    try
-        rmdir(dname{k},'s');
-    end
-end
+dname=unique(dname);

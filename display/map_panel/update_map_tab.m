@@ -79,14 +79,17 @@ for i=1:length(fData_tot)
         % grab data
         E = fData.X_1E_gridEasting;
         N = fData.X_N1_gridNorthing;
-        %H = fData.X_11H_gridHeight;
         L = fData.X_NEH_gridLevel;        
         % get mean
        
                
         switch disp_config.Var_disp
             case 'wc_int'
-                data = nanmean(L,3);
+                if size(L,3)>1
+                    data = pow2db_perso(nanmean(db2pow(L),3));
+                else
+                    data=L;
+                end
             case 'bathy'
                 data = nanmean(L,3);
             case 'bs'

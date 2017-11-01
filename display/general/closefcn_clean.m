@@ -38,9 +38,17 @@ fData=getappdata(main_figure,'fData');
 ext_figs=getappdata(main_figure,'ext_figs');
 delete(ext_figs);
 
-
-clean_fdata(fData);
-
+dname=clean_fdata(fData);
 delete(main_figure);
+clear fData
+
+for k=1:numel(dname)
+    try
+        rmdir(dname{k},'s');
+        fprintf('Removed %s\n',dname{k}); 
+    catch
+       fprintf('Failed to remove %s\n',dname{k}); 
+    end
+end
 
 end

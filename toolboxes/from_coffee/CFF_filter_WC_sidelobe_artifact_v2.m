@@ -251,7 +251,7 @@ switch method_spec
         if memoryMapFlag
             
             % close binary files
-            fclose(fileID_X_SBP_L1);
+            fclose(fileID_X_SBP_L1)
             
             % re-open files as memmapfile
             fData.X_SBP_L1 = memmapfile(file_X_SBP_L1, 'Format',{'int8' [nSamples nBeams nPings] 'val'},'repeat',1,'writable',true);

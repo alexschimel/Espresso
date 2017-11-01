@@ -51,8 +51,18 @@ for i=idx_rem
     delete(obj);
 end
 
-clean_fdata(fdata(idx_rem));
+dname=clean_fdata(fdata(idx_rem));
 fdata(idx_rem)=[];
+
+for k=1:numel(dname)
+    try
+        rmdir(dname{k},'s');
+        fprintf('Removed %s\n',dname{k}); 
+    catch
+       fprintf('Failed to remove %s\n',dname{k}); 
+    end
+end
+
 setappdata(main_figure,'fData',fdata);
 if isempty(fdata)
     disp_config=getappdata(main_figure,'disp_config');

@@ -13,7 +13,7 @@ switch parent_tab_group.Type
 end
 
 %pos = getpixelposition(wc_tab_comp.wc_tab);
-wc_tab_comp.data_disp=uicontrol(wc_tab_comp.wc_tab,'style','popup','Units','pixels','position',[1 1 120 20],...
+wc_tab_comp.data_disp=uicontrol(wc_tab_comp.wc_tab,'style','popup','Units','pixels','position',[20 20 120 20],...
     'String',{'Original' 'Masked Original' 'Without Sidelobes' 'Masked without Sidelobes'},'Value',3,'Callback',{@change_wc_disp_cback,main_figure});
 
 wc_tab_comp.wc_axes=axes(wc_tab_comp.wc_tab,...
@@ -31,6 +31,8 @@ box(wc_tab_comp.wc_axes,'on')
 wc_tab_comp.wc_gh=pcolor(wc_tab_comp.wc_axes,[],[],[]);
 set(wc_tab_comp.wc_gh,'facealpha','flat','LineStyle','none','AlphaData',[]);
 wc_tab_comp.ac_gh=plot(wc_tab_comp.wc_axes,nan,nan,'--k','Tag','ac','linewidth',2);
+wc_tab_comp.bot_gh=plot(wc_tab_comp.wc_axes,nan,nan,'.k','Tag','ac','markersize',4);
+
 axis(wc_tab_comp.wc_axes,'equal');
 
 setappdata(main_figure,'wc_tab',wc_tab_comp);
@@ -39,6 +41,7 @@ fData=getappdata(main_figure,'fData');
 if isempty(fData)
     return;
 end
+
 update_wc_tab(main_figure);
 end
 

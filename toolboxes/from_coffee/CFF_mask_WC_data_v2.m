@@ -109,6 +109,22 @@ nBlocks = ceil(nPings./blockLength);
 blocks = [ 1+(0:nBlocks-1)'.*blockLength , (1:nBlocks)'.*blockLength ];
 blocks(end) = nPings;
 
+soundSpeed          = fData.WC_1P_SoundSpeed.*0.1; %m/s
+samplingFrequencyHz = fData.WC_1P_SamplingFrequencyHz; %Hz
+dr_samples = soundSpeed./(samplingFrequencyHz.*2);
+
+gridConvergenceDeg  = fData.X_1P_pingGridConv; %deg
+vesselHeadingDeg    = fData.X_1P_pingHeading; %deg
+sonarHeadingOffsetDeg = fData.IP_ASCIIparameters.S1H; %deg
+
+
+sonarH         =fData.X_1P_pingH; %m
+sonarE        = fData.X_1P_pingE; %m
+sonarN       = fData.X_1P_pingN; %m
+heading = - mod( gridConvergenceDeg + vesselHeadingDeg + sonarHeadingOffsetDeg, 360 )/180*pi;
+
+idx_samples = (1:nSamples)';
+
 for iB = 1:nBlocks
     
     % txt = sprintf('block #%i/%i',iB,nBlocks);
@@ -117,6 +133,15 @@ for iB = 1:nBlocks
     % list of pings in this block
     blockPings  = (blocks(iB,1):blocks(iB,2));
     nBlockPings = length(blockPings);
+    
+    
+    
+    [ranges,sampleUpDist,sampleAcrossDist]=get_samples_range_dist(...
+        idx_samples,...
+        fData.WC_BP_StartRangeSampleNumber(:,blockPings),...
+        dr_samples(blockPings),...
+        fData.WC_BP_BeamPointingAngle(:,blockPings)/100/180*pi);
+    
     
     % MASK 1: OUTER BEAMS REMOVAL
     if ~isinf(remove_angle)
@@ -131,24 +156,18 @@ for iB = 1:nBlocks
         
         clear X_BP_AngleMask angles
         
-    else
-        
+    else        
         % conserve all data
-        X_1BP_Mask = single(ones(1,nBeams,nBlockPings));
+        X_1BP_Mask = single(ones(nSamples,nBeams,nBlockPings));
         
     end
     
     % MASK 2: CLOSE RANGE REMOVAL
     if remove_closerange>0
-        
-        % extract needed data
-        ranges = fData.X_SBP_sampleRange.Data.val(:,:,blockPings);
-        
+         
         % build mask: 1: to conserve, 0: to remove
         X_SBP_CloseRangeMask = single(ranges>=remove_closerange);
-        
-        clear ranges
-        
+          
     else
         
         % conserve all data
@@ -160,11 +179,21 @@ for iB = 1:nBlocks
     if ~isinf(remove_bottomrange)
         
         % extract needed data
-        X_1P_oneSampleDistance = permute(fData.X_11P_oneSampleDistance(1,1,blockPings),[1 3 2]);
+        theta=fData.WC_BP_BeamPointingAngle(:,blockPings)/100/180*pi;
+        
+        psi=1/180*pi./cos(theta);
+        
+        idx_theta_faible=cos(theta)>cos(theta-psi/2);
+        idx_theta_fort=cos(theta)<=cos(theta-psi/2);
+        
+        M=zeros(size(theta),'single');
+        M(idx_theta_faible)=(1./cos(theta(idx_theta_faible)+psi(idx_theta_faible)/2)-1./cos(theta(idx_theta_faible))).*fData.X_BP_bottomRange(idx_theta_faible);
+        M(idx_theta_fort)=(1./cos(theta(idx_theta_fort)+psi(idx_theta_fort)/2)-1./cos(theta(idx_theta_fort)-psi(idx_theta_fort)/2)).*fData.X_BP_bottomRange(idx_theta_fort);
+        
         
         % calculate max sample beyond which mask is to be applied
-        X_BP_maxRange  = fData.X_BP_bottomRange(:,blockPings) + remove_bottomrange;
-        X_BP_maxSample = bsxfun(@rdivide,X_BP_maxRange,X_1P_oneSampleDistance);
+        X_BP_maxRange  = fData.X_BP_bottomRange(:,blockPings) + (remove_bottomrange-abs(M));
+        X_BP_maxSample = bsxfun(@rdivide,X_BP_maxRange,dr_samples(blockPings));
         X_BP_maxSample = round(X_BP_maxSample);
         X_BP_maxSample(X_BP_maxSample>nSamples) = nSamples;
         
@@ -206,7 +235,7 @@ for iB = 1:nBlocks
     
     % MULTIPLYING ALL MASKS
     X_SBP_Mask = bsxfun(@times,X_1BP_Mask,(X_SBP_CloseRangeMask.*X_SBP_BottomRangeMask.*X_SBP_PolygonMask));
-    X_SBP_Mask(X_SBP_Mask==0) = NaN; % turn 0s to nan
+
     
     % saving
     if memoryMapFlag

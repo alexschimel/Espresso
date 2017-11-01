@@ -34,11 +34,13 @@ end
         
         E=fData.X_1P_pingE;
         N=fData.X_1P_pingN;
+        
+        
 
         [across_dist,ip]=min(sqrt((E-pt(1,1)).^2+(N-pt(1,2)).^2));
-    
+        heading=fData.X_1P_pingHeading(ip)/180*pi;
 %       z=E(ip)*pt(1,1)+ N(ip)*pt(1,2);
-        z=cross([E(ip) N(ip) 0], [pt(1,1) pt(1,2) 0]);
+        z=cross([sin(heading) cos(heading) 0], [pt(1,1) pt(1,2) 0]);
         z=z(3);
         across_dist=sign(z)*across_dist;
         

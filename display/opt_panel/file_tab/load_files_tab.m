@@ -137,7 +137,6 @@ end
 
 [mat_all_files,mat_wcd_files]=matfilenames_from_all_filenames(files_to_load);
 
-
 dr = 5; % samples subsampling factor
 db = 2; % beam subsampling factor
 
@@ -164,15 +163,17 @@ for nF = 1:numel(mat_all_files)
     fData_temp = CFF_convert_mat_to_fabc_v2({mat_all_files{nF};mat_wcd_files{nF}},dr,db);
     disp('CFF_process_ping_v2...');
     
-
-        fData_temp = CFF_process_ping_v2(fData_temp,'WC');
-        if strcmp(disp_config.MET_tmproj,'')
-            disp_config.MET_tmproj=fData_temp.MET_tmproj;
-        elseif ~strcmp(disp_config.MET_tmproj,fData_temp.MET_tmproj)
-            disp('Data using another UTM zone for pojection. You cannot load them in the current project.');
-             clean_fdata(fData_temp);
-           return; 
-        end
+    
+    fData_temp = CFF_process_ping_v2(fData_temp,'WC');
+    if strcmp(disp_config.MET_tmproj,'')
+        disp_config.MET_tmproj=fData_temp.MET_tmproj;
+    elseif ~strcmp(disp_config.MET_tmproj,fData_temp.MET_tmproj)
+        disp('Data using another UTM zone for projection. You cannot load them in the current project.');
+        clean_fdata(fData_temp);
+        return;
+    end
+    disp('Processing Bottom...');
+    fData_temp = CFF_process_WC_bottom_detect_v2(fData_temp);
     
     fData_temp.ID=str2double(datestr(now,'yyyymmddHHMMSSFFF'));
     pause(1e-3);
@@ -180,6 +181,7 @@ for nF = 1:numel(mat_all_files)
     
     
 end
+disp('Done')
 setappdata(main_figure,'fData',fData);
 update_file_tab(main_figure);
 update_display(main_figure);
@@ -227,7 +229,7 @@ for nF = 1:numel(mat_all_files)
     disp(txt);
     CFF_convert_all_to_mat_v2(wcd_files_to_process{nF},mat_wcd_files{nF},'datagrams',[107]);
 end
-
+disp('Done')
 
 update_file_tab(main_figure);
 set(enabled_on,'Enable','on');
