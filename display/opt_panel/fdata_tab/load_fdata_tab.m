@@ -41,7 +41,8 @@ ax=map_tab_comp.map_axes;
 
 fdata=getappdata(main_figure,'fData');
 idx_rem=fdata_tab_comp.selected_idx;
-for i=idx_rem
+
+for i=idx_rem(:)'
     id=fdata{i}.ID;
 %     times2 = datestr(fData.X_1P_pingSDN,'HH:MM:SS.FFF');
     tag_id=num2str(id,'%.0f');
@@ -51,29 +52,20 @@ for i=idx_rem
     delete(obj);
 end
 
-dname=clean_fdata(fdata(idx_rem));
 fdata(idx_rem)=[];
-
-for k=1:numel(dname)
-    try
-        rmdir(dname{k},'s');
-        fprintf('Removed %s\n',dname{k}); 
-    catch
-       fprintf('Failed to remove %s\n',dname{k}); 
-    end
-end
 
 setappdata(main_figure,'fData',fdata);
 if isempty(fdata)
     disp_config=getappdata(main_figure,'disp_config');
     disp_config.MET_tmproj='';
+   
 end
+disp_config.Fdata_idx=1;
 
 update_fdata_tab(main_figure);
 update_file_tab(main_figure);
 update_map_tab(main_figure,0,1);
-
-
+update_wc_tab(main_figure);
 
 end
 

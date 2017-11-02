@@ -42,7 +42,7 @@ main_figure = figure('Units','pixels',...
                      'Toolbar','none',...
                      'visible','off',...
                      'WindowStyle','normal',...
-                     'CloseRequestFcn',@closefcn_clean);
+                     'CloseRequestFcn',@closefcn_clean_espresso);
                  
 %% Install mouse pointer manager in figure
 iptPointerManager(main_figure);
@@ -68,6 +68,7 @@ end
 disp_config=display_config_cl();
 setappdata(main_figure,'disp_config',disp_config);
 setappdata(main_figure,'fData',{});
+setappdata(main_figure,'grids',{});
 setappdata(main_figure,'ext_figs',[]);
 
 %% Initialize the display and the interactions with the user

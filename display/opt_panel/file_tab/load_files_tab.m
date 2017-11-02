@@ -46,7 +46,7 @@ fData=getappdata(main_figure,'fData');
 if isempty(fData)
     path_init=whereisroot();
 else
-    [path_init,~,~]=fileparts(fData{end}.MET_MATfilename{1});
+    [path_init,~,~]=fileparts(fData{end}.ALLfilename{1});
     i=strfind(path_init,filesep);
     path_init=path_init(1:i(end-1));
 end
@@ -135,51 +135,66 @@ if isempty(files_to_load)
     return;
 end
 
-[mat_all_files,mat_wcd_files]=matfilenames_from_all_filenames(files_to_load);
+loaded_files=get_loaded_files(main_figure);
 
-dr = 5; % samples subsampling factor
-db = 2; % beam subsampling factor
+mat_fdata_files=fdata_filenames_from_all_filenames(files_to_load);
 
 fData=getappdata(main_figure,'fData');
-files_loaded=cell(1,numel(fData));
-for nF=1:numel(fData)
-    files_loaded{nF}=fData{nF}.MET_MATfilename{1};
-end
+
 disp_config=getappdata(main_figure,'disp_config');
 
 
-for nF = 1:numel(mat_all_files)
+for nF = 1:numel(mat_fdata_files)
     
     %% Start Display
     fprintf('Loading file "%s" - started on: %s\n',files_to_load{nF}, datestr(now));
     
-    if ismember(mat_all_files{nF},files_loaded)
+    if ismember(mat_fdata_files{nF},loaded_files)
         fprintf('%s already loaded\n',files_to_load{nF});
         continue;
     end
     %% convert mat to fabc format
-    
-    disp('CFF_convert_mat_to_fabc_v2...');
-    fData_temp = CFF_convert_mat_to_fabc_v2({mat_all_files{nF};mat_wcd_files{nF}},dr,db);
+    tic
+    if exist(mat_fdata_files{nF},'file')==0
+       continue
+    else
+        fData_temp=load(mat_fdata_files{nF});
+    end
     disp('CFF_process_ping_v2...');
-    
-    
     fData_temp = CFF_process_ping_v2(fData_temp,'WC');
+    
     if strcmp(disp_config.MET_tmproj,'')
         disp_config.MET_tmproj=fData_temp.MET_tmproj;
     elseif ~strcmp(disp_config.MET_tmproj,fData_temp.MET_tmproj)
         disp('Data using another UTM zone for projection. You cannot load them in the current project.');
         clean_fdata(fData_temp);
-        return;
+        continue;
     end
     disp('Processing Bottom...');
     fData_temp = CFF_process_WC_bottom_detect_v2(fData_temp);
     
     fData_temp.ID=str2double(datestr(now,'yyyymmddHHMMSSFFF'));
+    
+    wc_dir=get_wc_dir(fData_temp.ALLfilename{1});
+    file_X_SBP_Mask = fullfile(wc_dir,'X_SBP_Mask.dat');
+    [nSamples,nBeams,nPings]=size(fData_temp.WC_SBP_SampleAmplitudes.Data.val);
+    if exist(file_X_SBP_Mask,'file')==2
+        fData_temp.X_SBP_Mask = memmapfile(file_X_SBP_Mask, 'Format',{'int8' [nSamples nBeams nPings] 'val'},'repeat',1,'writable',true);
+    end
+    
+    file_X_SBP_L1 = fullfile(wc_dir,'X_SBP_L1.dat');
+    if exist(file_X_SBP_Mask,'file')==2
+        [nSamples,nBeams,nPings]=size(fData_temp.WC_SBP_SampleAmplitudes.Data.val);
+        fData_temp.X_SBP_L1 = memmapfile(file_X_SBP_L1, 'Format',{'int8' [nSamples nBeams nPings] 'val'},'repeat',1,'writable',true);
+    else
+        fprintf('\nMask for file %s has never been processed.\n',fData_temp.ALLfilename{1})
+        continue;
+    end
+    
     pause(1e-3);
     fData{numel(fData)+1}=fData_temp;
     
-    
+    toc
 end
 disp('Done')
 setappdata(main_figure,'fData',fData);
@@ -207,32 +222,49 @@ if isempty(files_to_process)
     return;
 end
 
-[mat_all_files,mat_wcd_files]=matfilenames_from_all_filenames(files_to_process);
+mat_fdata_files=fdata_filenames_from_all_filenames(files_to_process);
 all_files_to_process=strcat(files_to_process,'.all');
 wcd_files_to_process=strcat(files_to_process,'.wcd');
 
-if numel(mat_all_files)==0
+if numel(mat_fdata_files)==0
     disp('All selected files are already pre-processed.')
     return;
 end
-enabled_on=findobj(file_tab_comp.file_tab,'Enable','on','-and','Style','pushbutton');
+% enabled_on=findobj(file_tab_comp.file_tab,'Enable','on','-and','Style','pushbutton');
+% 
+% set(enabled_on,'Enable','off');
 
-set(enabled_on,'Enable','off');
-
-
-for nF = 1:numel(mat_all_files)
-    txt = sprintf('Converting file "%s" - started on: %s', all_files_to_process{nF}, datestr(now));
-    disp(txt);
-    CFF_convert_all_to_mat_v2(all_files_to_process{nF},mat_all_files{nF},'datagrams',[73 80 107]);
+tic
+for nF = 1:numel(mat_fdata_files)
+    fprintf('Converting file "%s" - started on: %s\n', all_files_to_process{nF}, datestr(now));
+    ALLdata_all = CFF_read_all(all_files_to_process{nF},'datagrams',[73 80 107]);
+    ALLdata_wcd = CFF_read_all(wcd_files_to_process{nF},'datagrams',[73 80 107]);
     
-    txt = sprintf('Converting file "%s" - started on: %s', wcd_files_to_process{nF}, datestr(now));
-    disp(txt);
-    CFF_convert_all_to_mat_v2(wcd_files_to_process{nF},mat_wcd_files{nF},'datagrams',[107]);
+    
+    %% if output folder doesn't exist, create it
+    MATfilepath = fileparts(mat_fdata_files{nF});
+    if ~exist(MATfilepath,'dir') && ~isempty(MATfilepath)
+        mkdir(MATfilepath);
+    end
+    
+    if exist(mat_fdata_files{nF},'file')==0||re>0
+        fData={};
+    else
+        fData=load(mat_fdata_files{nF});
+    end
+    [fData,up]=CFF_convert_struct_to_fabc_v2({ALLdata_all ALLdata_wcd},fData);
+    
+    if up>0
+        save(mat_fdata_files{nF},'-struct','fData','-v7.3');
+        clear fData;
+    end
+
 end
+toc
 disp('Done')
 
 update_file_tab(main_figure);
-set(enabled_on,'Enable','on');
+% set(enabled_on,'Enable','on');
 end
 
 

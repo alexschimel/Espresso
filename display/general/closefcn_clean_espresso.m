@@ -1,6 +1,6 @@
-%% load_files_cback.m
+%% closefcn_clean_espresso.m
 %
-% Callback for the file loading window
+% Close main figure
 %
 %% Help
 %
@@ -33,8 +33,11 @@
 % Yoann Ladroit, NIWA. Type |help Espresso.m| for copyright information.
 
 %% Function
-function load_files_cback(src,~,main_figure)
-
-load_files_figure(main_figure);
+function closefcn_clean_espresso(main_figure,~)
+fData=getappdata(main_figure,'fData');
+ext_figs=getappdata(main_figure,'ext_figs');
+delete(ext_figs);
+delete(main_figure);
+clear fData
 
 end

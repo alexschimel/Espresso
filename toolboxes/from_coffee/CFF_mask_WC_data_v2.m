@@ -91,8 +91,8 @@ end
 
 if memoryMapFlag
     % create binary file
-    [tmpdir,~,~]=fileparts(fData.WC_SBP_SampleAmplitudes.Filename);
-    file_X_SBP_Mask = fullfile(tmpdir,'X_SBP_Mask.dat');
+    wc_dir=get_wc_dir(fData.ALLfilename{1});
+    file_X_SBP_Mask = fullfile(wc_dir,'X_SBP_Mask.dat');
     fileID_X_SBP_Mask = fopen(file_X_SBP_Mask,'w+');
 else
     % initialize numerical arrays

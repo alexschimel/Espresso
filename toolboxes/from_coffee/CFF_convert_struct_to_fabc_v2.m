@@ -1,133 +1,7 @@
-%% CFF_convert_mat_to_fabc_v2.m
-%
-% Converts the Kongsberg EM series data files in MAT format (containing the
-% KONGSBERG datagrams) to the FABC format for use in processing.
-%
-% Note: v2 has a few major changes including change in order of dimensions
-%
-%% Help
-%
-% *USE*
-%
-% FABCdata = CFF_convert_mat_to_fabc_v2(MATfilename) converts the contents
-% of MATfilename (string or cell of string) to a FABCdata structure.
-%
-% FABCdata = CFF_convert_mat_to_fabc_v2({MATfilename1,MATfilename2})
-% converts the contents of strings MATfilename1 and MATfilename2 to a
-% FABCdata structure, with the datagrams of MATfilename2 not being loaded
-% if that datagram type existed in MATfilename1. AKA, use 1 for WCD data
-% and 2 for ALL data.
-%
-% *INPUT VARIABLES*
-%
-% REQUIRED:
-% * |MATfilename|: MAT file to convert either as a string of a single file,
-% or cell of strings for several files to parse together.
-%
-% *OUTPUT VARIABLES*
-%
-% * |FABCdata|: structure for the storage of data in a format easier to use
-% than the EM datagrams. The data is recorded as fields coded "a_b_c" of
-% the structure "FABCdata", and accessible as FABCdata.a_b_c, where:
-%     * a: code indicating data origin:
-%         * IP: installation parameters
-%         * De: depth datagram
-%         * He: height datagram
-%         * X8: XYZ88 datagram
-%         * SI: seabed image datagram
-%         * S8: seabed image data 89
-%         * WC: watercolumn data
-%         * Po: position datagram
-%         * At: attitude datagram
-%         * SS: sound speed profile datagram
-%     More codes for the 'a' part will be created if more datagrams are
-%     parsed. As further codes work with the data contained in FABC
-%     structure, these derived data can be recorded back into the FABC,
-%     with the 'a' code set to 'X'.
-%     * b: code indicating data dimensions (rows/columns)
-%         * 1P: ping-like single-row-vector
-%         * B1: beam-like single-column-vector
-%         * BP: beam/ping array
-%         * TP: transmit-sector/ping array
-%         * SP: samples/ping array (note: samples are not sorted, this is
-%         not equivalent to range!)
-%         * 1D: datagram-like single-row-vector (for attitude or
-%         position data)
-%         * ED: entries-per-datagram/datagram array (for attitude or
-%         position data)
-%         * SBP: sample/beam/ping array (water-column data)
-%     More codes for the 'b' part will be created if the storage of other
-%     datagrams needs them. As subsequent functions work with the data
-%     contained in FABC structure to generate derived data, these derived
-%     data can be recorded with other dimensions types. They are not listed
-%     fully here but they may include:
-%         * RP: range (choose distance, time or sample) / ping
-%         * SP: swathe (meters) / ping
-%         * LL: lat/long (WGS84)
-%         * N1: northing-like single-column-vector
-%         * 1E: easting-like single-row-vector
-%         * NE: northing/easting
-%         * NEH: northing/easting/height
-%     * c: data type, obtained from the original variable name in the
-%     Kongsberg datagram, or from the user's imagination for derived data
-%     obtained from subsequent functions.
-%
-% *RESEARCH NOTES*
-%
-% * FOR NOW, PARSING DIFFERENT FILES DO NOT APPEND DATA TO EXISTING
-% FIELDS. ONLY NEW DATAGRAMS ARE COPIED. So if file 1 has Depth datagrams,
-% and file 2 has depth and watercolumn datagrams, the function will save
-% all datagrams in file 1 first (aka, Depth), and then IGNORE THE DEPTH
-% DATAGRAMS IN THE SECOND FILE, only recording the water-column one. This
-% is because I could not be bothered having to test for redundant dagrams
-% in both files. In theory, this code is to use on a single file only, with
-% the option to load several files being only used to load data from a .raw
-% file and its corresponding .wcd file.
-%
-% * Have not tested the loading of data from 'EM_Depth' and
-% 'EM_SeabedImage' in the new version. Might need debugging.
-%
-% * Possible improvement: maybe the loading of the EM_* datagrams can
-% probably be done on a matfile basis...
-%
-% *NEW FEATURES*
-%
-% * 2017-10-06: remove the possibility to load FABCdata as a matfile. Was
-% too slow (Alex Schimel)
-% * 2017-10-04: complete re-ordering of dimensions, no backward
-% compatibility so saving as a new function (v2) (Alex Schimel).
-% * 2017-09-28: revamped code to allow loading data in a matfile, rather
-% than in memory, as possible fix for large-memory files. Still to be fully
-% tested (see research notes) (Alex Schimel).
-% * 2017-09-28: updated header to new format, and updated contents, in
-% preparation for revamping to handle large water-column data (Alex
-% Schimel).
-% * 2014-04-28: Fixed watercolumn data parsing for when some
-% datagrams are missing. height datagram supported (Alex Schimel).
-% * ????-??-??: Added support for XYZ88, seabed image 89 and WC
-% * ????-??-??: Splitted seabed image samples per beam. Still not sorted
-% * ????-??-??: Made all types of datagram optional
-% * ????-??-??: Improved comments and general code
-% * ????-??-??: Changed data origin codes to two letters
-% * ????-??-??: Recording ASCII parameters as well
-% * ????-??-??: Reading sound speed profile
-%
-% % *EXAMPLE*
-%
-% ALLfilename = '.\data\EM2040c\0001_20140213_052736_Yolla.all';
-% MATfilename = '0001_20140213_052736_Yolla.mat';
-% info = CFF_all_file_info(ALLfilename);
-% info.parsed(:)=1; % to save all the datagrams
-% ALLdata = CFF_read_all_from_fileinfo(ALLfilename, info);
-% ALLfileinfo = CFF_save_mat_from_all(ALLdata, MATfilename);
-% FABCdata = CFF_convert_mat_to_fabc_v2(MATfilename);
-%
-% *AUTHOR, AFFILIATION & COPYRIGHT*
-%
-% Alexandre Schimel,Deakin University, NIWA
 
+%Based on CFF_convert_mat_to_fabc_v2
 %% Function
-function [FABCdata] = CFF_convert_mat_to_fabc_v2(MATfilename,varargin)
+function [FABCdata,up] = CFF_convert_struct_to_fabc_v2(varStruct,varargin)
 
 
 %% input parsing
@@ -136,42 +10,54 @@ function [FABCdata] = CFF_convert_mat_to_fabc_v2(MATfilename,varargin)
 p = inputParser;
 
 % required
-addRequired(p,'MATfilename',@(x) ischar(x) || iscell(x));
-
+addRequired(p,'varStruct',@(x) isstruct(x) || iscell(x));
 % optional
+addOptional(p,'FABCdata',{},@(x) isstruct(x) || iscell(x));
 addOptional(p,'dr_sub',1,@(x) isnumeric(x)&&x>0);
 addOptional(p,'db_sub',1,@(x) isnumeric(x)&&x>0);
 
 % parse
-parse(p,MATfilename,varargin{:})
+parse(p,varStruct,varargin{:})
 
 % get results
-MATfilename = p.Results.MATfilename;
+varStruct = p.Results.varStruct;
+FABCdata = p.Results.FABCdata;
 dr_sub = p.Results.dr_sub;
 db_sub = p.Results.db_sub;
 clear p;
 
 %% pre-processing
 
-% turn MATfilename to cell if string
-if ischar(MATfilename)
-    MATfilename = {MATfilename};
+
+% turn varStruct to cell if string
+if ischar(varStruct)
+    varStruct = {varStruct};
 end
 
 % number of files
-nFiles = length(MATfilename);
+nFiles = length(varStruct);
 
-% initialize FABC structre by writing MATfilename in it as metadata
-FABCdata.MET_MATfilename = MATfilename;
 
 % and the decimation factors
-FABCdata.dr_sub = dr_sub;
-FABCdata.db_sub = db_sub;
-
+if isempty(FABCdata)
+    FABCdata.dr_sub = dr_sub;
+    FABCdata.db_sub = db_sub;
+    FABCdata.ALLfilename=cell(1,nFiles);
+   for iF = 1:nFiles
+       FABCdata.ALLfilename{iF}=varStruct{iF}.ALLfilename;
+   end
+end
+up=0;
 
 %% loop through all files and aggregate the datagrams contents
 
 for iF = 1:nFiles
+    
+    if ~ismember(varStruct{iF}.ALLfilename,FABCdata.ALLfilename)
+        disp('Cannot add different files to this structure.')
+        continue;
+    end
+    
     
     % clear previous datagrams
     clear -regexp EM\w*
@@ -179,16 +65,17 @@ for iF = 1:nFiles
     % OPENING MAT FILE
     % research note: maybe these could be loaded through matfile, rather
     % than loading it all...
-    file = MATfilename{iF};
-    load(file);
+    varStructCurr = varStruct{iF};
+
+    fid_all=fopen(FABCdata.ALLfilename{iF}, 'r',varStructCurr.datagramsformat);
+    wc_dir=get_wc_dir(FABCdata.ALLfilename{iF});
     
-    [dir_data,fname,~]=fileparts(file);
     % EM_InstallationStart (v2 VERIFIED)
-    if exist('EM_InstallationStart','var')
-        
+    if isfield(varStructCurr,'EM_InstallationStart')
+        EM_InstallationStart=varStructCurr.EM_InstallationStart;
         % only do if data of that type has not been recorded yet, aka:
         if ~isfield(FABCdata,'IP_ASCIIparameters')
-            
+            up=1;
             % initialize struct
             IP_ASCIIparameters = struct;
             
@@ -236,11 +123,12 @@ for iF = 1:nFiles
     end
     
     % EM_SoundSpeedProfile (v2 VERIFIED)
-    if exist('EM_SoundSpeedProfile','var')
-        
+    
+    if isfield(varStructCurr,'EM_SoundSpeedProfile')
+        EM_SoundSpeedProfile=varStructCurr.EM_SoundSpeedProfile;
         % only do if data of that type has not been recorded yet, aka:
         if ~isfield(FABCdata,'SS_1D_Date')
-            
+            up=1;
             NumberOfDatagrams  = length(EM_SoundSpeedProfile.TypeOfDatagram);
             MaxNumberOfEntries = max(EM_SoundSpeedProfile.NumberOfEntries);
             
@@ -269,11 +157,11 @@ for iF = 1:nFiles
     end
     
     % EM_Attitude
-    if exist('EM_Attitude','var')
-        
+    if isfield(varStructCurr,'EM_Attitude')
+        EM_Attitude=varStructCurr.EM_Attitude;
         % only do if data of that type has not been recorded yet, aka:
         if ~isfield(FABCdata,'At_1D_Date')
-            
+            up=1;
             NumberOfDatagrams  = length(EM_Attitude.TypeOfDatagram);
             MaxNumberOfEntries = max(EM_Attitude.NumberOfEntries);
             
@@ -307,11 +195,11 @@ for iF = 1:nFiles
     end
     
     % EM_Height
-    if exist('EM_Height','var')
-        
+    if isfield(varStructCurr,'EM_Height')
+        EM_Height=varStructCurr.EM_Height;
         % only do if data of that type has not been recorded yet, aka:
         if ~isfield(FABCdata,'He_1D_Date')
-            
+            up=1;
             % NumberOfDatagrams = length(EM_Height.TypeOfDatagram);
             
             FABCdata.He_1D_Date                            = EM_Height.Date;
@@ -324,11 +212,11 @@ for iF = 1:nFiles
     end
     
     % EM_Position (v2 verified)
-    if exist('EM_Position','var')
-        
+    if isfield(varStructCurr,'EM_Position')
+        EM_Position=varStructCurr.EM_Position;
         % only do if data of that type has not been recorded yet, aka:
         if ~isfield(FABCdata,'Po_1D_Date')
-            
+            up=1;
             % NumberOfDatagrams = length(EM_Position.TypeOfDatagram);
             
             FABCdata.Po_1D_Date                            = EM_Position.Date;
@@ -344,11 +232,13 @@ for iF = 1:nFiles
     end
     
     % EM_Depth
-    if exist('EM_Depth','var')
+    
+    if isfield(varStructCurr,'EM_Depth')
+        EM_Depth=varStructCurr.EM_Depth;
         
         % only do if data of that type has not been recorded yet, aka:
         if ~isfield(FABCdata,'De_1P_Date')
-            
+            up=1;
             NumberOfPings    = length(EM_Depth.TypeOfDatagram); % total number of pings in file
             MaxNumberOfBeams = max(cellfun(@(x) max(x),EM_Depth.BeamNumber)); % maximum beam number in file
             
@@ -397,11 +287,12 @@ for iF = 1:nFiles
     end
     
     % EM_XYZ88
-    if exist('EM_XYZ88','var')
+    if isfield(varStructCurr,'EM_XYZ88')
+        EM_XYZ88=varStructCurr.EM_XYZ88;
         
         % only do if data of that type has not been recorded yet, aka:
         if ~isfield(FABCdata,'X8_1P_Date')
-            
+            up=1;
             NumberOfPings    = length(EM_XYZ88.TypeOfDatagram); % total number of pings in file
             MaxNumberOfBeams = max(EM_XYZ88.NumberOfBeamsInDatagram); % maximum beam number in file
             
@@ -446,11 +337,11 @@ for iF = 1:nFiles
     end
     
     % EM_SeabedImage
-    if exist('EM_SeabedImage','var')
-        
+    if isfield(varStructCurr,'EM_SeabedImage')
+        EM_SeabedImage=varStructCurr.EM_SeabedImage;
         % only do if data of that type has not been recorded yet, aka:
         if ~isfield(FABCdata,'SI_1P_Date')
-            
+            up=1;
             NumberOfPings      = length(EM_SeabedImage.TypeOfDatagram); % total number of pings in file
             MaxNumberOfBeams   = max(cellfun(@(x) max(x),EM_SeabedImage.BeamIndexNumber))+1; % maximum beam number (beam index number +1), in file
             MaxNumberOfSamples = max(cellfun(@(x) max(x),EM_SeabedImage.NumberOfSamplesPerBeam));
@@ -512,11 +403,11 @@ for iF = 1:nFiles
     end
     
     % EM_SeabedImage89
-    if exist('EM_SeabedImage89','var')
-        
+    if isfield(varStructCurr,'EM_SeabedImage89')
+        EM_SeabedImage89=varStructCurr.EM_SeabedImage89;
         % only do if data of that type has not been recorded yet, aka:
         if ~isfield(FABCdata,'S8_1D_Date')
-            
+            up=1;
             NumberOfPings      = length(EM_SeabedImage89.TypeOfDatagram); % total number of pings in file
             MaxNumberOfBeams   = max(EM_SeabedImage89.NumberOfValidBeams);
             MaxNumberOfSamples = max(cellfun(@(x) max(x),EM_SeabedImage89.NumberOfSamplesPerBeam));
@@ -578,11 +469,11 @@ for iF = 1:nFiles
     end
     
     % EM_WaterColumn (v2 verified)
-    if exist('EM_WaterColumn','var')
-        
+    if isfield(varStructCurr,'EM_WaterColumn')
+        EM_WaterColumn=varStructCurr.EM_WaterColumn;
         % only do if data of that type has not been recorded yet, aka:
-        if ~isfield(FABCdata,'WC_1P_Date')
-                        
+        if ~isfield(FABCdata,'WC_1P_Date')||FABCdata.dr_sub~=dr_sub||FABCdata.db_sub~=db_sub
+            up=1;
             % get indices of first datagram for each ping
             [pingCounters,iFirstDatagram] = unique(EM_WaterColumn.PingCounter);
             
@@ -595,7 +486,7 @@ for iF = 1:nFiles
             % decimating beams and samples
             maxNBeams_sub       = ceil(maxNBeams/db_sub); % number of beams to extract
             maxNSamples_sub     = ceil(maxNSamples/dr_sub); % number of samples to extract
-
+            
             % read data per ping from first datagram of each ping
             FABCdata.WC_1P_Date                            = EM_WaterColumn.Date(iFirstDatagram);
             FABCdata.WC_1P_TimeSinceMidnightInMilliseconds = EM_WaterColumn.TimeSinceMidnightInMilliseconds(iFirstDatagram);
@@ -624,28 +515,20 @@ for iF = 1:nFiles
             FABCdata.WC_BP_BeamNumber             = nan(maxNBeams_sub,nPings);
             
             % decide whether to save in memory or as memmapfile
-            if nPings*maxNBeams_sub*maxNSamples_sub < 10^6
-                
-                % use simple 3D data array
-                
-                % initialize data per decimated samples, decimated beams,
-                % and pings
-                FABCdata.WC_SBP_SampleAmplitudes.Data.val = zeros(maxNSamples_sub,maxNBeams_sub,nPings,'int8')-int8(128);
-                
-            else
-                
-                % use memmap file
-                
-                % initialize binary file for writing
-                tmpdir=fullfile(dir_data,'temp',fname);
-                if exist(tmpdir,'dir')==0
-                    mkdir(tmpdir);
-                end
-                
-                file_binary = fullfile(tmpdir,'WC_SBP_SampleAmplitudes.dat');
+            
+            
+            % use memmap file
+            
+            % initialize binary file for writing
+
+            file_binary = fullfile(wc_dir,'WC_SBP_SampleAmplitudes.dat');
+            
+            if exist(file_binary,'file')==0||FABCdata.dr_sub~=dr_sub||FABCdata.db_sub~=db_sub
                 fileID = fopen(file_binary,'w+');
-                
+            else
+                fileID=-1;
             end
+            
             
             % now get data for each ping
             for iP = 1:nPings
@@ -687,37 +570,35 @@ for iF = 1:nFiles
                     FABCdata.WC_BP_DetectedRangeInSamples(iBeams,iP) = round(EM_WaterColumn.DetectedRangeInSamples{iDatagrams(iD)}(idx_beams)./dr_sub);
                     FABCdata.WC_BP_TransmitSectorNumber(iBeams,iP)   = EM_WaterColumn.TransmitSectorNumber2{iDatagrams(iD)}(idx_beams);
                     FABCdata.WC_BP_BeamNumber(iBeams,iP)             = EM_WaterColumn.BeamNumber{iDatagrams(iD)}(idx_beams);
-                    
-                    % now getting watercolumn data (beams x samples)
-                    for iB = 1:numel(iBeams)
-                        % actual number of samples in that beam
-                        Ns = EM_WaterColumn.NumberOfSamples{iDatagrams(iD)}(idx_beams(iB));
-                        % number of samples we're going to record:
-                        Ns_sub = ceil(Ns/dr_sub);
-                        % get the data:
-                        SB_temp(1:Ns_sub,iBeams(iB)) = EM_WaterColumn.SampleAmplitude{iDatagrams(iD)}{idx_beams(iB)}(1:dr_sub:Ns_sub*dr_sub)';
+                    if fileID>=0
+                        % now getting watercolumn data (beams x samples)
+                        for iB = 1:numel(iBeams)
+                            % actual number of samples in that beam
+                            Ns = EM_WaterColumn.NumberOfSamples{iDatagrams(iD)}(idx_beams(iB));
+                            % number of samples we're going to record:
+                            Ns_sub = ceil(Ns/dr_sub);
+                            % get the data:
+                            fseek(fid_all,EM_WaterColumn.SampleAmplitudePosition{iDatagrams(iD)}(idx_beams(iB)),'bof');
+                            SB_temp(1:Ns_sub,iBeams(iB))=fread(fid_all,Ns_sub,'int8',dr_sub-1);
+                            %SB_temp(1:Ns_sub,iBeams(iB)) = EM_WaterColumn.SampleAmplitude{iDatagrams(iD)}{idx_beams(iB)}(1:dr_sub:Ns_sub*dr_sub)';
+                        end
                     end
-                    
                 end
                 
                 % store data
-                if exist('fileID','var')
+                if fileID>=0
                     % write on binary file
                     fwrite(fileID,SB_temp,'int8');
-                else
-                    % store as data
-                    FABCdata.WC_SBP_SampleAmplitudes.Data.val(1:maxNSamples_sub,1:maxNBeams_sub,iP) = SB_temp;
                 end
                 
             end
             
-            % close binary file if in this case
-            if exist('fileID','var')
-                % close binary file
+            if fileID>=0
                 fclose(fileID);
-                % re-open as memmapfile
-                FABCdata.WC_SBP_SampleAmplitudes = memmapfile(file_binary,'Format',{'int8' [maxNSamples_sub maxNBeams_sub nPings] 'val'},'repeat',1,'writable',true);
             end
+            % re-open as memmapfile
+            FABCdata.WC_SBP_SampleAmplitudes = memmapfile(file_binary,'Format',{'int8' [maxNSamples_sub maxNBeams_sub nPings] 'val'},'repeat',1,'writable',true);
+            
             
         end
         
@@ -725,92 +606,5 @@ for iF = 1:nFiles
     
     
     % other types of datagrams not supported yet.
-    
+    fclose(fid_all);
 end
-
-
-% OLD CODE TO POSITION SEABED IMAGE SAMPLES RELATIVE TO BOTTOM DETECTION
-% SAMPLES
-% % if seabed image datagrams:
-% if exist('EM_SeabedImage')
-%
-%     NumberOfPings = length(EM_SeabedImage.TypeOfDatagram); % total number of pings in file
-%     NumberOfBeams = max(cellfun(@(x) max(x),EM_SeabedImage.BeamIndexNumber))+1; % maximum beam number (beam index number +1), in file
-%
-%     FABCdata.SI_1P_Date = EM_SeabedImage.Date';
-%     FABCdata.SI_1P_TimeSinceMidnightInMilliseconds = EM_SeabedImage.TimeSinceMidnightInMilliseconds';
-%     FABCdata.SI_1P_PingCounter = EM_SeabedImage.PingCounter';
-%     FABCdata.SI_1P_MeanAbsorptionCoefficient = EM_SeabedImage.MeanAbsorptionCoefficient';
-%     FABCdata.SI_1P_PulseLength = EM_SeabedImage.PulseLength';
-%     FABCdata.SI_1P_RangeToNormalIncidence = EM_SeabedImage.RangeToNormalIncidence';
-%     FABCdata.SI_1P_StartRangeSampleOfTVGRamp = EM_SeabedImage.StartRangeSampleOfTVGRamp';
-%     FABCdata.SI_1P_StopRangeSampleOfTVGRamp = EM_SeabedImage.StopRangeSampleOfTVGRamp';
-%     FABCdata.SI_1P_NormalIncidenceBS = EM_SeabedImage.NormalIncidenceBS';
-%     FABCdata.SI_1P_ObliqueBS = EM_SeabedImage.ObliqueBS';
-%     FABCdata.SI_1P_TxBeamwidth = EM_SeabedImage.TxBeamwidth';
-%     FABCdata.SI_1P_TVGLawCrossoverAngle = EM_SeabedImage.TVGLawCrossoverAngle';
-%     FABCdata.SI_1P_NumberOfValidBeams = EM_SeabedImage.NumberOfValidBeams';
-%
-%     % initialize
-%     FABCdata.SI_BP_SortingDirection = nan(NumberOfPings,NumberOfBeams);
-%     FABCdata.SI_BP_NumberOfSamplesPerBeam = nan(NumberOfPings,NumberOfBeams);
-%     FABCdata.SI_BP_CentreSampleNumber = nan(NumberOfPings,NumberOfBeams);
-%     FABCdata.SI_B1_BeamNumber = 1:NumberOfBeams;
-%     FABCdata.SI_SBP_SampleAmplitudes = cell(NumberOfPings,1);
-%
-%     for iP = 1:NumberOfPings
-%
-%         % Get data from datagram
-%         BeamNumber = cell2mat(EM_SeabedImage.BeamIndexNumber(iP))+1;
-%         SortingDirection = cell2mat(EM_SeabedImage.SortingDirection(iP));
-%         NumberOfSamplesPerBeam = cell2mat(EM_SeabedImage.NumberOfSamplesPerBeam(iP));
-%         CentreSampleNumber = cell2mat(EM_SeabedImage.CentreSampleNumber(iP));
-%         Samples = cell2mat(EM_SeabedImage.SampleAmplitudes(iP).beam(:));
-%
-%         % Get bottom sample number from Depth datagram
-%         % depth datagram says "OWTT = range / sampling rate / 4"
-%         % since OWTT = bottomsample# / (2 * sampling rate), then bottomsample# = "range"/2
-%         % problem, this means bottom sample number as a 0.5 resolution
-%         % (???)
-%         BottomSample = ceil( FABCdata.De_BP_Range(BeamNumber,iP)' ./ 2 );
-%
-%         % from BottomSample and CentreSampleNumber, deduce numbers of first
-%         % and last of recorded samples.
-%         firstSampleNumber = 1 - CentreSampleNumber + BottomSample;
-%         lastSampleNumber  = NumberOfSamplesPerBeam - CentreSampleNumber + BottomSample;
-%
-%         % min, max and total sample range for this ping.
-%         minSampleNumber = min(firstSampleNumber);
-%         maxSampleNumber = max(lastSampleNumber);
-%         NumberOfSamples = maxSampleNumber-minSampleNumber+1;
-%
-%         % from number of samples per beam, get indices of first and last
-%         % sample for each beam in the Samples data vector
-%         iFirst =  [1;cumsum(NumberOfSamplesPerBeam(1:end-1))+1];
-%         iLast = iFirst+NumberOfSamplesPerBeam-1;
-%
-%         % initialize the beams/sample array (use zero instead of NaN to
-%         % allow turning it to sparse
-%         temp = zeros(length(BeamNumber),NumberOfSamples);
-%
-%         % and fill in
-%         for iB = 1:length(BeamNumber)
-%             temp(iB,firstSampleNumber(iB)-minSampleNumber+1:lastSampleNumber(iB)-minSampleNumber+1) = Samples(iFirst(iB):iLast(iB));
-%         end
-%
-%         % store
-%         FABCdata.SI_BP_SortingDirection(BeamNumber,iP) = SortingDirection;
-%         FABCdata.SI_BP_NumberOfSamplesPerBeam(BeamNumber,iP) = NumberOfSamplesPerBeam;
-%         FABCdata.SI_BP_CentreSampleNumber(BeamNumber,iP) = CentreSampleNumber;
-%
-%         % store additional stuff:
-%         FABCdata.SI_BP_BottomSample(BeamNumber,iP) = BottomSample; % from Depth datagram, see above for calculation
-%         FABCdata.SI_BP_firstSampleNumber(BeamNumber,iP) = firstSampleNumber; % firstSampleNumber = 1 - CentreSampleNumber + BottomSample;
-%         FABCdata.SI_BP_lastSampleNumber(BeamNumber,iP) = lastSampleNumber; % lastSampleNumber  = NumberOfSamplesPerBeam - CentreSampleNumber + BottomSample;
-%
-%         % and the data:
-%         FABCdata.SI_SBP_SampleAmplitudes{iP} = sparse(temp);
-%
-%     end
-%
-% end

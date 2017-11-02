@@ -80,7 +80,7 @@ end
 %% Memory Map flag
 if isobject(fData.WC_SBP_SampleAmplitudes)
     memoryMapFlag = 1;
-    [tmpdir,~,~]=fileparts(fData.WC_SBP_SampleAmplitudes.Filename);
+    wc_dir=get_wc_dir(fData.ALLfilename{1});
 else
     memoryMapFlag = 0;
 end
@@ -99,7 +99,7 @@ switch method_spec
         if memoryMapFlag
             % create binary file
             
-            file_X_SBP_L1 = fullfile(tmpdir,'X_SBP_L1.dat');
+            file_X_SBP_L1 = fullfile(wc_dir,'X_SBP_L1.dat');
             % open
             fileID_X_SBP_L1 = fopen(file_X_SBP_L1,'w+');
             % write
@@ -125,7 +125,7 @@ switch method_spec
         % init arrays
         if memoryMapFlag
             % create binary file
-            file_X_SBP_L1 = fullfile(tmpdir,'X_SBP_L1.dat');
+            file_X_SBP_L1 = fullfile(wc_dir,'X_SBP_L1.dat');
             fileID_X_SBP_L1 = fopen(file_X_SBP_L1,'w+');
         else
             % initialize numerical arrays
@@ -185,7 +185,7 @@ switch method_spec
         % init arrays
         if memoryMapFlag
             % create binary file
-            file_X_SBP_L1 = fullfile(tmpdir,'X_SBP_L1.dat');
+            file_X_SBP_L1 = fullfile(wc_dir,'X_SBP_L1.dat');
             fileID_X_SBP_L1 = fopen(file_X_SBP_L1,'w+');
         else
             % initialize numerical arrays
@@ -251,7 +251,7 @@ switch method_spec
         if memoryMapFlag
             
             % close binary files
-            fclose(fileID_X_SBP_L1)
+            fclose(fileID_X_SBP_L1);
             
             % re-open files as memmapfile
             fData.X_SBP_L1 = memmapfile(file_X_SBP_L1, 'Format',{'int8' [nSamples nBeams nPings] 'val'},'repeat',1,'writable',true);
@@ -268,7 +268,7 @@ switch method_spec
          % init arrays
         if memoryMapFlag
             % create binary file
-            file_X_SBP_L1 = fullfile(tmpdir,'X_SBP_L1.dat');
+            file_X_SBP_L1 = fullfile(wc_dir,'X_SBP_L1.dat');
             fileID_X_SBP_L1 = fopen(file_X_SBP_L1,'w+');
         else
             % initialize numerical arrays

@@ -44,9 +44,9 @@ uicontrol(wc_proc_tab_comp.wc_proc_tab,'Style','pushbutton','units','normalized'
 uicontrol(wc_proc_tab_comp.wc_proc_tab,'style','text',...
     'BackgroundColor','White','units','normalized','position',[0.05 0.35 0.3 0.05],'String','Grid resolution (m)');
 uicontrol(wc_proc_tab_comp.wc_proc_tab,'style','text',...
-    'BackgroundColor','White','units','normalized','position',[0.35 0.45 0.1 0.05],'String','Horz');
+    'BackgroundColor','White','units','normalized','position',[0.35 0.4 0.1 0.05],'String','Horz');
 uicontrol(wc_proc_tab_comp.wc_proc_tab,'style','text',...
-    'BackgroundColor','White','units','normalized','position',[0.45 0.45 0.1 0.05],'String','Vert');
+    'BackgroundColor','White','units','normalized','position',[0.45 0.4 0.1 0.05],'String','Vert');
 
 
 wc_proc_tab_comp.grid_val=uicontrol(wc_proc_tab_comp.wc_proc_tab,'style','edit',...
@@ -75,7 +75,6 @@ wc_proc_tab_comp.clim_max=uicontrol(wc_proc_tab_comp.wc_proc_tab,'style','edit',
 
 
 
-
 cax=disp_config.Cax_wc;
 uicontrol(wc_proc_tab_comp.wc_proc_tab,'style','text',...
     'BackgroundColor','White','units','normalized','position',[0.05 0.15 0.3 0.05],'String','CLim WC (dB)');
@@ -86,15 +85,13 @@ wc_proc_tab_comp.clim_max_wc=uicontrol(wc_proc_tab_comp.wc_proc_tab,'style','edi
     'BackgroundColor','White','units','normalized','position',[0.45 0.15 0.1 0.05],'String',num2str(cax(2)),'Callback',{@change_wc_cax_cback,main_figure});
 
 
-% 
+%
 % uicontrol(wc_proc_tab_comp.wc_proc_tab,'Style','pushbutton','units','normalized',...
 %     'pos',[0.2 0.01 0.25 0.08],...
 %     'String','Process WC',...
 %     'callback',{@process_wc_cback,main_figure});
 
 
-
-wc_proc_tab_comp.str_disp='original';
 setappdata(main_figure,'wc_proc_tab',wc_proc_tab_comp);
 update_str_disp_cback([],[],main_figure)
 end
@@ -165,12 +162,14 @@ res=str2double(get(wc_proc_tab_comp.grid_val,'String'));
 vert_res=str2double(get(wc_proc_tab_comp.vert_grid_val,'String'));
 tic
 for i=idx_zoom(:)'
-        if ~isfield(fData_tot{i},'X_SBP_L1')||~isfield(fData_tot{i},'X_SBP_Mask')
-            fprintf('\nMasks for file %s has never been processed.\n',fData_tot{i}.MET_MATfilename{1})
-        else
-            disp('Gridding Water Column...');
-            fData_tot{i} = CFF_grid_watercolumn_v2_temp(fData_tot{i},wc_proc_tab_comp.str_disp,res,vert_res,wc_proc_tab_comp.dim_grid.String{wc_proc_tab_comp.dim_grid.Value});
-        end
+    if ~isfield(fData_tot{i},'X_SBP_Mask')||~isfield(fData_tot{i},'X_SBP_L1')
+            fprintf('\nMask for file %s has never been processed.\n',fData_tot{i}.ALLfilename{1})
+            continue;
+    end
+      
+    disp('Gridding Water Column...');
+    fData_tot{i} = CFF_grid_watercolumn_v3(fData_tot{i},wc_proc_tab_comp.str_disp,res,vert_res,wc_proc_tab_comp.dim_grid.String{wc_proc_tab_comp.dim_grid.Value});
+    
 end
 disp('Done');
 toc
@@ -204,43 +203,6 @@ wc_proc_tab_comp.str_disp=[str_disp_m str_disp];
 setappdata(main_figure,'wc_proc_tab',wc_proc_tab_comp);
 
 end
-% 
-% function process_wc_cback(~,~,main_figure)
-% fData_tot=getappdata(main_figure,'fData');
-% if isempty(fData_tot)
-%     return;
-% end
-% fdata_tab_comp=getappdata(main_figure,'fdata_tab');
-% 
-% idx_zoom=find(cell2mat(fdata_tab_comp.table.Data(:,end-1)));
-% 
-% if isempty(idx_zoom)
-%     disp('No lines selected');
-%     return;
-% end
-% 
-% for i=idx_zoom(:)'
-%     if ~isfield(fData_tot{i},'X_SBP_sampleEasting')
-%         fprintf('\nProcessing file %s\n',fData_tot{i}.MET_MATfilename{1})
-%         disp('Processing Watercolumn...');
-%         fData_tot{i} = CFF_process_watercolumn_v2(fData_tot{i});
-%         disp('Detecting Bottom...');
-%         fData_tot{i} = CFF_process_WC_bottom_detect_v2(fData_tot{i});
-%     else
-%         fprintf('\nWater Column for file %s already processed.\n',fData_tot{i}.MET_MATfilename{1})
-%     end
-% end
-% disp('Done');
-% 
-% setappdata(main_figure,'fData',fData_tot);
-% 
-% disp_config=getappdata(main_figure,'disp_config');
-% 
-% disp_config.Fdata_idx=idx_zoom(end);
-% 
-% update_wc_tab(main_figure);
-% 
-% end
 
 
 function compute_masks_cback(~,~,main_figure)
@@ -270,16 +232,15 @@ r_bot=str2double(get(wc_proc_tab_comp.r_bot,'String'));
 
 for i=idx_zoom(:)'
     
-
-        disp('Filtering Bottom Detect...');
-        fData_tot{i} = CFF_filter_WC_bottom_detect_v2(fData_tot{i},...
-            'method','flag','pingBeamWindowSize',[3 3],'maxHorizDist',inf,'flagParams',flagParams,'interpolate','yes');
-        
-        disp('Creating Mask...');
-        fData_tot{i} = CFF_mask_WC_data_v2(fData_tot{i},angle_mask,r_min,-r_bot);
-        
-        disp('Filtering Sidelobe Artifacts...');
-        fData_tot{i} = CFF_filter_WC_sidelobe_artifact_v2(fData_tot{i},2);
+    disp('Filtering Bottom Detect...');
+    fData_tot{i} = CFF_filter_WC_bottom_detect_v2(fData_tot{i},...
+        'method','flag','pingBeamWindowSize',[3 3],'maxHorizDist',inf,'flagParams',flagParams,'interpolate','yes');
+    
+    disp('Creating Mask...');
+    fData_tot{i} = CFF_mask_WC_data_v2(fData_tot{i},angle_mask,r_min,-r_bot);
+    
+    disp('Filtering Sidelobe Artifacts...');
+    fData_tot{i} = CFF_filter_WC_sidelobe_artifact_v2(fData_tot{i},2);
     
 end
 disp('Done');

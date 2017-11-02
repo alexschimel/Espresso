@@ -20,7 +20,7 @@ E=fData.X_1P_pingE;
 N=fData.X_1P_pingN;
 
 [~,ip]=min(sqrt((E-cp(1,1)).^2+(N-cp(1,2)).^2));
-[~,file,~]=fileparts(fData.MET_MATfilename{1});
+[~,file,~]=fileparts(fData.ALLfilename{1});
 
 info_str=sprintf('File: %s \n Proj: %s Time: %s',file,fData.MET_tmproj,datestr(fData.X_1P_pingSDN(ip)));
 

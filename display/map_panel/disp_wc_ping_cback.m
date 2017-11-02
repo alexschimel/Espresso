@@ -41,7 +41,7 @@ switch current_figure.SelectionType
         
         %z=E(ip)*pt(1)+ N(ip)*pt(2);
         heading=fData.X_1P_pingHeading(ip)/180*pi;
-        z=cross([sin(heading) cos(heading) 0], [pt(1) pt(2) 0]);
+        z=cross([cos(heading) sin(heading) 0], [pt(1)-E(ip) pt(2)-N(ip) 0]);
         z=z(3);
         
         disp_config=getappdata(main_figure,'disp_config');

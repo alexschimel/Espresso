@@ -51,6 +51,7 @@ load_info_panel(main_figure);
 load_files_tab(main_figure,options_panel);
 load_fdata_tab(main_figure,options_panel);
 load_wc_proc_tab(main_figure,options_panel);
+load_grid_tab(main_figure,options_panel)
 load_wc_tab(main_figure,wc_panel);
 
 load_map_tab(main_figure,map_panel);

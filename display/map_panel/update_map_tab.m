@@ -2,6 +2,7 @@ function update_map_tab(main_figure,new_res,new_zoom)
 
 map_tab_comp=getappdata(main_figure,'Map_tab');
 fData_tot=getappdata(main_figure,'fData');
+grids=getappdata(main_figure,'grids');
 if isempty(fData_tot)
     return;
 end
@@ -102,6 +103,7 @@ for i=1:length(fData_tot)
         set(obj_wc,'Visible',vis);
         data=get(obj_wc,'CData');
     end
+    
     switch disp_config.Var_disp
         case 'wc_int'
             alphadata=data>disp_config.Cax_wc_int(1);
@@ -121,6 +123,34 @@ for i=1:length(fData_tot)
         ylim(2)=nanmax(ylim(2),nanmax(fData.X_N1_gridNorthing(:)));
      end
 end
+
+if nansum(idx_zoom)==0
+    set(map_tab_comp.ping_line,'XData',nan,'YData',nan);
+end
+
+for igrid=1:numel(grids)
+    
+    
+    grid=grids{igrid};
+    tag_id_grid=num2str(grid.ID,'grid%.0f');
+    [numElemGridN,numElemGridE]=size(grid.grid_level);
+    gridEasting  = (0:numElemGridE-1) .*grid.res + grid.minGridE;
+    gridNorthing = (0:numElemGridN-1)'.*grid.res +grid.minGridN;
+    alphadata=grid.grid_level>disp_config.Cax_wc_int(1);
+    obj_grid=findobj(ax,'Tag',tag_id_grid);
+    
+
+    if isempty(obj_grid)   
+        obj_grid=imagesc(ax,gridEasting,gridNorthing,grid.grid_level,'Tag',tag_id_grid,'alphadata',alphadata);
+    else
+        set(obj_grid,'XData',gridEasting,'YData',gridNorthing,'CData',grid.grid_level,'alphadata',alphadata);
+    end
+
+    uistack(obj_grid,'bottom');
+end
+
+
+
 cax=disp_config.get_cax();
 caxis(ax,cax);
 

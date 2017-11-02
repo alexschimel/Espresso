@@ -9,7 +9,7 @@ function update_fdata_tab(main_figure)
     data_new=cell(numel(fdata),3);
     
     for nF=1:numel(fdata)
-        [fold,li,~]=fileparts(fdata{nF}.MET_MATfilename{1});
+        [fold,li,~]=fileparts(fdata{nF}.ALLfilename{1});
         data_new{nF,1}=li;
         data_new{nF,2}=fold;
         data_new{nF,3}=true;

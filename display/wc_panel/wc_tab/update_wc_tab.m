@@ -3,6 +3,19 @@ wc_tab_comp=getappdata(main_figure,'wc_tab');
 map_tab_comp=getappdata(main_figure,'Map_tab');
 fData_tot=getappdata(main_figure,'fData');
 
+if isempty(fData_tot)
+    set(map_tab_comp.ping_line,'XData',nan,'YData',nan);
+    set(wc_tab_comp.wc_gh,'XData',[],...
+        'YData',[],'ZData',[],...
+        'CData',[],'AlphaData',[]);
+    set(wc_tab_comp.ac_gh,'XData',[],...
+        'YData',[]);    
+    set(wc_tab_comp.bot_gh,'XData',[],...
+        'YData',[]);
+    title(wc_tab_comp.wc_axes,'');
+    return;
+end
+
 disp_config=getappdata(main_figure,'disp_config');
 
 ip=disp_config.Iping;
@@ -70,6 +83,7 @@ set(wc_tab_comp.wc_gh,'XData',ac_dist,...
 
 set(wc_tab_comp.ac_gh,'XData',[across_dist across_dist],...
     'YData',get(wc_tab_comp.wc_axes,'YLim'));
+
 set(wc_tab_comp.bot_gh,'XData',fData.X_BP_bottomAcrossDist(:,ip),...
     'YData',fData.X_BP_bottomUpDist(:,ip));
 

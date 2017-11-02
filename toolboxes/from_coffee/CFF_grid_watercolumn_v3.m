@@ -1,44 +1,5 @@
-%% CFF_grid_watercolumn_v2_temp.m
-%
-% Grids multibeam water-column data now in 3D instead of per slice
-%
-%% Help
-%
-% *USE*
-%
-% TODO: write longer description of function
-%
-% *INPUT VARIABLES*
-%
-% * |fData|:
-% * varargin{1}: data to grid: 'original' or 'L1' or a field of fData of SBP
-% size
-% * varargin{2}: grid resolution in m
-%
-% *OUTPUT VARIABLES*
-%
-% * |output_variable_1|: TODO: write description and info on variable
-%
-% *RESEARCH NOTES*
-%
-% TODO: write research notes
-%
-% *NEW FEATURES*
-%
-% * 2017-10-06: New header
-% * 2016-12-01: Also gridding bottom detect
-% * 2014-04-30: First version
-%
-% *EXAMPLE*
-%
-% [gridEasting,gridNorthing,gridHeight,gridLevel,gridDensity] = CFF_grid_watercolumn(fData,'original',0.1)
-%
-% *AUTHOR, AFFILIATION & COPYRIGHT*
-%
-% Alexandre Schimel, NIWA.
 
-%% Function
-function fData = CFF_grid_watercolumn_v2_temp(fData,varargin)
+function fData = CFF_grid_watercolumn_v3(fData,varargin)
 
 %% input parsing
 
@@ -53,10 +14,11 @@ addOptional(p,'dataToGrid','original',@(x) ischar(x));
 addOptional(p,'res',1,@(x) isnumeric(x)&&x>0);
 addOptional(p,'vert_res',1,@(x) isnumeric(x)&&x>0);
 addOptional(p,'dim','3D',@(x) ismember(x,{'2D' '3D'}));
+addOptional(p,'dr_sub',4,@(x) isnumeric(x)&&x>0);
+addOptional(p,'db_sub',2,@(x) isnumeric(x)&&x>0);
 addOptional(p,'e_lim',[],@isnumeric);
 addOptional(p,'n_lim',[],@isnumeric);
-% addOptional(p,'dr_sub',1,@(x) isnumeric(x)&&x>0);
-% addOptional(p,'db_sub',1,@(x) isnumeric(x)&&x>0);
+
 
 % parse
 parse(p,fData,varargin{:})
@@ -65,13 +27,11 @@ parse(p,fData,varargin{:})
 dataToGrid = p.Results.dataToGrid;
 res = p.Results.res;
 vert_res= p.Results.vert_res;
-% dr  = p.Results.dr_sub;
-% db  = p.Results.db_sub;
+dr  = p.Results.dr_sub;
+db  = p.Results.db_sub;
 
 % subsampling now happening in conv_mat_2_fabc so disable it here, but keep
 % code, aka:
-dr = 1;
-db = 1;
 
 dim=p.Results.dim;
 
@@ -198,13 +158,13 @@ for iB = 1:nBlocks
     % list of pings in this block
        blockPings = (blocks(iB,1):blocks(iB,2));
         nSamples=max(nSamples_tot(blockPings));
-       idx_samples = (1:nSamples)';
+       idx_samples = (1:dr:nSamples)';
 
       [~,sampleUpDist,sampleAcrossDist]=get_samples_range_dist(...
           idx_samples,...
-            fData.WC_BP_StartRangeSampleNumber(:,blockPings),...
+            fData.WC_BP_StartRangeSampleNumber(1:db:end,blockPings),...
             dr_samples(blockPings),...
-            fData.WC_BP_BeamPointingAngle(:,blockPings)/100/180*pi);
+            fData.WC_BP_BeamPointingAngle(1:db:end,blockPings)/100/180*pi);
         
         [blockE,blockN,blockH]...
             =get_samples_ENH(...
