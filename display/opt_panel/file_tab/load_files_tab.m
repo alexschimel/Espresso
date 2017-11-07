@@ -153,7 +153,7 @@ for nF = 1:numel(mat_fdata_files)
         fprintf('%s already loaded\n',files_to_load{nF});
         continue;
     end
-    %% convert mat to fabc format
+
     tic
     if exist(mat_fdata_files{nF},'file')==0
        continue
@@ -183,12 +183,9 @@ for nF = 1:numel(mat_fdata_files)
     end
     
     file_X_SBP_L1 = fullfile(wc_dir,'X_SBP_L1.dat');
-    if exist(file_X_SBP_Mask,'file')==2
+    if exist(file_X_SBP_L1,'file')==2
         [nSamples,nBeams,nPings]=size(fData_temp.WC_SBP_SampleAmplitudes.Data.val);
         fData_temp.X_SBP_L1 = memmapfile(file_X_SBP_L1, 'Format',{'int8' [nSamples nBeams nPings] 'val'},'repeat',1,'writable',true);
-    else
-        fprintf('\nMask for file %s has never been processed.\n',fData_temp.ALLfilename{1})
-        continue;
     end
     
     pause(1e-3);
@@ -237,8 +234,24 @@ end
 tic
 for nF = 1:numel(mat_fdata_files)
     fprintf('Converting file "%s" - started on: %s\n', all_files_to_process{nF}, datestr(now));
+    
     ALLdata_all = CFF_read_all(all_files_to_process{nF},'datagrams',[73 80 107]);
-    ALLdata_wcd = CFF_read_all(wcd_files_to_process{nF},'datagrams',[73 80 107]);
+    
+    if exist(wcd_files_to_process{nF},'file')>0&&~isfield(ALLdata_all,'EM_WaterColumn')
+        ALLdata_wcd = CFF_read_all(wcd_files_to_process{nF},'datagrams',107);
+    else
+        ALLdata_wcd=[];
+    end
+    
+    if isempty(ALLdata_wcd)
+        ALLdata=ALLdata_all;
+    else
+        ALLdata={ALLdata_all ALLdata_wcd};
+    end
+    
+    if isempty(ALLdata_wcd)&&~isfield(ALLdata_all,'EM_WaterColumn')
+        fprintf('No WC data for file %s\n',all_files_to_process{nF});
+    end
     
     
     %% if output folder doesn't exist, create it
@@ -252,7 +265,7 @@ for nF = 1:numel(mat_fdata_files)
     else
         fData=load(mat_fdata_files{nF});
     end
-    [fData,up]=CFF_convert_struct_to_fabc_v2({ALLdata_all ALLdata_wcd},fData);
+    [fData,up]=CFF_convert_struct_to_fabc_v2(ALLdata,fData);
     
     if up>0
         save(mat_fdata_files{nF},'-struct','fData','-v7.3');

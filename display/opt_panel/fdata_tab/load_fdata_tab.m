@@ -26,6 +26,9 @@ fdata_tab_comp.selected_idx=[];
 
 rc_menu = uicontextmenu(ancestor(fdata_tab_comp.table,'figure'));
 fdata_tab_comp.table.UIContextMenu =rc_menu;
+uimenu(rc_menu,'Label','Select All','Callback',{@selection_callback,main_figure},'Tag','se');
+uimenu(rc_menu,'Label','De-Select All','Callback',{@selection_callback,main_figure},'Tag','de');
+uimenu(rc_menu,'Label','Inverse Selection','Callback',{@selection_callback,main_figure},'Tag','inv');
 uimenu(rc_menu,'Label','Remove Selected Lines','Callback',{@remove_lines_cback,main_figure});
 
 setappdata(main_figure,'fdata_tab',fdata_tab_comp);
@@ -33,6 +36,24 @@ setappdata(main_figure,'fdata_tab',fdata_tab_comp);
 update_fdata_tab(main_figure);
 
 end
+
+function selection_callback(src,~,main_figure)
+fdata_tab_comp = getappdata(main_figure,'fdata_tab');
+data=fdata_tab_comp.table.Data;
+for i=1:size(data,1)
+    switch src.Tag
+        case 'se'
+            data{i,end-1}=true;
+        case 'de'
+            data{i,end-1}=false;
+        case 'inv'
+            data{i,end-1}=~data{i,1};
+    end
+end
+set(fdata_tab_comp.table,'Data',data);
+update_map_tab(main_figure,0,0);
+end
+
 
 function remove_lines_cback(~,~,main_figure)
 fdata_tab_comp = getappdata(main_figure,'fdata_tab');

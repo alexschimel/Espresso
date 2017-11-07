@@ -70,7 +70,8 @@ dr_samples = soundSpeed./(samplingFrequencyHz.*2);
 gridConvergenceDeg  = fData.X_1P_pingGridConv; %deg
 vesselHeadingDeg    = fData.X_1P_pingHeading; %deg
 sonarHeadingOffsetDeg = fData.IP_ASCIIparameters.S1H; %deg
-
+fData.res=res;
+fData.vert_res=vert_res;
 
 sonarH         =fData.X_1P_pingH; %m
 sonarE        = fData.X_1P_pingE; %m

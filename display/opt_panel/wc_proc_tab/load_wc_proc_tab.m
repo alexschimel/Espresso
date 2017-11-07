@@ -165,8 +165,7 @@ for i=idx_zoom(:)'
     if ~isfield(fData_tot{i},'X_SBP_Mask')||~isfield(fData_tot{i},'X_SBP_L1')
             fprintf('\nMask for file %s has never been processed.\n',fData_tot{i}.ALLfilename{1})
             continue;
-    end
-      
+    end     
     disp('Gridding Water Column...');
     fData_tot{i} = CFF_grid_watercolumn_v3(fData_tot{i},wc_proc_tab_comp.str_disp,res,vert_res,wc_proc_tab_comp.dim_grid.String{wc_proc_tab_comp.dim_grid.Value});
     

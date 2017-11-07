@@ -9,122 +9,122 @@ end
 %disp_config=getappdata(main_figure,'disp_config');
 
 
+survDataSummary = {};
+
+% Column names and column format
+columnname = {'Name' 'Res.' 'Disp' 'ID'};
+columnformat = {'char','numeric','logical','numeric'};
+
+% Create the uitable
+grid_tab_comp.table_main = uitable('Parent',grid_tab_comp.grid_tab,...
+    'Data', survDataSummary,...
+    'ColumnName', columnname,...
+    'ColumnFormat', columnformat,...
+    'CellSelectionCallback',{@cell_select_cback,main_figure},...
+    'CellEditCallback',{@update_grid_map,main_figure},...
+    'ColumnEditable', [true true true false],...
+    'Units','Normalized','Position',[0 0.1 1 0.9],...
+    'RowName',[]);
+pos_t = getpixelposition(grid_tab_comp.table_main);
+set(grid_tab_comp.table_main,'ColumnWidth',...
+    num2cell(pos_t(3)*[15/20 3/20 2/20 0/20]));
+set(grid_tab_comp.grid_tab,'SizeChangedFcn',{@resize_table,grid_tab_comp.table_main});
+
+
 uicontrol(grid_tab_comp.grid_tab,'Style','pushbutton','units','normalized',...
-    'pos',[0.2 0.26 0.25 0.08],...
-    'String','Grid',...
+    'pos',[0.1 0.01 0.25 0.08],...
+    'String','Create',...
     'callback',{@grid_tot_cback,main_figure});
 
+
+uicontrol(grid_tab_comp.grid_tab,'Style','pushbutton','units','normalized',...
+    'pos',[0.35 0.01 0.25 0.08],...
+    'String','Re-compute',...
+    'callback',{@re_grid_cback,main_figure});
+
+uicontrol(grid_tab_comp.grid_tab,'Style','pushbutton','units','normalized',...
+    'pos',[0.6 0.01 0.25 0.08],...
+    'String','Delete',...
+    'callback',{@delete_grid_cback,main_figure});
+
+grid_tab_comp.selected_idx=[];
 setappdata(main_figure,'grid_tab',grid_tab_comp);
 
 end
 
+function delete_grid_cback(src,~,main_figure)
+grids=getappdata(main_figure,'grids');
+map_tab_comp= getappdata(main_figure,'Map_tab');
+grid_tab_comp = getappdata(main_figure,'grid_tab');
+ax=map_tab_comp.map_axes;
+idx_rem=[];
+for i=grid_tab_comp.selected_idx(:)'
+    if i<=numel(grids)
+        tag_id_grid=num2str(grids(i).ID,'grid%.0f'); 
+        tag_id_box=num2str(grids(i).ID,'box%.0f'); 
+        obj=findobj(ax,'Tag',tag_id_grid,'-or','Tag',tag_id_box);
+        delete(obj);
+        idx_rem=union(i,idx_rem);
+    end
+end
+grids(idx_rem)=[];
+setappdata(main_figure,'grids',grids);
 
+update_grid_tab(main_figure);
+
+end
+
+function re_grid_cback(src,~,main_figure)
+grids=getappdata(main_figure,'grids');
+grid_tab_comp = getappdata(main_figure,'grid_tab');
+fData_tot=getappdata(main_figure,'fData');
+idx_grid=find(cell2mat(grid_tab_comp.table_main.Data(grid_tab_comp.selected_idx(:),4))==[grids(:).ID]);
+for i=idx_grid(:)'
+    grids(idx_grid)=compute_grid(grids(idx_grid),fData_tot);
+end
+setappdata(main_figure,'grids',grids);
+
+update_map_tab(main_figure,1,0);
+
+end
+
+function update_grid_map(src,evt,main_figure)
+grids=getappdata(main_figure,'grids');
+fData_tot=getappdata(main_figure,'fData');
+idx_grid=cell2mat(src.Data(evt.Indices(1),4))==[grids(:).ID];
+    switch evt.Indices(2)
+        case 1  
+            grids(idx_grid).name=evt.NewData;
+        case 2
+            if ~isnan(evt.NewData)
+                grids(idx_grid).res=evt.NewData;
+                grids(idx_grid)=compute_grid(grids(idx_grid),fData_tot);
+            end
+    end
+    setappdata(main_figure,'grids',grids);
+    
+    update_map_tab(main_figure,1,0);
+
+end
 
 function grid_tot_cback(~,~,main_figure)
-%disp_config=getappdata(main_figure,'disp_config');
-grids=getappdata(main_figure,'grids');
-map_tab_comp=getappdata(main_figure,'Map_tab');
-fData_tot=getappdata(main_figure,'fData');
+    
+replace_interaction(main_figure,'interaction','WindowButtonDownFcn','id',1,'interaction_fcn',{@create_grid,main_figure});
 
-res=0.5;
-
-ax=map_tab_comp.map_axes;
-E_lim=ax.XLim;
-N_lim=ax.YLim;
-
-numElemGridE = ceil((E_lim(2)-E_lim(1))./res)+1;
-numElemGridN = ceil((N_lim(2)-N_lim(1))./res)+1;
-
-gridSum   = zeros(numElemGridN,numElemGridE,'single');
-gridCount = zeros(numElemGridN,numElemGridE,'single');
-
-grid.fData_ID=nan(1,numel(fData_tot));
-for iF=1:numel(fData_tot)
-    fData=fData_tot{iF};
-    grid.fData_ID(iF)=fData.ID;
-    
-    if ~isfield(fData,'X_1E_gridEasting')
-        continue;
-    end
-    
-    E = fData.X_1E_gridEasting;
-    N = fData.X_N1_gridNorthing;
-    L = fData.X_NEH_gridLevel;
-    
-    if size(L,3)>1
-        data = pow2db_perso(nanmean(db2pow(L),3));
-    else
-        data=L;
-    end
-    
-    
-      
-    idx_keep_E=E>E_lim(1)&E<E_lim(2);
-    idx_keep_N=N>N_lim(1)&N<N_lim(2);
-    
-    E(~idx_keep_E)=[];
-    N(~idx_keep_N)=[];
-    data(~idx_keep_N,:)=[];
-    data(:,~idx_keep_E)=[];   
-    idx_nan=isnan(data);
-
-    E_mat=repmat(E,numel(N),1);
-    N_mat=repmat(N,1,numel(E));
-    
-    data(idx_nan)=[];
-    N_mat(idx_nan)=[];
-    E_mat(idx_nan)=[];
-    data = (10.^(data./10));
-     
-    E_idx = round((E_mat-E_lim(1))/res+1);
-    N_idx = round((N_mat-N_lim(1))/res+1);
-       
-    idx_E_start = min(E_idx);
-    idx_N_start = min(N_idx);
-    
-    E_idx = E_idx - min(E_idx) + 1;
-    N_idx = N_idx - min(N_idx) + 1;
-     
-    N_E = max(E_idx);
-    N_N = max(N_idx);
-    
-    subs = single([N_idx(:) E_idx(:)]);
-    
-    gridCountTemp = accumarray(subs,ones(size(data(:)'),'single'),single([N_N N_E]),@sum,single(0));
-    
-    gridSumTemp = accumarray(subs,data(:)',single([N_N N_E]),@sum,single(0));
-    
-    gridCount(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1) = ...
-        gridCount(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1)+gridCountTemp;
-    
-    
-    gridSum(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1) = ...
-        gridSum(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1)+gridSumTemp;
-    
 end
 
-grid.grid_level=single(10.*log10(gridSum./gridCount));
-grid.minGridE  = E_lim(1);
-grid.minGridN = N_lim(1);
-grid.res=res;
 
-%grid.ID=str2double(datestr(now,'yyyymmddHHMMSSFFF'));
-grid.ID=1;
 
-if numel(grids)>1
-    id_g=nan(1,numel(grids));
-    for ig=1:numel(grids)
-        id_g(ig)=grids{ig}.ID;
-    end
-    idx_grid=find(id_g==grid.ID);
-    if isempty(idx_grid)
-        idx_grid=numel(grids)+1;
-    end
+function cell_select_cback(~,evt,main_figure)
+grid_tab_comp = getappdata(main_figure,'grid_tab');
+
+if ~isempty(evt.Indices)
+    selected_idx=(evt.Indices(:,1));
 else
-    idx_grid=1;
+    selected_idx=[];
 end
+%selected_idx'
+grid_tab_comp.selected_idx=selected_idx;
+setappdata(main_figure,'grid_tab',grid_tab_comp);
 
-grids{idx_grid}=grid;
-setappdata(main_figure,'grids',grids);
-update_map_tab(main_figure,0,0);
 end

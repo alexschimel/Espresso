@@ -46,26 +46,31 @@ converted = [];
 AllFilename_list = subdir(fullfile(folder_init,'*.all'));
 if isempty(AllFilename_list)
     return;
+else
+     AllFilename_cell = {AllFilename_list([AllFilename_list(:).isdir]==0).name};
 end
-AllFilename_cell = {AllFilename_list([AllFilename_list(:).isdir]==0).name};
-
 % get .wcd files
 WCDFilename_list = subdir(fullfile(folder_init,'*.wcd'));
 if isempty(WCDFilename_list)
+  return;
+else
+    WCDFilename_cell = {WCDFilename_list([WCDFilename_list(:).isdir]==0).name};
+end
+
+if isempty(WCDFilename_cell)&&isempty(AllFilename_cell)
     return;
 end
-WCDFilename_cell = {WCDFilename_list([WCDFilename_list(:).isdir]==0).name};
 
 % split in folders and file names
-[wcd_folders,wcd_files,~] = cellfun(@fileparts,WCDFilename_cell,'UniformOutput',0);
-[all_folders,all_files,~] = cellfun(@fileparts,AllFilename_cell,'UniformOutput',0);
 
+[all_folders,all_files,~] = cellfun(@fileparts,AllFilename_cell,'UniformOutput',0);
+[wcd_folders,wcd_files,~] = cellfun(@fileparts,WCDFilename_cell,'UniformOutput',0);
 % recombine
 wcd_files = fullfile(wcd_folders,wcd_files);
 all_files = fullfile(all_folders,all_files);
 
-% only keep where we have both
 [files_full,~] = intersect(all_files,wcd_files);
+%files_full = all_files;
 [folders,files,~] = cellfun(@fileparts,files_full,'UniformOutput',0);
 
 mat_fdata_files=fdata_filenames_from_all_filenames(files_full);

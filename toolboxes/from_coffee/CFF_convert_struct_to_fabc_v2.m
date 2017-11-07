@@ -28,9 +28,7 @@ clear p;
 
 %% pre-processing
 
-
-% turn varStruct to cell if string
-if ischar(varStruct)
+if ~iscell(varStruct)
     varStruct = {varStruct};
 end
 

@@ -46,7 +46,7 @@ switch current_figure.SelectionType
         
         disp_config=getappdata(main_figure,'disp_config');
         
-        disp_config.AcrossDist=sign(z)*across_dist;
+        disp_config.AcrossDist=-sign(z)*across_dist;
         disp_config.Iping=ip;
         disp_config.Fdata_idx=find(idx_fData);
         

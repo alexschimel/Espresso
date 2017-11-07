@@ -42,7 +42,7 @@ end
 %       z=E(ip)*pt(1,1)+ N(ip)*pt(1,2);
         z=cross([cos(heading) sin(heading) 0], [pt(1,1)-E(ip) pt(1,2)-N(ip) 0]);
         z=z(3);
-        across_dist=sign(z)*across_dist;
+        across_dist=-sign(z)*across_dist;
         
         disp_config.Iping=ip;
         disp_config.AcrossDist=across_dist;
