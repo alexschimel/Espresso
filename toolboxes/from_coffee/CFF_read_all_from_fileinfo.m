@@ -418,7 +418,7 @@ for iDatag = datagToParse'
             
             % counter for this type of datagram
             try i78=i78+1; catch, i78=1; end
-            counter = i78;
+
             
             % parsing
             ALLdata.EM_RawRangeAngle78.NumberOfBytesInDatagram(i78)           = nbDatag;
@@ -816,7 +816,6 @@ for iDatag = datagToParse'
             
             % counter for this type of datagram
             try i102=i102+1; catch, i102=1; end
-            counter = i102;
             
             % parsing
             % ...to write...

@@ -9,7 +9,7 @@ end
 fdata_tab_comp=getappdata(main_figure,'fdata_tab');
 grid_tab_comp=getappdata(main_figure,'grid_tab');
 disp_config=getappdata(main_figure,'disp_config');
-idx_sel=fdata_tab_comp.selected_idx;
+
 idx_zoom=(cell2mat(fdata_tab_comp.table.Data(:,end-1)));
 
 if ~isempty(grid_tab_comp.table_main.Data)
@@ -27,15 +27,13 @@ ylim=[nan nan];
 for i=1:length(fData_tot)
     if idx_zoom(i)
         vis='on';
+        col=[0 0.6 0];        
     else
         vis='off';
+        col='r';
     end
     
-    if any(i==idx_sel)
-        col='r';
-    else
-        col='k';
-    end
+
     
     fData=fData_tot{i};
     %     times1 = datestr(fData.X_1P_pingSDN,'dd-mmm-yyyy HH:MM:SS.FFF');
@@ -49,19 +47,15 @@ for i=1:length(fData_tot)
     
     if isempty(obj)
         
-        plot(ax,fData.X_1P_pingE(1),fData.X_1P_pingN(1),'o','Tag',tag_id,'Visible','on','Color',col);
+        plot(ax,fData.X_1P_pingE(1),fData.X_1P_pingN(1),'o',...
+            'Tag',tag_id,'Visible','on','Color',col);
         plot(ax,fData.X_1P_pingE,fData.X_1P_pingN,...,
-            'Tag',tag_id,'Visible',vis,'Color',col,...
-            'ButtonDownFcn',{@disp_wc_ping_cback,main_figure});
-        
-        plot(ax,[fData.X_1P_pingE(1:df:end),fData.X_1P_pingE(end)],[fData.X_1P_pingN(1:df:end),fData.X_1P_pingN(end)],'.','Tag',tag_id,'Visible','on','Color',col);
+            'Tag',tag_id,'Visible','on','Color',col,...
+            'ButtonDownFcn',{@disp_wc_ping_cback,main_figure});       
+        plot(ax,[fData.X_1P_pingE(1:df:end),fData.X_1P_pingE(end)],[fData.X_1P_pingN(1:df:end),fData.X_1P_pingN(end)],'.',...
+            'Tag',tag_id,'Visible','on','Color',col);
         plot(ax,fData.X_1P_pingE(end),fData.X_1P_pingN(end),'s','Tag',tag_id,'Visible','on','Color',col);
-        %         text(ax,fData.X_1P_pingE(1),fData.X_1P_pingN(1),sprintf(' \\leftarrow %s (start)',times1(1,:)),'Tag',tag_id,'Visible',vis)
-        %         text(ax,fData.X_1P_pingE(end),fData.X_1P_pingN(end),sprintf(' \\leftarrow %s (end)',times1(end,:)),'Tag',tag_id,'Visible',vis)
-        %
-        %         for ii = (df+1):df:length(fData.X_1P_pingN)-1
-        %             text(ax,fData.X_1P_pingE(ii),fData.X_1P_pingN(ii),sprintf(' \\leftarrow %s',times2(ii,:)),'Tag',tag_id,'Visible',vis)
-        %         end
+
     else
         set(obj,'Visible','on');
         set(obj(arrayfun(@(x) strcmp(x.Type,'line'),obj)),'Color',col);
@@ -167,14 +161,14 @@ for igrid=1:numel(grids)
     end
     
     if isempty(obj_grid)
-        obj_grid=imagesc(ax,gridEasting,gridNorthing,grid.grid_level,'Tag',tag_id_grid,'alphadata',alphadata);
+        obj_grid=imagesc(ax,gridEasting,gridNorthing,grid.grid_level,'Tag',tag_id_grid,'alphadata',alphadata,'ButtonDownFcn',{@move_map_cback,main_figure});
     else
         set(obj_grid,'XData',gridEasting,'YData',gridNorthing,'CData',grid.grid_level,'alphadata',alphadata);
     end
     set(obj_grid,'Visible',vis);
     uistack(obj_grid,'bottom');
 end
-
+    
 cax=disp_config.get_cax();
 caxis(ax,cax);
 
@@ -183,11 +177,14 @@ if~any(idx_zoom)
 end
 
 if new_zoom>0
+    pos=getpixelposition(ax);
+    ratio=pos(4)/pos(3);
     dx=nanmax([diff(xlim) diff(ylim)]);
-    xlim=xlim+[-dx/20 +dx/20];
-    set(ax,'XLim',xlim);
-    ylim=ylim+[-dx/20 +dx/20];
-    set(ax,'YLim',ylim);
+    dy=dx*ratio;
+    xlim=mean(xlim)+[-11*dx/20 +11*dx/20];
+    ylim=mean(ylim)+[-11*dy/20 +11*dy/20];
+    
+    set(ax,'YLim',ylim,'XLim',xlim);
 end
 
 % get current ticks position

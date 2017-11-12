@@ -195,27 +195,35 @@ switch method_spec
         % define 11 middle beams for reference level
         nadirBeams = (floor((nBeams./2)-5):ceil((nBeams./2)+5)); % middle beams
         
-        % per-ping processing
-        for ip = 1:nPings
+        % block processing setup
+        blockLength = 10;
+        nBlocks = ceil(nPings./blockLength);
+        blocks = [ 1+(0:nBlocks-1)'.*blockLength , (1:nBlocks)'.*blockLength ];
+        blocks(end,2) = nPings;
+        
+        % per-block processing
+    
+        for iB = 1:nBlocks
             
             % grab data
-            thisPing = double(fData.WC_SBP_SampleAmplitudes.Data.val(:,:,ip))./2;
-            thisPing(thisPing<=-127/2)=nan;
-            thisBottom = fData.X_BP_bottomSample(:,ip);
+            thisPing = single(fData.WC_SBP_SampleAmplitudes.Data.val(:,:,blocks(iB,1):blocks(iB,2)))./2;
+            idx_nan=thisPing<=-127/2;
+            thisPing(idx_nan)=nan;
+            thisBottom = fData.X_BP_bottomSample(:,blocks(iB,1):blocks(iB,2));
             
             % mean level across all beams for each range (and each ping)
-            meanAcrossBeams = nanmean(thisPing,2);
+            meanAcrossBeams = mean(thisPing,2,'omitnan');
             
             % find the reference level as the median level of all samples above the median bottom sample in nadir beams:
-            nadirBottom = median(thisBottom(nadirBeams)); % median value -> bottom
-            meanRefLevel = nanmean(reshape(thisPing((1:nadirBottom),nadirBeams),1,[]));
+            nadirBottom = median(thisBottom(nadirBeams,:)); % median value -> bottom
+            meanRefLevel = nanmean(reshape(thisPing((1:min(nadirBottom)),nadirBeams,:),1,[]));
             % question, should we calculate the mean in natural or in dB?
             
             % statistical compensation. removing mean, then adding
             % reference level, like everyone does (correction "a" in
             % Parnum's thesis)
-            X_SBP_L1 = bsxfun(@minus,thisPing,meanAcrossBeams) + meanRefLevel;
-            X_SBP_L1(isnan(X_SBP_L1))=-128/2;
+            X_SBP_L1 = bsxfun(@minus,thisPing,(meanAcrossBeams)) + (meanRefLevel);
+            X_SBP_L1(idx_nan)=-128/2;
             % note that other compensations of that style are possible (to
             % be tested for performance
             
@@ -240,7 +248,7 @@ switch method_spec
                 fwrite(fileID_X_SBP_L1,X_SBP_L1,'int8');
             else
                 % save in array
-                fData.X_SBP_L1.Data.val(:,:,ip) = X_SBP_L1;
+                fData.X_SBP_L1.Data.val(:,:,blocks(iB,1):blocks(iB,2)) = X_SBP_L1;
             end
             
             clear X_SBP_L1 thisPing thisBottom meanAcrossBeams

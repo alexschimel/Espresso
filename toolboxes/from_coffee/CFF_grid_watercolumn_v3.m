@@ -10,14 +10,14 @@ p = inputParser;
 addRequired(p,'fData',@isstruct);
 
 % optional
-addOptional(p,'dataToGrid','original',@(x) ischar(x));
-addOptional(p,'res',1,@(x) isnumeric(x)&&x>0);
-addOptional(p,'vert_res',1,@(x) isnumeric(x)&&x>0);
-addOptional(p,'dim','3D',@(x) ismember(x,{'2D' '3D'}));
-addOptional(p,'dr_sub',4,@(x) isnumeric(x)&&x>0);
-addOptional(p,'db_sub',2,@(x) isnumeric(x)&&x>0);
-addOptional(p,'e_lim',[],@isnumeric);
-addOptional(p,'n_lim',[],@isnumeric);
+addParameter(p,'dataToGrid','processed',@(x) ischar(x));
+addParameter(p,'res',1,@(x) isnumeric(x)&&x>0);
+addParameter(p,'vert_res',1,@(x) isnumeric(x)&&x>0);
+addParameter(p,'dim','3D',@(x) ismember(x,{'2D' '3D'}));
+addParameter(p,'dr_sub',4,@(x) isnumeric(x)&&x>0);
+addParameter(p,'db_sub',2,@(x) isnumeric(x)&&x>0);
+addParameter(p,'e_lim',[],@isnumeric);
+addParameter(p,'n_lim',[],@isnumeric);
 
 
 % parse
@@ -178,14 +178,8 @@ for iB = 1:nBlocks
     switch dataToGrid
         case 'original'
             blockL = single(fData.WC_SBP_SampleAmplitudes.Data.val(1:dr:nSamples,1:db:nBeams,blockPings))./2;
-        case 'masked original'
-            blockL = single(fData.WC_SBP_SampleAmplitudes.Data.val(1:dr:nSamples,1:db:nBeams,blockPings))./2;
-            blockL(fData.X_SBP_Mask.Data.val(1:dr:nSamples,1:db:nBeams,blockPings)==0)=nan;
-        case 'L1'
-            blockL = single(fData.X_SBP_L1.Data.val(1:dr:nSamples,1:db:nBeams,blockPings));
-        case 'masked L1'
-            blockL = single(fData.X_SBP_L1.Data.val(1:dr:nSamples,1:db:nBeams,blockPings));
-            blockL(fData.X_SBP_Mask.Data.val(1:dr:nSamples,1:db:nBeams,blockPings)==0)=nan;
+        case 'processed'
+            blockL = single(fData.X_SBP_Masked.Data.val(1:dr:nSamples,1:db:nBeams,blockPings));
     end
     
     clear blockPings

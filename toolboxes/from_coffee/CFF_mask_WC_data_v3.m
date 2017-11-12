@@ -1,4 +1,4 @@
-function [fData] = CFF_mask_WC_data_v2(fData,varargin)
+function [fData] = CFF_mask_WC_data_v3(fData,varargin)
 % [fData] = CFF_mask_WC_data_v2(fData,varargin)
 %
 % DESCRIPTION
@@ -83,7 +83,7 @@ else
     memoryMapFlag = 0;
 end
 
-if isfield(fData,'X_SBP_Mask')
+if isfield(fData,'X_SBP_Masked')
      memoryMapFlag = 0;
 end
 
@@ -92,11 +92,11 @@ end
 if memoryMapFlag
     % create binary file
     wc_dir=get_wc_dir(fData.ALLfilename{1});
-    file_X_SBP_Mask = fullfile(wc_dir,'X_SBP_Mask.dat');
+    file_X_SBP_Mask = fullfile(wc_dir,'X_SBP_Masked.dat');
     fileID_X_SBP_Mask = fopen(file_X_SBP_Mask,'w+');
 else
     % initialize numerical arrays
-    fData.X_SBP_Mask.Data.val      = zeros(nSamples,nBeams,nPings,'int8');
+    fData.X_SBP_Masked.Data.val      = zeros(nSamples,nBeams,nPings,'int8');
 end
 
 
@@ -225,15 +225,15 @@ for iB = 1:nBlocks
     
     % MULTIPLYING ALL MASKS
     X_SBP_Mask = bsxfun(@times,X_1BP_Mask,(X_SBP_CloseRangeMask.*X_SBP_BottomRangeMask.*X_SBP_PolygonMask));
-
-    
+    amp=single(fData.WC_SBP_SampleAmplitudes.Data.val(:,:,blockPings))./2;
+    amp(X_SBP_Mask==0)=-128/2;
     % saving
     if memoryMapFlag
         % write into binary files:
-        fwrite(fileID_X_SBP_Mask,X_SBP_Mask,'int8');
+        fwrite(fileID_X_SBP_Mask,amp,'int8');
     else
         % save in data
-        fData.X_SBP_Mask.Data.val(:,:,blockPings) = X_SBP_Mask;
+        fData.X_SBP_Masked.Data.val(:,:,blockPings) = amp;
     end
     
 end
@@ -247,6 +247,6 @@ if memoryMapFlag
     fclose(fileID_X_SBP_Mask);
 
     % re-open files as memmapfile
-    fData.X_SBP_Mask = memmapfile(file_X_SBP_Mask, 'Format',{'int8' [nSamples nBeams nPings] 'val'},'repeat',1,'writable',true);
+    fData.X_SBP_Masked = memmapfile(file_X_SBP_Mask, 'Format',{'int8' [nSamples nBeams nPings] 'val'},'repeat',1,'writable',true);
 
 end

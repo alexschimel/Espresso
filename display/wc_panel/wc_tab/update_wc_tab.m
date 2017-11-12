@@ -20,6 +20,12 @@ disp_config=getappdata(main_figure,'disp_config');
 
 ip=disp_config.Iping;
 across_dist=disp_config.AcrossDist;
+
+
+if disp_config.Fdata_idx>numel(fData_tot)
+    disp_config.Fdata_idx=numel(fData_tot);
+end
+
 fData=fData_tot{disp_config.Fdata_idx};
 
 if ip>numel(fData.WC_1P_PingCounter)
@@ -29,21 +35,15 @@ end
 
 str_disp=wc_tab_comp.data_disp.String{wc_tab_comp.data_disp.Value};
 
-if ~isfield(fData,'X_SBP_L1')||~isfield(fData,'X_SBP_Mask')
+if ~isfield(fData,'X_SBP_Masked')
     str_disp='Original';
 end
 
 switch str_disp
     case 'Original'
-        amp = double(fData.WC_SBP_SampleAmplitudes.Data.val(:,:,ip))./2;
-    case 'Masked Original'
-        amp = double(fData.WC_SBP_SampleAmplitudes.Data.val(:,:,ip))./2;
-        amp(fData.X_SBP_Mask.Data.val(:,:,ip)==0)=nan;
-    case 'Without Sidelobes'
-        amp = double(fData.X_SBP_L1.Data.val(:,:,ip));
-    case 'Masked without Sidelobes'
-        amp = double(fData.X_SBP_L1.Data.val(:,:,ip));
-        amp(fData.X_SBP_Mask.Data.val(:,:,ip)==0)=nan;
+        amp = single(fData.WC_SBP_SampleAmplitudes.Data.val(:,:,ip))./2;
+    case 'Processed'
+        amp=single(fData.X_SBP_Masked.Data.val(:,:,ip));
 end
 
 amp(amp==-64)=nan;

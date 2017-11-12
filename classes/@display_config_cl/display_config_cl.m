@@ -19,9 +19,9 @@ classdef display_config_cl <handle
             p = inputParser;
             addParameter(p,'Var_disp','wc_int',@(x) ismember(x,{'wc_int' 'bs' 'bathy'}));
             addParameter(p,'Cmap','ek60',@(x) ismember(x,{'jet' 'parula' 'ek60' 'gray'}));
-            addParameter(p,'Cax_wc_int',[-50 -10],@isnumeric);
+            addParameter(p,'Cax_wc_int',[-35 -15],@isnumeric);
             addParameter(p,'Cax_wc',[-50 -10],@isnumeric);
-            addParameter(p,'Cax_bs',[-50 -10],@isnumeric);
+            addParameter(p,'Cax_bs',[-40 -15],@isnumeric);
             addParameter(p,'Cax_bathy',[-50 -10],@isnumeric);
             addParameter(p,'MET_tmproj','',@ischar);
             

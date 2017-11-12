@@ -184,31 +184,19 @@ switch method
                 pmax = min(nPings,pp+pingBeamWindowSize(1));
                 bmin = max(1,bb-pingBeamWindowSize(2));
                 bmax = min(nBeams,bb+pingBeamWindowSize(2));
-                % index of BT in the subset
-                pid = find(pp==pmin:pmax);
-                bid = find(bb==bmin:bmax);
-                % get easting, northing and height
-                subEasting = bE(bmin:bmax,pmin:pmax);
-                subNorthing = bN(bmin:bmax,pmin:pmax);
-                subHeight = bH(bmin:bmax,pmin:pmax);
-                % remove the BT itself from the subset
-                subEasting(bid,pid) = NaN;
-                subNorthing(bid,pid) = NaN;
-                subHeight(bid,pid) = NaN;
-                % compute horizontal distance in m
-                subHzDist = sqrt( (bE(bb,pp)-subEasting).^2 + (bN(bb,pp)-subNorthing).^2 );
-                % keep only subset within desired horizontal distance
-                subEasting(subHzDist>maxHorizDist) = NaN;
-                subNorthing(subHzDist>maxHorizDist) = NaN;
-                subHeight(subHzDist>maxHorizDist) = NaN;
+                
+
+                subHzDist = sqrt( (bE(bb,pp)-bE(bmin:bmax,pmin:pmax)).^2 + (bN(bb,pp)-bN(bmin:bmax,pmin:pmax)).^2 );
+
                 subHzDist(subHzDist>maxHorizDist) = NaN;
+                
                 % if there are no subset left, flag that bottom anyway
                 if all(isnan(subHzDist(:)))
                     b1(bb,pp) = NaN;
                     continue
                 end
                 % compute vertical distance in m
-                subVertDist = subHeight-bH(bb,pp);
+                subVertDist = bH(bmin:bmax,pmin:pmax)-bH(bb,pp);
                 % now switch on the flagging variable
                 switch flagParams.variable
                     case 'vert'
@@ -225,7 +213,7 @@ switch method
                         error('flagParams.variable not recognized')
                 end
                 % finally, apply flagging decision
-                if f(abs(v)) > flagParams.threshold
+                if f(abs(v) > flagParams.threshold)
                     b1(bb,pp) = NaN;
                 end
             end

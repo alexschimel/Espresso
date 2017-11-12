@@ -14,7 +14,7 @@ end
 
 %pos = getpixelposition(wc_tab_comp.wc_tab);
 wc_tab_comp.data_disp=uicontrol(wc_tab_comp.wc_tab,'style','popup','Units','pixels','position',[20 20 120 20],...
-    'String',{'Original' 'Masked Original' 'Without Sidelobes' 'Masked without Sidelobes'},'Value',3,'Callback',{@change_wc_disp_cback,main_figure});
+    'String',{'Original' 'Processed'},'Value',2,'Callback',{@change_wc_disp_cback,main_figure});
 
 wc_tab_comp.wc_axes=axes(wc_tab_comp.wc_tab,...
     'Units','normalized','outerposition',[0 0 1 1],'nextplot','add','YDir','normal');
@@ -33,7 +33,7 @@ set(wc_tab_comp.wc_gh,'facealpha','flat','LineStyle','none','AlphaData',[]);
 wc_tab_comp.ac_gh=plot(wc_tab_comp.wc_axes,nan,nan,'--k','Tag','ac','linewidth',2);
 wc_tab_comp.bot_gh=plot(wc_tab_comp.wc_axes,nan,nan,'.k','Tag','ac','markersize',4);
 
-axis(wc_tab_comp.wc_axes,'equal');
+%axis(wc_tab_comp.wc_axes,'equal');
 
 setappdata(main_figure,'wc_tab',wc_tab_comp);
 fData=getappdata(main_figure,'fData');

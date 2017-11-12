@@ -41,12 +41,13 @@ switch current_figure.SelectionType
         
         %z=E(ip)*pt(1)+ N(ip)*pt(2);
         heading=fData.X_1P_pingHeading(ip)/180*pi;
+        heading=-heading+pi/2;
         z=cross([cos(heading) sin(heading) 0], [pt(1)-E(ip) pt(2)-N(ip) 0]);
-        z=z(3);
+        z=-z(3);
         
         disp_config=getappdata(main_figure,'disp_config');
         
-        disp_config.AcrossDist=-sign(z)*across_dist;
+        disp_config.AcrossDist=sign(z)*across_dist;
         disp_config.Iping=ip;
         disp_config.Fdata_idx=find(idx_fData);
         

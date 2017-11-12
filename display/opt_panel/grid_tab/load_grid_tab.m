@@ -2,7 +2,7 @@ function load_grid_tab(main_figure,parent_tab_group)
 
 switch parent_tab_group.Type
     case 'uitabgroup'
-        grid_tab_comp.grid_tab=uitab(parent_tab_group,'Title','Grid Proc.','Tag','grid_tab','BackGroundColor','w');
+        grid_tab_comp.grid_tab=uitab(parent_tab_group,'Title','Mosaic Proc.','Tag','grid_tab','BackGroundColor','w');
     case 'figure'
         grid_tab_comp.grid_tab=parent_tab_group;
 end
@@ -96,9 +96,13 @@ idx_grid=cell2mat(src.Data(evt.Indices(1),4))==[grids(:).ID];
         case 1  
             grids(idx_grid).name=evt.NewData;
         case 2
-            if ~isnan(evt.NewData)
+            if ~isnan(evt.NewData)&&evt.NewData>0
                 grids(idx_grid).res=evt.NewData;
+                grids(idx_grid)=get_default_res(grids(idx_grid),fData_tot);
+
                 grids(idx_grid)=compute_grid(grids(idx_grid),fData_tot);
+            else
+                src.Data{evt.Indices(1),evt.Indices(2)}=evt.PreviousData;
             end
     end
     setappdata(main_figure,'grids',grids);
@@ -124,7 +128,7 @@ else
     selected_idx=[];
 end
 %selected_idx'
-grid_tab_comp.selected_idx=selected_idx;
+grid_tab_comp.selected_idx=unique(selected_idx);
 setappdata(main_figure,'grid_tab',grid_tab_comp);
 
 end

@@ -34,7 +34,7 @@
 
 %% Function
 function closefcn_clean_espresso(main_figure,~)
-fData=getappdata(main_figure,'fData');
+%fData=getappdata(main_figure,'fData');
 ext_figs=getappdata(main_figure,'ext_figs');
 delete(ext_figs);
 delete(main_figure);

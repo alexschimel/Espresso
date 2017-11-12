@@ -110,7 +110,6 @@ file_tab_comp.processedd=[];
 
 setappdata(main_figure,'file_tab',file_tab_comp);
 
-
 update_file_tab(main_figure);
 
 end
@@ -149,7 +148,7 @@ for nF = 1:numel(mat_fdata_files)
     %% Start Display
     fprintf('Loading file "%s" - started on: %s\n',files_to_load{nF}, datestr(now));
     
-    if ismember(mat_fdata_files{nF},loaded_files)
+    if ismember(files_to_load{nF},loaded_files)
         fprintf('%s already loaded\n',files_to_load{nF});
         continue;
     end
@@ -160,6 +159,7 @@ for nF = 1:numel(mat_fdata_files)
     else
         fData_temp=load(mat_fdata_files{nF});
     end
+    
     disp('CFF_process_ping_v2...');
     fData_temp = CFF_process_ping_v2(fData_temp,'WC');
     
@@ -176,16 +176,11 @@ for nF = 1:numel(mat_fdata_files)
     fData_temp.ID=str2double(datestr(now,'yyyymmddHHMMSSFFF'));
     
     wc_dir=get_wc_dir(fData_temp.ALLfilename{1});
-    file_X_SBP_Mask = fullfile(wc_dir,'X_SBP_Mask.dat');
-    [nSamples,nBeams,nPings]=size(fData_temp.WC_SBP_SampleAmplitudes.Data.val);
-    if exist(file_X_SBP_Mask,'file')==2
-        fData_temp.X_SBP_Mask = memmapfile(file_X_SBP_Mask, 'Format',{'int8' [nSamples nBeams nPings] 'val'},'repeat',1,'writable',true);
-    end
-    
-    file_X_SBP_L1 = fullfile(wc_dir,'X_SBP_L1.dat');
+
+    file_X_SBP_L1 = fullfile(wc_dir,'X_SBP_Masked.dat');
     if exist(file_X_SBP_L1,'file')==2
         [nSamples,nBeams,nPings]=size(fData_temp.WC_SBP_SampleAmplitudes.Data.val);
-        fData_temp.X_SBP_L1 = memmapfile(file_X_SBP_L1, 'Format',{'int8' [nSamples nBeams nPings] 'val'},'repeat',1,'writable',true);
+        fData_temp.X_SBP_Masked = memmapfile(file_X_SBP_L1, 'Format',{'int8' [nSamples nBeams nPings] 'val'},'repeat',1,'writable',true);
     end
     
     pause(1e-3);
@@ -211,6 +206,7 @@ files=file_tab_comp.files;
 files_to_process=files(selected_idx);
 
 processed_selected=processed(selected_idx);
+
 if re==0
     files_to_process=files_to_process(~processed_selected);
 end
@@ -233,23 +229,44 @@ end
 
 tic
 for nF = 1:numel(mat_fdata_files)
-    fprintf('Converting file "%s" - started on: %s\n', all_files_to_process{nF}, datestr(now));
+    fprintf('Converting file "%s" - started on: %s\n', files_to_process{nF}, datestr(now));
     
-    ALLdata_all = CFF_read_all(all_files_to_process{nF},'datagrams',[73 80 107]);
-    
-    if exist(wcd_files_to_process{nF},'file')>0&&~isfield(ALLdata_all,'EM_WaterColumn')
-        ALLdata_wcd = CFF_read_all(wcd_files_to_process{nF},'datagrams',107);
+    dg_wc=[73 80 107];
+    if exist(wcd_files_to_process{nF},'file')>0
+        ALLdata_wcd = CFF_read_all(wcd_files_to_process{nF},'datagrams',dg_wc);
     else
         ALLdata_wcd=[];
     end
     
+    dg_all=[];
+    if ~isfield(ALLdata_wcd,'PositionCounter')
+        dg_all=union(dg_all,80);
+    end
+    
+    if ~isfield(ALLdata_wcd,'EM_InstallationStart')
+        dg_all=union(dg_all,103);
+    end
+    
+    if ~isfield(ALLdata_wcd,'EM_WaterColumn')
+        dg_all=union(dg_all,107);
+    end
+    
+    if exist(all_files_to_process{nF},'file')>0&&~isempty(dg_all)
+        ALLdata_all = CFF_read_all(all_files_to_process{nF},'datagrams',dg_all);
+    else
+        ALLdata_all=[];
+    end
+
+    
     if isempty(ALLdata_wcd)
         ALLdata=ALLdata_all;
+    elseif isempty(ALLdata_all)
+        ALLdata=ALLdata_wcd;
     else
         ALLdata={ALLdata_all ALLdata_wcd};
     end
     
-    if isempty(ALLdata_wcd)&&~isfield(ALLdata_all,'EM_WaterColumn')
+    if ~isfield(ALLdata_wcd,'EM_WaterColumn')&&~isfield(ALLdata_all,'EM_WaterColumn')
         fprintf('No WC data for file %s\n',all_files_to_process{nF});
     end
     
@@ -265,6 +282,7 @@ for nF = 1:numel(mat_fdata_files)
     else
         fData=load(mat_fdata_files{nF});
     end
+    
     [fData,up]=CFF_convert_struct_to_fabc_v2(ALLdata,fData);
     
     if up>0
@@ -318,7 +336,7 @@ else
     selected_idx=[];
 end
 %selected_idx'
-file_tab_comp.selected_idx=selected_idx;
+file_tab_comp.selected_idx=unique(selected_idx);
 setappdata(main_figure,'file_tab',file_tab_comp);
 
 end

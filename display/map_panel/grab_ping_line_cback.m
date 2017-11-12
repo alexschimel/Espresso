@@ -35,14 +35,14 @@ end
         E=fData.X_1P_pingE;
         N=fData.X_1P_pingN;
         
-        
-
         [across_dist,ip]=min(sqrt((E-pt(1,1)).^2+(N-pt(1,2)).^2));
         heading=fData.X_1P_pingHeading(ip)/180*pi;
 %       z=E(ip)*pt(1,1)+ N(ip)*pt(1,2);
+        heading=-heading+pi/2;
+        %heading/pi*180
         z=cross([cos(heading) sin(heading) 0], [pt(1,1)-E(ip) pt(1,2)-N(ip) 0]);
-        z=z(3);
-        across_dist=-sign(z)*across_dist;
+        z=-z(3);
+        across_dist=sign(z)*across_dist;
         
         disp_config.Iping=ip;
         disp_config.AcrossDist=across_dist;

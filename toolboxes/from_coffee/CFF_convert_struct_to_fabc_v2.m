@@ -16,6 +16,7 @@ addOptional(p,'FABCdata',{},@(x) isstruct(x) || iscell(x));
 addOptional(p,'dr_sub',1,@(x) isnumeric(x)&&x>0);
 addOptional(p,'db_sub',1,@(x) isnumeric(x)&&x>0);
 
+
 % parse
 parse(p,varStruct,varargin{:})
 
@@ -473,7 +474,7 @@ for iF = 1:nFiles
         if ~isfield(FABCdata,'WC_1P_Date')||FABCdata.dr_sub~=dr_sub||FABCdata.db_sub~=db_sub
             up=1;
             % get indices of first datagram for each ping
-            [pingCounters,iFirstDatagram] = unique(EM_WaterColumn.PingCounter);
+            [pingCounters,iFirstDatagram] = unique(EM_WaterColumn.PingCounter,'stable');
             
             % get data dimensions
             nPings              = length(pingCounters); % total number of pings in file
@@ -576,6 +577,7 @@ for iF = 1:nFiles
                             % number of samples we're going to record:
                             Ns_sub = ceil(Ns/dr_sub);
                             % get the data:
+                            
                             fseek(fid_all,EM_WaterColumn.SampleAmplitudePosition{iDatagrams(iD)}(idx_beams(iB)),'bof');
                             SB_temp(1:Ns_sub,iBeams(iB))=fread(fid_all,Ns_sub,'int8',dr_sub-1);
                             %SB_temp(1:Ns_sub,iBeams(iB)) = EM_WaterColumn.SampleAmplitude{iDatagrams(iD)}{idx_beams(iB)}(1:dr_sub:Ns_sub*dr_sub)';

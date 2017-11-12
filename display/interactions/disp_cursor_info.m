@@ -13,6 +13,9 @@ y=cp(1,2);
 
 disp_config=getappdata(main_figure,'disp_config');
 
+if disp_config.Fdata_idx>numel(fData_tot)
+    disp_config.Fdata_idx=numel(fData_tot);
+end
 fData=fData_tot{disp_config.Fdata_idx};
 
 

@@ -65,7 +65,7 @@ idx_rem=fdata_tab_comp.selected_idx;
 
 for i=idx_rem(:)'
     id=fdata{i}.ID;
-%     times2 = datestr(fData.X_1P_pingSDN,'HH:MM:SS.FFF');
+    %     times2 = datestr(fData.X_1P_pingSDN,'HH:MM:SS.FFF');
     tag_id=num2str(id,'%.0f');
     tag_id_wc=num2str(id,'wc%.0f');
     
@@ -79,9 +79,11 @@ setappdata(main_figure,'fData',fdata);
 if isempty(fdata)
     disp_config=getappdata(main_figure,'disp_config');
     disp_config.MET_tmproj='';
-   
 end
-disp_config.Fdata_idx=1;
+
+disp_config.Fdata_idx=numel(fdata);
+disp_config.Iping=1;
+disp_config.AcrossDist=0;
 
 update_fdata_tab(main_figure);
 update_file_tab(main_figure);
@@ -90,7 +92,15 @@ update_wc_tab(main_figure);
 
 end
 
-function update_map_cback(src,~,main_figure)
+function update_map_cback(src,evt,main_figure)
+
+disp_config=getappdata(main_figure,'disp_config');
+if evt.Indices(2)==3
+    disp_config.Fdata_idx=evt.Indices(1);
+    disp_config.Iping=1;
+    disp_config.AcrossDist=0;
+    update_wc_tab(main_figure);
+end
 update_map_tab(main_figure,0,1);
 end
 
@@ -104,8 +114,21 @@ else
     selected_idx=[];
 end
 
-fdata_tab_comp.selected_idx=selected_idx;
+fdata_tab_comp.selected_idx=unique(selected_idx);
 setappdata(main_figure,'fdata_tab',fdata_tab_comp);
 update_map_tab(main_figure,1,0);
+disp_config=getappdata(main_figure,'disp_config');
+
+if ~isempty(selected_idx)
+    disp_config.Fdata_idx=selected_idx(end);
+else
+    disp_config.Fdata_idx=1;
+end
+
+disp_config.Iping=1;
+disp_config.AcrossDist=0;
+update_wc_tab(main_figure);
+
+
 
 end

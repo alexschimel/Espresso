@@ -23,8 +23,8 @@ dx=diff(x_lim);
 dy=diff(y_lim);
 
 if callbackdata.VerticalScrollCount<0
-    x_lim_new=[pos(1) pos(1)]+[-3*dx/8 3*dx/8];
-    y_lim_new=[pos(2) pos(2)]+[-3*dy/8 3*dy/8];   
+    x_lim_new=[pos(1) pos(1)]+[-2*dx/8 2*dx/8];
+    y_lim_new=[pos(2) pos(2)]+[-2*dy/8 2*dy/8];   
 else  
     x_lim_new=[pos(1) pos(1)]+[-5*dx/8 5*dx/8];
     y_lim_new=[pos(2) pos(2)]+[-5*dy/8 5*dy/8]; 

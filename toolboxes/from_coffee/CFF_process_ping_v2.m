@@ -66,38 +66,36 @@ function [fData] = CFF_process_ping_v2(fData,varargin)
 if nargin>1
     % datagramSource was specified, get ping time 
     datagramSource = varargin{1};
-    expression = ['pingTSMIM = fData.' datagramSource '_1P_TimeSinceMidnightInMilliseconds;'];
-    eval(expression);
-    expression = ['date = num2str(fData.' datagramSource '_1P_Date);'];
-    eval(expression);
-    expression = ['pingCounter  = fData.' datagramSource '_1P_PingCounter;'];
-    eval(expression);
+    pingTSMIM = fData.([datagramSource '_1P_TimeSinceMidnightInMilliseconds']);
+    date = fData.([datagramSource '_1P_Date']);
+    pingCounter  = fData.([datagramSource '_1P_PingCounter']);
+
 else
     % datagramSource was not specified
     fDataFields = fields(fData);
     if sum(strcmp(fDataFields, 'De_1P_Date'))
         datagramSource = 'De';
         pingTSMIM  = fData.De_1P_TimeSinceMidnightInMilliseconds;
-        date         = num2str(fData.De_1P_Date);
+        date         = fData.De_1P_Date;
         pingCounter  = fData.De_1P_PingCounter;
         fprintf(['datagramSource not specified. Using ''' datagramSource '''...\n']);
     elseif sum(strcmp(fDataFields, 'X8_1P_Date'))
         datagramSource = 'X8';
         pingTSMIM  = fData.X8_1P_TimeSinceMidnightInMilliseconds;
-        date         = num2str(fData.X8_1P_Date);
+        date         = fData.X8_1P_Date;
         pingCounter  = fData.X8_1P_PingCounter;
         fprintf(['datagramSource not specified. Using ''' datagramSource '''...\n']);
     elseif sum(strcmp(fDataFields, 'WC_1P_Date'))
         datagramSource = 'WC';
         pingTSMIM  = fData.WC_1P_TimeSinceMidnightInMilliseconds;
-        date         = num2str(fData.WC_1P_Date);
+        date         = fData.WC_1P_Date;
         pingCounter  = fData.WC_1P_PingCounter;
         fprintf(['datagramSource not specified. Using ''' datagramSource '''...\n']);
     else
         error('can''t find a suitable datagramSource')
     end
 end
-
+pingDate = datenum(cellfun(@num2str,num2cell(date),'un',0),'yyyymmdd');
 % varargin{2}: ellipsoid for CFF_ll2tm conversion
 if nargin>2
     ellips=varargin{2};
@@ -136,8 +134,8 @@ posLatitude  = fData.Po_1D_Latitude./20000000; % now in decimal degrees
 posLongitude = fData.Po_1D_Longitude./10000000; % now in decimal degrees
 posHeading   = fData.Po_1D_HeadingOfVessel./100; % now in degrees relative to north
 posTSMIM     = fData.Po_1D_TimeSinceMidnightInMilliseconds; % in ms
-
-
+posDate = datenum(cellfun(@num2str,num2cell(fData.Po_1D_Date),'un',0),'yyyymmdd');
+posSDN     = posDate(:)'+ posTSMIM/(24*60*60*1000);
 
 
 
@@ -145,19 +143,16 @@ posTSMIM     = fData.Po_1D_TimeSinceMidnightInMilliseconds; % in ms
 % create ping time vectors in serial date number (SDN, Matlab, the whole
 % and fractional number of days from January 0, 0000) and Time Since
 % Midnight In Milliseconds (TSMIM, Kongsberg).
-pingYear    = str2num(date(:,1:4));
-pingMonth   = str2num(date(:,5:6));
-pingDay     = str2num(date(:,7:8));
-pingSecond  = pingTSMIM./1000;
-pingSDN     = datenum(pingYear, pingMonth, pingDay, 0, 0, pingSecond) + navLat./(1000.*60.*60.*24);
-pingTSMIM   = pingTSMIM + navLat;
+
+pingSDN     = pingDate(:)'+ pingTSMIM/(24*60*60*1000) + navLat./(1000.*60.*60.*24);
 
 if isfield(fData,'He_1D_Height')
     heiHeight    = fData.He_1D_Height./100; % now m
-    heiTSMIM     = fData.He_1D_TimeSinceMidnightInMilliseconds; % in ms
+    heiDate = datenum(cellfun(@num2str,num2cell(fData.He_1D_Date),'un',0),'yyyymmdd');
+    heiSDN     = heiDate(:)'+fData.He_1D_TimeSinceMidnightInMilliseconds/(24*60*60*1000); 
 else
     heiHeight=zeros(size(pingTSMIM));
-    heiTSMIM =pingTSMIM;
+    heiSDN =pingSDN;
 end
 
 %% 4. PROCESS NAVIGATION AND HEADING:
@@ -195,20 +190,20 @@ pingHeading  = nan(size(pingTSMIM));
 
 % interpolate Easting, Northing, Grid Convergence and Heading at ping times
 for jj = 1:length(pingTSMIM)
-    A = posTSMIM-pingTSMIM(jj);
+    A = posSDN-pingSDN(jj);
     iA = find (A == 0);
     if A > 0
         % the ping time is older than any navigation time, extrapolate from the first items in navigation array.
-        pingE(jj) = posE(2) + (posE(2)-posE(1)).*(pingTSMIM(jj)-posTSMIM(2))./(posTSMIM(2)-posTSMIM(1));
-        pingN(jj) = posN(2) + (posN(2)-posN(1)).*(pingTSMIM(jj)-posTSMIM(2))./(posTSMIM(2)-posTSMIM(1));
-        pingGridConv(jj) = posGridConv(2) + (posGridConv(2)-posGridConv(1)).*(pingTSMIM(jj)-posTSMIM(2))./(posTSMIM(2)-posTSMIM(1));
-        pingHeading(jj) = posHeading(2) + (posHeading(2)-posHeading(1)).*(pingTSMIM(jj)-posTSMIM(2))./(posTSMIM(2)-posTSMIM(1));
+        pingE(jj) = posE(2) + (posE(2)-posE(1)).*(pingSDN(jj)-posSDN(2))./(posSDN(2)-posSDN(1));
+        pingN(jj) = posN(2) + (posN(2)-posN(1)).*(pingSDN(jj)-posSDN(2))./(posSDN(2)-posSDN(1));
+        pingGridConv(jj) = posGridConv(2) + (posGridConv(2)-posGridConv(1)).*(pingSDN(jj)-posSDN(2))./(posSDN(2)-posSDN(1));
+        pingHeading(jj) = posHeading(2) + (posHeading(2)-posHeading(1)).*(pingSDN(jj)-posSDN(2))./(posSDN(2)-posSDN(1));
     elseif A < 0
         % the ping time is more recent than any navigation time, extrapolate from the last items in navigation array.
-        pingE(jj) = posE(end) + (posE(end)-posE(end-1)).*(pingTSMIM(jj)-posTSMIM(end))./(posTSMIM(end)-posTSMIM(end-1));
-        pingN(jj) = posN(end) + (posN(end)-posN(end-1)).*(pingTSMIM(jj)-posTSMIM(end))./(posTSMIM(end)-posTSMIM(end-1));
-        pingGridConv(jj) = posGridConv(end) + (posGridConv(end)-posGridConv(end-1)).*(pingTSMIM(jj)-posTSMIM(end))./(posTSMIM(end)-posTSMIM(end-1));
-        pingHeading(jj) = posHeading(end) + (posHeading(end)-posHeading(end-1)).*(pingTSMIM(jj)-posTSMIM(end))./(posTSMIM(end)-posTSMIM(end-1));
+        pingE(jj) = posE(end) + (posE(end)-posE(end-1)).*(pingSDN(jj)-posSDN(end))./(posSDN(end)-posSDN(end-1));
+        pingN(jj) = posN(end) + (posN(end)-posN(end-1)).*(pingSDN(jj)-posSDN(end))./(posSDN(end)-posSDN(end-1));
+        pingGridConv(jj) = posGridConv(end) + (posGridConv(end)-posGridConv(end-1)).*(pingSDN(jj)-posSDN(end))./(posSDN(end)-posSDN(end-1));
+        pingHeading(jj) = posHeading(end) + (posHeading(end)-posHeading(end-1)).*(pingSDN(jj)-posSDN(end))./(posSDN(end)-posSDN(end-1));
     elseif ~isempty(iA)
         % the ping time corresponds to an existing navigation time, get easting and northing from it.
         pingE(jj) = posE(iA);
@@ -224,10 +219,10 @@ for jj = 1:length(pingTSMIM)
         [~,iMin] = min(A(iPosA));
         iA(2) = iPosA(iMin); % index of navigation time just more recent ping time
         % now extrapolate easting, northing, grid convergence and heading
-        pingE(jj) = posE(iA(2)) + (posE(iA(2))-posE(iA(1))).*(pingTSMIM(jj)-posTSMIM(iA(2)))./(posTSMIM(iA(2))-posTSMIM(iA(1)));
-        pingN(jj) = posN(iA(2)) + (posN(iA(2))-posN(iA(1))).*(pingTSMIM(jj)-posTSMIM(iA(2)))./(posTSMIM(iA(2))-posTSMIM(iA(1)));
-        pingGridConv(jj) = posGridConv(iA(2)) + (posGridConv(iA(2))-posGridConv(iA(1))).*(pingTSMIM(jj)-posTSMIM(iA(2)))./(posTSMIM(iA(2))-posTSMIM(iA(1)));
-        pingHeading(jj) = posHeading(iA(2)) + (posHeading(iA(2))-posHeading(iA(1))).*(pingTSMIM(jj)-posTSMIM(iA(2)))./(posTSMIM(iA(2))-posTSMIM(iA(1)));
+        pingE(jj) = posE(iA(2)) + (posE(iA(2))-posE(iA(1))).*(pingSDN(jj)-posSDN(iA(2)))./(posSDN(iA(2))-posSDN(iA(1)));
+        pingN(jj) = posN(iA(2)) + (posN(iA(2))-posN(iA(1))).*(pingSDN(jj)-posSDN(iA(2)))./(posSDN(iA(2))-posSDN(iA(1)));
+        pingGridConv(jj) = posGridConv(iA(2)) + (posGridConv(iA(2))-posGridConv(iA(1))).*(pingSDN(jj)-posSDN(iA(2)))./(posSDN(iA(2))-posSDN(iA(1)));
+        pingHeading(jj) = posHeading(iA(2)) + (posHeading(iA(2))-posHeading(iA(1))).*(pingSDN(jj)-posSDN(iA(2)))./(posSDN(iA(2))-posSDN(iA(1)));
     end
 end
 
@@ -241,18 +236,18 @@ pingHeading = mod(pingHeading,360);
 % interpolate them at the same time to match ping time.
 
 % initialize new vectors
-pingH = nan(size(pingTSMIM));
+pingH = nan(size(pingSDN));
 
 % interpolate Height at ping times
-for jj = 1:length(pingTSMIM)
-    A = heiTSMIM-pingTSMIM(jj);
+for jj = 1:length(pingSDN)
+    A = heiSDN-pingSDN(jj);
     iA = find (A == 0,1);
     if A > 0
         % the ping time is older than any height time, extrapolate from the first items in height array.
-        pingH(jj) = heiHeight(2) + (heiHeight(2)-heiHeight(1)).*(pingTSMIM(jj)-heiTSMIM(2))./(heiTSMIM(2)-heiTSMIM(1));
+        pingH(jj) = heiHeight(2) + (heiHeight(2)-heiHeight(1)).*(pingSDN(jj)-heiSDN(2))./(heiSDN(2)-heiSDN(1));
     elseif A < 0
         % the ping time is more recent than any height time, extrapolate from the last items in height array.
-        pingH(jj) = heiHeight(end) + (heiHeight(end)-heiHeight(end-1)).*(pingTSMIM(jj)-heiTSMIM(end))./(heiTSMIM(end)-heiTSMIM(end-1));
+        pingH(jj) = heiHeight(end) + (heiHeight(end)-heiHeight(end-1)).*(pingSDN(jj)-heiSDN(end))./(heiSDN(end)-heiSDN(end-1));
     elseif ~isempty(iA)
         % the ping time corresponds to an existing height time, get height
         % from it
@@ -266,7 +261,7 @@ for jj = 1:length(pingTSMIM)
         [~,iMin] = min(A(iPosA));
         iA(2) = iPosA(iMin); % index of height time just more recent ping time
         % now extrapolate height
-        pingH(jj) = heiHeight(iA(2)) + (heiHeight(iA(2))-heiHeight(iA(1))).*(pingTSMIM(jj)-heiTSMIM(iA(2)))./(heiTSMIM(iA(2))-heiTSMIM(iA(1)));
+        pingH(jj) = heiHeight(iA(2)) + (heiHeight(iA(2))-heiHeight(iA(1))).*(pingSDN(jj)-heiSDN(iA(2)))./(heiSDN(iA(2))-heiSDN(iA(1)));
     end
 end
 
