@@ -47,11 +47,13 @@ for i=1:size(data,1)
         case 'de'
             data{i,end-1}=false;
         case 'inv'
-            data{i,end-1}=~data{i,1};
+            data{i,end-1}=~data{i,end-1};
     end
 end
-set(fdata_tab_comp.table,'Data',data);
-update_map_tab(main_figure,0,0);
+fdata_tab_comp.table.Data=data;
+fdata_tab_comp.selected_idx=find([data{:,end-1}]);
+setappdata(main_figure,'fdata_tab',fdata_tab_comp);
+update_map_tab(main_figure,0,0,[]);
 end
 
 
@@ -61,7 +63,7 @@ map_tab_comp=getappdata(main_figure,'Map_tab');
 ax=map_tab_comp.map_axes;
 
 fdata=getappdata(main_figure,'fData');
-idx_rem=fdata_tab_comp.selected_idx;
+idx_rem=find([fdata_tab_comp.table.Data{:,end-1}]);
 
 for i=idx_rem(:)'
     id=fdata{i}.ID;
@@ -87,21 +89,21 @@ disp_config.AcrossDist=0;
 
 update_fdata_tab(main_figure);
 update_file_tab(main_figure);
-update_map_tab(main_figure,0,1);
+update_map_tab(main_figure,0,1,[]);
 update_wc_tab(main_figure);
 
 end
 
 function update_map_cback(src,evt,main_figure)
-
+fdata_tab_comp = getappdata(main_figure,'fdata_tab');
 disp_config=getappdata(main_figure,'disp_config');
 if evt.Indices(2)==3
     disp_config.Fdata_idx=evt.Indices(1);
     disp_config.Iping=1;
-    disp_config.AcrossDist=0;
+    disp_config.AcrossDist=0;   
     update_wc_tab(main_figure);
 end
-update_map_tab(main_figure,0,1);
+update_map_tab(main_figure,0,1,evt.Indices(1));
 end
 
 
@@ -116,7 +118,6 @@ end
 
 fdata_tab_comp.selected_idx=unique(selected_idx);
 setappdata(main_figure,'fdata_tab',fdata_tab_comp);
-update_map_tab(main_figure,1,0);
 disp_config=getappdata(main_figure,'disp_config');
 
 if ~isempty(selected_idx)

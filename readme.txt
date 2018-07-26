@@ -1,53 +1,47 @@
-MATLAB Compiler
+Espresso Executable
 
 1. Prerequisites for Deployment 
 
-. Verify the MATLAB Runtime is installed and ensure you    
-  have installed version 9.0.1 (R2016a).   
+Verify that version 9.3 (R2017b) of the MATLAB Runtime is installed.   
 
-. If the MATLAB Runtime is not installed, do the following:
-  (1) enter
+If the MATLAB Runtime is not installed, you can run the MATLAB Runtime installer.
+To find its location, enter
   
-      >>mcrinstaller
+    >>mcrinstaller
       
-      at MATLAB prompt. The MCRINSTALLER command displays the 
-      location of the MATLAB Runtime installer.
+at the MATLAB prompt.
 
-  (2) run the MATLAB Runtime installer.
+Alternatively, download and install the Windows version of the MATLAB Runtime for R2017b 
+from the following link on the MathWorks website:
 
-Or download the Windows 64-bit version of the MATLAB Runtime for R2016a 
-from the MathWorks Web site by navigating to
-
-   http://www.mathworks.com/products/compiler/mcr/index.html
-   
+    http://www.mathworks.com/products/compiler/mcr/index.html
    
 For more information about the MATLAB Runtime and the MATLAB Runtime installer, see 
 Package and Distribute in the MATLAB Compiler documentation  
 in the MathWorks Documentation Center.    
 
-
-NOTE: You will need administrator rights to run MCRInstaller. 
+NOTE: You will need administrator rights to run the MATLAB Runtime installer. 
 
 
 2. Files to Deploy and Package
 
-Files to package for Standalone 
+Files to Package for Standalone 
 ================================
 -Espresso.exe
 -MCRInstaller.exe 
-   -if end users are unable to download the MATLAB Runtime using the above  
-    link, include it when building your component by clicking 
-    the "Runtime downloaded from web" link in the Deployment Tool
+    Note: if end users are unable to download the MATLAB Runtime using the
+    instructions in the previous section, include it when building your 
+    component by clicking the "Runtime downloaded from web" link in the
+    Deployment Tool.
 -This readme file 
 
 3. Definitions
 
-For information on deployment terminology, go to 
-http://www.mathworks.com/help. Select MATLAB Compiler >   
-Getting Started > About Application Deployment > 
-Deployment Product Terms in the MathWorks Documentation 
+For information on deployment terminology, go to
+http://www.mathworks.com/help and select MATLAB Compiler >
+Getting Started > About Application Deployment >
+Deployment Product Terms in the MathWorks Documentation
 Center.
-
 
 
 

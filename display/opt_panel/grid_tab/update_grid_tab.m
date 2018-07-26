@@ -15,7 +15,7 @@ if nb_grids>=1
     grid_tab_comp.table_main.Data=new_entry;
     
 else
-    grid_tab_comp.table_main.Data={}
+    grid_tab_comp.table_main.Data={};
 end
 
 end

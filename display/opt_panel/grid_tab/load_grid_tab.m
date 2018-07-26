@@ -32,25 +32,76 @@ set(grid_tab_comp.grid_tab,'SizeChangedFcn',{@resize_table,grid_tab_comp.table_m
 
 
 uicontrol(grid_tab_comp.grid_tab,'Style','pushbutton','units','normalized',...
-    'pos',[0.1 0.01 0.25 0.08],...
+    'pos',[0.1 0.01 0.2 0.08],...
     'String','Create',...
     'callback',{@grid_tot_cback,main_figure});
 
 
 uicontrol(grid_tab_comp.grid_tab,'Style','pushbutton','units','normalized',...
-    'pos',[0.35 0.01 0.25 0.08],...
+    'pos',[0.3 0.01 0.2 0.08],...
     'String','Re-compute',...
     'callback',{@re_grid_cback,main_figure});
 
 uicontrol(grid_tab_comp.grid_tab,'Style','pushbutton','units','normalized',...
-    'pos',[0.6 0.01 0.25 0.08],...
+    'pos',[0.5 0.01 0.2 0.08],...
     'String','Delete',...
     'callback',{@delete_grid_cback,main_figure});
+
+uicontrol(grid_tab_comp.grid_tab,'Style','pushbutton','units','normalized',...
+    'pos',[0.7 0.01 0.2 0.08],...
+    'String','Export',...
+    'callback',{@export_grid_cback,main_figure});
 
 grid_tab_comp.selected_idx=[];
 setappdata(main_figure,'grid_tab',grid_tab_comp);
 
 end
+
+function export_grid_cback(src,~,main_figure)
+grids=getappdata(main_figure,'grids');
+map_tab_comp= getappdata(main_figure,'Map_tab');
+grid_tab_comp = getappdata(main_figure,'grid_tab');
+ax=map_tab_comp.map_axes;
+file_tab_comp=getappdata(main_figure,'file_tab');
+path_tmp=file_tab_comp.path_box.String;
+disp_config=getappdata(main_figure,'disp_config');
+
+zone=disp_config.get_zone();
+
+for i=grid_tab_comp.selected_idx(:)'
+        %tag_id_grid=num2str(grids(i).ID,'grid%.0f'); 
+        %tag_id_box=num2str(grids(i).ID,'box%.0f'); 
+        %grid_obj=findobj(ax,'Tag',tag_id_grid);
+       
+        
+        
+        [fileN, pathname] = uiputfile({'*.tif'},...
+            'Export to GeoTiff',...
+            fullfile(path_tmp,sprintf('%s_grid_%d.tif',grids(i).name,grids(i).res)));
+        if isequal(pathname,0)||isequal(fileN,0)
+            return;
+        end
+        
+        if zone>0
+            z=32600+zone;
+        else
+            z=32700-zone;
+        end
+% 
+%         
+%         [latlim,lonlim]=utm2ll(grids(i).E_lim,grids(i).N_lim,zone);
+%         lonlim(lonlim>180)=lonlim(lonlim>180)-360;
+%        
+R = makerefmat(grids(i).E_lim(1),grids(i).N_lim(1),grids(i).res,grids(i).res);  
+%R=[[grids(i).E_lim(1) grids(i).N_lim(1)];[grids(i).res grids(i).res];[size(grids(i).grid_level)]];
+%levels=grids(i).grid_level;
+%levels(isnan(levels))=-999;    
+geotiffwrite(fullfile(pathname,fileN),grids(i).grid_level,R,'CoordRefSysCode',sprintf('EPSG:%d',z));
+disp('Are we there yet? Yes we are..');
+end
+
+end
+
 
 function delete_grid_cback(src,~,main_figure)
 grids=getappdata(main_figure,'grids');
@@ -84,7 +135,7 @@ for i=idx_grid(:)'
 end
 setappdata(main_figure,'grids',grids);
 
-update_map_tab(main_figure,1,0);
+update_map_tab(main_figure,1,0,[]);
 
 end
 
@@ -107,7 +158,7 @@ idx_grid=cell2mat(src.Data(evt.Indices(1),4))==[grids(:).ID];
     end
     setappdata(main_figure,'grids',grids);
     
-    update_map_tab(main_figure,1,0);
+    update_map_tab(main_figure,1,0,[]);
 
 end
 

@@ -34,4 +34,4 @@ replace_interaction(main_figure,'interaction','WindowButtonDownFcn','id',1);
 
 update_grid_tab(main_figure);
 
-update_map_tab(main_figure,0,0);
+update_map_tab(main_figure,0,0,[]);

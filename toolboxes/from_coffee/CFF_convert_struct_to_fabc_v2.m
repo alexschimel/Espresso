@@ -601,6 +601,183 @@ for iF = 1:nFiles
             
             
         end
+    end
+        % EM_AmpPhase 
+    if isfield(varStructCurr,'EM_AmpPhase')
+        EM_AmpPhase=varStructCurr.EM_AmpPhase;
+        % only do if data of that type has not been recorded yet, aka:
+        if ~isfield(FABCdata,'WCAP_1P_Date')%||FABCdata.dr_sub~=dr_sub||FABCdata.db_sub~=db_sub
+            up=1;
+            % get indices of first datagram for each ping
+            [pingCounters,iFirstDatagram] = unique(EM_AmpPhase.PingCounter,'stable');
+            
+            % get data dimensions
+            nPings              = length(pingCounters); % total number of pings in file
+            maxNBeams           = max(EM_AmpPhase.TotalNumberOfReceiveBeams); % maximum number of beams for a ping in file
+            maxNTransmitSectors = max(EM_AmpPhase.NumberOfTransmitSectors); % maximum number of transmit sectors for a ping in file
+            maxNSamples         = max(cellfun(@(x) max(x),EM_AmpPhase.NumberOfSamples)); % max number of samples for a beam in file
+            %maxNSamples         = max(cellfun(@(x,y) max(x+y),EM_AmpPhase.NumberOfSamples+EM_AmpPhase.StartRangeSampleNumber)); % max number of samples for a beam in file
+           
+            % decimating beams and samples
+            maxNBeams_sub       =  ceil(maxNBeams/db_sub); % number of beams to extract
+            maxNSamples_sub     = ceil(maxNSamples/dr_sub); % number of samples to extract
+            
+            % read data per ping from first datagram of each ping
+            FABCdata.WCAP_1P_Date                            = EM_AmpPhase.Date(iFirstDatagram);
+            FABCdata.WCAP_1P_TimeSinceMidnightInMilliseconds = EM_AmpPhase.TimeSinceMidnightInMilliseconds(iFirstDatagram);
+            FABCdata.WCAP_1P_PingCounter                     = EM_AmpPhase.PingCounter(iFirstDatagram);
+            FABCdata.WCAP_1P_NumberOfDatagrams               = EM_AmpPhase.NumberOfDatagrams(iFirstDatagram);
+            FABCdata.WCAP_1P_NumberOfTransmitSectors         = EM_AmpPhase.NumberOfTransmitSectors(iFirstDatagram);
+            FABCdata.WCAP_1P_TotalNumberOfReceiveBeams       = EM_AmpPhase.TotalNumberOfReceiveBeams(iFirstDatagram);
+            FABCdata.WCAP_1P_SoundSpeed                      = EM_AmpPhase.SoundSpeed(iFirstDatagram);
+            FABCdata.WCAP_1P_SamplingFrequencyHz             = (EM_AmpPhase.SamplingFrequency(iFirstDatagram).*0.01)./dr_sub; % in Hz
+            FABCdata.WCAP_1P_TXTimeHeave                     = EM_AmpPhase.TXTimeHeave(iFirstDatagram);
+            FABCdata.WCAP_1P_TVGFunctionApplied              = EM_AmpPhase.TVGFunctionApplied(iFirstDatagram);
+            FABCdata.WCAP_1P_TVGOffset                       = EM_AmpPhase.TVGOffset(iFirstDatagram);
+            FABCdata.WCAP_1P_ScanningInfo                    = EM_AmpPhase.ScanningInfo(iFirstDatagram);
+            
+            % initialize data per transmit sector and ping
+            FABCdata.WCAP_TP_TiltAngle            = nan(maxNTransmitSectors,nPings);
+            FABCdata.WCAP_TP_CenterFrequency      = nan(maxNTransmitSectors,nPings);
+            FABCdata.WCAP_TP_TransmitSectorNumber = nan(maxNTransmitSectors,nPings);
+            
+            % initialize data per decimated beam and ping
+            FABCdata.WCAP_BP_BeamPointingAngle      = nan(maxNBeams_sub,nPings);
+            FABCdata.WCAP_BP_StartRangeSampleNumber = nan(maxNBeams_sub,nPings);
+            FABCdata.WCAP_BP_NumberOfSamples        = nan(maxNBeams_sub,nPings);
+            FABCdata.WCAP_BP_DetectedRangeInSamples = zeros(maxNBeams_sub,nPings);
+            FABCdata.WCAP_BP_TransmitSectorNumber   = nan(maxNBeams_sub,nPings);
+            FABCdata.WCAP_BP_BeamNumber             = nan(maxNBeams_sub,nPings);
+            
+            % decide whether to save in memory or as memmapfile
+            
+            
+            % use memmap file
+            
+            % initialize binary file for writing
+
+            file_amp_binary = fullfile(wc_dir,'WCAP_SBP_SampleAmplitudes.dat');
+            file_phase_binary = fullfile(wc_dir,'WCAP_SBP_SamplePhase.dat');
+            
+            if exist(file_amp_binary,'file')==0||FABCdata.dr_sub~=dr_sub||FABCdata.db_sub~=db_sub
+                file_amp_id = fopen(file_amp_binary,'w+');
+            else
+                file_amp_id=-1;
+            end
+            
+            if exist(file_phase_binary,'file')==0||FABCdata.dr_sub~=dr_sub||FABCdata.db_sub~=db_sub
+                file_phase_id = fopen(file_phase_binary,'w+');
+            else
+                file_phase_id=-1;
+            end
+            
+            
+            % now get data for each ping
+            for iP = 1:nPings
+                
+                % find datagrams composing this ping
+                pingCounter = FABCdata.WCAP_1P_PingCounter(1,iP); % ping number (ex: 50455)
+                % nDatagrams  = FABCdata.WCAP_1P_NumberOfDatagrams(1,iP); % theoretical number of datagrams for this ping (ex: 7)
+                iDatagrams  = find(EM_AmpPhase.PingCounter==pingCounter); % index of the datagrams making up this ping in EM_AmpPhase (ex: 58-59-61-64)
+                nDatagrams  = length(iDatagrams); % actual number of datagrams available (ex: 4)
+                
+                % some datagrams may be missing, like in the example. Detect and adjust...
+                datagramOrder     = EM_AmpPhase.DatagramNumbers(iDatagrams); % order of the datagrams (ex: 4-3-6-2, the missing one is 1st, 5th and 7th)
+                [~,IX]            = sort(datagramOrder);
+                iDatagrams        = iDatagrams(IX); % index of the datagrams making up this ping in EM_AmpPhase, but in the right order (ex: 64-59-58-61, missing datagrams are still missing)
+                nBeamsPerDatagram = EM_AmpPhase.NumberOfBeamsInThisDatagram(iDatagrams); % number of beams in each datagram making up this ping (ex: 56-61-53-28)
+                
+                % assuming transmit sectors data are not split between several datagrams, get that data from the first datagram.
+                nTransmitSectors = FABCdata.WCAP_1P_NumberOfTransmitSectors(1,iP); % number of transmit sectors in this ping
+                FABCdata.WCAP_TP_TiltAngle(1:nTransmitSectors,iP)            = EM_AmpPhase.TiltAngle{iDatagrams(1)};
+                FABCdata.WCAP_TP_CenterFrequency(1:nTransmitSectors,iP)      = EM_AmpPhase.CenterFrequency{iDatagrams(1)};
+                FABCdata.WCAP_TP_TransmitSectorNumber(1:nTransmitSectors,iP) = EM_AmpPhase.TransmitSectorNumber{iDatagrams(1)};
+                
+                % initialize the decimated samples / decimated beams matrix (Watercolumn data)
+                SB2_temp = zeros(maxNSamples_sub,maxNBeams_sub,'int16')-2^15;
+                Ph_temp = zeros(maxNSamples_sub,maxNBeams_sub,'int16');
+                
+                % and then read the data in each datagram
+                for iD = 1:nDatagrams
+                    
+                    % index of beams in output structure for this datagram
+                    [iBeams,idx_beams] = unique(ceil((sum(nBeamsPerDatagram(1:iD-1)) + (1:nBeamsPerDatagram(iD)))/db_sub));
+                    % old approach
+                    % iBeams = sum(nBeamsPerDatagram(1:iD-1)) + (1:nBeamsPerDatagram(iD));
+                    % idx_beams = (1:numel(iBeams));
+                    
+                    % ping x beam data
+                    FABCdata.WCAP_BP_BeamPointingAngle(iBeams,iP)      = EM_AmpPhase.BeamPointingAngle{iDatagrams(iD)}(idx_beams);
+                    FABCdata.WCAP_BP_StartRangeSampleNumber(iBeams,iP) = round(EM_AmpPhase.StartRangeSampleNumber{iDatagrams(iD)}(idx_beams)./dr_sub);
+                    FABCdata.WCAP_BP_NumberOfSamples(iBeams,iP)        = round(EM_AmpPhase.NumberOfSamples{iDatagrams(iD)}(idx_beams)./dr_sub);
+                    FABCdata.WCAP_BP_DetectedRangeInSamples(iBeams,iP) = round(EM_AmpPhase.DetectedRangeInSamples{iDatagrams(iD)}(idx_beams)./dr_sub);
+                    FABCdata.WCAP_BP_TransmitSectorNumber(iBeams,iP)   = EM_AmpPhase.TransmitSectorNumber2{iDatagrams(iD)}(idx_beams);
+                    FABCdata.WCAP_BP_BeamNumber(iBeams,iP)             = EM_AmpPhase.BeamNumber{iDatagrams(iD)}(idx_beams);
+                    if file_amp_id>=0||file_phase_id>=0
+                        % now getting watercolumn data (beams x samples)
+                        for iB = 1:numel(iBeams)
+                            % actual number of samples in that beam
+                            Ns = EM_AmpPhase.NumberOfSamples{iDatagrams(iD)}(idx_beams(iB));
+                            % number of samples we're going to record:
+                            Ns_sub = ceil(Ns/dr_sub);
+                            % get the data:
+                            if Ns_sub>0
+                                fseek(fid_all,EM_AmpPhase.SamplePhaseAmplitudePosition{iDatagrams(iD)}(idx_beams(iB)),'bof');
+                                idx_in_beam=1:Ns_sub;
+                                tmp=fread(fid_all,Ns_sub,'uint16',2);
+                                SB2_temp(idx_in_beam,iBeams(iB))=int16(20*log10(single(tmp)*0.0001)*40);
+                                fseek(fid_all,EM_AmpPhase.SamplePhaseAmplitudePosition{iDatagrams(iD)}(idx_beams(iB))+1,'bof');
+                                
+                                tmp=fread(fid_all,Ns_sub,'int16',2);
+                                Ph_temp(idx_in_beam,iBeams(iB))=-0.0001*single(tmp)*30/pi*180;
+                                
+                            end
+                        end
+                    end
+                end
+                
+                if iP==1
+                
+%                 test=single(SB2_temp);
+%                 test(SB2_temp==0)=nan;
+%                 test=0.0001*test;
+%                 figure();
+%                 imagesc(test);
+%                 
+%                 test=single(Ph_temp);
+%                 test(Ph_temp==0)=nan;
+%                 test=-0.0001*test;
+%                 figure();
+%                 imagesc(test);
+                
+                end
+                % store data
+                if file_amp_id>=0
+                    % write on binary file
+                    fwrite(file_amp_id,SB2_temp,'int16');
+                end
+                
+                                % store data
+                if file_phase_id>=0
+                    % write on binary file
+                    fwrite(file_phase_id,Ph_temp,'int16');
+                end
+            end
+            
+            if file_amp_id>=0
+                fclose(file_amp_id);
+            end
+            
+            if file_phase_id>=0
+                fclose(file_phase_id);
+            end
+            
+            % re-open as memmapfile
+            FABCdata.WCAP_SBP_SampleAmplitudes = memmapfile(file_amp_binary,'Format',{'int16' [maxNSamples_sub maxNBeams_sub nPings] 'val'},'repeat',1,'writable',true);
+            FABCdata.WCAP_SBP_SamplePhase = memmapfile(file_phase_binary,'Format',{'int16' [maxNSamples_sub maxNBeams_sub nPings] 'val'},'repeat',1,'writable',true);
+            
+            
+        end
         
     end
     

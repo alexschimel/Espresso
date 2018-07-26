@@ -113,7 +113,9 @@ else
     [~,~,~,~,tmproj] = CFF_ll2tm(firstPosLon,firstPosLat,ellips,'utm');
     tmproj = ['utm' tmproj];
     %fprintf(['tmproj not specified. Using ''' tmproj '''...\n']);
+    
 end
+
 
 % varargin{?}: datum conversion?
 ...

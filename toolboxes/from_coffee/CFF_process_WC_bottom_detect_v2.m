@@ -49,9 +49,15 @@
 %% Function
 function [fData] = CFF_process_WC_bottom_detect_v2(fData)
 
+if isfield(fData,'WC_SBP_SampleAmplitudes')
+    start_fmt='WC_';
+elseif isfield(fData,'WCAP_SBP_SampleAmplitudes')
+    start_fmt='WCAP_';
+end
+
 % Extract needed ping info
-X_1P_soundSpeed           = fData.WC_1P_SoundSpeed.*0.1; %m/s
-X_1P_samplingFrequencyHz  = fData.WC_1P_SamplingFrequencyHz; %Hz
+X_1P_soundSpeed           = fData.(sprintf('%s1P_SoundSpeed',start_fmt)).*0.1; %m/s
+X_1P_samplingFrequencyHz  = fData.(sprintf('%s1P_SamplingFrequencyHz',start_fmt)); %Hz
 X_1P_sonarHeight          = fData.X_1P_pingH; %m
 X_1P_sonarEasting         = fData.X_1P_pingE; %m
 X_1P_sonarNorthing        = fData.X_1P_pingN; %m
@@ -61,7 +67,7 @@ X_1_sonarHeadingOffsetDeg = fData.IP_ASCIIparameters.S1H; %deg
 
 % Extract needed beam info
 % X_BP_startRangeSampleNumber = fData.WC_BP_StartRangeSampleNumber; % not needed for bottom detect (I think)
-X_BP_beamPointingAngleDeg   = fData.WC_BP_BeamPointingAngle.*0.01; %deg
+X_BP_beamPointingAngleDeg   = fData.(sprintf('%sBP_BeamPointingAngle',start_fmt)).*0.01; %deg
 X_BP_beamPointingAngleRad   = deg2rad(X_BP_beamPointingAngleDeg);
 
 % Grab sample corresponding to bottom:
@@ -70,7 +76,7 @@ X_BP_beamPointingAngleRad   = deg2rad(X_BP_beamPointingAngleDeg);
 % filtered) value. If the field doesn't exist, then this is the first
 % calculation requested on the original bottom detect.
 if ~isfield(fData, 'X_BP_bottomSample')
-    fData.X_BP_bottomSample = fData.WC_BP_DetectedRangeInSamples; %in sample number
+    fData.X_BP_bottomSample = fData.(sprintf('%sBP_DetectedRangeInSamples',start_fmt)); %in sample number
     fData.X_BP_bottomSample(fData.X_BP_bottomSample==0) = NaN;
 end
 

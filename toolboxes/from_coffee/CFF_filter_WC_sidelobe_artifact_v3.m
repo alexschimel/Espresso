@@ -75,12 +75,20 @@ else
 end
 
 %% Memory Map flag
-if isobject(fData.WC_SBP_SampleAmplitudes)
+if isfield(fData,'WC_SBP_SampleAmplitudes')
+    start_fmt='WC_';
+elseif isfield(fData,'WCAP_SBP_SampleAmplitudes')
+    start_fmt='WCAP_';
+end
+
+if isobject(fData.(sprintf('%sSBP_SampleAmplitudes',start_fmt)))
     memoryMapFlag = 1;
     wc_dir=get_wc_dir(fData.ALLfilename{1});
 else
     memoryMapFlag = 0;
 end
+
+
 
 if isfield(fData,'X_SBP_Masked')
      memoryMapFlag = 0;
@@ -93,7 +101,7 @@ switch method_spec
         
         % same but a little bit more complex       
         % Dimensions
-        [nSamples,nBeams,nPings] = size(fData.WC_SBP_SampleAmplitudes.Data.val);
+        [nSamples,nBeams,nPings] = size(fData.(sprintf('%sSBP_SampleAmplitudes',start_fmt)).Data.val);
         
         % init arrays
         if memoryMapFlag
@@ -116,9 +124,8 @@ switch method_spec
         for iB = 1:nBlocks
             
             % grab data
-            thisPing = single(fData.WC_SBP_SampleAmplitudes.Data.val(:,:,blocks(iB,1):blocks(iB,2)))./2;
-            idx_nan=thisPing<=-127/2;
-            thisPing(idx_nan)=nan;
+            thisPing=get_wc_data(fData,sprintf('%sSBP_SampleAmplitudes',start_fmt),blocks(iB,1):blocks(iB,2),1,1);
+            idx_nan=isnan(thisPing);
             thisBottom = fData.X_BP_bottomSample(:,blocks(iB,1):blocks(iB,2));
             
             % mean level across all beams for each range (and each ping)

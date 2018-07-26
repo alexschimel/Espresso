@@ -45,10 +45,14 @@ function [fData] = CFF_mask_WC_data_v3(fData,varargin)
 %%%
 % Alex Schimel, Deakin University
 %%%
-
+if isfield(fData,'WC_SBP_SampleAmplitudes')
+    start_fmt='WC_';
+elseif isfield(fData,'WCAP_SBP_SampleAmplitudes')
+    start_fmt='WCAP_';
+end
 
 %% Extract dimensions
-[nSamples, nBeams, nPings] = size(fData.WC_SBP_SampleAmplitudes.Data.val);
+[nSamples, nBeams, nPings] = size(fData.(sprintf('%sSBP_SampleAmplitudes',start_fmt)).Data.val);
 
 
 %% Set methods
@@ -77,7 +81,7 @@ else
 end
 
 %% Memory Map flag
-if isobject(fData.WC_SBP_SampleAmplitudes)
+if isobject(fData.(sprintf('%sSBP_SampleAmplitudes',start_fmt)))
     memoryMapFlag = 1;
 else
     memoryMapFlag = 0;
@@ -96,21 +100,21 @@ if memoryMapFlag
     fileID_X_SBP_Mask = fopen(file_X_SBP_Mask,'w+');
 else
     % initialize numerical arrays
-    fData.X_SBP_Masked.Data.val      = zeros(nSamples,nBeams,nPings,'int8');
+    fData.X_SBP_Masked.Data.val  = zeros(nSamples,nBeams,nPings,'int8');
 end
 
 
 %% Block processing
 
 % main computation section will be done in blocks, and saved as numerical
-% arrays or memmapfile depending on fData.WC_SBP_SampleAmplitudes.
+% arrays or memmapfile depending on fData.(sprintf('%sSBP_SampleAmplitudes',start_fmt)).
 blockLength = 50;
 nBlocks = ceil(nPings./blockLength);
 blocks = [ 1+(0:nBlocks-1)'.*blockLength , (1:nBlocks)'.*blockLength ];
 blocks(end) = nPings;
 
-soundSpeed          = fData.WC_1P_SoundSpeed.*0.1; %m/s
-samplingFrequencyHz = fData.WC_1P_SamplingFrequencyHz; %Hz
+soundSpeed          = fData.(sprintf('%s1P_SoundSpeed',start_fmt)).*0.1; %m/s
+samplingFrequencyHz = fData.(sprintf('%s1P_SamplingFrequencyHz',start_fmt)); %Hz
 dr_samples = soundSpeed./(samplingFrequencyHz.*2);
 
 
@@ -128,7 +132,7 @@ for iB = 1:nBlocks
       
     ranges=get_samples_range(...
         idx_samples,...
-        fData.WC_BP_StartRangeSampleNumber(:,blockPings),...
+        fData.(sprintf('%sBP_StartRangeSampleNumber',start_fmt))(:,blockPings),...
         dr_samples(blockPings));
     
     
@@ -168,7 +172,7 @@ for iB = 1:nBlocks
     if ~isinf(remove_bottomrange)
         
         % extract needed data
-        theta=fData.WC_BP_BeamPointingAngle(:,blockPings)/100/180*pi;
+        theta=fData.(sprintf('%sBP_BeamPointingAngle',start_fmt))(:,blockPings)/100/180*pi;
         
         psi=1.5/180*pi./sqrt(cos(theta));
         
@@ -225,7 +229,8 @@ for iB = 1:nBlocks
     
     % MULTIPLYING ALL MASKS
     X_SBP_Mask = bsxfun(@times,X_1BP_Mask,(X_SBP_CloseRangeMask.*X_SBP_BottomRangeMask.*X_SBP_PolygonMask));
-    amp=single(fData.WC_SBP_SampleAmplitudes.Data.val(:,:,blockPings))./2;
+    amp=get_wc_data(fData,sprintf('%sSBP_SampleAmplitudes',start_fmt),blockPings,1,1);
+
     amp(X_SBP_Mask==0)=-128/2;
     % saving
     if memoryMapFlag

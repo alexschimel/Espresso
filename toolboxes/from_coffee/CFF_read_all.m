@@ -50,7 +50,7 @@
 %     datagTypeNumber = 105. datagTypeText = 'INSTALLATION PARAMETERS -  STOP (69H)';
 %     datagTypeNumber = 107. datagTypeText = 'WATER COLUMN DATAGRAM (6BH)';
 %     datagTypeNumber = 110. datagTypeText = 'NETWORK ATTITUDE VELOCITY DATAGRAM 110 (6EH)';
-% 
+%     datagTypeNumber = 114. datagTypeText = 'AMPLITUDE AND PHASE WC DATAGRAM 114 (72H)';
 % *OUTPUT VARIABLES*
 %
 % * |ALLdata|: structure containing the data. Each field corresponds a

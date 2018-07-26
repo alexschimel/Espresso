@@ -145,6 +145,7 @@ disp_config=getappdata(main_figure,'disp_config');
 
 for nF = 1:numel(mat_fdata_files)
     
+    
     %% Start Display
     fprintf('Loading file "%s" - started on: %s\n',files_to_load{nF}, datestr(now));
     
@@ -154,14 +155,25 @@ for nF = 1:numel(mat_fdata_files)
     end
 
     tic
-    if exist(mat_fdata_files{nF},'file')==0
-       continue
+    if ~isfile(mat_fdata_files{nF})
+        continue
     else
         fData_temp=load(mat_fdata_files{nF});
+        [~,file_names,f_ext]=cellfun(@fileparts,fData_temp.ALLfilename,'un',0);
+        folder_tmp=fileparts(fileparts(mat_fdata_files{nF}));
+        fData_temp.ALLfilename=cellfun(@(x,y) fullfile(folder_tmp,[x y]),file_names,f_ext,'un',0);
+        if isfield(fData_temp,'WC_SBP_SampleAmplitudes')
+            start_fmt='WC_';
+            d_source='WC';
+        elseif isfield(fData_temp,'WCAP_SBP_SampleAmplitudes')
+            start_fmt='WCAP_';
+            d_source='WCAP';
+        end
     end
     
     disp('CFF_process_ping_v2...');
-    fData_temp = CFF_process_ping_v2(fData_temp,'WC');
+    
+    fData_temp = CFF_process_ping_v2(fData_temp,d_source);
     
     if strcmp(disp_config.MET_tmproj,'')
         disp_config.MET_tmproj=fData_temp.MET_tmproj;
@@ -176,16 +188,18 @@ for nF = 1:numel(mat_fdata_files)
     fData_temp.ID=str2double(datestr(now,'yyyymmddHHMMSSFFF'));
     
     wc_dir=get_wc_dir(fData_temp.ALLfilename{1});
-
+    if isfile(fullfile(wc_dir,sprintf('%sSBP_SampleAmplitudes.dat',start_fmt)))
+        fData_temp.(sprintf('%sSBP_SampleAmplitudes',start_fmt)).Filename=fullfile(wc_dir,sprintf('%sSBP_SampleAmplitudes.dat',start_fmt));
+    end
+    
     file_X_SBP_L1 = fullfile(wc_dir,'X_SBP_Masked.dat');
-    if exist(file_X_SBP_L1,'file')==2
-        [nSamples,nBeams,nPings]=size(fData_temp.WC_SBP_SampleAmplitudes.Data.val);
+    if isfile(file_X_SBP_L1)
+        [nSamples,nBeams,nPings]=size(fData_temp.(sprintf('%sSBP_SampleAmplitudes',start_fmt)).Data.val);
         fData_temp.X_SBP_Masked = memmapfile(file_X_SBP_L1, 'Format',{'int8' [nSamples nBeams nPings] 'val'},'repeat',1,'writable',true);
     end
     
     pause(1e-3);
-    fData{numel(fData)+1}=fData_temp;
-    
+    fData{numel(fData)+1}=fData_temp;  
     toc
 end
 disp('Done')
@@ -230,8 +244,10 @@ end
 tic
 for nF = 1:numel(mat_fdata_files)
     fprintf('Converting file "%s" - started on: %s\n', files_to_process{nF}, datestr(now));
-    
-    dg_wc=[73 80 107];
+    wc_d=107;
+    %wc_d=114;
+    %dg_wc=[73 80 114];
+    dg_wc=[73 80 wc_d];
     if exist(wcd_files_to_process{nF},'file')>0
         ALLdata_wcd = CFF_read_all(wcd_files_to_process{nF},'datagrams',dg_wc);
     else
@@ -247,8 +263,8 @@ for nF = 1:numel(mat_fdata_files)
         dg_all=union(dg_all,103);
     end
     
-    if ~isfield(ALLdata_wcd,'EM_WaterColumn')
-        dg_all=union(dg_all,107);
+    if ~isfield(ALLdata_wcd,'EM_WaterColumn')&&~isfield(ALLdata_wcd,'EM_AmpPhase') 
+        dg_all=union(dg_all,wc_d);
     end
     
     if exist(all_files_to_process{nF},'file')>0&&~isempty(dg_all)
@@ -266,7 +282,7 @@ for nF = 1:numel(mat_fdata_files)
         ALLdata={ALLdata_all ALLdata_wcd};
     end
     
-    if ~isfield(ALLdata_wcd,'EM_WaterColumn')&&~isfield(ALLdata_all,'EM_WaterColumn')
+    if ~isfield(ALLdata_wcd,'EM_WaterColumn')&&~isfield(ALLdata_all,'EM_WaterColumn')&&~isfield(ALLdata_wcd,'EM_AmpPhase')&&~isfield(ALLdata_all,'EM_AmpPhase')     
         fprintf('No WC data for file %s\n',all_files_to_process{nF});
     end
     

@@ -1,4 +1,4 @@
-function update_map_tab(main_figure,new_res,new_zoom)
+function update_map_tab(main_figure,new_res,new_zoom,idx_up)
 
 map_tab_comp=getappdata(main_figure,'Map_tab');
 fData_tot=getappdata(main_figure,'fData');
@@ -24,7 +24,11 @@ df = 100;
 xlim=[nan nan];
 ylim=[nan nan];
 
-for i=1:length(fData_tot)
+if isempty(idx_up)
+    idx_up=1:length(fData_tot);
+end
+
+for i=idx_up
     if idx_zoom(i)
         vis='on';
         col=[0 0.6 0];        
@@ -116,12 +120,21 @@ for i=1:length(fData_tot)
     set(obj_wc,'alphadata',alphadata);
     uistack(obj_wc,'bottom');
     
-    if idx_zoom(i)&&isfield(fData,'X_NEH_gridLevel')
+    if idx_zoom(i)
+        if isfield(fData,'X_NEH_gridLevel')
         xlim(1)=nanmin(xlim(1),nanmin(fData.X_1E_gridEasting(:)));
         xlim(2)=nanmax(xlim(2),nanmax(fData.X_1E_gridEasting(:)));
         
         ylim(1)=nanmin(ylim(1),nanmin(fData.X_N1_gridNorthing(:)));
         ylim(2)=nanmax(ylim(2),nanmax(fData.X_N1_gridNorthing(:)));
+        elseif isfield(fData,'X_1P_pingE')
+             xlim(1)=nanmin(xlim(1),nanmin(fData.X_1P_pingE(:)));
+        xlim(2)=nanmax(xlim(2),nanmax(fData.X_1P_pingE(:)));
+        
+        ylim(1)=nanmin(ylim(1),nanmin(fData.X_1P_pingN(:)));
+        ylim(2)=nanmax(ylim(2),nanmax(fData.X_1P_pingN(:)));
+            
+        end
     end
 end
 
@@ -176,15 +189,15 @@ if~any(idx_zoom)
     return;
 end
 
-if new_zoom>0
+if new_zoom>0&& all(~isnan(xlim))&& all(~isnan(ylim))
     pos=getpixelposition(ax);
     ratio=pos(4)/pos(3);
     dx=nanmax([diff(xlim) diff(ylim)]);
     dy=dx*ratio;
-    xlim=mean(xlim)+[-11*dx/20 +11*dx/20];
-    ylim=mean(ylim)+[-11*dy/20 +11*dy/20];
+    xlim=nanmean(xlim)+[-11*dx/20 +11*dx/20];
+    ylim=nanmean(ylim)+[-11*dy/20 +11*dy/20];
     
-    set(ax,'YLim',ylim,'XLim',xlim);
+     set(ax,'YLim',ylim,'XLim',xlim);
 end
 
 % get current ticks position

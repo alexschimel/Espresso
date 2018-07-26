@@ -46,9 +46,15 @@ function [fData] = CFF_mask_WC_data_v2(fData,varargin)
 % Alex Schimel, Deakin University
 %%%
 
+if isfield(fData,'WC_SBP_SampleAmplitudes')
+    start_fmt='WC_';
+elseif isfield(fData,'WCAP_SBP_SampleAmplitudes')
+    start_fmt='WCAP_';
+end
 
 %% Extract dimensions
-[nSamples, nBeams, nPings] = size(fData.WC_SBP_SampleAmplitudes.Data.val);
+[nSamples, nBeams, nPings] = size(fData.(sprintf('%sSBP_SampleAmplitudes',start_fmt)).Data.val);
+
 
 
 %% Set methods
@@ -77,7 +83,7 @@ else
 end
 
 %% Memory Map flag
-if isobject(fData.WC_SBP_SampleAmplitudes)
+if isobject(fData.(sprintf('%sSBP_SampleAmplitudes',start_fmt)))
     memoryMapFlag = 1;
 else
     memoryMapFlag = 0;
@@ -103,7 +109,7 @@ end
 %% Block processing
 
 % main computation section will be done in blocks, and saved as numerical
-% arrays or memmapfile depending on fData.WC_SBP_SampleAmplitudes.
+% arrays or memmapfile depending on fData.(sprintf('%sSBP_SampleAmplitudes',start_fmt)).
 blockLength = 50;
 nBlocks = ceil(nPings./blockLength);
 blocks = [ 1+(0:nBlocks-1)'.*blockLength , (1:nBlocks)'.*blockLength ];

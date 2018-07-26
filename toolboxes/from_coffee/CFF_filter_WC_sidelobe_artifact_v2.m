@@ -78,7 +78,13 @@ else
 end
 
 %% Memory Map flag
-if isobject(fData.WC_SBP_SampleAmplitudes)
+if isfield(fData,'WC_SBP_SampleAmplitudes')
+    start_fmt='WC_';
+elseif isfield(fData,'WCAP_SBP_SampleAmplitudes')
+    start_fmt='WCAP_';
+end
+
+if isobject(fData.(sprintf('%sSBP_SampleAmplitudes',start_fmt)))
     memoryMapFlag = 1;
     wc_dir=get_wc_dir(fData.ALLfilename{1});
 else
@@ -88,6 +94,8 @@ end
 if isfield(fData,'X_SBP_L1')
      memoryMapFlag = 0;
 end
+
+
 
 
 % MAIN PROCESSING SWITCH
@@ -103,15 +111,15 @@ switch method_spec
             % open
             fileID_X_SBP_L1 = fopen(file_X_SBP_L1,'w+');
             % write
-            fwrite(fileID_X_SBP_L1,fData.WC_SBP_SampleAmplitudes.Data.val./2,'int8');
+            fwrite(fileID_X_SBP_L1, get_wc_data(fData,sprintf('%sSBP_SampleAmplitudes',start_fmt),[],1,1),'int8');
             % close
             fclose(fileID_X_SBP_L1);
             % Dimensions
-            [nSamples,nBeams,nPings] = size(fData.WC_SBP_SampleAmplitudes.Data.val);
+            [nSamples,nBeams,nPings] = size(fData.(sprintf('%sSBP_SampleAmplitudes',start_fmt)).Data.val);
             % re-open as memmapfile
             fData.X_SBP_L1 = memmapfile(file_X_SBP_L1, 'Format',{'int8' [nSamples nBeams nPings] 'val'},'repeat',1,'writable',true);
         else
-            fData.X_SBP_L1.Data.val = fData.WC_SBP_SampleAmplitudes.Data.val./2;
+            fData.X_SBP_L1.Data.val =  get_wc_data(fData,sprintf('%sSBP_SampleAmplitudes',start_fmt),[],1,1);
         end
         
     case 1
@@ -120,7 +128,7 @@ switch method_spec
         % over all beams and remove it
         
         % Dimensions
-        [nSamples,nBeams,nPings] = size(fData.WC_SBP_SampleAmplitudes.Data.val);
+        [nSamples,nBeams,nPings] = size(fData.(sprintf('%sSBP_SampleAmplitudes',start_fmt)).Data.val);
         
         % init arrays
         if memoryMapFlag
@@ -133,27 +141,27 @@ switch method_spec
         end
         
         % Compute mean level across beams:
-        meanAcrossBeams   = nanmean(fData.WC_SBP_SampleAmplitudes.Data.val./2,2);
+        meanAcrossBeams   = nanmean(get_wc_data(fData,sprintf('%sSBP_SampleAmplitudes',start_fmt),[],1,1),2);
         
         % remove this mean:
-        X_SBP_L1 = bsxfun(@minus,fData.WC_SBP_SampleAmplitudes.Data.val./2,meanAcrossBeams); % removing mean across beams
+        X_SBP_L1 = bsxfun(@minus,get_wc_data(fData,sprintf('%sSBP_SampleAmplitudes',start_fmt),[],1,1),meanAcrossBeams); % removing mean across beams
         
         % note the same technique could maybe be applied in other
         % dimensions? across samples?
-        % meanAcrossSamples = nanmean(fData.WC_SBP_SampleAmplitudes.Data.val./2,1);
-        % X_SBP_L1 = bsxfun(@minus,fData.WC_SBP_SampleAmplitudes.Data.val./2,meanAcrossSamples); % removing mean across samples
+        % meanAcrossSamples = nanmean(fData.(sprintf('%sSBP_SampleAmplitudes',start_fmt)).Data.val./2,1);
+        % X_SBP_L1 = bsxfun(@minus,fData.(sprintf('%sSBP_SampleAmplitudes',start_fmt)).Data.val./2,meanAcrossSamples); % removing mean across samples
         %
         % across pings?
-        % meanAcrossPings   = nanmean(fData.WC_SBP_SampleAmplitudes.Data.val./2,3);
-        % X_SBP_L1 = bsxfun(@minus,fData.WC_SBP_SampleAmplitudes.Data.val./2,meanAcrossPings); % removing mean across pings
+        % meanAcrossPings   = nanmean(fData.(sprintf('%sSBP_SampleAmplitudes',start_fmt)).Data.val./2,3);
+        % X_SBP_L1 = bsxfun(@minus,fData.(sprintf('%sSBP_SampleAmplitudes',start_fmt)).Data.val./2,meanAcrossPings); % removing mean across pings
         %
         % what about across pings then across samples? (VERY experimental)
-        % X_SBP_L1 = bsxfun(@minus,bsxfun(@minus,fData.WC_SBP_SampleAmplitudes.Data.val./2,meanAcrossBeams),meanAcrossSamples); % removing mean across pings THEN mean across samples (experimental)
+        % X_SBP_L1 = bsxfun(@minus,bsxfun(@minus,fData.(sprintf('%sSBP_SampleAmplitudes',start_fmt)).Data.val./2,meanAcrossBeams),meanAcrossSamples); % removing mean across pings THEN mean across samples (experimental)
         %
         % Maybe something could be done with the std across dimensions?
-        % stdAcrossSamples  = std(fData.WC_SBP_SampleAmplitudes.Data.val./2,[],1,'omitnan');
-        % stdAcrossBeams    = std(fData.WC_SBP_SampleAmplitudes.Data.val./2,[],2,'omitnan');
-        % stdAcrossPings    = std(fData.WC_SBP_SampleAmplitudes.Data.val./2,[],3,'omitnan');
+        % stdAcrossSamples  = std(fData.(sprintf('%sSBP_SampleAmplitudes',start_fmt)).Data.val./2,[],1,'omitnan');
+        % stdAcrossBeams    = std(fData.(sprintf('%sSBP_SampleAmplitudes',start_fmt)).Data.val./2,[],2,'omitnan');
+        % stdAcrossPings    = std(fData.(sprintf('%sSBP_SampleAmplitudes',start_fmt)).Data.val./2,[],3,'omitnan');
         
         % saving result
         if memoryMapFlag
@@ -180,7 +188,7 @@ switch method_spec
         % same but a little bit more complex
         
         % Dimensions
-        [nSamples,nBeams,nPings] = size(fData.WC_SBP_SampleAmplitudes.Data.val);
+        [nSamples,nBeams,nPings] = size(fData.(sprintf('%sSBP_SampleAmplitudes',start_fmt)).Data.val);
         
         % init arrays
         if memoryMapFlag
@@ -206,8 +214,8 @@ switch method_spec
         for iB = 1:nBlocks
             
             % grab data
-            thisPing = single(fData.WC_SBP_SampleAmplitudes.Data.val(:,:,blocks(iB,1):blocks(iB,2)))./2;
-            idx_nan=thisPing<=-127/2;
+            thisPing =  get_wc_data(fData,sprintf('%sSBP_SampleAmplitudes',start_fmt),blocks(iB,1):blocks(iB,2),1,1);
+            idx_nan=isnan(thisPing);
             thisPing(idx_nan)=nan;
             thisBottom = fData.X_BP_bottomSample(:,blocks(iB,1):blocks(iB,2));
             
@@ -271,7 +279,7 @@ switch method_spec
         % DEMOUSTIER'S CORRECTION USING PERCENTILES:
         
         % Dimensions
-        [nSamples,nBeams,nPings] = size(fData.WC_SBP_SampleAmplitudes.Data.val);
+        [nSamples,nBeams,nPings] = size(fData.(sprintf('%sSBP_SampleAmplitudes',start_fmt)).Data.val);
         
          % init arrays
         if memoryMapFlag
@@ -287,8 +295,8 @@ switch method_spec
         for ip = 1:nPings
             
             % grab data
-            thisPing = double(fData.WC_SBP_SampleAmplitudes.Data.val(:,:,ip)./2);
-            thisPing(thisPing==-128/2)=nan;
+            thisPing = double(get_wc_data(fData,sprintf('%sSBP_SampleAmplitudes',start_fmt),ip,1,1));
+            
             % calculate 75th percentile
             sevenfiveperc = nan(nSamples,1);
             for ismp = 1:nSamples

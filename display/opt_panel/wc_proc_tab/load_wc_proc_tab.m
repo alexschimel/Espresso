@@ -188,7 +188,7 @@ disp_config=getappdata(main_figure,'disp_config');
 
 disp_config.Fdata_idx=idx_zoom(end);
 
-update_map_tab(main_figure,1,0);
+update_map_tab(main_figure,1,0,[]);
 update_wc_tab(main_figure);
 end
 

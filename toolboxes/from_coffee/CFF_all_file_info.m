@@ -256,6 +256,12 @@ while 1
             try i68=i68+1; catch, i68=1; end
             counter = i68;
             
+        case 71
+            datagTypeText='SURFACE SOUND SPEED (47H)';
+            % counter for this type of datagram
+            try i71=i71+1; catch, i71=1; end
+            counter = i71;
+            
         case 72
             
             datagTypeText = 'HEADING (48H)';
@@ -376,8 +382,16 @@ while 1
             try i110=i110+1; catch, i110=1; end
             counter = i110;
             
-        otherwise
+        case 114 
+             datagTypeText = 'AMPLITUDE AND PHASE WC DATAGRAM 114 (72H)';
             
+            % counter for this type of datagram
+            try i114=i114+1; catch, i114=1; end
+            counter = i114;
+        otherwise
+             %datagTypeNumber
+%             dec2hex(datagTypeNumber)
+            %char(datagTypeNumber);
             % this datagTypeNumber is not recognized yet
             datagTypeText = {sprintf('UNKNOWN DATAGRAM (%sH)',dec2hex(datagTypeNumber))};
             

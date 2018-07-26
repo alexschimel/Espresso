@@ -35,8 +35,15 @@ db  = p.Results.db_sub;
 
 dim=p.Results.dim;
 
+if isfield(fData,'WC_SBP_SampleAmplitudes')
+    start_fmt='WC_';
+elseif isfield(fData,'WCAP_SBP_SampleAmplitudes')
+    start_fmt='WCAP_';
+end
+
+
 % get dimensions
-[~,nBeams,nPings] = size(fData.WC_SBP_SampleAmplitudes.Data.val);
+[~,nBeams,nPings] = size(fData.(sprintf('%sSBP_SampleAmplitudes',start_fmt)).Data.val);
 
 % block processing setup
 blockLength = 10;
@@ -59,7 +66,7 @@ switch dim
 end
 
 % block processing
-%[nSamples,nBeams,nPings] = size(fData.WC_SBP_SampleAmplitudes.Data.val);
+%[nSamples,nBeams,nPings] = size(fData.(sprintf('%sSBP_SampleAmplitudes',start_fmt)).Data.val);
 
 nSamples=max(fData.WC_BP_DetectedRangeInSamples(:));
 
@@ -177,13 +184,14 @@ for iB = 1:nBlocks
     % get field to grid
     switch dataToGrid
         case 'original'
-            blockL = single(fData.WC_SBP_SampleAmplitudes.Data.val(1:dr:nSamples,1:db:nBeams,blockPings))./2;
+            blockL=get_wc_data(fData,sprintf('%sSBP_SampleAmplitudes',start_fmt),blockPings,dr,db);
         case 'processed'
             blockL = single(fData.X_SBP_Masked.Data.val(1:dr:nSamples,1:db:nBeams,blockPings));
+            blockL(blockL==-64)=nan;
     end
     
     clear blockPings
-    blockL(blockL==-128/2)=nan;
+
     % remove nans:
     indNan = isnan(blockL);
     blockL(indNan) = [];
