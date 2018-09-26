@@ -14,7 +14,7 @@ classdef display_config_cl <handle
     end
     
     methods
-        function obj =display_config_cl(varargin)
+        function obj = display_config_cl(varargin)
             
             p = inputParser;
             addParameter(p,'Var_disp','wc_int',@(x) ismember(x,{'wc_int' 'bs' 'bathy'}));
@@ -30,46 +30,47 @@ classdef display_config_cl <handle
             addParameter(p,'AcrossDist',1,@isnumeric);
             
             parse(p,varargin{:});
-            results=p.Results;
-            props=fieldnames(results);
+            results = p.Results;
+            props = fieldnames(results);
             
-            for i=1:length(props)
-                obj.(props{i})=results.(props{i});
+            for i = 1:length(props)
+                obj.(props{i}) = results.(props{i});
             end
             
         end
     end
     
     methods
-        function cax=get_cax(obj)
+        function cax = get_cax(obj)
             switch obj.Var_disp
                 case 'wc_int'
-                    cax=obj.Cax_wc_int;
+                    cax = obj.Cax_wc_int;
                 case 'bs'
-                    cax=obj.Cax_bs;
+                    cax = obj.Cax_bs;
                 case 'bathy'
-                    cax=obj.Cax_bathy;
+                    cax = obj.Cax_bathy;
             end
             
         end
         
-        function cax=set_cax(obj,cax)
+        function cax = set_cax(obj,cax)
             switch obj.Var_disp
                 case 'wc_int'
-                    obj.Cax_wc_int=cax;
+                    obj.Cax_wc_int = cax;
                 case 'bs'
-                    obj.Cax_bs=cax;
+                    obj.Cax_bs = cax;
                 case 'bathy'
-                    obj.Cax_bathy=cax;
+                    obj.Cax_bathy = cax;
             end
             
         end
-        function zone=get_zone(obj)
-            tmp=textscan(obj.MET_tmproj,'utm%2d%c');
-            zone=double(tmp{1});
+        
+        function zone = get_zone(obj)
+            tmp = textscan(obj.MET_tmproj,'utm%2d%c');
+            zone = double(tmp{1});
             switch tmp{2}
                 case 'S'
-                    zone=-zone;
+                    zone = -zone;
             end
         end
         

@@ -8,13 +8,9 @@
 %
 % TODO: write longer description of function
 %
-% *INPUT VARIABLES*
-%
-% * |input_variable_1|: TODO: write description and info on variable
-%
 % *OUTPUT VARIABLES*
 %
-% * |output_variable_1|: TODO: write description and info on variable
+% * |app_path_main|: root path of program
 %
 % *RESEARCH NOTES*
 %

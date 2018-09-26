@@ -1,4 +1,3 @@
-function [fData] = CFF_filter_WC_bottom_detect_v2(fData,varargin)
 % [fData] = CFF_filter_WC_bottom_detect_v2(fData,varargin)
 %
 % DESCRIPTION
@@ -29,7 +28,8 @@ function [fData] = CFF_filter_WC_bottom_detect_v2(fData,varargin)
 % Alex Schimel, Deakin University
 %%%
 
-
+%% function
+function [fData] = CFF_filter_WC_bottom_detect_v2(fData,varargin)
 
 %% INPUT PARSER
 

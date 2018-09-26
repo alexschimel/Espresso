@@ -1,6 +1,6 @@
 %% initialize_display.m
 %
-% Initialize display
+% Initialize display of Espresso main figure
 %
 %% Help
 %
@@ -35,35 +35,53 @@
 %% Function
 function initialize_display(main_figure)
 
-% create the four main panels in main window
-map_panel     = uitabgroup(main_figure,'Position',[0.3  .05  0.7 .95]);
-options_panel = uitabgroup(main_figure,'Position',[0    .525 0.3 .475]);
-wc_panel      = uitabgroup(main_figure,'Position',[0    .05  0.3 .475]);
+%% CONTROL PANEL
+
+% create panel
+control_panel = uitabgroup(main_figure,'Position',[0 0.525 0.3 .475]);
+setappdata(main_figure,'control_panel',control_panel);
+
+% create tabs in panel
+load_files_tab(main_figure,control_panel);
+load_fdata_tab(main_figure,control_panel);
+load_wc_proc_tab(main_figure,control_panel);
+load_grid_tab(main_figure,control_panel);
 
 
-% add panels to appdata
+%% SWATHE PANEL
+
+% create panel
+swath_panel = uitabgroup(main_figure,'Position',[0 0.05  0.3 .475]);
+setappdata(main_figure,'swath_panel',swath_panel);
+
+% create tabs in panel
+load_wc_tab(main_figure,swath_panel);
+
+
+%% MAP PANEL
+
+% create panel
+map_panel = uitabgroup(main_figure,'Position',[0.3 0.05 0.7 0.95]);
 setappdata(main_figure,'map_panel',map_panel);
-setappdata(main_figure,'options_panel',options_panel);
-setappdata(main_figure,'wc_panel',wc_panel);
 
-load_info_panel(main_figure);
-
-load_files_tab(main_figure,options_panel);
-load_fdata_tab(main_figure,options_panel);
-load_wc_proc_tab(main_figure,options_panel);
-load_grid_tab(main_figure,options_panel)
-load_wc_tab(main_figure,wc_panel);
-
+% create tabs in panel
 load_map_tab(main_figure,map_panel);
+
+
+%% INFO PANEL (bottom panel)
+
+% create panel
 load_info_panel(main_figure);
 
-% create menu in main window
-%create_menu(main_figure);
 
+%% obsolete: top menu
+% create_menu(main_figure);
 % obj_enable = findobj(main_figure,'Enable','on','-not','Type','uimenu');
 % set(obj_enable,'Enable','off');
 
-% center main window and make visible
+%% FINISHING UP
+% center main window on screen and make visible
+
 centerfig(main_figure);
 set(main_figure,'Visible','on');
 drawnow;

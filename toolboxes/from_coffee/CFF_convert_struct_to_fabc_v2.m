@@ -1,8 +1,7 @@
-
 %Based on CFF_convert_mat_to_fabc_v2
+
 %% Function
 function [FABCdata,up] = CFF_convert_struct_to_fabc_v2(varStruct,varargin)
-
 
 %% input parsing
 
@@ -15,7 +14,6 @@ addRequired(p,'varStruct',@(x) isstruct(x) || iscell(x));
 addOptional(p,'FABCdata',{},@(x) isstruct(x) || iscell(x));
 addOptional(p,'dr_sub',1,@(x) isnumeric(x)&&x>0);
 addOptional(p,'db_sub',1,@(x) isnumeric(x)&&x>0);
-
 
 % parse
 parse(p,varStruct,varargin{:})
@@ -36,20 +34,18 @@ end
 % number of files
 nFiles = length(varStruct);
 
-
 % and the decimation factors
 if isempty(FABCdata)
     FABCdata.dr_sub = dr_sub;
     FABCdata.db_sub = db_sub;
     FABCdata.ALLfilename=cell(1,nFiles);
-   for iF = 1:nFiles
-       FABCdata.ALLfilename{iF}=varStruct{iF}.ALLfilename;
-   end
+    for iF = 1:nFiles
+        FABCdata.ALLfilename{iF}=varStruct{iF}.ALLfilename;
+    end
 end
 up=0;
 
 %% loop through all files and aggregate the datagrams contents
-
 for iF = 1:nFiles
     
     if ~ismember(varStruct{iF}.ALLfilename,FABCdata.ALLfilename)
@@ -65,7 +61,7 @@ for iF = 1:nFiles
     % research note: maybe these could be loaded through matfile, rather
     % than loading it all...
     varStructCurr = varStruct{iF};
-
+    
     fid_all=fopen(FABCdata.ALLfilename{iF}, 'r',varStructCurr.datagramsformat);
     wc_dir=get_wc_dir(FABCdata.ALLfilename{iF});
     
@@ -519,7 +515,7 @@ for iF = 1:nFiles
             % use memmap file
             
             % initialize binary file for writing
-
+            
             file_binary = fullfile(wc_dir,'WC_SBP_SampleAmplitudes.dat');
             
             if exist(file_binary,'file')==0||FABCdata.dr_sub~=dr_sub||FABCdata.db_sub~=db_sub
@@ -602,7 +598,7 @@ for iF = 1:nFiles
             
         end
     end
-        % EM_AmpPhase 
+    % EM_AmpPhase
     if isfield(varStructCurr,'EM_AmpPhase')
         EM_AmpPhase=varStructCurr.EM_AmpPhase;
         % only do if data of that type has not been recorded yet, aka:
@@ -617,7 +613,7 @@ for iF = 1:nFiles
             maxNTransmitSectors = max(EM_AmpPhase.NumberOfTransmitSectors); % maximum number of transmit sectors for a ping in file
             maxNSamples         = max(cellfun(@(x) max(x),EM_AmpPhase.NumberOfSamples)); % max number of samples for a beam in file
             %maxNSamples         = max(cellfun(@(x,y) max(x+y),EM_AmpPhase.NumberOfSamples+EM_AmpPhase.StartRangeSampleNumber)); % max number of samples for a beam in file
-           
+            
             % decimating beams and samples
             maxNBeams_sub       =  ceil(maxNBeams/db_sub); % number of beams to extract
             maxNSamples_sub     = ceil(maxNSamples/dr_sub); % number of samples to extract
@@ -655,7 +651,7 @@ for iF = 1:nFiles
             % use memmap file
             
             % initialize binary file for writing
-
+            
             file_amp_binary = fullfile(wc_dir,'WCAP_SBP_SampleAmplitudes.dat');
             file_phase_binary = fullfile(wc_dir,'WCAP_SBP_SamplePhase.dat');
             
@@ -737,19 +733,19 @@ for iF = 1:nFiles
                 end
                 
                 if iP==1
-                
-%                 test=single(SB2_temp);
-%                 test(SB2_temp==0)=nan;
-%                 test=0.0001*test;
-%                 figure();
-%                 imagesc(test);
-%                 
-%                 test=single(Ph_temp);
-%                 test(Ph_temp==0)=nan;
-%                 test=-0.0001*test;
-%                 figure();
-%                 imagesc(test);
-                
+                    
+                    %                 test=single(SB2_temp);
+                    %                 test(SB2_temp==0)=nan;
+                    %                 test=0.0001*test;
+                    %                 figure();
+                    %                 imagesc(test);
+                    %
+                    %                 test=single(Ph_temp);
+                    %                 test(Ph_temp==0)=nan;
+                    %                 test=-0.0001*test;
+                    %                 figure();
+                    %                 imagesc(test);
+                    
                 end
                 % store data
                 if file_amp_id>=0
@@ -757,7 +753,7 @@ for iF = 1:nFiles
                     fwrite(file_amp_id,SB2_temp,'int16');
                 end
                 
-                                % store data
+                % store data
                 if file_phase_id>=0
                     % write on binary file
                     fwrite(file_phase_id,Ph_temp,'int16');

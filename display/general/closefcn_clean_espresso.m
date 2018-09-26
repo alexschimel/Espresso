@@ -1,6 +1,6 @@
 %% closefcn_clean_espresso.m
 %
-% Close main figure
+% Callback function when Espresso's main figure is closed
 %
 %% Help
 %
@@ -34,10 +34,16 @@
 
 %% Function
 function closefcn_clean_espresso(main_figure,~)
-%fData=getappdata(main_figure,'fData');
-ext_figs=getappdata(main_figure,'ext_figs');
+
+fprintf('Closing Espresso...\n');
+
+% fData = getappdata(main_figure,'fData');
+ext_figs = getappdata(main_figure,'ext_figs');
 delete(ext_figs);
 delete(main_figure);
 clear fData
+
+fprintf('...Done.\n');
+
 
 end

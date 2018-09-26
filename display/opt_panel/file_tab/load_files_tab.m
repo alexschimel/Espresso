@@ -1,6 +1,7 @@
 %% load_files_tab.m
 %
-% Main function for the figure to load files into app
+% Creates "Data files" tab (#1) in Espresso's Control Panel. Also has
+% callback functions for loading and converting files
 %
 %% Help
 %
@@ -35,48 +36,61 @@
 %% Function
 function load_files_tab(main_figure,parent_tab_group)
 
+%% create tab variable
 switch parent_tab_group.Type
     case 'uitabgroup'
-        file_tab_comp.file_tab=uitab(parent_tab_group,'Title','Loading','Tag','file_tab','BackGroundColor','w');
+        file_tab_comp.file_tab = uitab(parent_tab_group,'Title','Data files','Tag','file_tab','BackGroundColor','w');
     case 'figure'
-        file_tab_comp.file_tab=parent_tab_group;
-end
-
-fData=getappdata(main_figure,'fData');
-if isempty(fData)
-    path_init=whereisroot();
-else
-    [path_init,~,~]=fileparts(fData{end}.ALLfilename{1});
-    i=strfind(path_init,filesep);
-    path_init=path_init(1:i(end-1));
+        file_tab_comp.file_tab = parent_tab_group;
 end
 
 
+%% folder push button
+
+% get icon
 icon = get_icons_cdata(fullfile(whereisroot(),'icons'));
 
-
-file_tab_comp.path_box = uicontrol(file_tab_comp.file_tab,'Style','edit',...
-    'Units','normalized',...
-    'Position',[0.0 0.91 0.9 0.08],...
-    'BackgroundColor','w',...
-    'string',path_init,...
-    'HorizontalAlignment','left','Callback',{@select_folder_callback,main_figure});
-
-file_tab_comp.path_choose = uicontrol(file_tab_comp.file_tab,'Style','pushbutton','units','normalized',...
-    'pos',[0.9 0.91 0.1 0.08],...
+% create button
+file_tab_comp.path_choose = uicontrol(file_tab_comp.file_tab,'Style','pushbutton',...
+    'units','normalized',...
+    'pos',[0.0 0.91 0.1 0.08],...
     'String','',...
     'Cdata',icon.folder,...
     'callback',{@select_folder_callback,main_figure});
 
-survDataSummary = {};
 
-% Column names and column format
+%% folder text field
+
+% define initial path from last data available (or root)
+fData = getappdata(main_figure,'fData');
+if isempty(fData)
+    path_init = whereisroot();
+else
+    [path_init,~,~] = fileparts(fData{end}.ALLfilename{1});
+    i = strfind(path_init,filesep);
+    path_init = path_init(1:i(end-1));
+end
+
+% create text field
+file_tab_comp.path_box = uicontrol(file_tab_comp.file_tab,'Style','edit',...
+    'Units','normalized',...
+    'Position',[0.1 0.91 0.9 0.08],...
+    'BackgroundColor','w',...
+    'string',path_init,...
+    'HorizontalAlignment','left',...
+    'Callback',{@select_folder_callback,main_figure});
+
+
+
+%% files list
+
+% Column names and format
 columnname = {'File' 'Folder'};
 columnformat = {'char','char'};
 
-% Create the uitable
+% Create the files list (uitable)
 file_tab_comp.table_main = uitable('Parent',file_tab_comp.file_tab,...
-    'Data', survDataSummary,...
+    'Data', {},...
     'ColumnName', columnname,...
     'ColumnFormat', columnformat,...
     'CellSelectionCallback',{@cell_select_cback,main_figure},...
@@ -84,285 +98,403 @@ file_tab_comp.table_main = uitable('Parent',file_tab_comp.file_tab,...
     'Units','Normalized','Position',[0 0.1 1 0.8],...
     'RowName',[]);
 
+% Set widths of columns in table and add callback for automatic resizing
 pos_t = getpixelposition(file_tab_comp.table_main);
-set(file_tab_comp.table_main,'ColumnWidth',...
-    num2cell(pos_t(3)*[10/20 10/20]));
+set(file_tab_comp.table_main,'ColumnWidth',num2cell(pos_t(3)*[10/20 10/20]));
 set(file_tab_comp.file_tab,'SizeChangedFcn',{@resize_table,file_tab_comp.table_main});
 
-%set(file_tab_comp.table_main,'CellEditCallback',{@edit_surv_data_db,surv_data_tab,main_figure});
 
-uicontrol(file_tab_comp.file_tab,'Style','pushbutton','units','normalized',...
+%% "convert", "reconvert" and "load" push buttons
+
+uicontrol(file_tab_comp.file_tab,'Style','pushbutton','String','Convert',...
+    'units','normalized',...
     'pos',[0.35 0.01 0.2 0.08],...
-    'String','Convert',...
     'callback',{@convert_files_callback,main_figure,0});
-uicontrol(file_tab_comp.file_tab,'Style','pushbutton','units','normalized',...
+
+uicontrol(file_tab_comp.file_tab,'Style','pushbutton','String','Re-Convert',...
+    'units','normalized',...
     'pos',[0.55 0.01 0.2 0.08],...
-    'String','Re-Convert',...
     'callback',{@convert_files_callback,main_figure,1});
-uicontrol(file_tab_comp.file_tab,'Style','pushbutton','units','normalized',...
+
+uicontrol(file_tab_comp.file_tab,'Style','pushbutton','String','Load',...
+    'units','normalized',...
     'pos',[0.75 0.01 0.15 0.08],...
-    'String','Load',...
     'callback',{@load_files_callback,main_figure});
 
-file_tab_comp.selected_idx=[];
-file_tab_comp.files={};
-file_tab_comp.processedd=[];
+%% finalize
 
+% empties
+file_tab_comp.selected_idx = [];
+file_tab_comp.files = {};
+file_tab_comp.converted = [];
+
+% add tab to appdata
 setappdata(main_figure,'file_tab',file_tab_comp);
 
+% run the update function
 update_file_tab(main_figure);
 
 end
 
 
-%% Subfunctions
+
+%% CALLBACKS
 
 
-function load_files_callback(src,~,main_figure)
-
-file_tab_comp = getappdata(main_figure,'file_tab');
-
-selected_idx=file_tab_comp.selected_idx;
-processed=file_tab_comp.processed;
-files=file_tab_comp.files;
-files_to_load=files(selected_idx);
-processed_selected=processed(selected_idx);
-
-files_to_load=files_to_load(processed_selected);
-
-if isempty(files_to_load)
-    return;
-end
-
-loaded_files=get_loaded_files(main_figure);
-
-mat_fdata_files=fdata_filenames_from_all_filenames(files_to_load);
-
-fData=getappdata(main_figure,'fData');
-
-disp_config=getappdata(main_figure,'disp_config');
-
-
-for nF = 1:numel(mat_fdata_files)
-    
-    
-    %% Start Display
-    fprintf('Loading file "%s" - started on: %s\n',files_to_load{nF}, datestr(now));
-    
-    if ismember(files_to_load{nF},loaded_files)
-        fprintf('%s already loaded\n',files_to_load{nF});
-        continue;
-    end
-
-    tic
-    if ~isfile(mat_fdata_files{nF})
-        continue
-    else
-        fData_temp=load(mat_fdata_files{nF});
-        [~,file_names,f_ext]=cellfun(@fileparts,fData_temp.ALLfilename,'un',0);
-        folder_tmp=fileparts(fileparts(mat_fdata_files{nF}));
-        fData_temp.ALLfilename=cellfun(@(x,y) fullfile(folder_tmp,[x y]),file_names,f_ext,'un',0);
-        if isfield(fData_temp,'WC_SBP_SampleAmplitudes')
-            start_fmt='WC_';
-            d_source='WC';
-        elseif isfield(fData_temp,'WCAP_SBP_SampleAmplitudes')
-            start_fmt='WCAP_';
-            d_source='WCAP';
-        end
-    end
-    
-    disp('CFF_process_ping_v2...');
-    
-    fData_temp = CFF_process_ping_v2(fData_temp,d_source);
-    
-    if strcmp(disp_config.MET_tmproj,'')
-        disp_config.MET_tmproj=fData_temp.MET_tmproj;
-    elseif ~strcmp(disp_config.MET_tmproj,fData_temp.MET_tmproj)
-        disp('Data using another UTM zone for projection. You cannot load them in the current project.');
-        clean_fdata(fData_temp);
-        continue;
-    end
-    disp('Processing Bottom...');
-    fData_temp = CFF_process_WC_bottom_detect_v2(fData_temp);
-    
-    fData_temp.ID=str2double(datestr(now,'yyyymmddHHMMSSFFF'));
-    
-    wc_dir=get_wc_dir(fData_temp.ALLfilename{1});
-    if isfile(fullfile(wc_dir,sprintf('%sSBP_SampleAmplitudes.dat',start_fmt)))
-        fData_temp.(sprintf('%sSBP_SampleAmplitudes',start_fmt)).Filename=fullfile(wc_dir,sprintf('%sSBP_SampleAmplitudes.dat',start_fmt));
-    end
-    
-    file_X_SBP_L1 = fullfile(wc_dir,'X_SBP_Masked.dat');
-    if isfile(file_X_SBP_L1)
-        [nSamples,nBeams,nPings]=size(fData_temp.(sprintf('%sSBP_SampleAmplitudes',start_fmt)).Data.val);
-        fData_temp.X_SBP_Masked = memmapfile(file_X_SBP_L1, 'Format',{'int8' [nSamples nBeams nPings] 'val'},'repeat',1,'writable',true);
-    end
-    
-    pause(1e-3);
-    fData{numel(fData)+1}=fData_temp;  
-    toc
-end
-disp('Done')
-setappdata(main_figure,'fData',fData);
-update_file_tab(main_figure);
-update_display(main_figure);
-
-end
-
-function convert_files_callback(src,~,main_figure,re)
-file_tab_comp = getappdata(main_figure,'file_tab');
-
-
-selected_idx=file_tab_comp.selected_idx;
-processed=file_tab_comp.processed;
-files=file_tab_comp.files;
-
-files_to_process=files(selected_idx);
-
-processed_selected=processed(selected_idx);
-
-if re==0
-    files_to_process=files_to_process(~processed_selected);
-end
-
-if isempty(files_to_process)
-    return;
-end
-
-mat_fdata_files=fdata_filenames_from_all_filenames(files_to_process);
-all_files_to_process=strcat(files_to_process,'.all');
-wcd_files_to_process=strcat(files_to_process,'.wcd');
-
-if numel(mat_fdata_files)==0
-    disp('All selected files are already pre-processed.')
-    return;
-end
-% enabled_on=findobj(file_tab_comp.file_tab,'Enable','on','-and','Style','pushbutton');
-% 
-% set(enabled_on,'Enable','off');
-
-tic
-for nF = 1:numel(mat_fdata_files)
-    fprintf('Converting file "%s" - started on: %s\n', files_to_process{nF}, datestr(now));
-    wc_d=107;
-    %wc_d=114;
-    %dg_wc=[73 80 114];
-    dg_wc=[73 80 wc_d];
-    if exist(wcd_files_to_process{nF},'file')>0
-        ALLdata_wcd = CFF_read_all(wcd_files_to_process{nF},'datagrams',dg_wc);
-    else
-        ALLdata_wcd=[];
-    end
-    
-    dg_all=[];
-    if ~isfield(ALLdata_wcd,'PositionCounter')
-        dg_all=union(dg_all,80);
-    end
-    
-    if ~isfield(ALLdata_wcd,'EM_InstallationStart')
-        dg_all=union(dg_all,103);
-    end
-    
-    if ~isfield(ALLdata_wcd,'EM_WaterColumn')&&~isfield(ALLdata_wcd,'EM_AmpPhase') 
-        dg_all=union(dg_all,wc_d);
-    end
-    
-    if exist(all_files_to_process{nF},'file')>0&&~isempty(dg_all)
-        ALLdata_all = CFF_read_all(all_files_to_process{nF},'datagrams',dg_all);
-    else
-        ALLdata_all=[];
-    end
-
-    
-    if isempty(ALLdata_wcd)
-        ALLdata=ALLdata_all;
-    elseif isempty(ALLdata_all)
-        ALLdata=ALLdata_wcd;
-    else
-        ALLdata={ALLdata_all ALLdata_wcd};
-    end
-    
-    if ~isfield(ALLdata_wcd,'EM_WaterColumn')&&~isfield(ALLdata_all,'EM_WaterColumn')&&~isfield(ALLdata_wcd,'EM_AmpPhase')&&~isfield(ALLdata_all,'EM_AmpPhase')     
-        fprintf('No WC data for file %s\n',all_files_to_process{nF});
-    end
-    
-    
-    %% if output folder doesn't exist, create it
-    MATfilepath = fileparts(mat_fdata_files{nF});
-    if ~exist(MATfilepath,'dir') && ~isempty(MATfilepath)
-        mkdir(MATfilepath);
-    end
-    
-    if exist(mat_fdata_files{nF},'file')==0||re>0
-        fData={};
-    else
-        fData=load(mat_fdata_files{nF});
-    end
-    
-    [fData,up]=CFF_convert_struct_to_fabc_v2(ALLdata,fData);
-    
-    if up>0
-        save(mat_fdata_files{nF},'-struct','fData','-v7.3');
-        clear fData;
-    end
-
-end
-toc
-disp('Done')
-
-update_file_tab(main_figure);
-% set(enabled_on,'Enable','on');
-end
-
-
+%%
+% Callback when pressing the "Folder" button or interacting with folder
+% text field
+%
 function select_folder_callback(src,~,main_figure)
+
+% get tab data
 file_tab_comp = getappdata(main_figure,'file_tab');
 
 switch src.Style
+    
     case 'edit'
-        new_path=get(src,'string');
+        % if interacting with folder text field
+        % get the new path
+        new_path = get(src,'string');
+        
+        if new_path ~= 0
+            if isfolder(new_path)
+                % folder is valid, update the tab
+                update_file_tab(main_figure);
+            end
+        else
+            return;
+        end
+        
     case 'pushbutton'
+        % if pressing the folder button
+        % open a getdir prompt for new directory, starting from old
+        % directory
         path_ori = get(file_tab_comp.path_box,'string');
-        new_path = uigetdir(path_ori);
-        if new_path~=0
+        new_path = uigetdir(path_ori,'Select folder of raw data files (.wcd) to open');
+        
+        if new_path ~= 0
+            % update the tab
             set(file_tab_comp.path_box,'string',new_path);
+            update_file_tab(main_figure);
         end
         
 end
 
-if new_path~=0
-    booldir = check_path(new_path);
-else
-    return;
-end
-
-if booldir
-    update_file_tab(main_figure);
-end
-
 end
 
 
+
+%%
+% Callback when selecting a cell in files list
+%
 function cell_select_cback(~,evt,main_figure)
+
+% get tab data
 file_tab_comp = getappdata(main_figure,'file_tab');
 
 if ~isempty(evt.Indices)
-    selected_idx=(evt.Indices(:,1));
+    selected_idx = (evt.Indices(:,1));
 else
-    selected_idx=[];
+    selected_idx = [];
 end
-%selected_idx'
-file_tab_comp.selected_idx=unique(selected_idx);
+
+% update the selected file(s)
+file_tab_comp.selected_idx = unique(selected_idx);
 setappdata(main_figure,'file_tab',file_tab_comp);
 
 end
 
-function booldir = check_path(new_path)
 
-if ~isdir(new_path)
-    booldir = 0;
-else
-    booldir = 1;
+
+%%
+% Callback when pressing the "Convert" button
+%
+function convert_files_callback(src,~,main_figure,reconvert)
+
+% PARAMS:
+% list of datagram needed for conversion
+wc_d = 107; % for traditional water column datagram
+% wc_d = 114; % for amplitude and phase datagram
+dg_wc = [73 80 wc_d];
+
+% get tab data
+file_tab_comp = getappdata(main_figure,'file_tab');
+
+% get list of files requested for conversion
+files = file_tab_comp.files;
+selected_idx = file_tab_comp.selected_idx;
+files_to_convert = files(selected_idx);
+
+% get list of files already converted
+files_converted = file_tab_comp.converted;
+files_already_converted = files_converted(selected_idx);
+
+% general timer
+timer_start = now;
+
+% for each file
+for nF = 1:numel(files_to_convert)
+    
+    file_to_convert = files_to_convert{nF};
+
+    % check if file not already converted
+    if files_already_converted(nF) && ~reconvert
+        fprintf('File "%s" (%i/%i) is already converted.\n',file_to_convert,nF,numel(files_to_convert));
+        continue
+    end
+    
+    % all tests passed. Converting can begin
+    fprintf('Converting file "%s" (%i/%i). Started at %s... \n',file_to_convert,nF,numel(files_to_convert),datestr(now));
+    tic
+    
+    % original files to convert
+    all_file_to_convert = strcat(file_to_convert,'.all');
+    wcd_file_to_convert = strcat(file_to_convert,'.wcd');
+    
+    % converted filename
+    mat_fdata_file = char(fdata_filenames_from_all_filenames(file_to_convert));
+    
+    % initialize which datagrams were read
+    datags_parsed_idx = zeros(size(dg_wc));
+    
+    % initialize output
+    RAWdata = [];
+    
+    % check datagrams available in WCD file (if it exists)
+    if exist(wcd_file_to_convert,'file')>0
+        
+        % get WCD file info and find list of datagrams available
+        WCDfile_info = CFF_all_file_info(wcd_file_to_convert);
+        WCDfile_datag_types = unique(WCDfile_info.datagTypeNumber);
+        
+        % find which datagrams can be read here
+        datags_parsed_idx = ismember(dg_wc,WCDfile_datag_types);
+        
+        % if any, read those datagrams
+        if any(datags_parsed_idx)
+            datags_to_read_idx = ismember(WCDfile_info.datagTypeNumber,dg_wc(datags_parsed_idx));
+            WCDfile_info.parsed(datags_to_read_idx) = 1;
+            RAWdata = CFF_read_all_from_fileinfo(wcd_file_to_convert, WCDfile_info);
+        end
+        
+    end
+    
+    if ~all(datags_parsed_idx) 
+        % if not all datagrams needed were in the WCD file...
+        
+        % ...check the all file (if it exists)
+        if exist(all_file_to_convert,'file')>0
+
+            % get ALL file info and find list of datagrams available
+            ALLfile_info = CFF_all_file_info(all_file_to_convert);
+            ALLfile_datag_types = unique(ALLfile_info.datagTypeNumber);
+            
+            % find which remaining datagram types can be read here
+            yesthose_idx = ismember(dg_wc,ALLfile_datag_types) & ~datags_parsed_idx;
+            
+            % if any, read those datagrams
+            if any(yesthose_idx)
+                ALLfile_info.parsed(ismember(ALLfile_info.datagTypeNumber,dg_wc(yesthose_idx))) = 1;
+                ALLdata = CFF_read_all_from_fileinfo(all_file_to_convert, ALLfile_info);
+                if ~isempty(RAWdata)
+                    RAWdata = {RAWdata ALLdata};
+                else
+                    RAWdata = {ALLdata};
+                end
+                datags_parsed_idx = datags_parsed_idx | yesthose_idx;
+            end
+            
+        end
+    end
+    
+    % if not all datagrams were found at this point, message and abort
+    if ~all(datags_parsed_idx)
+        if ismember(wc_d,dg_wc(~datags_parsed_idx))
+            fprintf('...File does not contain required water-column datagrams. Check file contents. Conversion aborted.\n');
+        else
+            fprintf('...File does not contain all necessary datagrams. Check file contents. Conversion aborted.\n');
+        end
+        continue
+    end
+    
+    % if output folder doesn't exist, create it
+    MATfilepath = fileparts(mat_fdata_file);
+    if ~exist(MATfilepath,'dir') && ~isempty(MATfilepath)
+        mkdir(MATfilepath);
+    end
+    
+    % If output file exists and reconversation not required, simply load
+    % it. Otherwise start from scratch 
+    if exist(mat_fdata_file,'file') && reconvert>0
+        fData = load(mat_fdata_file);
+    else
+        fData = {};    
+    end
+    
+    % have not examined that new function yet. Not sure what's "up" or why
+    % loading two fData? XXX
+    [fData,up] = CFF_convert_struct_to_fabc_v2(RAWdata,fData);
+    
+    if up > 0
+        save(mat_fdata_file,'-struct','fData','-v7.3');
+        clear fData;
+    end
+    
+    % End of conversion
+    fprintf('...Done. Elapsed time: %f seconds.\n',toc);
+    
 end
 
+% update display
+update_file_tab(main_figure);
+
+% general timer
+timer_end = now;
+fprintf('Total time for conversion: %f seconds (~%.2f minutes).\n',(timer_end-timer_start)*24*60*60,(timer_end-timer_start)*24*60);
+
 end
+
+
+
+
+%%
+% Callback when pressing the "Load" button
+%
+function load_files_callback(src,~,main_figure)
+
+% get tab data
+file_tab_comp = getappdata(main_figure,'file_tab');
+
+% get existing fData and disp_config
+fData = getappdata(main_figure,'fData');
+disp_config = getappdata(main_figure,'disp_config');
+
+% get list of files requested for loading
+files = file_tab_comp.files;
+selected_idx = file_tab_comp.selected_idx;
+files_to_load = files(selected_idx);
+
+% get list of files not converted
+list_of_files_not_converted = ~file_tab_comp.converted;
+files_not_converted = list_of_files_not_converted(selected_idx);
+
+% get list of files already loaded
+loaded_files = get_loaded_files(main_figure);
+files_already_loaded = ismember(files_to_load,loaded_files);
+
+% general timer
+timer_start = now;
+
+% for each file
+for nF = 1:numel(files_to_load)
+
+    file_to_load = files_to_load{nF};
+    
+    % check if file was converted
+    if files_not_converted(nF)
+        fprintf('File "%s" (%i/%i) has not been converted yet. Loading aborted.\n',nF,numel(files_to_load),file_to_load);
+        continue
+    end
+        
+    % check if file not already loaded
+    if files_already_loaded(nF)
+        fprintf('File "%s" (%i/%i) is already loaded.\n',file_to_load,nF,numel(files_to_load));
+        continue
+    end
+        
+    % converted filename
+    mat_fdata_file = char(fdata_filenames_from_all_filenames(file_to_load));
+    
+    % check if converted file exists
+    if ~isfile(mat_fdata_file)
+        fprintf('File "%s" (%i/%i) is marked as converted and loadable but converted file cannot be found. Try re-convert. Loading aborted.\n',file_to_load,nF,numel(files_to_load));
+        continue
+    end
+    
+    % all tests passed. Loading can begin
+    fprintf('Loading converted file "%s" (%i/%i). Started at %s... \n',file_to_load,nF,numel(files_to_load),datestr(now));
+    tic
+    
+    % loading temp
+    fData_temp = load(mat_fdata_file);
+    
+    % update raw data filenames in fData_temp
+    [~,file_names,f_ext] = cellfun(@fileparts,fData_temp.ALLfilename,'un',0);
+    folder_tmp = fileparts(fileparts(mat_fdata_file));
+    fData_temp.ALLfilename = cellfun(@(x,y) fullfile(folder_tmp,[x y]),file_names,f_ext,'un',0);
+    
+    % getting source of water-column data and prefix right
+    if isfield(fData_temp,'WC_SBP_SampleAmplitudes')
+        start_fmt = 'WC_';
+        d_source = 'WC';
+    elseif isfield(fData_temp,'WCAP_SBP_SampleAmplitudes')
+        start_fmt = 'WCAP_';
+        d_source = 'WCAP';
+    end
+    
+    % Interpolating navigation data from ancillary sensors to ping time
+    fprintf('...Interpolating navigation data from ancillary sensors to ping time...\n');
+    fData_temp = CFF_process_ping_v2(fData_temp,d_source);
+    
+    % checking UTM zone for projection
+    if strcmp(disp_config.MET_tmproj,'')
+        % first file, use its projection
+        disp_config.MET_tmproj = fData_temp.MET_tmproj;
+    elseif ~strcmp(disp_config.MET_tmproj,fData_temp.MET_tmproj)
+        % different projection. Abandon loading
+        fprintf('... File is using different UTM zone for projection than project. Loading aborted.\n');
+        clean_fdata(fData_temp);
+        continue;
+    end
+    
+    % Processing bottom detect
+    fprintf('...Processing bottom detect...\n');
+    fData_temp = CFF_process_WC_bottom_detect_v2(fData_temp);
+    
+    % what is that for? XXX
+    fData_temp.ID = str2double(datestr(now,'yyyymmddHHMMSSFFF'));
+    
+    % record raw data memmap filename in fData struct
+    wc_dir = get_wc_dir(fData_temp.ALLfilename{1});
+    memmap_filename = fullfile(wc_dir,[start_fmt 'SBP_SampleAmplitudes']);
+    if isfile(memmap_filename)
+        fData_temp.([start_fmt 'SBP_SampleAmplitudes']).Filename = memmap_filename;
+    end
+    
+    % processed memmap filename
+    file_X_SBP_L1 = fullfile(wc_dir,'X_SBP_Masked.dat');
+    
+    % to comment XXX
+    if isfile(file_X_SBP_L1)
+        [nSamples,nBeams,nPings] = size(fData_temp.([start_fmt 'SBP_SampleAmplitudes']).Data.val);
+        fData_temp.X_SBP_Masked = memmapfile(file_X_SBP_L1, 'Format',{'int8' [nSamples nBeams nPings] 'val'},'repeat',1,'writable',true);
+    end
+    
+    % why pause here? XXX
+    pause(1e-3);
+    
+    % add this file's data to the full fData
+    fData{numel(fData)+1} = fData_temp;
+    
+    % disp
+    fprintf('...Done. Elapsed time: %f seconds.\n',toc);
+    
+end
+
+% add fData to appdata
+setappdata(main_figure,'fData',fData);
+
+% update display
+update_file_tab(main_figure);
+update_display(main_figure);
+
+% general timer
+timer_end = now;
+fprintf('Total time for loading: %f seconds (~%.2f minutes).\n',(timer_end-timer_start)*24*60*60,(timer_end-timer_start)*24*60);
+
+end
+
+
+
+

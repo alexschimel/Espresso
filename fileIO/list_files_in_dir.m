@@ -47,12 +47,12 @@ AllFilename_list = subdir(fullfile(folder_init,'*.all'));
 if isempty(AllFilename_list)
     return;
 else
-     AllFilename_cell = {AllFilename_list([AllFilename_list(:).isdir]==0).name};
+    AllFilename_cell = {AllFilename_list([AllFilename_list(:).isdir]==0).name};
 end
 % get .wcd files
 WCDFilename_list = subdir(fullfile(folder_init,'*.wcd'));
 if isempty(WCDFilename_list)
-  return;
+    return;
 else
     WCDFilename_cell = {WCDFilename_list([WCDFilename_list(:).isdir]==0).name};
 end
@@ -77,6 +77,5 @@ mat_fdata_files=fdata_filenames_from_all_filenames(files_full);
 
 % boolean for whether these mat files exist
 converted = cellfun(@(x) exist(x,'file')>0,mat_fdata_files);
-
 
 end

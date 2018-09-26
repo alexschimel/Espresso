@@ -1,4 +1,4 @@
-function [x,y,f]=ll2utm(varargin)
+function [x,y,f] = ll2utm(varargin)
 %LL2UTM Lat/Lon to UTM coordinates precise conversion.
 %	[X,Y]=LL2UTM2(LAT,LON) or LL2UTM([LAT,LON]) converts coordinates 
 %	LAT,LON (in degrees) to UTM X and Y (in meters). Default datum is WGS84.

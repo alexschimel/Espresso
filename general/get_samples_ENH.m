@@ -1,5 +1,4 @@
-
-function [E,N,H]=get_samples_ENH(sonarE,sonarN,sonarH,heading,sampleAcrossDist,sampleUpDist)
+function [E,N,H] = get_samples_ENH(sonarE,sonarN,sonarH,heading,sampleAcrossDist,sampleUpDist)
 
 sonarH = permute(sonarH,[3,1,2]);
 sonarE = permute(sonarE,[3,1,2]); 

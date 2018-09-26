@@ -1,4 +1,3 @@
-function [fData] = CFF_filter_WC_sidelobe_artifact_v2(fData,varargin)
 % [fData] = CFF_filter_WC_sidelobe_artifact_v2(fData,varargin)
 %
 % DESCRIPTION
@@ -66,6 +65,8 @@ function [fData] = CFF_filter_WC_sidelobe_artifact_v2(fData,varargin)
 % Alex Schimel, Deakin University
 %%%
 
+%% function
+function [fData] = CFF_filter_WC_sidelobe_artifact_v2(fData,varargin)
 
 %% Set methods
 method_spec = 2; % default
@@ -94,9 +95,6 @@ end
 if isfield(fData,'X_SBP_L1')
      memoryMapFlag = 0;
 end
-
-
-
 
 % MAIN PROCESSING SWITCH
 switch method_spec

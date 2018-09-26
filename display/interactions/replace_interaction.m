@@ -1,14 +1,16 @@
-
-%replace_interaction(curr_fig,'interaction','WindowButtonDownFcn','id',1,'interaction_fcn',{@zoom_in_callback,curr_fig},'pointer','glassplus');
 function replace_interaction(curr_fig,varargin)
 
-interact_fields={'WindowButtonDownFcn',...
+%replace_interaction(curr_fig,'interaction','WindowButtonDownFcn','id',1,'interaction_fcn',{@zoom_in_callback,curr_fig},'pointer','glassplus');
+
+interact_fields = {'WindowButtonDownFcn',...
     'WindowButtonMotionFcn',...
     'WindowButtonUpFcn',...
     'WindowKeyPressFcn',...
     'KeyPressFcn',...
     'WindowKeyReleaseFcn',...
     'WindowScrollWheelFcn'};
+
+%% parsing inputs
 
 p = inputParser;
 
@@ -20,7 +22,9 @@ addParameter(p,'pointer',[],@(x) ischar(x)||isempty(x))
 
 parse(p,curr_fig,varargin{:});
 
-interactions_id=getappdata(curr_fig,'interactions_id');
+%% then?
+
+interactions_id = getappdata(curr_fig,'interactions_id');
 
 if isempty(interactions_id)
     return;
@@ -29,14 +33,15 @@ end
 iptremovecallback(curr_fig,p.Results.interaction,interactions_id.(p.Results.interaction)(p.Results.id));
 
 if isempty(p.Results.interaction_fcn)
-    fcn=' ';
+    fcn = ' ';
 else
-    fcn=p.Results.interaction_fcn;
+    fcn = p.Results.interaction_fcn;
 end
-interactions_id.(p.Results.interaction)(p.Results.id)=iptaddcallback(curr_fig,(p.Results.interaction),fcn);
 
-if isappdata(curr_fig,'Curr_disp')&&isempty(p.Results.pointer)
-    curr_disp=getappdata(curr_fig,'Curr_disp');
+interactions_id.(p.Results.interaction)(p.Results.id) = iptaddcallback(curr_fig,(p.Results.interaction),fcn);
+
+if isappdata(curr_fig,'Curr_disp') && isempty(p.Results.pointer)
+    curr_disp = getappdata(curr_fig,'Curr_disp');
     setptr(curr_fig,curr_disp.get_pointer());
 elseif ~isempty(p.Results.pointer)
     setptr(curr_fig,p.Results.pointer);

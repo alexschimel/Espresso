@@ -2,7 +2,7 @@
 
 function compile_espresso(root_folder,nomFunc)
 
-folders=folders_list(root_folder);
+folders = folders_list(root_folder);
 
 
 switch computer
@@ -19,28 +19,26 @@ switch computer
 end
 
 for i= 1:(length(folders))
-    str{end+1}=sprintf('-a %s ',folders{i});
+    str{end+1} = sprintf('-a %s ',folders{i});
 end
 
-str{end+1}='-o Espresso -r icons/espresso.ico -w enable';
+str{end+1} = '-o Espresso -r icons/espresso.ico -w enable';
 
-str_mcc =[str{:}];
+str_mcc = [str{:}];
 disp(str_mcc);
 eval(str_mcc);
 
 end
 
-function folders=folders_list(path)
+function folders = folders_list(path)
 
+folders{1} = fullfile(path,'toolboxes');
+folders{2} = fullfile(path, 'processing');
+folders{3} = fullfile(path, 'classes');
+folders{4} = fullfile(path, 'display');
+folders{5} = fullfile(path, 'fileIO');
+folders{6} = fullfile(path, 'general');
 
-folders{1}=fullfile(path,'toolboxes');
-folders{2}=fullfile(path, 'processing');
-folders{3}=fullfile(path, 'classes');
-folders{4}=fullfile(path, 'display');
-folders{5}=fullfile(path, 'fileIO');
-folders{6}=fullfile(path, 'general');
-
-
-folders(cellfun(@isempty, folders))=[];
+folders(cellfun(@isempty, folders)) = [];
 
 end

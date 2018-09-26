@@ -1,4 +1,3 @@
-function [fData] = CFF_filter_WC_sidelobe_artifact_v3(fData,varargin)
 % [fData] = CFF_filter_WC_sidelobe_artifact_v2(fData,varargin)
 %
 % DESCRIPTION
@@ -63,6 +62,8 @@ function [fData] = CFF_filter_WC_sidelobe_artifact_v3(fData,varargin)
 % Alex Schimel, Deakin University
 %%%
 
+%% function starts
+function [fData] = CFF_filter_WC_sidelobe_artifact_v3(fData,varargin)
 
 %% Set methods
 method_spec = 2; % default
@@ -87,8 +88,6 @@ if isobject(fData.(sprintf('%sSBP_SampleAmplitudes',start_fmt)))
 else
     memoryMapFlag = 0;
 end
-
-
 
 if isfield(fData,'X_SBP_Masked')
      memoryMapFlag = 0;
