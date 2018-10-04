@@ -1,7 +1,6 @@
 %% CFF_all_file_info.m
 %
-% Records basic info about the datagrams contained in one Kongsberg EM
-% series binary .all or .wcd data file.
+% Records basic info about the datagrams contained in one Kongsberg EM series binary .all or .wcd data file.
 %
 %% Help
 %
@@ -18,8 +17,7 @@
 %
 % *OUTPUT VARIABLES*
 %
-% * |ALLfileinfo|: structure containing information about datagrams in
-% ALLfilename, with fields: 
+% * |ALLfileinfo|: structure containing information about datagrams in ALLfilename, with fields: 
 %   * |ALLfilename|: input file name
 %   * |filesize|: file size in bytes
 %   * |datagsizeformat|: endianness of the datagram size field 'b' or 'l'
@@ -389,9 +387,7 @@ while 1
             try i114=i114+1; catch, i114=1; end
             counter = i114;
         otherwise
-             %datagTypeNumber
-%             dec2hex(datagTypeNumber)
-            %char(datagTypeNumber);
+
             % this datagTypeNumber is not recognized yet
             datagTypeText = {sprintf('UNKNOWN DATAGRAM (%sH)',dec2hex(datagTypeNumber))};
             

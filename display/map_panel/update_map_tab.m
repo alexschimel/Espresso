@@ -22,7 +22,8 @@ end
 
 ax = map_tab_comp.map_axes;
 
-df = 100;
+% show every df pings on navigation (subsampled)
+df = 10;
 xlim = [nan nan];
 ylim = [nan nan];
 
@@ -33,16 +34,18 @@ end
 for i = idx_up
     
     if idx_zoom(i)
+        % selected line
         vis = 'on';
-        col = [0 0.6 0];
+        col = [0 0 0]; % black
     else
+        % unselected line
         vis = 'off';
-        col = 'r';
+        col = [0.7 0.7 0.7]; % very light gray
     end
     
     fData = fData_tot{i};
     % times1 = datestr(fData.X_1P_pingSDN,'dd-mmm-yyyy HH:MM:SS.FFF');
-    %  times2 = datestr(fData.X_1P_pingSDN,'HH:MM:SS.FFF');
+    % times2 = datestr(fData.X_1P_pingSDN,'HH:MM:SS.FFF');
     tag_id = num2str(fData.ID,'%.0f');
     tag_id_wc = num2str(fData.ID,'wc%.0f');
     tag_id_line = num2str(fData.ID,'%.0f_line');
@@ -52,14 +55,17 @@ for i = idx_up
     
     if isempty(obj)
         
-        plot(ax,fData.X_1P_pingE(1),fData.X_1P_pingN(1),'o',...
-            'Tag',tag_id,'Visible','on','Color',col);
-        plot(ax,fData.X_1P_pingE,fData.X_1P_pingN,...,
-            'Tag',tag_id,'Visible','on','Color',col,...
-            'ButtonDownFcn',{@disp_wc_ping_cback,main_figure});
-        plot(ax,[fData.X_1P_pingE(1:df:end),fData.X_1P_pingE(end)],[fData.X_1P_pingN(1:df:end),fData.X_1P_pingN(end)],'.',...
-            'Tag',tag_id,'Visible','on','Color',col);
-        plot(ax,fData.X_1P_pingE(end),fData.X_1P_pingN(end),'s','Tag',tag_id,'Visible','on','Color',col);
+        % start of line
+        plot(ax,fData.X_1P_pingE(1),fData.X_1P_pingN(1),'o','Tag',tag_id,'Visible','on','Color',col);
+        
+        % line navigation
+        plot(ax,fData.X_1P_pingE,fData.X_1P_pingN,'Tag',tag_id,'Visible','on','Color',col,'ButtonDownFcn',{@disp_wc_ping_cback,main_figure});
+        
+        % plot subsampled navigation
+        plot(ax,[fData.X_1P_pingE(1:df:end),fData.X_1P_pingE(end)],[fData.X_1P_pingN(1:df:end),fData.X_1P_pingN(end)],'.','Tag',tag_id,'Visible','on','Color',col);
+        
+        % end of line
+        %plot(ax,fData.X_1P_pingE(end),fData.X_1P_pingN(end),'s','Tag',tag_id,'Visible','on','Color',col);
         
     else
         set(obj,'Visible','on');
@@ -80,13 +86,14 @@ for i = idx_up
         obj_wc = [];
     end
     
-    if isempty(obj_wc)&&isfield(fData,'X_NEH_gridLevel')
+    if isempty(obj_wc) && isfield(fData,'X_NEH_gridLevel')
+        
         % grab data
         E = fData.X_1E_gridEasting;
         N = fData.X_N1_gridNorthing;
         L = fData.X_NEH_gridLevel;
-        % get mean
-                
+        
+        % get mean        
         switch disp_config.Var_disp
             case 'wc_int'
                 if size(L,3)>1
@@ -101,9 +108,12 @@ for i = idx_up
         end
         
         obj_wc = imagesc(ax,E,N,data,'Visible',vis,'Tag',tag_id_wc,'ButtonDownFcn',{@disp_wc_ping_cback,main_figure});
+        
     else
+        
         set(obj_wc,'Visible',vis);
         data = get(obj_wc,'CData');
+        
     end
     
     switch disp_config.Var_disp
@@ -120,15 +130,16 @@ for i = idx_up
     
     if idx_zoom(i)
         if isfield(fData,'X_NEH_gridLevel')
+            
             xlim(1) = nanmin(xlim(1),nanmin(fData.X_1E_gridEasting(:)));
             xlim(2) = nanmax(xlim(2),nanmax(fData.X_1E_gridEasting(:)));
-            
             ylim(1) = nanmin(ylim(1),nanmin(fData.X_N1_gridNorthing(:)));
             ylim(2) = nanmax(ylim(2),nanmax(fData.X_N1_gridNorthing(:)));
+            
         elseif isfield(fData,'X_1P_pingE')
+            
             xlim(1) = nanmin(xlim(1),nanmin(fData.X_1P_pingE(:)));
             xlim(2) = nanmax(xlim(2),nanmax(fData.X_1P_pingE(:)));
-            
             ylim(1) = nanmin(ylim(1),nanmin(fData.X_1P_pingN(:)));
             ylim(2) = nanmax(ylim(2),nanmax(fData.X_1P_pingN(:)));
             
@@ -165,7 +176,6 @@ for igrid = 1:numel(grids)
     else
         set(obj_box,'Position',[grid.E_lim(1),grid.N_lim(1),diff(grid.E_lim),diff(grid.N_lim)]);
     end
-    
     
     if new_res
         delete(obj_grid);
@@ -219,10 +229,5 @@ fmt = '%.2f';
 % update strings
 set(ax,'yticklabel',y_labels);
 set(ax,'xticklabel',x_labels);
-
-% if ~isdeployed
-%     fprintf(1,'Currently %.0f active objects in Espresso\n\n',numel(findall(main_figure)));
-% end
-
 
 end

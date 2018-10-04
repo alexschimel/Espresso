@@ -101,14 +101,13 @@ datagsizeformat = ALLfileinfo.datagsizeformat;
 datagramsformat = ALLfileinfo.datagramsformat;
 ALLdata.ALLfilename=ALLfilename;
 ALLdata.datagramsformat=datagramsformat;
+
 %% Open file
 [fid,~] = fopen(ALLfilename, 'r',datagramsformat);
 
 
 %% Parse only datagrams indicated in ALLfileinfo
-
 datagToParse = find(ALLfileinfo.parsed==1);
-
 
 
 %% Reading datagrams
@@ -140,14 +139,14 @@ for iDatag = datagToParse'
     switch datagTypeNumber
         
         case 49 % 'PU STATUS OUTPUT (31H)'
-            
-            % counter for this type of datagram
-            try i49=i49+1; catch, i49=1; end
             if ~(isempty(p.Results.OutputFields)||any(strcmp('EM_PUStatus',p.Results.OutputFields)))
                 continue;
             end
+            % counter for this type of datagram
+            try i49=i49+1; catch, i49=1; end
+            
+            % parsing
             % SOMETHING WRONG WITH THIS DATAGRAM, NEW TEMPLATE? REWRITE USING LATEST KONGSBERG DOCUMENTATION
-            %             % parsing
             %             ALLdata.EM_PUStatus.STX(i49)                                    = stxDatag;
             %             ALLdata.EM_PUStatus.TypeOfDatagram(i49)                         = datagTypeNumber;
             %             ALLdata.EM_PUStatus.EMModelNumber(i49)                          = emNumber;
@@ -250,7 +249,7 @@ for iDatag = datagToParse'
             parsed = 1;
             
         case 67 % 'CLOCK (43H)'
-           if ~(isempty(p.Results.OutputFields)||any(strcmp('EM_Clock',p.Results.OutputFields)))
+            if ~(isempty(p.Results.OutputFields)||any(strcmp('EM_Clock',p.Results.OutputFields)))
                 continue;
             end
             % counter for this type of datagram
@@ -444,7 +443,6 @@ for iDatag = datagToParse'
             end
             % counter for this type of datagram
             try i78=i78+1; catch, i78=1; end
-
             
             % parsing
             ALLdata.EM_RawRangeAngle78.NumberOfBytesInDatagram(i78)           = nbDatag;
@@ -861,7 +859,7 @@ for iDatag = datagToParse'
             parsed = 1;
             
         case 102 % 'RAW RANGE AND BEAM ANGLE (f) (66H)'
-             if ~(isempty(p.Results.OutputFields)||any(strcmp('EM_RawBeamRangeAngle',p.Results.OutputFields)))
+            if ~(isempty(p.Results.OutputFields)||any(strcmp('EM_RawBeamRangeAngle',p.Results.OutputFields)))
                 continue;
             end
             % counter for this type of datagram
@@ -944,12 +942,18 @@ for iDatag = datagToParse'
             % counter for this type of datagram
             try i107=i107+1; catch, i107=1; end
             
+            % ----- IMPORTANT NOTE ----------------------------------------
+            % This datagram's data is massive so we don't extract it from
+            % the files and store in memory as is. Instead, we record the
+            % metadata and the exact location of the data for later
+            % extraction. 
+            % -------------------------------------------------------------
+            
             % parsing
+            ALLdata.EM_WaterColumn.NumberOfBytesInDatagram(i107) = nbDatag;
             
-            
-            
-            ALLdata.EM_WaterColumn.NumberOfBytesInDatagram(i107)           = nbDatag;
-            pos_1=ftell(fid);
+            % position at start of datagram
+            pos_1 = ftell(fid); 
             
             ALLdata.EM_WaterColumn.STX(i107)                               = stxDatag;
             ALLdata.EM_WaterColumn.TypeOfDatagram(i107)                    = datagTypeNumber;
@@ -987,59 +991,77 @@ for iDatag = datagToParse'
             ALLdata.EM_WaterColumn.Spare{i107}                         = fread(fid,Ntx,'uint8',C-1);
             fseek(fid,1-C,'cof'); % we need to come back after last jump
             
-            % repeat cycle #2: Nrx entries of a possibly variable number of bits. Using a for loop
+            % repeat cycle #2: Nrx entries of a possibly variable number of
+            % bits. Reading everything first and using a for loop to parse
+            % the data in it
             Nrx = ALLdata.EM_WaterColumn.NumberOfBeamsInThisDatagram(i107);
             
-            pos_2=ftell(fid);
-            %
+            pos_2 = ftell(fid); % position at start of data
+            tmp = fread(fid,nbDatag-(pos_2-pos_1+1)-15,'int8'); % read all that data block
+            tmp = int8(tmp');
+            id  = 0; % offset for start of each Nrx block
+            wc_parsing_error = 0; % initialize flag
             
+            % initialize outputs
+            ALLdata.EM_WaterColumn.BeamPointingAngle{i107}          = nan(1,Nrx);
+            ALLdata.EM_WaterColumn.StartRangeSampleNumber{i107}     = nan(1,Nrx);
+            ALLdata.EM_WaterColumn.NumberOfSamples{i107}            = nan(1,Nrx);
+            ALLdata.EM_WaterColumn.DetectedRangeInSamples{i107}     = nan(1,Nrx);
+            ALLdata.EM_WaterColumn.TransmitSectorNumber2{i107}      = nan(1,Nrx);
+            ALLdata.EM_WaterColumn.BeamNumber{i107}                 = nan(1,Nrx);
+            ALLdata.EM_WaterColumn.SampleAmplitudePosition{i107}    = nan(1,Nrx); 
+            Ns  = zeros(1,Nrx);
             
-            Ns = zeros(1,Nrx);
-            tmp=fread(fid,nbDatag-(pos_2-pos_1+1)-15,'int8');
-            tmp=int8(tmp');
-            id=0;
-            ALLdata.EM_WaterColumn.BeamPointingAngle{i107}=nan(1,Nrx);
-            ALLdata.EM_WaterColumn.StartRangeSampleNumber{i107}=nan(1,Nrx);
-            ALLdata.EM_WaterColumn.NumberOfSamples{i107}=nan(1,Nrx);
-            ALLdata.EM_WaterColumn.DetectedRangeInSamples{i107}=nan(1,Nrx);
-            ALLdata.EM_WaterColumn.TransmitSectorNumber2{i107}=nan(1,Nrx);
-            ALLdata.EM_WaterColumn.BeamNumber{i107}=nan(1,Nrx);
-            ALLdata.EM_WaterColumn.SampleAmplitudePosition{i107}=nan(1,Nrx);
-            get_rid_of_it=0;
-            for jj=1:Nrx     
+            % now parse the data
+            for jj = 1:Nrx
+                
                 try
-                    ALLdata.EM_WaterColumn.BeamPointingAngle{i107}(jj)             = typecast(tmp(1+id:2+id),'int16');
-                    ALLdata.EM_WaterColumn.StartRangeSampleNumber{i107}(jj)        = typecast(tmp(3+id:4+id),'uint16');
-                    ALLdata.EM_WaterColumn.NumberOfSamples{i107}(jj)               = typecast(tmp(5+id:6+id),'uint16');
-                    ALLdata.EM_WaterColumn.DetectedRangeInSamples{i107}(jj)        = typecast(tmp(7+id:8+id),'uint16');
-                    ALLdata.EM_WaterColumn.TransmitSectorNumber2{i107}(jj)         = typecast(tmp(9+id),'uint8');
-                    ALLdata.EM_WaterColumn.BeamNumber{i107}(jj)                    = typecast(tmp(10+id),'uint8');
-                    ALLdata.EM_WaterColumn.SampleAmplitudePosition{i107}(jj)=pos_2+id+10;
+                    
+                    ALLdata.EM_WaterColumn.BeamPointingAngle{i107}(jj)       = typecast(tmp(1+id:2+id),'int16');
+                    ALLdata.EM_WaterColumn.StartRangeSampleNumber{i107}(jj)  = typecast(tmp(3+id:4+id),'uint16');
+                    ALLdata.EM_WaterColumn.NumberOfSamples{i107}(jj)         = typecast(tmp(5+id:6+id),'uint16');
+                    ALLdata.EM_WaterColumn.DetectedRangeInSamples{i107}(jj)  = typecast(tmp(7+id:8+id),'uint16');
+                    ALLdata.EM_WaterColumn.TransmitSectorNumber2{i107}(jj)   = typecast(tmp(9+id),'uint8');
+                    ALLdata.EM_WaterColumn.BeamNumber{i107}(jj)          	 = typecast(tmp(10+id),'uint8');
+                    
+                    % recording data position instead of data themselves
+                    ALLdata.EM_WaterColumn.SampleAmplitudePosition{i107}(jj) = pos_2 + id + 10; 
+                    % actual data recording would be:
+                    % ALLdata.EM_WaterColumn.SampleAmplitude{i107}{jj} = tmp((11+id):(11+id+Ns(jj)-1));
+                    
                     Ns(jj) = ALLdata.EM_WaterColumn.NumberOfSamples{i107}(jj);
-                    %ALLdata.EM_WaterColumn.SampleAmplitude{i107}{jj}               = tmp((11+id):(11+id+Ns(jj)-1));
-                    id=10*jj+sum(Ns);
+                    
+                    % offset to next jj block
+                    id = 10*jj + sum(Ns);
+                    
                 catch
-                    ALLdata.EM_WaterColumn.NumberOfSamples{i107}(jj)=0;
+                    
+                    % issue in the recording, flag and exit the loop
+                    ALLdata.EM_WaterColumn.NumberOfSamples{i107}(jj) = 0;
                     Ns(jj) = 0;
-                    get_rid_of_it=1;
+                    wc_parsing_error = 1;
                     continue;
+                    
                 end
+                
             end
             
-            if get_rid_of_it==0
+            if wc_parsing_error == 0
+                % HERE if data parsing all went well
+                
                 % "spare byte if required to get even length (always 0 if used)"
                 if floor((Nrx*10+sum(Ns))/2) == (Nrx*10+sum(Ns))/2
                     % even so far, since ETX is 1 byte, add a spare here
-                    ALLdata.EM_WaterColumn.Spare4(i107)                            = double(typecast(tmp(1+id),'uint8'));
-                    id=id+1;
+                    ALLdata.EM_WaterColumn.Spare4(i107) = double(typecast(tmp(1+id),'uint8'));
+                    id = id+1;
                 else
                     % odd so far, since ETX is 1 bytes, no spare
                     ALLdata.EM_WaterColumn.Spare4(i107) = NaN;
                 end
                 
-                ALLdata.EM_WaterColumn.ETX(i107)                               = typecast(tmp(id+1),'uint8');
-                ALLdata.EM_WaterColumn.CheckSum(i107)                          = typecast(tmp(2+id:3+id),'uint16');
-                
+                % end of datagram
+                ALLdata.EM_WaterColumn.ETX(i107)      = typecast(tmp(id+1),'uint8');
+                ALLdata.EM_WaterColumn.CheckSum(i107) = typecast(tmp(2+id:3+id),'uint16');
                 
                 % ETX check
                 if ALLdata.EM_WaterColumn.ETX(i107)~=3
@@ -1048,16 +1070,24 @@ for iDatag = datagToParse'
                 
                 % confirm parsing
                 parsed = 1;
-            else
                 
-                fields_wc=fieldnames(ALLdata.EM_WaterColumn);
-                for ifi=1:numel(fields_wc)
-                    if numel(ALLdata.EM_WaterColumn.(fields_wc{ifi}))>=i107
-                        ALLdata.EM_WaterColumn.(fields_wc{ifi})(i107)=[];
+            else
+                % HERE if data parsing failed, add a blank datagram in
+                % output
+                
+                % copy field names of previous entries
+                fields_wc = fieldnames(ALLdata.EM_WaterColumn);
+                
+                % add blanks fields for those missing
+                for ifi = 1:numel(fields_wc)
+                    if numel(ALLdata.EM_WaterColumn.(fields_wc{ifi})) >= i107
+                        ALLdata.EM_WaterColumn.(fields_wc{ifi})(i107) = [];
                     end
                 end
-                i107=i107-1;
-                parsed=0;
+                
+                i107 = i107-1; % XXX if we do that, then we'll rewrite over the blank record we just entered??
+                parsed = 0;
+                
             end
             
         case 110 % 'NETWORK ATTITUDE VELOCITY DATAGRAM 110 (6EH)'
@@ -1116,17 +1146,24 @@ for iDatag = datagToParse'
             parsed = 1;
             
         case 114 %'AMPLITUDE AND PHASE WC DATAGRAM 114 (72H)';
-             if ~(isempty(p.Results.OutputFields)||any(strcmp('EM_AmpPhase',p.Results.OutputFields)))
+            if ~(isempty(p.Results.OutputFields)||any(strcmp('EM_AmpPhase',p.Results.OutputFields)))
                 continue;
             end
             % counter for this type of datagram
             try i114=i114+1; catch, i114=1; end
             
-            % parsing
+            % ----- IMPORTANT NOTE ----------------------------------------
+            % This datagram's data is massive so we don't extract it from
+            % the files and store in memory as is. Instead, we record the
+            % metadata and the exact location of the data for later
+            % extraction. 
+            % -------------------------------------------------------------
             
-          
+            % parsing
             ALLdata.EM_AmpPhase.NumberOfBytesInDatagram(i114)           = nbDatag;
-            pos_1=ftell(fid);
+            
+            % position at start of datagram
+            pos_1 = ftell(fid); 
             
             ALLdata.EM_AmpPhase.STX(i114)                               = stxDatag;
             ALLdata.EM_AmpPhase.TypeOfDatagram(i114)                    = datagTypeNumber;
@@ -1164,61 +1201,83 @@ for iDatag = datagToParse'
             ALLdata.EM_AmpPhase.Spare{i114}                         = fread(fid,Ntx,'uint8',C-1);
             fseek(fid,1-C,'cof'); % we need to come back after last jump
             
-            % repeat cycle #2: Nrx entries of a possibly variable number of bits. Using a for loop
+            % repeat cycle #2: Nrx entries of a possibly variable number of
+            % bits. Reading everything first and using a for loop to parse
+            % the data in it
             Nrx = ALLdata.EM_AmpPhase.NumberOfBeamsInThisDatagram(i114);
             
-            pos_2=ftell(fid);           
+            pos_2 = ftell(fid); % position at start of data
+            tmp = fread(fid,nbDatag-(pos_2-pos_1+1)-15,'int8'); % read all that data block
+            tmp = int8(tmp');
+            id = 0; % offset for start of each Nrx block
+            wc_parsing_error = 0; % initialize flag
             
+            % initialize outputs
+            ALLdata.EM_AmpPhase.BeamPointingAngle{i114}             = nan(1,Nrx);
+            ALLdata.EM_AmpPhase.StartRangeSampleNumber{i114}        = nan(1,Nrx);
+            ALLdata.EM_AmpPhase.NumberOfSamples{i114}               = nan(1,Nrx);
+            ALLdata.EM_AmpPhase.DetectedRangeInSamples{i114}        = nan(1,Nrx);
+            ALLdata.EM_AmpPhase.TransmitSectorNumber2{i114}         = nan(1,Nrx);
+            ALLdata.EM_AmpPhase.BeamNumber{i114}                    = nan(1,Nrx);
+            ALLdata.EM_AmpPhase.SamplePhaseAmplitudePosition{i114}  = nan(1,Nrx);
             Ns = zeros(1,Nrx);
-            tmp=fread(fid,nbDatag-(pos_2-pos_1+1)-15,'int8');
-            tmp=int8(tmp');
-            id=0;
-            ALLdata.EM_AmpPhase.BeamPointingAngle{i114}=nan(1,Nrx);
-            ALLdata.EM_AmpPhase.StartRangeSampleNumber{i114}=nan(1,Nrx);
-            ALLdata.EM_AmpPhase.NumberOfSamples{i114}=nan(1,Nrx);
-            ALLdata.EM_AmpPhase.DetectedRangeInSamples{i114}=nan(1,Nrx);
-            ALLdata.EM_AmpPhase.TransmitSectorNumber2{i114}=nan(1,Nrx);
-            ALLdata.EM_AmpPhase.BeamNumber{i114}=nan(1,Nrx);
-            ALLdata.EM_AmpPhase.SamplePhaseAmplitudePosition{i114}=nan(1,Nrx);
-            get_rid_of_it=0;
-            for jj=1:Nrx        
-               try 
-                ALLdata.EM_AmpPhase.BeamPointingAngle{i114}(jj)             = typecast(tmp(1+id:2+id),'int16');
-                ALLdata.EM_AmpPhase.StartRangeSampleNumber{i114}(jj)        = typecast(tmp(3+id:4+id),'uint16');
-                ALLdata.EM_AmpPhase.NumberOfSamples{i114}(jj)               = typecast(tmp(5+id:6+id),'uint16');
-                ALLdata.EM_AmpPhase.DetectedRangeInSamples{i114}(jj)        = typecast(tmp(7+id:8+id),'uint16');
-                ALLdata.EM_AmpPhase.TransmitSectorNumber2{i114}(jj)         = typecast(tmp(9+id),'uint8');
-                ALLdata.EM_AmpPhase.BeamNumber{i114}(jj)                    = typecast(tmp(10+id),'uint8');
-                ALLdata.EM_AmpPhase.SamplePhaseAmplitudePosition{i114}(jj)=pos_2+id+10;
-                if ALLdata.EM_AmpPhase.NumberOfSamples{i114}(jj)<2^16/2
-                    Ns(jj) = ALLdata.EM_AmpPhase.NumberOfSamples{i114}(jj);
-                else
-                    Ns(jj)=0;
-                    ALLdata.EM_AmpPhase.NumberOfSamples{i114}(jj)=0;
-                end
-                %ALLdata.EM_AmpPhase.SampleAmplitude{i114}{jj}               = tmp((11+id):(11+id+Ns(jj)-1));
-                id=10*jj+4*sum(Ns);
-                 catch
-                    ALLdata.EM_WaterColumn.NumberOfSamples{i107}(jj)=0;
+            
+            % now parse the data
+            for jj = 1:Nrx
+                
+                try
+                    
+                    ALLdata.EM_AmpPhase.BeamPointingAngle{i114}(jj)             = typecast(tmp(1+id:2+id),'int16');
+                    ALLdata.EM_AmpPhase.StartRangeSampleNumber{i114}(jj)        = typecast(tmp(3+id:4+id),'uint16');
+                    ALLdata.EM_AmpPhase.NumberOfSamples{i114}(jj)               = typecast(tmp(5+id:6+id),'uint16');
+                    ALLdata.EM_AmpPhase.DetectedRangeInSamples{i114}(jj)        = typecast(tmp(7+id:8+id),'uint16');
+                    ALLdata.EM_AmpPhase.TransmitSectorNumber2{i114}(jj)         = typecast(tmp(9+id),'uint8');
+                    ALLdata.EM_AmpPhase.BeamNumber{i114}(jj)                    = typecast(tmp(10+id),'uint8');
+                    
+                    % recording data position instead of data themselves
+                    ALLdata.EM_AmpPhase.SamplePhaseAmplitudePosition{i114}(jj) = pos_2 + id + 10;
+                    % actual data recording would be:
+                    % ALLdata.EM_AmpPhase.SampleAmplitude{i114}{jj} = tmp((11+id):(11+id+Ns(jj)-1));
+                    
+                    if ALLdata.EM_AmpPhase.NumberOfSamples{i114}(jj) < 2^16/2
+                        Ns(jj) = ALLdata.EM_AmpPhase.NumberOfSamples{i114}(jj);
+                    else
+                        % error in number of samples
+                        ALLdata.EM_AmpPhase.NumberOfSamples{i114}(jj) = 0;
+                        Ns(jj) = 0;
+                    end
+                    
+                    % offset to next jj block
+                    id = 10*jj + 4*sum(Ns);
+                    
+                catch
+                    
+                    % issue in the recording, flag and exit the loop
+                    ALLdata.EM_WaterColumn.NumberOfSamples{i107}(jj) = 0;
                     Ns(jj) = 0;
-                    get_rid_of_it=1;
+                    wc_parsing_error = 1;
                     continue;
+                    
                 end
+                
             end
-            if get_rid_of_it==0
+            
+            if wc_parsing_error == 0
+                % HERE if data parsing all went well
+                
                 % "spare byte if required to get even length (always 0 if used)"
                 if floor((Nrx*10+4*sum(Ns))/2) == (Nrx*10+4*sum(Ns))/2
                     % even so far, since ETX is 1 byte, add a spare here
-                    ALLdata.EM_AmpPhase.Spare4(i114)                            = double(typecast(tmp(1+id),'uint8'));
-                    id=id+1;
+                    ALLdata.EM_AmpPhase.Spare4(i114) = double(typecast(tmp(1+id),'uint8'));
+                    id = id+1;
                 else
                     % odd so far, since ETX is 1 bytes, no spare
                     ALLdata.EM_AmpPhase.Spare4(i114) = NaN;
                 end
                 
-                ALLdata.EM_AmpPhase.ETX(i114)                               = typecast(tmp(id+1),'uint8');
-                ALLdata.EM_AmpPhase.CheckSum(i114)                          = typecast(tmp(2+id:3+id),'uint16');
-                
+                % end of datagram
+                ALLdata.EM_AmpPhase.ETX(i114)      = typecast(tmp(id+1),'uint8');
+                ALLdata.EM_AmpPhase.CheckSum(i114) = typecast(tmp(2+id:3+id),'uint16');
                 
                 % ETX check
                 if ALLdata.EM_AmpPhase.ETX(i114)~=3
@@ -1227,17 +1286,26 @@ for iDatag = datagToParse'
                 
                 % confirm parsing
                 parsed = 1;
-            else
                 
-                fields_ap=fieldnames(ALLdata.EM_AmpPhase);
-                for ifi=1:numel(fields_ap)
-                    if numel(ALLdata.EM_AmpPhase.(fields_ap{ifi}))>=i114
-                        ALLdata.EM_AmpPhase.(fields_ap{ifi})(i114)=[];
+            else
+                % HERE if data parsing failed, add a blank datagram in
+                % output
+                
+                % copy field names of previous entries
+                fields_ap = fieldnames(ALLdata.EM_AmpPhase);
+                
+                % add blanks fields for those missing
+                for ifi = 1:numel(fields_ap)
+                    if numel(ALLdata.EM_AmpPhase.(fields_ap{ifi})) >= i114
+                        ALLdata.EM_AmpPhase.(fields_ap{ifi})(i114) = [];
                     end
                 end
-                i114=i114-1;
-                parsed=0;
+                
+                i114 = i114-1; % XXX if we do that, then we'll rewrite over the blank record we just entered??
+                parsed = 0;
+                
             end
+            
         otherwise
             
             % datagTypeNumber is not recognized yet

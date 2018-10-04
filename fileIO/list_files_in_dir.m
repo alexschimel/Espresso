@@ -62,9 +62,9 @@ if isempty(WCDFilename_cell)&&isempty(AllFilename_cell)
 end
 
 % split in folders and file names
-
 [all_folders,all_files,~] = cellfun(@fileparts,AllFilename_cell,'UniformOutput',0);
 [wcd_folders,wcd_files,~] = cellfun(@fileparts,WCDFilename_cell,'UniformOutput',0);
+
 % recombine
 wcd_files = fullfile(wcd_folders,wcd_files);
 all_files = fullfile(all_folders,all_files);

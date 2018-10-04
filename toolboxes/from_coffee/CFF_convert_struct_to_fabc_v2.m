@@ -1,7 +1,162 @@
-%Based on CFF_convert_mat_to_fabc_v2
+%% CFF_convert_struct_to_fabc_v2.m
+%
+% Converts the Kongsberg EM series data files in MAT format (containing the
+% KONGSBERG datagrams) to the FABC format for use in processing.
+%
+% Note: v2 has a few major changes including change in order of dimensions
+%
+% Based on CFF_convert_mat_to_fabc_v2
+%
+%% Help
+%
+% *USE*
+%
+% fData = CFF_convert_struct_to_fabc_v2(ALLdata) converts the contents of
+% one ALLdata structure to a structure in the fData format.
 
+% fData = CFF_convert_struct_to_fabc_v2({ALLdata;WCDdata}) converts two
+% ALLdata structures into one fData sructure. While many more structures
+% can thus be loaded, this is typically done because ALLdata structures
+% exist on a per-file basis and Kongsberg raw data often come in pairs of
+% files: one .all and one .wcd. Note that the ALLdata structures are
+% converted to fData in the order they are in input, and that the first
+% ones take precedence, aka in the example above, if WCDdata contains a
+% type of datagram that is already in ALLdata, they will NOT be converted.
+% This is to avoid doubling up. Order the ALLdata structures in input in
+% order of desired precedence. DO NOT use this feature to convert ALLdata
+% structures from different acquisition files. It will not work. Convert
+% each into its own fData structure.
+%
+% fData = CFF_convert_struct_to_fabc_v2(ALLdata,10,2) operates the
+% converstion with sub-sampling in range and in beams. For example, to
+% sub-sample range by a factor of 10 and beams by a factor of 2, use fData
+% = CFF_convert_struct_to_fabc_v2(ALLdata,10,2).
+%
+% [fData,update_flag] = CFF_convert_struct_to_fabc_v2(ALLdata,1,1,fData);
+% takes the result of a precedent conversion in input to allow potentially
+% saving time. The function will start by loading the result of the
+% precedent conversion, check that what you're trying to add to it comes
+% from the same raw data source, and add to fData only those types of
+% datagrams that may be missing. If fData has been modified, it will return
+% a update_flag=1. If the output is the same and no modification occured,
+% then it will return a update_flag=0. NOTE: If the decimation factors in
+% input are different to those used in the input fData, then the data
+% WILL be updated. This is actually the main use of this feature...
+%
+% *INPUT VARIABLES*
+%
+% REQUIRED:
+% * |ALLdataGroup|: ALLdata structure or cells of ALLdata structures.
+%
+% OPTIONAL:
+% * to write XXX
+%
+% *OUTPUT VARIABLES*
+%
+% * |FABCdata|: structure for the storage of data in a format easier to use
+% than the EM datagrams. The data is recorded as fields coded "a_b_c" of
+% the structure "FABCdata", and accessible as FABCdata.a_b_c, where:
+%     * a: code indicating data origin:
+%         * IP: installation parameters
+%         * De: depth datagram
+%         * He: height datagram
+%         * X8: XYZ88 datagram
+%         * SI: seabed image datagram
+%         * S8: seabed image data 89
+%         * WC: watercolumn data
+%         * Po: position datagram
+%         * At: attitude datagram
+%         * SS: sound speed profile datagram
+%     More codes for the 'a' part will be created if more datagrams are
+%     parsed. As further codes work with the data contained in FABC
+%     structure, these derived data can be recorded back into the FABC,
+%     with the 'a' code set to 'X'.
+%     * b: code indicating data dimensions (rows/columns)
+%         * 1P: ping-like single-row-vector
+%         * B1: beam-like single-column-vector
+%         * BP: beam/ping array
+%         * TP: transmit-sector/ping array
+%         * SP: samples/ping array (note: samples are not sorted, this is
+%         not equivalent to range!)
+%         * 1D: datagram-like single-row-vector (for attitude or
+%         position data)
+%         * ED: entries-per-datagram/datagram array (for attitude or
+%         position data)
+%         * SBP: sample/beam/ping array (water-column data)
+%     More codes for the 'b' part will be created if the storage of other
+%     datagrams needs them. As subsequent functions work with the data
+%     contained in FABC structure to generate derived data, these derived
+%     data can be recorded with other dimensions types. They are not listed
+%     fully here but they may include:
+%         * RP: range (choose distance, time or sample) / ping
+%         * SP: swathe (meters) / ping
+%         * LL: lat/long (WGS84)
+%         * N1: northing-like single-column-vector
+%         * 1E: easting-like single-row-vector
+%         * NE: northing/easting
+%         * NEH: northing/easting/height
+%     * c: data type, obtained from the original variable name in the
+%     Kongsberg datagram, or from the user's imagination for derived data
+%     obtained from subsequent functions.
+%
+% *DEVELOPMENT NOTES*
+%
+% * FOR NOW, PARSING DIFFERENT FILES DO NOT APPEND DATA TO EXISTING
+% FIELDS. ONLY NEW DATAGRAMS ARE COPIED. So if file 1 has Depth datagrams,
+% and file 2 has depth and watercolumn datagrams, the function will save
+% all datagrams in file 1 first (aka, Depth), and then IGNORE THE DEPTH
+% DATAGRAMS IN THE SECOND FILE, only recording the water-column one. This
+% is because I could not be bothered having to test for redundant dagrams
+% in both files. In theory, this code is to use on a single file only, with
+% the option to load several files being only used to load data from a .all
+% file and its corresponding .wcd file.
+%
+% * Have not tested the loading of data from 'EM_Depth' and
+% 'EM_SeabedImage' in the new format version (v2). Might need debugging.
+%
+% * only water column data is subsampled, all other
+% datagrams are converted in full. To be consistent, develop code to
+% subsample all datagrams as desired in parameters. Add a subsampling in
+% pings while you're at it.
+%
+% *NEW FEATURES*
+%
+% * 2017-10-06: remove the possibility to load FABCdata as a matfile. Was
+% too slow (Alex Schimel)
+% * 2017-10-04: complete re-ordering of dimensions, no backward
+% compatibility so saving as a new function (v2) (Alex Schimel).
+% * 2017-09-28: revamped code to allow loading data in a matfile, rather
+% than in memory, as possible fix for large-memory files. Still to be fully
+% tested (see research notes) (Alex Schimel).
+% * 2017-09-28: updated header to new format, and updated contents, in
+% preparation for revamping to handle large water-column data (Alex
+% Schimel).
+% * 2014-04-28: Fixed watercolumn data parsing for when some
+% datagrams are missing. height datagram supported (Alex Schimel).
+% * ????-??-??: Added support for XYZ88, seabed image 89 and WC
+% * ????-??-??: Splitted seabed image samples per beam. Still not sorted
+% * ????-??-??: Made all types of datagram optional
+% * ????-??-??: Improved comments and general code
+% * ????-??-??: Changed data origin codes to two letters
+% * ????-??-??: Recording ASCII parameters as well
+% * ????-??-??: Reading sound speed profile
+%
+% % *EXAMPLE*
+%
+% ALLfilename = '.\data\EM2040c\0001_20140213_052736_Yolla.all';
+% MATfilename = '0001_20140213_052736_Yolla.mat';
+% info = CFF_all_file_info(ALLfilename);
+% info.parsed(:)=1; % to save all the datagrams
+% ALLdata = CFF_read_all_from_fileinfo(ALLfilename, info);
+% FABCdata = CFF_convert_struct_to_fabc_v2(ALLdata);
+%
+% *AUTHOR, AFFILIATION & COPYRIGHT*
+%
+% Alexandre Schimel,Deakin University, NIWA.
+% Yoann Ladroit, NIWA.
+%
 %% Function
-function [FABCdata,up] = CFF_convert_struct_to_fabc_v2(varStruct,varargin)
+function [fData,update_flag] = CFF_convert_struct_to_fabc_v2(ALLdataGroup,varargin)
 
 %% input parsing
 
@@ -9,73 +164,101 @@ function [FABCdata,up] = CFF_convert_struct_to_fabc_v2(varStruct,varargin)
 p = inputParser;
 
 % required
-addRequired(p,'varStruct',@(x) isstruct(x) || iscell(x));
+addRequired(p,'ALLdataGroup',@(x) isstruct(x) || iscell(x));
+
 % optional
-addOptional(p,'FABCdata',{},@(x) isstruct(x) || iscell(x));
 addOptional(p,'dr_sub',1,@(x) isnumeric(x)&&x>0);
 addOptional(p,'db_sub',1,@(x) isnumeric(x)&&x>0);
+addOptional(p,'fData',{},@(x) isstruct(x) || iscell(x));
 
 % parse
-parse(p,varStruct,varargin{:})
+parse(p,ALLdataGroup,varargin{:})
 
 % get results
-varStruct = p.Results.varStruct;
-FABCdata = p.Results.FABCdata;
+ALLdataGroup = p.Results.ALLdataGroup;
 dr_sub = p.Results.dr_sub;
 db_sub = p.Results.db_sub;
+fData = p.Results.fData;
 clear p;
+
 
 %% pre-processing
 
-if ~iscell(varStruct)
-    varStruct = {varStruct};
+if ~iscell(ALLdataGroup)
+    ALLdataGroup = {ALLdataGroup};
 end
 
-% number of files
-nFiles = length(varStruct);
+% number of individual ALLdata structures in input ALLdataGroup
+nStruct = length(ALLdataGroup);
 
-% and the decimation factors
-if isempty(FABCdata)
-    FABCdata.dr_sub = dr_sub;
-    FABCdata.db_sub = db_sub;
-    FABCdata.ALLfilename=cell(1,nFiles);
-    for iF = 1:nFiles
-        FABCdata.ALLfilename{iF}=varStruct{iF}.ALLfilename;
-    end
-end
-up=0;
-
-%% loop through all files and aggregate the datagrams contents
-for iF = 1:nFiles
+% initialize fData if one not given in input
+if isempty(fData)
     
-    if ~ismember(varStruct{iF}.ALLfilename,FABCdata.ALLfilename)
-        disp('Cannot add different files to this structure.')
+    update_mode = 0;
+    
+    % initialize FABC structure by writing in the raw data filenames to be
+    % added here
+    fData.ALLfilename = cell(1,nStruct);
+    for iF = 1:nStruct
+        fData.ALLfilename{iF} = ALLdataGroup{iF}.ALLfilename;
+    end
+    
+    % add the decimation factors given here in input
+    fData.dr_sub = dr_sub;
+    fData.db_sub = db_sub;
+    
+else
+    
+    update_mode = 1;
+    
+end
+
+% initialize update_flag
+update_flag = 0;
+
+
+%% take one ALLdata structure at a time and add its contents to fData
+
+for iF = 1:nStruct
+    
+    
+    %% pre processing
+    
+    % get current structure
+    ALLdata = ALLdataGroup{iF};
+    
+    % Make sure we don't update fData with datagrams from different
+    % sources
+    % XXX clean up that display later
+    if ~ismember(ALLdata.ALLfilename,fData.ALLfilename)
+        fprintf('Cannot add different files to this structure.\n')
         continue;
     end
     
+    % open the original raw file in case we need to grab WC data from it
+    fid_all = fopen(fData.ALLfilename{iF},'r',ALLdata.datagramsformat);
     
-    % clear previous datagrams
-    clear -regexp EM\w*
+    % get folder where WC data will be recorded as memmap files
+    wc_dir = CFF_WCD_memmap_folder(fData.ALLfilename{iF});
     
-    % OPENING MAT FILE
-    % research note: maybe these could be loaded through matfile, rather
-    % than loading it all...
-    varStructCurr = varStruct{iF};
+    % now reading each type of datagram...
     
-    fid_all=fopen(FABCdata.ALLfilename{iF}, 'r',varStructCurr.datagramsformat);
-    wc_dir=get_wc_dir(FABCdata.ALLfilename{iF});
+    %% EM_InstallationStart (v2 VERIFIED)
     
-    % EM_InstallationStart (v2 VERIFIED)
-    if isfield(varStructCurr,'EM_InstallationStart')
-        EM_InstallationStart=varStructCurr.EM_InstallationStart;
-        % only do if data of that type has not been recorded yet, aka:
-        if ~isfield(FABCdata,'IP_ASCIIparameters')
-            up=1;
+    if isfield(ALLdata,'EM_InstallationStart')
+        
+        % only convert these datagrams if this type doesn't already exist in output
+        if ~isfield(fData,'IP_ASCIIparameters')
+            
+            if update_mode
+                update_flag = 1;
+            end
+            
             % initialize struct
             IP_ASCIIparameters = struct;
             
             % read ASCIIdata
-            ASCIIdata = char(EM_InstallationStart.ASCIIData(1));
+            ASCIIdata = char(ALLdata.EM_InstallationStart.ASCIIData(1));
             
             % remove carriage returns, tabs and linefeed
             ASCIIdata = regexprep(ASCIIdata,char(9),'');
@@ -110,40 +293,45 @@ for iF = 1:nFiles
                 
             end
             
-            % finally store in FABCdata
-            FABCdata.IP_ASCIIparameters = IP_ASCIIparameters;
+            % finally store in fData
+            fData.IP_ASCIIparameters = IP_ASCIIparameters;
             
         end
         
     end
     
-    % EM_SoundSpeedProfile (v2 VERIFIED)
     
-    if isfield(varStructCurr,'EM_SoundSpeedProfile')
-        EM_SoundSpeedProfile=varStructCurr.EM_SoundSpeedProfile;
-        % only do if data of that type has not been recorded yet, aka:
-        if ~isfield(FABCdata,'SS_1D_Date')
-            up=1;
-            NumberOfDatagrams  = length(EM_SoundSpeedProfile.TypeOfDatagram);
-            MaxNumberOfEntries = max(EM_SoundSpeedProfile.NumberOfEntries);
+    %% EM_SoundSpeedProfile (v2 VERIFIED)
+    
+    if isfield(ALLdata,'EM_SoundSpeedProfile')
+        
+        % only convert these datagrams if this type doesn't already exist in output
+        if ~isfield(fData,'SS_1D_Date')
             
-            FABCdata.SS_1D_Date                                              = EM_SoundSpeedProfile.Date;
-            FABCdata.SS_1D_TimeSinceMidnightInMilliseconds                   = EM_SoundSpeedProfile.TimeSinceMidnightInMilliseconds;
-            FABCdata.SS_1D_ProfileCounter                                    = EM_SoundSpeedProfile.ProfileCounter;
-            FABCdata.SS_1D_DateWhenProfileWasMade                            = EM_SoundSpeedProfile.DateWhenProfileWasMade;
-            FABCdata.SS_1D_TimeSinceMidnightInMillisecondsWhenProfileWasMade = EM_SoundSpeedProfile.TimeSinceMidnightInMillisecondsWhenProfileWasMade;
-            FABCdata.SS_1D_NumberOfEntries                                   = EM_SoundSpeedProfile.NumberOfEntries;
-            FABCdata.SS_1D_DepthResolution                                   = EM_SoundSpeedProfile.DepthResolution;
+            if update_mode
+                update_flag = 1;
+            end
             
-            FABCdata.SS_ED_Depth      = nan(MaxNumberOfEntries,NumberOfDatagrams);
-            FABCdata.SS_ED_SoundSpeed = nan(MaxNumberOfEntries,NumberOfDatagrams);
+            NumberOfDatagrams  = length(ALLdata.EM_SoundSpeedProfile.TypeOfDatagram);
+            MaxNumberOfEntries = max(ALLdata.EM_SoundSpeedProfile.NumberOfEntries);
+            
+            fData.SS_1D_Date                                              = ALLdata.EM_SoundSpeedProfile.Date;
+            fData.SS_1D_TimeSinceMidnightInMilliseconds                   = ALLdata.EM_SoundSpeedProfile.TimeSinceMidnightInMilliseconds;
+            fData.SS_1D_ProfileCounter                                    = ALLdata.EM_SoundSpeedProfile.ProfileCounter;
+            fData.SS_1D_DateWhenProfileWasMade                            = ALLdata.EM_SoundSpeedProfile.DateWhenProfileWasMade;
+            fData.SS_1D_TimeSinceMidnightInMillisecondsWhenProfileWasMade = ALLdata.EM_SoundSpeedProfile.TimeSinceMidnightInMillisecondsWhenProfileWasMade;
+            fData.SS_1D_NumberOfEntries                                   = ALLdata.EM_SoundSpeedProfile.NumberOfEntries;
+            fData.SS_1D_DepthResolution                                   = ALLdata.EM_SoundSpeedProfile.DepthResolution;
+            
+            fData.SS_ED_Depth      = nan(MaxNumberOfEntries,NumberOfDatagrams);
+            fData.SS_ED_SoundSpeed = nan(MaxNumberOfEntries,NumberOfDatagrams);
             
             for iD = 1:NumberOfDatagrams
                 
-                NumberOfEntries = EM_SoundSpeedProfile.NumberOfEntries(iD);
+                NumberOfEntries = ALLdata.EM_SoundSpeedProfile.NumberOfEntries(iD);
                 
-                FABCdata.SS_ED_Depth(1:NumberOfEntries,iD)      = cell2mat(EM_SoundSpeedProfile.Depth(iD));
-                FABCdata.SS_ED_SoundSpeed(1:NumberOfEntries,iD) = cell2mat(EM_SoundSpeedProfile.SoundSpeed(iD));
+                fData.SS_ED_Depth(1:NumberOfEntries,iD)      = cell2mat(ALLdata.EM_SoundSpeedProfile.Depth(iD));
+                fData.SS_ED_SoundSpeed(1:NumberOfEntries,iD) = cell2mat(ALLdata.EM_SoundSpeedProfile.SoundSpeed(iD));
                 
             end
             
@@ -151,37 +339,42 @@ for iF = 1:nFiles
         
     end
     
-    % EM_Attitude
-    if isfield(varStructCurr,'EM_Attitude')
-        EM_Attitude=varStructCurr.EM_Attitude;
-        % only do if data of that type has not been recorded yet, aka:
-        if ~isfield(FABCdata,'At_1D_Date')
-            up=1;
-            NumberOfDatagrams  = length(EM_Attitude.TypeOfDatagram);
-            MaxNumberOfEntries = max(EM_Attitude.NumberOfEntries);
+    %% EM_Attitude
+    
+    if isfield(ALLdata,'EM_Attitude')
+        
+        % only convert these datagrams if this type doesn't already exist in output
+        if ~isfield(fData,'At_1D_Date')
             
-            FABCdata.At_1D_Date                            = EM_Attitude.Date;
-            FABCdata.At_1D_TimeSinceMidnightInMilliseconds = EM_Attitude.TimeSinceMidnightInMilliseconds;
-            FABCdata.At_1D_AttitudeCounter                 = EM_Attitude.AttitudeCounter;
-            FABCdata.At_1D_NumberOfEntries                 = EM_Attitude.NumberOfEntries;
+            if update_mode
+                update_flag = 1;
+            end
             
-            FABCdata.At_ED_TimeInMillisecondsSinceRecordStart = nan(MaxNumberOfEntries, NumberOfDatagrams);
-            FABCdata.At_ED_SensorStatus                       = nan(MaxNumberOfEntries, NumberOfDatagrams);
-            FABCdata.At_ED_Roll                               = nan(MaxNumberOfEntries, NumberOfDatagrams);
-            FABCdata.At_ED_Pitch                              = nan(MaxNumberOfEntries, NumberOfDatagrams);
-            FABCdata.At_ED_Heave                              = nan(MaxNumberOfEntries, NumberOfDatagrams);
-            FABCdata.At_ED_Heading                            = nan(MaxNumberOfEntries, NumberOfDatagrams);
+            NumberOfDatagrams  = length(ALLdata.EM_Attitude.TypeOfDatagram);
+            MaxNumberOfEntries = max(ALLdata.EM_Attitude.NumberOfEntries);
+            
+            fData.At_1D_Date                            = ALLdata.EM_Attitude.Date;
+            fData.At_1D_TimeSinceMidnightInMilliseconds = ALLdata.EM_Attitude.TimeSinceMidnightInMilliseconds;
+            fData.At_1D_AttitudeCounter                 = ALLdata.EM_Attitude.AttitudeCounter;
+            fData.At_1D_NumberOfEntries                 = ALLdata.EM_Attitude.NumberOfEntries;
+            
+            fData.At_ED_TimeInMillisecondsSinceRecordStart = nan(MaxNumberOfEntries, NumberOfDatagrams);
+            fData.At_ED_SensorStatus                       = nan(MaxNumberOfEntries, NumberOfDatagrams);
+            fData.At_ED_Roll                               = nan(MaxNumberOfEntries, NumberOfDatagrams);
+            fData.At_ED_Pitch                              = nan(MaxNumberOfEntries, NumberOfDatagrams);
+            fData.At_ED_Heave                              = nan(MaxNumberOfEntries, NumberOfDatagrams);
+            fData.At_ED_Heading                            = nan(MaxNumberOfEntries, NumberOfDatagrams);
             
             for iD = 1:NumberOfDatagrams
                 
-                NumberOfEntries = EM_Attitude.NumberOfEntries(iD);
+                NumberOfEntries = ALLdata.EM_Attitude.NumberOfEntries(iD);
                 
-                FABCdata.At_ED_TimeInMillisecondsSinceRecordStart(1:NumberOfEntries, iD) = cell2mat(EM_Attitude.TimeInMillisecondsSinceRecordStart(iD));
-                FABCdata.At_ED_SensorStatus(1:NumberOfEntries, iD)                       = cell2mat(EM_Attitude.SensorStatus(iD));
-                FABCdata.At_ED_Roll(1:NumberOfEntries, iD)                               = cell2mat(EM_Attitude.Roll(iD));
-                FABCdata.At_ED_Pitch(1:NumberOfEntries, iD)                              = cell2mat(EM_Attitude.Pitch(iD));
-                FABCdata.At_ED_Heave(1:NumberOfEntries, iD)                              = cell2mat(EM_Attitude.Heave(iD));
-                FABCdata.At_ED_Heading(1:NumberOfEntries, iD)                            = cell2mat(EM_Attitude.Heading(iD));
+                fData.At_ED_TimeInMillisecondsSinceRecordStart(1:NumberOfEntries, iD) = cell2mat(ALLdata.EM_Attitude.TimeInMillisecondsSinceRecordStart(iD));
+                fData.At_ED_SensorStatus(1:NumberOfEntries, iD)                       = cell2mat(ALLdata.EM_Attitude.SensorStatus(iD));
+                fData.At_ED_Roll(1:NumberOfEntries, iD)                               = cell2mat(ALLdata.EM_Attitude.Roll(iD));
+                fData.At_ED_Pitch(1:NumberOfEntries, iD)                              = cell2mat(ALLdata.EM_Attitude.Pitch(iD));
+                fData.At_ED_Heave(1:NumberOfEntries, iD)                              = cell2mat(ALLdata.EM_Attitude.Heave(iD));
+                fData.At_ED_Heading(1:NumberOfEntries, iD)                            = cell2mat(ALLdata.EM_Attitude.Heading(iD));
                 
             end
             
@@ -189,91 +382,106 @@ for iF = 1:nFiles
         
     end
     
-    % EM_Height
-    if isfield(varStructCurr,'EM_Height')
-        EM_Height=varStructCurr.EM_Height;
-        % only do if data of that type has not been recorded yet, aka:
-        if ~isfield(FABCdata,'He_1D_Date')
-            up=1;
-            % NumberOfDatagrams = length(EM_Height.TypeOfDatagram);
+    
+    %% EM_Height
+    
+    if isfield(ALLdata,'EM_Height')
+        
+        % only convert these datagrams if this type doesn't already exist in output
+        if ~isfield(fData,'He_1D_Date')
             
-            FABCdata.He_1D_Date                            = EM_Height.Date;
-            FABCdata.He_1D_TimeSinceMidnightInMilliseconds = EM_Height.TimeSinceMidnightInMilliseconds;
-            FABCdata.He_1D_HeightCounter                   = EM_Height.HeightCounter;
-            FABCdata.He_1D_Height                          = EM_Height.Height;
+            if update_mode
+                update_flag = 1;
+            end
+            
+            % NumberOfDatagrams = length(ALLdata.EM_Height.TypeOfDatagram);
+            
+            fData.He_1D_Date                            = ALLdata.EM_Height.Date;
+            fData.He_1D_TimeSinceMidnightInMilliseconds = ALLdata.EM_Height.TimeSinceMidnightInMilliseconds;
+            fData.He_1D_HeightCounter                   = ALLdata.EM_Height.HeightCounter;
+            fData.He_1D_Height                          = ALLdata.EM_Height.Height;
             
         end
         
     end
     
-    % EM_Position (v2 verified)
-    if isfield(varStructCurr,'EM_Position')
-        EM_Position=varStructCurr.EM_Position;
-        % only do if data of that type has not been recorded yet, aka:
-        if ~isfield(FABCdata,'Po_1D_Date')
-            up=1;
-            % NumberOfDatagrams = length(EM_Position.TypeOfDatagram);
+    %% EM_Position (v2 verified)
+    
+    if isfield(ALLdata,'EM_Position')
+        
+        % only convert these datagrams if this type doesn't already exist in output
+        if ~isfield(fData,'Po_1D_Date')
             
-            FABCdata.Po_1D_Date                            = EM_Position.Date;
-            FABCdata.Po_1D_TimeSinceMidnightInMilliseconds = EM_Position.TimeSinceMidnightInMilliseconds;
-            FABCdata.Po_1D_PositionCounter                 = EM_Position.PositionCounter;
-            FABCdata.Po_1D_Latitude                        = EM_Position.Latitude;
-            FABCdata.Po_1D_Longitude                       = EM_Position.Longitude;
-            FABCdata.Po_1D_SpeedOfVesselOverGround         = EM_Position.SpeedOfVesselOverGround;
-            FABCdata.Po_1D_HeadingOfVessel                 = EM_Position.HeadingOfVessel;
+            if update_mode
+                update_flag = 1;
+            end
+            
+            % NumberOfDatagrams = length(ALLdata.EM_Position.TypeOfDatagram);
+            
+            fData.Po_1D_Date                            = ALLdata.EM_Position.Date;
+            fData.Po_1D_TimeSinceMidnightInMilliseconds = ALLdata.EM_Position.TimeSinceMidnightInMilliseconds;
+            fData.Po_1D_PositionCounter                 = ALLdata.EM_Position.PositionCounter;
+            fData.Po_1D_Latitude                        = ALLdata.EM_Position.Latitude;
+            fData.Po_1D_Longitude                       = ALLdata.EM_Position.Longitude;
+            fData.Po_1D_SpeedOfVesselOverGround         = ALLdata.EM_Position.SpeedOfVesselOverGround;
+            fData.Po_1D_HeadingOfVessel                 = ALLdata.EM_Position.HeadingOfVessel;
             
         end
         
     end
     
-    % EM_Depth
     
-    if isfield(varStructCurr,'EM_Depth')
-        EM_Depth=varStructCurr.EM_Depth;
+    %% EM_Depth
+    
+    if isfield(ALLdata,'EM_Depth')
         
-        % only do if data of that type has not been recorded yet, aka:
-        if ~isfield(FABCdata,'De_1P_Date')
-            up=1;
-            NumberOfPings    = length(EM_Depth.TypeOfDatagram); % total number of pings in file
-            MaxNumberOfBeams = max(cellfun(@(x) max(x),EM_Depth.BeamNumber)); % maximum beam number in file
+        % only convert these datagrams if this type doesn't already exist in output
+        if ~isfield(fData,'De_1P_Date')
             
-            FABCdata.De_1P_Date                            = EM_Depth.Date;
-            FABCdata.De_1P_TimeSinceMidnightInMilliseconds = EM_Depth.TimeSinceMidnightInMilliseconds;
-            FABCdata.De_1P_PingCounter                     = EM_Depth.PingCounter;
-            FABCdata.De_1P_HeadingOfVessel                 = EM_Depth.HeadingOfVessel;
-            FABCdata.De_1P_SoundSpeedAtTransducer          = EM_Depth.SoundSpeedAtTransducer;
-            FABCdata.De_1P_TransmitTransducerDepth         = EM_Depth.TransmitTransducerDepth + 65536.*EM_Depth.TransducerDepthOffsetMultiplier;
-            FABCdata.De_1P_MaximumNumberOfBeamsPossible    = EM_Depth.MaximumNumberOfBeamsPossible;
-            FABCdata.De_1P_NumberOfValidBeams              = EM_Depth.NumberOfValidBeams;
-            FABCdata.De_1P_ZResolution                     = EM_Depth.ZResolution;
-            FABCdata.De_1P_XAndYResolution                 = EM_Depth.XAndYResolution;
-            FABCdata.De_1P_SamplingRate                    = EM_Depth.SamplingRate;
+            if update_mode
+                update_flag = 1;
+            end
+            
+            NumberOfPings    = length(ALLdata.EM_Depth.TypeOfDatagram); % total number of pings in file
+            MaxNumberOfBeams = max(cellfun(@(x) max(x),ALLdata.EM_Depth.BeamNumber)); % maximum beam number in file
+            
+            fData.De_1P_Date                            = ALLdata.EM_Depth.Date;
+            fData.De_1P_TimeSinceMidnightInMilliseconds = ALLdata.EM_Depth.TimeSinceMidnightInMilliseconds;
+            fData.De_1P_PingCounter                     = ALLdata.EM_Depth.PingCounter;
+            fData.De_1P_HeadingOfVessel                 = ALLdata.EM_Depth.HeadingOfVessel;
+            fData.De_1P_SoundSpeedAtTransducer          = ALLdata.EM_Depth.SoundSpeedAtTransducer;
+            fData.De_1P_TransmitTransducerDepth         = ALLdata.EM_Depth.TransmitTransducerDepth + 65536.*ALLdata.EM_Depth.TransducerDepthOffsetMultiplier;
+            fData.De_1P_MaximumNumberOfBeamsPossible    = ALLdata.EM_Depth.MaximumNumberOfBeamsPossible;
+            fData.De_1P_NumberOfValidBeams              = ALLdata.EM_Depth.NumberOfValidBeams;
+            fData.De_1P_ZResolution                     = ALLdata.EM_Depth.ZResolution;
+            fData.De_1P_XAndYResolution                 = ALLdata.EM_Depth.XAndYResolution;
+            fData.De_1P_SamplingRate                    = ALLdata.EM_Depth.SamplingRate;
             
             % initialize
-            FABCdata.De_BP_DepthZ                  = nan(MaxNumberOfBeams,NumberOfPings);
-            FABCdata.De_BP_AcrosstrackDistanceY    = nan(MaxNumberOfBeams,NumberOfPings);
-            FABCdata.De_BP_AlongtrackDistanceX     = nan(MaxNumberOfBeams,NumberOfPings);
-            FABCdata.De_BP_BeamDepressionAngle     = nan(MaxNumberOfBeams,NumberOfPings);
-            FABCdata.De_BP_BeamAzimuthAngle        = nan(MaxNumberOfBeams,NumberOfPings);
-            FABCdata.De_BP_Range                   = nan(MaxNumberOfBeams,NumberOfPings);
-            FABCdata.De_BP_QualityFactor           = nan(MaxNumberOfBeams,NumberOfPings);
-            FABCdata.De_BP_LengthOfDetectionWindow = nan(MaxNumberOfBeams,NumberOfPings);
-            FABCdata.De_BP_ReflectivityBS          = nan(MaxNumberOfBeams,NumberOfPings);
-            FABCdata.De_B1_BeamNumber              = (1:MaxNumberOfBeams)';
+            fData.De_BP_DepthZ                  = nan(MaxNumberOfBeams,NumberOfPings);
+            fData.De_BP_AcrosstrackDistanceY    = nan(MaxNumberOfBeams,NumberOfPings);
+            fData.De_BP_AlongtrackDistanceX     = nan(MaxNumberOfBeams,NumberOfPings);
+            fData.De_BP_BeamDepressionAngle     = nan(MaxNumberOfBeams,NumberOfPings);
+            fData.De_BP_BeamAzimuthAngle        = nan(MaxNumberOfBeams,NumberOfPings);
+            fData.De_BP_Range                   = nan(MaxNumberOfBeams,NumberOfPings);
+            fData.De_BP_QualityFactor           = nan(MaxNumberOfBeams,NumberOfPings);
+            fData.De_BP_LengthOfDetectionWindow = nan(MaxNumberOfBeams,NumberOfPings);
+            fData.De_BP_ReflectivityBS          = nan(MaxNumberOfBeams,NumberOfPings);
+            fData.De_B1_BeamNumber              = (1:MaxNumberOfBeams)';
             
             for iP = 1:NumberOfPings
                 
-                BeamNumber = cell2mat(EM_Depth.BeamNumber(iP));
+                BeamNumber = cell2mat(ALLdata.EM_Depth.BeamNumber(iP));
                 
-                FABCdata.De_BP_DepthZ(BeamNumber,iP)                  = cell2mat(EM_Depth.DepthZ(iP));
-                FABCdata.De_BP_AcrosstrackDistanceY(BeamNumber,iP)    = cell2mat(EM_Depth.AcrosstrackDistanceY(iP));
-                FABCdata.De_BP_AlongtrackDistanceX(BeamNumber,iP)     = cell2mat(EM_Depth.AlongtrackDistanceX(iP));
-                FABCdata.De_BP_BeamDepressionAngle(BeamNumber,iP)     = cell2mat(EM_Depth.BeamDepressionAngle(iP));
-                FABCdata.De_BP_BeamAzimuthAngle(BeamNumber,iP)        = cell2mat(EM_Depth.BeamAzimuthAngle(iP));
-                FABCdata.De_BP_Range(BeamNumber,iP)                   = cell2mat(EM_Depth.Range(iP));
-                FABCdata.De_BP_QualityFactor(BeamNumber,iP)           = cell2mat(EM_Depth.QualityFactor(iP));
-                FABCdata.De_BP_LengthOfDetectionWindow(BeamNumber,iP) = cell2mat(EM_Depth.LengthOfDetectionWindow(iP));
-                FABCdata.De_BP_ReflectivityBS(BeamNumber,iP)          = cell2mat(EM_Depth.ReflectivityBS(iP));
+                fData.De_BP_DepthZ(BeamNumber,iP)                  = cell2mat(ALLdata.EM_Depth.DepthZ(iP));
+                fData.De_BP_AcrosstrackDistanceY(BeamNumber,iP)    = cell2mat(ALLdata.EM_Depth.AcrosstrackDistanceY(iP));
+                fData.De_BP_AlongtrackDistanceX(BeamNumber,iP)     = cell2mat(ALLdata.EM_Depth.AlongtrackDistanceX(iP));
+                fData.De_BP_BeamDepressionAngle(BeamNumber,iP)     = cell2mat(ALLdata.EM_Depth.BeamDepressionAngle(iP));
+                fData.De_BP_BeamAzimuthAngle(BeamNumber,iP)        = cell2mat(ALLdata.EM_Depth.BeamAzimuthAngle(iP));
+                fData.De_BP_Range(BeamNumber,iP)                   = cell2mat(ALLdata.EM_Depth.Range(iP));
+                fData.De_BP_QualityFactor(BeamNumber,iP)           = cell2mat(ALLdata.EM_Depth.QualityFactor(iP));
+                fData.De_BP_LengthOfDetectionWindow(BeamNumber,iP) = cell2mat(ALLdata.EM_Depth.LengthOfDetectionWindow(iP));
+                fData.De_BP_ReflectivityBS(BeamNumber,iP)          = cell2mat(ALLdata.EM_Depth.ReflectivityBS(iP));
                 
             end
             
@@ -281,49 +489,54 @@ for iF = 1:nFiles
         
     end
     
-    % EM_XYZ88
-    if isfield(varStructCurr,'EM_XYZ88')
-        EM_XYZ88=varStructCurr.EM_XYZ88;
+    
+    %% EM_XYZ88
+    
+    if isfield(ALLdata,'EM_XYZ88')
         
-        % only do if data of that type has not been recorded yet, aka:
-        if ~isfield(FABCdata,'X8_1P_Date')
-            up=1;
-            NumberOfPings    = length(EM_XYZ88.TypeOfDatagram); % total number of pings in file
-            MaxNumberOfBeams = max(EM_XYZ88.NumberOfBeamsInDatagram); % maximum beam number in file
+        % only convert these datagrams if this type doesn't already exist in output
+        if ~isfield(fData,'X8_1P_Date')
             
-            FABCdata.X8_1P_Date                            = EM_XYZ88.Date;
-            FABCdata.X8_1P_TimeSinceMidnightInMilliseconds = EM_XYZ88.TimeSinceMidnightInMilliseconds;
-            FABCdata.X8_1P_PingCounter                     = EM_XYZ88.PingCounter;
-            FABCdata.X8_1P_HeadingOfVessel                 = EM_XYZ88.HeadingOfVessel;
-            FABCdata.X8_1P_SoundSpeedAtTransducer          = EM_XYZ88.SoundSpeedAtTransducer;
-            FABCdata.X8_1P_TransmitTransducerDepth         = EM_XYZ88.TransmitTransducerDepth;
-            FABCdata.X8_1P_NumberOfBeamsInDatagram         = EM_XYZ88.NumberOfBeamsInDatagram;
-            FABCdata.X8_1P_NumberOfValidDetections         = EM_XYZ88.NumberOfValidDetections;
-            FABCdata.X8_1P_SamplingFrequencyInHz           = EM_XYZ88.SamplingFrequencyInHz;
+            if update_mode
+                update_flag = 1;
+            end
+            
+            NumberOfPings    = length(ALLdata.EM_XYZ88.TypeOfDatagram); % total number of pings in file
+            MaxNumberOfBeams = max(ALLdata.EM_XYZ88.NumberOfBeamsInDatagram); % maximum beam number in file
+            
+            fData.X8_1P_Date                            = ALLdata.EM_XYZ88.Date;
+            fData.X8_1P_TimeSinceMidnightInMilliseconds = ALLdata.EM_XYZ88.TimeSinceMidnightInMilliseconds;
+            fData.X8_1P_PingCounter                     = ALLdata.EM_XYZ88.PingCounter;
+            fData.X8_1P_HeadingOfVessel                 = ALLdata.EM_XYZ88.HeadingOfVessel;
+            fData.X8_1P_SoundSpeedAtTransducer          = ALLdata.EM_XYZ88.SoundSpeedAtTransducer;
+            fData.X8_1P_TransmitTransducerDepth         = ALLdata.EM_XYZ88.TransmitTransducerDepth;
+            fData.X8_1P_NumberOfBeamsInDatagram         = ALLdata.EM_XYZ88.NumberOfBeamsInDatagram;
+            fData.X8_1P_NumberOfValidDetections         = ALLdata.EM_XYZ88.NumberOfValidDetections;
+            fData.X8_1P_SamplingFrequencyInHz           = ALLdata.EM_XYZ88.SamplingFrequencyInHz;
             
             % initialize
-            FABCdata.X8_BP_DepthZ                       = nan(MaxNumberOfBeams,NumberOfPings);
-            FABCdata.X8_BP_AcrosstrackDistanceY         = nan(MaxNumberOfBeams,NumberOfPings);
-            FABCdata.X8_BP_AlongtrackDistanceX          = nan(MaxNumberOfBeams,NumberOfPings);
-            FABCdata.X8_BP_DetectionWindowLength        = nan(MaxNumberOfBeams,NumberOfPings);
-            FABCdata.X8_BP_QualityFactor                = nan(MaxNumberOfBeams,NumberOfPings);
-            FABCdata.X8_BP_BeamIncidenceAngleAdjustment = nan(MaxNumberOfBeams,NumberOfPings);
-            FABCdata.X8_BP_DetectionInformation         = nan(MaxNumberOfBeams,NumberOfPings);
-            FABCdata.X8_BP_RealTimeCleaningInformation  = nan(MaxNumberOfBeams,NumberOfPings);
-            FABCdata.X8_BP_ReflectivityBS               = nan(MaxNumberOfBeams,NumberOfPings);
-            FABCdata.X8_B1_BeamNumber                   = (1:MaxNumberOfBeams)';
+            fData.X8_BP_DepthZ                       = nan(MaxNumberOfBeams,NumberOfPings);
+            fData.X8_BP_AcrosstrackDistanceY         = nan(MaxNumberOfBeams,NumberOfPings);
+            fData.X8_BP_AlongtrackDistanceX          = nan(MaxNumberOfBeams,NumberOfPings);
+            fData.X8_BP_DetectionWindowLength        = nan(MaxNumberOfBeams,NumberOfPings);
+            fData.X8_BP_QualityFactor                = nan(MaxNumberOfBeams,NumberOfPings);
+            fData.X8_BP_BeamIncidenceAngleAdjustment = nan(MaxNumberOfBeams,NumberOfPings);
+            fData.X8_BP_DetectionInformation         = nan(MaxNumberOfBeams,NumberOfPings);
+            fData.X8_BP_RealTimeCleaningInformation  = nan(MaxNumberOfBeams,NumberOfPings);
+            fData.X8_BP_ReflectivityBS               = nan(MaxNumberOfBeams,NumberOfPings);
+            fData.X8_B1_BeamNumber                   = (1:MaxNumberOfBeams)';
             
             for iP = 1:NumberOfPings
                 
-                FABCdata.X8_BP_DepthZ(1:MaxNumberOfBeams,iP)                       = cell2mat(EM_XYZ88.DepthZ(iP));
-                FABCdata.X8_BP_AcrosstrackDistanceY(1:MaxNumberOfBeams,iP)         = cell2mat(EM_XYZ88.AcrosstrackDistanceY(iP));
-                FABCdata.X8_BP_AlongtrackDistanceX(1:MaxNumberOfBeams,iP)          = cell2mat(EM_XYZ88.AlongtrackDistanceX(iP));
-                FABCdata.X8_BP_DetectionWindowLength(1:MaxNumberOfBeams,iP)        = cell2mat(EM_XYZ88.DetectionWindowLength(iP));
-                FABCdata.X8_BP_QualityFactor(1:MaxNumberOfBeams,iP)                = cell2mat(EM_XYZ88.QualityFactor(iP));
-                FABCdata.X8_BP_BeamIncidenceAngleAdjustment(1:MaxNumberOfBeams,iP) = cell2mat(EM_XYZ88.BeamIncidenceAngleAdjustment(iP));
-                FABCdata.X8_BP_DetectionInformation(1:MaxNumberOfBeams,iP)         = cell2mat(EM_XYZ88.DetectionInformation(iP));
-                FABCdata.X8_BP_RealTimeCleaningInformation(1:MaxNumberOfBeams,iP)  = cell2mat(EM_XYZ88.RealTimeCleaningInformation(iP));
-                FABCdata.X8_BP_ReflectivityBS(1:MaxNumberOfBeams,iP)               = cell2mat(EM_XYZ88.ReflectivityBS(iP));
+                fData.X8_BP_DepthZ(1:MaxNumberOfBeams,iP)                       = cell2mat(ALLdata.EM_XYZ88.DepthZ(iP));
+                fData.X8_BP_AcrosstrackDistanceY(1:MaxNumberOfBeams,iP)         = cell2mat(ALLdata.EM_XYZ88.AcrosstrackDistanceY(iP));
+                fData.X8_BP_AlongtrackDistanceX(1:MaxNumberOfBeams,iP)          = cell2mat(ALLdata.EM_XYZ88.AlongtrackDistanceX(iP));
+                fData.X8_BP_DetectionWindowLength(1:MaxNumberOfBeams,iP)        = cell2mat(ALLdata.EM_XYZ88.DetectionWindowLength(iP));
+                fData.X8_BP_QualityFactor(1:MaxNumberOfBeams,iP)                = cell2mat(ALLdata.EM_XYZ88.QualityFactor(iP));
+                fData.X8_BP_BeamIncidenceAngleAdjustment(1:MaxNumberOfBeams,iP) = cell2mat(ALLdata.EM_XYZ88.BeamIncidenceAngleAdjustment(iP));
+                fData.X8_BP_DetectionInformation(1:MaxNumberOfBeams,iP)         = cell2mat(ALLdata.EM_XYZ88.DetectionInformation(iP));
+                fData.X8_BP_RealTimeCleaningInformation(1:MaxNumberOfBeams,iP)  = cell2mat(ALLdata.EM_XYZ88.RealTimeCleaningInformation(iP));
+                fData.X8_BP_ReflectivityBS(1:MaxNumberOfBeams,iP)               = cell2mat(ALLdata.EM_XYZ88.ReflectivityBS(iP));
                 
             end
             
@@ -331,43 +544,49 @@ for iF = 1:nFiles
         
     end
     
-    % EM_SeabedImage
-    if isfield(varStructCurr,'EM_SeabedImage')
-        EM_SeabedImage=varStructCurr.EM_SeabedImage;
-        % only do if data of that type has not been recorded yet, aka:
-        if ~isfield(FABCdata,'SI_1P_Date')
-            up=1;
-            NumberOfPings      = length(EM_SeabedImage.TypeOfDatagram); % total number of pings in file
-            MaxNumberOfBeams   = max(cellfun(@(x) max(x),EM_SeabedImage.BeamIndexNumber))+1; % maximum beam number (beam index number +1), in file
-            MaxNumberOfSamples = max(cellfun(@(x) max(x),EM_SeabedImage.NumberOfSamplesPerBeam));
+    
+    %% EM_SeabedImage
+    
+    if isfield(ALLdata,'EM_SeabedImage')
+        
+        % only convert these datagrams if this type doesn't already exist in output
+        if ~isfield(fData,'SI_1P_Date')
             
-            FABCdata.SI_1P_Date                            = EM_SeabedImage.Date;
-            FABCdata.SI_1P_TimeSinceMidnightInMilliseconds = EM_SeabedImage.TimeSinceMidnightInMilliseconds;
-            FABCdata.SI_1P_PingCounter                     = EM_SeabedImage.PingCounter;
-            FABCdata.SI_1P_MeanAbsorptionCoefficient       = EM_SeabedImage.MeanAbsorptionCoefficient;
-            FABCdata.SI_1P_PulseLength                     = EM_SeabedImage.PulseLength;
-            FABCdata.SI_1P_RangeToNormalIncidence          = EM_SeabedImage.RangeToNormalIncidence;
-            FABCdata.SI_1P_StartRangeSampleOfTVGRamp       = EM_SeabedImage.StartRangeSampleOfTVGRamp;
-            FABCdata.SI_1P_StopRangeSampleOfTVGRamp        = EM_SeabedImage.StopRangeSampleOfTVGRamp;
-            FABCdata.SI_1P_NormalIncidenceBS               = EM_SeabedImage.NormalIncidenceBS;
-            FABCdata.SI_1P_ObliqueBS                       = EM_SeabedImage.ObliqueBS;
-            FABCdata.SI_1P_TxBeamwidth                     = EM_SeabedImage.TxBeamwidth;
-            FABCdata.SI_1P_TVGLawCrossoverAngle            = EM_SeabedImage.TVGLawCrossoverAngle;
-            FABCdata.SI_1P_NumberOfValidBeams              = EM_SeabedImage.NumberOfValidBeams;
+            if update_mode
+                update_flag = 1;
+            end
+            
+            NumberOfPings      = length(ALLdata.EM_SeabedImage.TypeOfDatagram); % total number of pings in file
+            MaxNumberOfBeams   = max(cellfun(@(x) max(x),ALLdata.EM_SeabedImage.BeamIndexNumber))+1; % maximum beam number (beam index number +1), in file
+            MaxNumberOfSamples = max(cellfun(@(x) max(x),ALLdata.EM_SeabedImage.NumberOfSamplesPerBeam));
+            
+            fData.SI_1P_Date                            = ALLdata.EM_SeabedImage.Date;
+            fData.SI_1P_TimeSinceMidnightInMilliseconds = ALLdata.EM_SeabedImage.TimeSinceMidnightInMilliseconds;
+            fData.SI_1P_PingCounter                     = ALLdata.EM_SeabedImage.PingCounter;
+            fData.SI_1P_MeanAbsorptionCoefficient       = ALLdata.EM_SeabedImage.MeanAbsorptionCoefficient;
+            fData.SI_1P_PulseLength                     = ALLdata.EM_SeabedImage.PulseLength;
+            fData.SI_1P_RangeToNormalIncidence          = ALLdata.EM_SeabedImage.RangeToNormalIncidence;
+            fData.SI_1P_StartRangeSampleOfTVGRamp       = ALLdata.EM_SeabedImage.StartRangeSampleOfTVGRamp;
+            fData.SI_1P_StopRangeSampleOfTVGRamp        = ALLdata.EM_SeabedImage.StopRangeSampleOfTVGRamp;
+            fData.SI_1P_NormalIncidenceBS               = ALLdata.EM_SeabedImage.NormalIncidenceBS;
+            fData.SI_1P_ObliqueBS                       = ALLdata.EM_SeabedImage.ObliqueBS;
+            fData.SI_1P_TxBeamwidth                     = ALLdata.EM_SeabedImage.TxBeamwidth;
+            fData.SI_1P_TVGLawCrossoverAngle            = ALLdata.EM_SeabedImage.TVGLawCrossoverAngle;
+            fData.SI_1P_NumberOfValidBeams              = ALLdata.EM_SeabedImage.NumberOfValidBeams;
             
             % initialize
-            FABCdata.SI_BP_SortingDirection       = nan(MaxNumberOfBeams,NumberOfPings);
-            FABCdata.SI_BP_NumberOfSamplesPerBeam = nan(MaxNumberOfBeams,NumberOfPings);
-            FABCdata.SI_BP_CentreSampleNumber     = nan(MaxNumberOfBeams,NumberOfPings);
-            FABCdata.SI_B1_BeamNumber             = (1:MaxNumberOfBeams)';
-            FABCdata.SI_SBP_SampleAmplitudes      = cell(NumberOfPings,1); % saving as sparse
+            fData.SI_BP_SortingDirection       = nan(MaxNumberOfBeams,NumberOfPings);
+            fData.SI_BP_NumberOfSamplesPerBeam = nan(MaxNumberOfBeams,NumberOfPings);
+            fData.SI_BP_CentreSampleNumber     = nan(MaxNumberOfBeams,NumberOfPings);
+            fData.SI_B1_BeamNumber             = (1:MaxNumberOfBeams)';
+            fData.SI_SBP_SampleAmplitudes      = cell(NumberOfPings,1); % saving as sparse
             
             for iP = 1:NumberOfPings
                 
                 % Get data from datagram
-                BeamNumber             = cell2mat(EM_SeabedImage.BeamIndexNumber(iP))+1;
-                NumberOfSamplesPerBeam = cell2mat(EM_SeabedImage.NumberOfSamplesPerBeam(iP));
-                Samples                = cell2mat(EM_SeabedImage.SampleAmplitudes(iP).beam(:));
+                BeamNumber             = cell2mat(ALLdata.EM_SeabedImage.BeamIndexNumber(iP))+1;
+                NumberOfSamplesPerBeam = cell2mat(ALLdata.EM_SeabedImage.NumberOfSamplesPerBeam(iP));
+                Samples                = cell2mat(ALLdata.EM_SeabedImage.SampleAmplitudes(iP).beam(:));
                 
                 % from number of samples per beam, get indices of first and last
                 % sample for each beam in the Samples data vector
@@ -375,9 +594,9 @@ for iF = 1:nFiles
                 iLast  = iFirst+NumberOfSamplesPerBeam-1;
                 
                 % store
-                FABCdata.SI_BP_SortingDirection(BeamNumber,iP)       = cell2mat(EM_SeabedImage.SortingDirection(iP));
-                FABCdata.SI_BP_NumberOfSamplesPerBeam(BeamNumber,iP) = NumberOfSamplesPerBeam;
-                FABCdata.SI_BP_CentreSampleNumber(BeamNumber,iP)     = cell2mat(EM_SeabedImage.CentreSampleNumber(iP));
+                fData.SI_BP_SortingDirection(BeamNumber,iP)       = cell2mat(ALLdata.EM_SeabedImage.SortingDirection(iP));
+                fData.SI_BP_NumberOfSamplesPerBeam(BeamNumber,iP) = NumberOfSamplesPerBeam;
+                fData.SI_BP_CentreSampleNumber(BeamNumber,iP)     = cell2mat(ALLdata.EM_SeabedImage.CentreSampleNumber(iP));
                 
                 % initialize the beams/sample array (use zero instead of NaN to
                 % allow turning it to sparse
@@ -389,7 +608,7 @@ for iF = 1:nFiles
                 end
                 
                 % and save the sparse version
-                FABCdata.SI_SBP_SampleAmplitudes(iP,1) = {sparse(temp)}; % to use full matrices, FABCdata.SI_SBP_SampleAmplitudes(:,:,iP) = temp;
+                fData.SI_SBP_SampleAmplitudes(iP,1) = {sparse(temp)}; % to use full matrices, fData.SI_SBP_SampleAmplitudes(:,:,iP) = temp;
                 
             end
             
@@ -397,43 +616,49 @@ for iF = 1:nFiles
         
     end
     
-    % EM_SeabedImage89
-    if isfield(varStructCurr,'EM_SeabedImage89')
-        EM_SeabedImage89=varStructCurr.EM_SeabedImage89;
-        % only do if data of that type has not been recorded yet, aka:
-        if ~isfield(FABCdata,'S8_1D_Date')
-            up=1;
-            NumberOfPings      = length(EM_SeabedImage89.TypeOfDatagram); % total number of pings in file
-            MaxNumberOfBeams   = max(EM_SeabedImage89.NumberOfValidBeams);
-            MaxNumberOfSamples = max(cellfun(@(x) max(x),EM_SeabedImage89.NumberOfSamplesPerBeam));
+    
+    %% EM_SeabedImage89
+    
+    if isfield(ALLdata,'EM_SeabedImage89')
+        
+        % only convert these datagrams if this type doesn't already exist in output
+        if ~isfield(fData,'S8_1P_Date')
             
-            FABCdata.S8_1P_Date                            = EM_SeabedImage89.Date;
-            FABCdata.S8_1P_TimeSinceMidnightInMilliseconds = EM_SeabedImage89.TimeSinceMidnightInMilliseconds;
-            FABCdata.S8_1P_PingCounter                     = EM_SeabedImage89.PingCounter;
-            FABCdata.S8_1P_SamplingFrequencyInHz           = EM_SeabedImage89.SamplingFrequencyInHz;
-            FABCdata.S8_1P_RangeToNormalIncidence          = EM_SeabedImage89.RangeToNormalIncidence;
-            FABCdata.S8_1P_NormalIncidenceBS               = EM_SeabedImage89.NormalIncidenceBS;
-            FABCdata.S8_1P_ObliqueBS                       = EM_SeabedImage89.ObliqueBS;
-            FABCdata.S8_1P_TxBeamwidthAlong                = EM_SeabedImage89.TxBeamwidthAlong;
-            FABCdata.S8_1P_TVGLawCrossoverAngle            = EM_SeabedImage89.TVGLawCrossoverAngle;
-            FABCdata.S8_1P_NumberOfValidBeams              = EM_SeabedImage89.NumberOfValidBeams;
+            if update_mode
+                update_flag = 1;
+            end
+            
+            NumberOfPings      = length(ALLdata.EM_SeabedImage89.TypeOfDatagram); % total number of pings in file
+            MaxNumberOfBeams   = max(ALLdata.EM_SeabedImage89.NumberOfValidBeams);
+            MaxNumberOfSamples = max(cellfun(@(x) max(x),ALLdata.EM_SeabedImage89.NumberOfSamplesPerBeam));
+            
+            fData.S8_1P_Date                            = ALLdata.EM_SeabedImage89.Date;
+            fData.S8_1P_TimeSinceMidnightInMilliseconds = ALLdata.EM_SeabedImage89.TimeSinceMidnightInMilliseconds;
+            fData.S8_1P_PingCounter                     = ALLdata.EM_SeabedImage89.PingCounter;
+            fData.S8_1P_SamplingFrequencyInHz           = ALLdata.EM_SeabedImage89.SamplingFrequencyInHz;
+            fData.S8_1P_RangeToNormalIncidence          = ALLdata.EM_SeabedImage89.RangeToNormalIncidence;
+            fData.S8_1P_NormalIncidenceBS               = ALLdata.EM_SeabedImage89.NormalIncidenceBS;
+            fData.S8_1P_ObliqueBS                       = ALLdata.EM_SeabedImage89.ObliqueBS;
+            fData.S8_1P_TxBeamwidthAlong                = ALLdata.EM_SeabedImage89.TxBeamwidthAlong;
+            fData.S8_1P_TVGLawCrossoverAngle            = ALLdata.EM_SeabedImage89.TVGLawCrossoverAngle;
+            fData.S8_1P_NumberOfValidBeams              = ALLdata.EM_SeabedImage89.NumberOfValidBeams;
             
             % initialize
-            FABCdata.S8_BP_SortingDirection       = nan(MaxNumberOfBeams,NumberOfPings);
-            FABCdata.S8_BP_DetectionInfo          = nan(MaxNumberOfBeams,NumberOfPings);
-            FABCdata.S8_BP_NumberOfSamplesPerBeam = nan(MaxNumberOfBeams,NumberOfPings);
-            FABCdata.S8_BP_CentreSampleNumber     = nan(MaxNumberOfBeams,NumberOfPings);
-            FABCdata.S8_B1_BeamNumber             = (1:MaxNumberOfBeams)';
-            FABCdata.S8_SBP_SampleAmplitudes      = cell(NumberOfPings,1);
+            fData.S8_BP_SortingDirection       = nan(MaxNumberOfBeams,NumberOfPings);
+            fData.S8_BP_DetectionInfo          = nan(MaxNumberOfBeams,NumberOfPings);
+            fData.S8_BP_NumberOfSamplesPerBeam = nan(MaxNumberOfBeams,NumberOfPings);
+            fData.S8_BP_CentreSampleNumber     = nan(MaxNumberOfBeams,NumberOfPings);
+            fData.S8_B1_BeamNumber             = (1:MaxNumberOfBeams)';
+            fData.S8_SBP_SampleAmplitudes      = cell(NumberOfPings,1);
             
             % in this more recent datagram, all beams are in. No beamnumber anymore
-            BeamNumber = FABCdata.S8_B1_BeamNumber;
+            BeamNumber = fData.S8_B1_BeamNumber;
             
             for iP = 1:NumberOfPings
                 
                 % Get data from datagram
-                NumberOfSamplesPerBeam = cell2mat(EM_SeabedImage89.NumberOfSamplesPerBeam(iP));
-                Samples                = cell2mat(EM_SeabedImage89.SampleAmplitudes(iP).beam(:));
+                NumberOfSamplesPerBeam = cell2mat(ALLdata.EM_SeabedImage89.NumberOfSamplesPerBeam(iP));
+                Samples                = cell2mat(ALLdata.EM_SeabedImage89.SampleAmplitudes(iP).beam(:));
                 
                 % from number of samples per beam, get indices of first and last
                 % sample for each beam in the Samples data vector
@@ -441,9 +666,9 @@ for iF = 1:nFiles
                 iLast  = iFirst+NumberOfSamplesPerBeam-1;
                 
                 % store
-                FABCdata.S8_BP_SortingDirection(BeamNumber,iP)       = cell2mat(EM_SeabedImage89.SortingDirection(iP));
-                FABCdata.S8_BP_NumberOfSamplesPerBeam(BeamNumber,iP) = NumberOfSamplesPerBeam;
-                FABCdata.S8_BP_CentreSampleNumber(BeamNumber,iP)     = cell2mat(EM_SeabedImage89.CentreSampleNumber(iP));
+                fData.S8_BP_SortingDirection(BeamNumber,iP)       = cell2mat(ALLdata.EM_SeabedImage89.SortingDirection(iP));
+                fData.S8_BP_NumberOfSamplesPerBeam(BeamNumber,iP) = NumberOfSamplesPerBeam;
+                fData.S8_BP_CentreSampleNumber(BeamNumber,iP)     = cell2mat(ALLdata.EM_SeabedImage89.CentreSampleNumber(iP));
                 
                 % initialize the beams/sample array (use zero instead of NaN to
                 % allow turning it to sparse
@@ -455,7 +680,7 @@ for iF = 1:nFiles
                 end
                 
                 % and save the sparse version
-                FABCdata.S8_SBP_SampleAmplitudes(iP,1) = {sparse(temp)}; % to use full matrices, FABCdata.S8_SBP_SampleAmplitudes(:,:,iP) = temp;
+                fData.S8_SBP_SampleAmplitudes(iP,1) = {sparse(temp)}; % to use full matrices, fData.S8_SBP_SampleAmplitudes(:,:,iP) = temp;
                 
             end
             
@@ -463,235 +688,262 @@ for iF = 1:nFiles
         
     end
     
-    % EM_WaterColumn (v2 verified)
-    if isfield(varStructCurr,'EM_WaterColumn')
-        EM_WaterColumn=varStructCurr.EM_WaterColumn;
-        % only do if data of that type has not been recorded yet, aka:
-        if ~isfield(FABCdata,'WC_1P_Date')||FABCdata.dr_sub~=dr_sub||FABCdata.db_sub~=db_sub
-            up=1;
+    
+    %% EM_WaterColumn (v2 verified)
+    
+    if isfield(ALLdata,'EM_WaterColumn')
+        
+        % only convert these datagrams if this type doesn't already exist in output
+        if ~isfield(fData,'WC_1P_Date') || fData.dr_sub~=dr_sub || fData.db_sub~=db_sub
+            
+            if update_mode
+                update_flag = 1;
+            end
+            
             % get indices of first datagram for each ping
-            [pingCounters,iFirstDatagram] = unique(EM_WaterColumn.PingCounter,'stable');
+            [pingCounters,iFirstDatagram] = unique(ALLdata.EM_WaterColumn.PingCounter,'stable');
             
             % get data dimensions
             nPings              = length(pingCounters); % total number of pings in file
-            maxNBeams           = max(EM_WaterColumn.TotalNumberOfReceiveBeams); % maximum number of beams for a ping in file
-            maxNTransmitSectors = max(EM_WaterColumn.NumberOfTransmitSectors); % maximum number of transmit sectors for a ping in file
-            maxNSamples         = max(cellfun(@(x) max(x),EM_WaterColumn.NumberOfSamples)); % max number of samples for a beam in file
+            maxNBeams           = max(ALLdata.EM_WaterColumn.TotalNumberOfReceiveBeams); % maximum number of beams for a ping in file
+            maxNTransmitSectors = max(ALLdata.EM_WaterColumn.NumberOfTransmitSectors); % maximum number of transmit sectors for a ping in file
+            maxNSamples         = max(cellfun(@(x) max(x),ALLdata.EM_WaterColumn.NumberOfSamples)); % max number of samples for a beam in file
             
             % decimating beams and samples
             maxNBeams_sub       = ceil(maxNBeams/db_sub); % number of beams to extract
             maxNSamples_sub     = ceil(maxNSamples/dr_sub); % number of samples to extract
             
             % read data per ping from first datagram of each ping
-            FABCdata.WC_1P_Date                            = EM_WaterColumn.Date(iFirstDatagram);
-            FABCdata.WC_1P_TimeSinceMidnightInMilliseconds = EM_WaterColumn.TimeSinceMidnightInMilliseconds(iFirstDatagram);
-            FABCdata.WC_1P_PingCounter                     = EM_WaterColumn.PingCounter(iFirstDatagram);
-            FABCdata.WC_1P_NumberOfDatagrams               = EM_WaterColumn.NumberOfDatagrams(iFirstDatagram);
-            FABCdata.WC_1P_NumberOfTransmitSectors         = EM_WaterColumn.NumberOfTransmitSectors(iFirstDatagram);
-            FABCdata.WC_1P_TotalNumberOfReceiveBeams       = EM_WaterColumn.TotalNumberOfReceiveBeams(iFirstDatagram);
-            FABCdata.WC_1P_SoundSpeed                      = EM_WaterColumn.SoundSpeed(iFirstDatagram);
-            FABCdata.WC_1P_SamplingFrequencyHz             = (EM_WaterColumn.SamplingFrequency(iFirstDatagram).*0.01)./dr_sub; % in Hz
-            FABCdata.WC_1P_TXTimeHeave                     = EM_WaterColumn.TXTimeHeave(iFirstDatagram);
-            FABCdata.WC_1P_TVGFunctionApplied              = EM_WaterColumn.TVGFunctionApplied(iFirstDatagram);
-            FABCdata.WC_1P_TVGOffset                       = EM_WaterColumn.TVGOffset(iFirstDatagram);
-            FABCdata.WC_1P_ScanningInfo                    = EM_WaterColumn.ScanningInfo(iFirstDatagram);
+            fData.WC_1P_Date                            = ALLdata.EM_WaterColumn.Date(iFirstDatagram);
+            fData.WC_1P_TimeSinceMidnightInMilliseconds = ALLdata.EM_WaterColumn.TimeSinceMidnightInMilliseconds(iFirstDatagram);
+            fData.WC_1P_PingCounter                     = ALLdata.EM_WaterColumn.PingCounter(iFirstDatagram);
+            fData.WC_1P_NumberOfDatagrams               = ALLdata.EM_WaterColumn.NumberOfDatagrams(iFirstDatagram);
+            fData.WC_1P_NumberOfTransmitSectors         = ALLdata.EM_WaterColumn.NumberOfTransmitSectors(iFirstDatagram);
+            fData.WC_1P_TotalNumberOfReceiveBeams       = ALLdata.EM_WaterColumn.TotalNumberOfReceiveBeams(iFirstDatagram);
+            fData.WC_1P_SoundSpeed                      = ALLdata.EM_WaterColumn.SoundSpeed(iFirstDatagram);
+            fData.WC_1P_SamplingFrequencyHz             = (ALLdata.EM_WaterColumn.SamplingFrequency(iFirstDatagram).*0.01)./dr_sub; % in Hz
+            fData.WC_1P_TXTimeHeave                     = ALLdata.EM_WaterColumn.TXTimeHeave(iFirstDatagram);
+            fData.WC_1P_TVGFunctionApplied              = ALLdata.EM_WaterColumn.TVGFunctionApplied(iFirstDatagram);
+            fData.WC_1P_TVGOffset                       = ALLdata.EM_WaterColumn.TVGOffset(iFirstDatagram);
+            fData.WC_1P_ScanningInfo                    = ALLdata.EM_WaterColumn.ScanningInfo(iFirstDatagram);
             
             % initialize data per transmit sector and ping
-            FABCdata.WC_TP_TiltAngle            = nan(maxNTransmitSectors,nPings);
-            FABCdata.WC_TP_CenterFrequency      = nan(maxNTransmitSectors,nPings);
-            FABCdata.WC_TP_TransmitSectorNumber = nan(maxNTransmitSectors,nPings);
+            fData.WC_TP_TiltAngle            = nan(maxNTransmitSectors,nPings);
+            fData.WC_TP_CenterFrequency      = nan(maxNTransmitSectors,nPings);
+            fData.WC_TP_TransmitSectorNumber = nan(maxNTransmitSectors,nPings);
             
             % initialize data per decimated beam and ping
-            FABCdata.WC_BP_BeamPointingAngle      = nan(maxNBeams_sub,nPings);
-            FABCdata.WC_BP_StartRangeSampleNumber = nan(maxNBeams_sub,nPings);
-            FABCdata.WC_BP_NumberOfSamples        = nan(maxNBeams_sub,nPings);
-            FABCdata.WC_BP_DetectedRangeInSamples = zeros(maxNBeams_sub,nPings);
-            FABCdata.WC_BP_TransmitSectorNumber   = nan(maxNBeams_sub,nPings);
-            FABCdata.WC_BP_BeamNumber             = nan(maxNBeams_sub,nPings);
+            fData.WC_BP_BeamPointingAngle      = nan(maxNBeams_sub,nPings);
+            fData.WC_BP_StartRangeSampleNumber = nan(maxNBeams_sub,nPings);
+            fData.WC_BP_NumberOfSamples        = nan(maxNBeams_sub,nPings);
+            fData.WC_BP_DetectedRangeInSamples = zeros(maxNBeams_sub,nPings);
+            fData.WC_BP_TransmitSectorNumber   = nan(maxNBeams_sub,nPings);
+            fData.WC_BP_BeamNumber             = nan(maxNBeams_sub,nPings);
             
-            % decide whether to save in memory or as memmapfile
-            
-            
-            % use memmap file
-            
-            % initialize binary file for writing
-            
+            % path to binary file for WC data
             file_binary = fullfile(wc_dir,'WC_SBP_SampleAmplitudes.dat');
             
-            if exist(file_binary,'file')==0||FABCdata.dr_sub~=dr_sub||FABCdata.db_sub~=db_sub
+            % if file does not exist or we're re-sampling it, create a new
+            % one ready for writing
+            if ~exist(file_binary,'file') || fData.dr_sub~=dr_sub || fData.db_sub~=db_sub
                 fileID = fopen(file_binary,'w+');
             else
-                fileID=-1;
+                % if we're here, it means the file already exists and
+                % already contain the data at the proper sampling. So we
+                % just need to store the metadata and link to it as
+                % memmapfile.
+                fileID = -1;
             end
-            
             
             % now get data for each ping
             for iP = 1:nPings
                 
                 % find datagrams composing this ping
-                pingCounter = FABCdata.WC_1P_PingCounter(1,iP); % ping number (ex: 50455)
-                % nDatagrams  = FABCdata.WC_1P_NumberOfDatagrams(1,iP); % theoretical number of datagrams for this ping (ex: 7)
-                iDatagrams  = find(EM_WaterColumn.PingCounter==pingCounter); % index of the datagrams making up this ping in EM_Watercolumn (ex: 58-59-61-64)
+                pingCounter = fData.WC_1P_PingCounter(1,iP); % ping number (ex: 50455)
+                % nDatagrams  = fData.WC_1P_NumberOfDatagrams(1,iP); % theoretical number of datagrams for this ping (ex: 7)
+                iDatagrams  = find(ALLdata.EM_WaterColumn.PingCounter==pingCounter); % index of the datagrams making up this ping in ALLdata.EM_Watercolumn (ex: 58-59-61-64)
                 nDatagrams  = length(iDatagrams); % actual number of datagrams available (ex: 4)
                 
                 % some datagrams may be missing, like in the example. Detect and adjust...
-                datagramOrder     = EM_WaterColumn.DatagramNumbers(iDatagrams); % order of the datagrams (ex: 4-3-6-2, the missing one is 1st, 5th and 7th)
+                datagramOrder     = ALLdata.EM_WaterColumn.DatagramNumbers(iDatagrams); % order of the datagrams (ex: 4-3-6-2, the missing one is 1st, 5th and 7th)
                 [~,IX]            = sort(datagramOrder);
-                iDatagrams        = iDatagrams(IX); % index of the datagrams making up this ping in EM_Watercolumn, but in the right order (ex: 64-59-58-61, missing datagrams are still missing)
-                nBeamsPerDatagram = EM_WaterColumn.NumberOfBeamsInThisDatagram(iDatagrams); % number of beams in each datagram making up this ping (ex: 56-61-53-28)
+                iDatagrams        = iDatagrams(IX); % index of the datagrams making up this ping in ALLdata.EM_Watercolumn, but in the right order (ex: 64-59-58-61, missing datagrams are still missing)
+                nBeamsPerDatagram = ALLdata.EM_WaterColumn.NumberOfBeamsInThisDatagram(iDatagrams); % number of beams in each datagram making up this ping (ex: 56-61-53-28)
                 
                 % assuming transmit sectors data are not split between several datagrams, get that data from the first datagram.
-                nTransmitSectors = FABCdata.WC_1P_NumberOfTransmitSectors(1,iP); % number of transmit sectors in this ping
-                FABCdata.WC_TP_TiltAngle(1:nTransmitSectors,iP)            = EM_WaterColumn.TiltAngle{iDatagrams(1)};
-                FABCdata.WC_TP_CenterFrequency(1:nTransmitSectors,iP)      = EM_WaterColumn.CenterFrequency{iDatagrams(1)};
-                FABCdata.WC_TP_TransmitSectorNumber(1:nTransmitSectors,iP) = EM_WaterColumn.TransmitSectorNumber{iDatagrams(1)};
+                nTransmitSectors = fData.WC_1P_NumberOfTransmitSectors(1,iP); % number of transmit sectors in this ping
+                fData.WC_TP_TiltAngle(1:nTransmitSectors,iP)            = ALLdata.EM_WaterColumn.TiltAngle{iDatagrams(1)};
+                fData.WC_TP_CenterFrequency(1:nTransmitSectors,iP)      = ALLdata.EM_WaterColumn.CenterFrequency{iDatagrams(1)};
+                fData.WC_TP_TransmitSectorNumber(1:nTransmitSectors,iP) = ALLdata.EM_WaterColumn.TransmitSectorNumber{iDatagrams(1)};
                 
-                % initialize the decimated samples / decimated beams matrix (Watercolumn data)
-                SB_temp = zeros(maxNSamples_sub,maxNBeams_sub,'int8')-128;
+                % initialize the water column data matrix for that ping.
+                % original data are in "int8" format, the NaN equivalent
+                % will be -128
+                if fileID >= 0
+                    SB_temp = zeros(maxNSamples_sub,maxNBeams_sub,'int8') - 128;
+                end
                 
                 % and then read the data in each datagram
                 for iD = 1:nDatagrams
                     
                     % index of beams in output structure for this datagram
                     [iBeams,idx_beams] = unique(ceil((sum(nBeamsPerDatagram(1:iD-1)) + (1:nBeamsPerDatagram(iD)))/db_sub));
-                    % old approach
+                    % old approach:
                     % iBeams = sum(nBeamsPerDatagram(1:iD-1)) + (1:nBeamsPerDatagram(iD));
                     % idx_beams = (1:numel(iBeams));
                     
                     % ping x beam data
-                    FABCdata.WC_BP_BeamPointingAngle(iBeams,iP)      = EM_WaterColumn.BeamPointingAngle{iDatagrams(iD)}(idx_beams);
-                    FABCdata.WC_BP_StartRangeSampleNumber(iBeams,iP) = round(EM_WaterColumn.StartRangeSampleNumber{iDatagrams(iD)}(idx_beams)./dr_sub);
-                    FABCdata.WC_BP_NumberOfSamples(iBeams,iP)        = round(EM_WaterColumn.NumberOfSamples{iDatagrams(iD)}(idx_beams)./dr_sub);
-                    FABCdata.WC_BP_DetectedRangeInSamples(iBeams,iP) = round(EM_WaterColumn.DetectedRangeInSamples{iDatagrams(iD)}(idx_beams)./dr_sub);
-                    FABCdata.WC_BP_TransmitSectorNumber(iBeams,iP)   = EM_WaterColumn.TransmitSectorNumber2{iDatagrams(iD)}(idx_beams);
-                    FABCdata.WC_BP_BeamNumber(iBeams,iP)             = EM_WaterColumn.BeamNumber{iDatagrams(iD)}(idx_beams);
-                    if fileID>=0
-                        % now getting watercolumn data (beams x samples)
+                    fData.WC_BP_BeamPointingAngle(iBeams,iP)      = ALLdata.EM_WaterColumn.BeamPointingAngle{iDatagrams(iD)}(idx_beams);
+                    fData.WC_BP_StartRangeSampleNumber(iBeams,iP) = round(ALLdata.EM_WaterColumn.StartRangeSampleNumber{iDatagrams(iD)}(idx_beams)./dr_sub);
+                    fData.WC_BP_NumberOfSamples(iBeams,iP)        = round(ALLdata.EM_WaterColumn.NumberOfSamples{iDatagrams(iD)}(idx_beams)./dr_sub);
+                    fData.WC_BP_DetectedRangeInSamples(iBeams,iP) = round(ALLdata.EM_WaterColumn.DetectedRangeInSamples{iDatagrams(iD)}(idx_beams)./dr_sub);
+                    fData.WC_BP_TransmitSectorNumber(iBeams,iP)   = ALLdata.EM_WaterColumn.TransmitSectorNumber2{iDatagrams(iD)}(idx_beams);
+                    fData.WC_BP_BeamNumber(iBeams,iP)             = ALLdata.EM_WaterColumn.BeamNumber{iDatagrams(iD)}(idx_beams);
+                    
+                    % now getting watercolumn data (beams x samples)
+                    if fileID >= 0
+                        
                         for iB = 1:numel(iBeams)
+                            
                             % actual number of samples in that beam
-                            Ns = EM_WaterColumn.NumberOfSamples{iDatagrams(iD)}(idx_beams(iB));
+                            Ns = ALLdata.EM_WaterColumn.NumberOfSamples{iDatagrams(iD)}(idx_beams(iB));
+                            
                             % number of samples we're going to record:
                             Ns_sub = ceil(Ns/dr_sub);
-                            % get the data:
                             
-                            fseek(fid_all,EM_WaterColumn.SampleAmplitudePosition{iDatagrams(iD)}(idx_beams(iB)),'bof');
-                            SB_temp(1:Ns_sub,iBeams(iB))=fread(fid_all,Ns_sub,'int8',dr_sub-1);
-                            %SB_temp(1:Ns_sub,iBeams(iB)) = EM_WaterColumn.SampleAmplitude{iDatagrams(iD)}{idx_beams(iB)}(1:dr_sub:Ns_sub*dr_sub)';
+                            % get the data:
+                            fseek(fid_all,ALLdata.EM_WaterColumn.SampleAmplitudePosition{iDatagrams(iD)}(idx_beams(iB)),'bof');
+                            SB_temp(1:Ns_sub,iBeams(iB)) = fread(fid_all,Ns_sub,'int8',dr_sub-1);
+                            
+                            % Note: the original method was to grab the
+                            % data that had been recorded in the ALLdata
+                            % structure, aka:
+                            % SB_temp(1:Ns_sub,iBeams(iB)) = ALLdata.EM_WaterColumn.SampleAmplitude{iDatagrams(iD)}{idx_beams(iB)}(1:dr_sub:Ns_sub*dr_sub)';
+                            
                         end
+                        
                     end
                 end
                 
-                % store data
-                if fileID>=0
-                    % write on binary file
+                % store data on binary file
+                if fileID >= 0
                     fwrite(fileID,SB_temp,'int8');
                 end
                 
             end
             
-            if fileID>=0
+            % close binary data file
+            if fileID >= 0
                 fclose(fileID);
             end
-            % re-open as memmapfile
-            FABCdata.WC_SBP_SampleAmplitudes = memmapfile(file_binary,'Format',{'int8' [maxNSamples_sub maxNBeams_sub nPings] 'val'},'repeat',1,'writable',true);
             
+            % and link to it through memmapfile
+            fData.WC_SBP_SampleAmplitudes = memmapfile(file_binary,'Format',{'int8' [maxNSamples_sub maxNBeams_sub nPings] 'val'},'repeat',1,'writable',true);
             
         end
     end
-    % EM_AmpPhase
-    if isfield(varStructCurr,'EM_AmpPhase')
-        EM_AmpPhase=varStructCurr.EM_AmpPhase;
-        % only do if data of that type has not been recorded yet, aka:
-        if ~isfield(FABCdata,'WCAP_1P_Date')%||FABCdata.dr_sub~=dr_sub||FABCdata.db_sub~=db_sub
-            up=1;
+    
+    
+    %% EM_AmpPhase
+    
+    if isfield(ALLdata,'EM_AmpPhase')
+        
+        % only convert these datagrams if this type doesn't already exist in output
+        if ~isfield(fData,'WCAP_1P_Date') || fData.dr_sub~=dr_sub || fData.db_sub~=db_sub
+            
+            if update_mode
+                update_flag = 1;
+            end
+            
             % get indices of first datagram for each ping
-            [pingCounters,iFirstDatagram] = unique(EM_AmpPhase.PingCounter,'stable');
+            [pingCounters,iFirstDatagram] = unique(ALLdata.EM_AmpPhase.PingCounter,'stable');
             
             % get data dimensions
             nPings              = length(pingCounters); % total number of pings in file
-            maxNBeams           = max(EM_AmpPhase.TotalNumberOfReceiveBeams); % maximum number of beams for a ping in file
-            maxNTransmitSectors = max(EM_AmpPhase.NumberOfTransmitSectors); % maximum number of transmit sectors for a ping in file
-            maxNSamples         = max(cellfun(@(x) max(x),EM_AmpPhase.NumberOfSamples)); % max number of samples for a beam in file
-            %maxNSamples         = max(cellfun(@(x,y) max(x+y),EM_AmpPhase.NumberOfSamples+EM_AmpPhase.StartRangeSampleNumber)); % max number of samples for a beam in file
+            maxNBeams           = max(ALLdata.EM_AmpPhase.TotalNumberOfReceiveBeams); % maximum number of beams for a ping in file
+            maxNTransmitSectors = max(ALLdata.EM_AmpPhase.NumberOfTransmitSectors); % maximum number of transmit sectors for a ping in file
+            maxNSamples         = max(cellfun(@(x) max(x),ALLdata.EM_AmpPhase.NumberOfSamples)); % max number of samples for a beam in file
             
             % decimating beams and samples
-            maxNBeams_sub       =  ceil(maxNBeams/db_sub); % number of beams to extract
+            maxNBeams_sub       = ceil(maxNBeams/db_sub); % number of beams to extract
             maxNSamples_sub     = ceil(maxNSamples/dr_sub); % number of samples to extract
             
             % read data per ping from first datagram of each ping
-            FABCdata.WCAP_1P_Date                            = EM_AmpPhase.Date(iFirstDatagram);
-            FABCdata.WCAP_1P_TimeSinceMidnightInMilliseconds = EM_AmpPhase.TimeSinceMidnightInMilliseconds(iFirstDatagram);
-            FABCdata.WCAP_1P_PingCounter                     = EM_AmpPhase.PingCounter(iFirstDatagram);
-            FABCdata.WCAP_1P_NumberOfDatagrams               = EM_AmpPhase.NumberOfDatagrams(iFirstDatagram);
-            FABCdata.WCAP_1P_NumberOfTransmitSectors         = EM_AmpPhase.NumberOfTransmitSectors(iFirstDatagram);
-            FABCdata.WCAP_1P_TotalNumberOfReceiveBeams       = EM_AmpPhase.TotalNumberOfReceiveBeams(iFirstDatagram);
-            FABCdata.WCAP_1P_SoundSpeed                      = EM_AmpPhase.SoundSpeed(iFirstDatagram);
-            FABCdata.WCAP_1P_SamplingFrequencyHz             = (EM_AmpPhase.SamplingFrequency(iFirstDatagram).*0.01)./dr_sub; % in Hz
-            FABCdata.WCAP_1P_TXTimeHeave                     = EM_AmpPhase.TXTimeHeave(iFirstDatagram);
-            FABCdata.WCAP_1P_TVGFunctionApplied              = EM_AmpPhase.TVGFunctionApplied(iFirstDatagram);
-            FABCdata.WCAP_1P_TVGOffset                       = EM_AmpPhase.TVGOffset(iFirstDatagram);
-            FABCdata.WCAP_1P_ScanningInfo                    = EM_AmpPhase.ScanningInfo(iFirstDatagram);
+            fData.WCAP_1P_Date                            = ALLdata.EM_AmpPhase.Date(iFirstDatagram);
+            fData.WCAP_1P_TimeSinceMidnightInMilliseconds = ALLdata.EM_AmpPhase.TimeSinceMidnightInMilliseconds(iFirstDatagram);
+            fData.WCAP_1P_PingCounter                     = ALLdata.EM_AmpPhase.PingCounter(iFirstDatagram);
+            fData.WCAP_1P_NumberOfDatagrams               = ALLdata.EM_AmpPhase.NumberOfDatagrams(iFirstDatagram);
+            fData.WCAP_1P_NumberOfTransmitSectors         = ALLdata.EM_AmpPhase.NumberOfTransmitSectors(iFirstDatagram);
+            fData.WCAP_1P_TotalNumberOfReceiveBeams       = ALLdata.EM_AmpPhase.TotalNumberOfReceiveBeams(iFirstDatagram);
+            fData.WCAP_1P_SoundSpeed                      = ALLdata.EM_AmpPhase.SoundSpeed(iFirstDatagram);
+            fData.WCAP_1P_SamplingFrequencyHz             = (ALLdata.EM_AmpPhase.SamplingFrequency(iFirstDatagram).*0.01)./dr_sub; % in Hz
+            fData.WCAP_1P_TXTimeHeave                     = ALLdata.EM_AmpPhase.TXTimeHeave(iFirstDatagram);
+            fData.WCAP_1P_TVGFunctionApplied              = ALLdata.EM_AmpPhase.TVGFunctionApplied(iFirstDatagram);
+            fData.WCAP_1P_TVGOffset                       = ALLdata.EM_AmpPhase.TVGOffset(iFirstDatagram);
+            fData.WCAP_1P_ScanningInfo                    = ALLdata.EM_AmpPhase.ScanningInfo(iFirstDatagram);
             
             % initialize data per transmit sector and ping
-            FABCdata.WCAP_TP_TiltAngle            = nan(maxNTransmitSectors,nPings);
-            FABCdata.WCAP_TP_CenterFrequency      = nan(maxNTransmitSectors,nPings);
-            FABCdata.WCAP_TP_TransmitSectorNumber = nan(maxNTransmitSectors,nPings);
+            fData.WCAP_TP_TiltAngle            = nan(maxNTransmitSectors,nPings);
+            fData.WCAP_TP_CenterFrequency      = nan(maxNTransmitSectors,nPings);
+            fData.WCAP_TP_TransmitSectorNumber = nan(maxNTransmitSectors,nPings);
             
             % initialize data per decimated beam and ping
-            FABCdata.WCAP_BP_BeamPointingAngle      = nan(maxNBeams_sub,nPings);
-            FABCdata.WCAP_BP_StartRangeSampleNumber = nan(maxNBeams_sub,nPings);
-            FABCdata.WCAP_BP_NumberOfSamples        = nan(maxNBeams_sub,nPings);
-            FABCdata.WCAP_BP_DetectedRangeInSamples = zeros(maxNBeams_sub,nPings);
-            FABCdata.WCAP_BP_TransmitSectorNumber   = nan(maxNBeams_sub,nPings);
-            FABCdata.WCAP_BP_BeamNumber             = nan(maxNBeams_sub,nPings);
+            fData.WCAP_BP_BeamPointingAngle      = nan(maxNBeams_sub,nPings);
+            fData.WCAP_BP_StartRangeSampleNumber = nan(maxNBeams_sub,nPings);
+            fData.WCAP_BP_NumberOfSamples        = nan(maxNBeams_sub,nPings);
+            fData.WCAP_BP_DetectedRangeInSamples = zeros(maxNBeams_sub,nPings);
+            fData.WCAP_BP_TransmitSectorNumber   = nan(maxNBeams_sub,nPings);
+            fData.WCAP_BP_BeamNumber             = nan(maxNBeams_sub,nPings);
             
-            % decide whether to save in memory or as memmapfile
-            
-            
-            % use memmap file
-            
-            % initialize binary file for writing
-            
-            file_amp_binary = fullfile(wc_dir,'WCAP_SBP_SampleAmplitudes.dat');
+            % path to binary file for WC data
+            file_amp_binary   = fullfile(wc_dir,'WCAP_SBP_SampleAmplitudes.dat');
             file_phase_binary = fullfile(wc_dir,'WCAP_SBP_SamplePhase.dat');
             
-            if exist(file_amp_binary,'file')==0||FABCdata.dr_sub~=dr_sub||FABCdata.db_sub~=db_sub
+            % if file does not exist or we're re-sampling it, create a new
+            % one ready for writing
+            if exist(file_amp_binary,'file')==0 || fData.dr_sub~=dr_sub || fData.db_sub~=db_sub
                 file_amp_id = fopen(file_amp_binary,'w+');
             else
-                file_amp_id=-1;
+                % if we're here, it means the file already exists and
+                % already contain the data at the proper sampling. So we
+                % just need to store the metadata and link to it as
+                % memmapfile.
+                file_amp_id = -1;
             end
             
-            if exist(file_phase_binary,'file')==0||FABCdata.dr_sub~=dr_sub||FABCdata.db_sub~=db_sub
+            % repeat for phase file
+            if exist(file_phase_binary,'file')==0 || fData.dr_sub~=dr_sub || fData.db_sub~=db_sub
                 file_phase_id = fopen(file_phase_binary,'w+');
             else
-                file_phase_id=-1;
+                file_phase_id = -1;
             end
-            
             
             % now get data for each ping
             for iP = 1:nPings
                 
                 % find datagrams composing this ping
-                pingCounter = FABCdata.WCAP_1P_PingCounter(1,iP); % ping number (ex: 50455)
-                % nDatagrams  = FABCdata.WCAP_1P_NumberOfDatagrams(1,iP); % theoretical number of datagrams for this ping (ex: 7)
-                iDatagrams  = find(EM_AmpPhase.PingCounter==pingCounter); % index of the datagrams making up this ping in EM_AmpPhase (ex: 58-59-61-64)
+                pingCounter = fData.WCAP_1P_PingCounter(1,iP); % ping number (ex: 50455)
+                % nDatagrams  = fData.WCAP_1P_NumberOfDatagrams(1,iP); % theoretical number of datagrams for this ping (ex: 7)
+                iDatagrams  = find(ALLdata.EM_AmpPhase.PingCounter==pingCounter); % index of the datagrams making up this ping in ALLdata.EM_AmpPhase (ex: 58-59-61-64)
                 nDatagrams  = length(iDatagrams); % actual number of datagrams available (ex: 4)
                 
                 % some datagrams may be missing, like in the example. Detect and adjust...
-                datagramOrder     = EM_AmpPhase.DatagramNumbers(iDatagrams); % order of the datagrams (ex: 4-3-6-2, the missing one is 1st, 5th and 7th)
+                datagramOrder     = ALLdata.EM_AmpPhase.DatagramNumbers(iDatagrams); % order of the datagrams (ex: 4-3-6-2, the missing one is 1st, 5th and 7th)
                 [~,IX]            = sort(datagramOrder);
-                iDatagrams        = iDatagrams(IX); % index of the datagrams making up this ping in EM_AmpPhase, but in the right order (ex: 64-59-58-61, missing datagrams are still missing)
-                nBeamsPerDatagram = EM_AmpPhase.NumberOfBeamsInThisDatagram(iDatagrams); % number of beams in each datagram making up this ping (ex: 56-61-53-28)
+                iDatagrams        = iDatagrams(IX); % index of the datagrams making up this ping in ALLdata.EM_AmpPhase, but in the right order (ex: 64-59-58-61, missing datagrams are still missing)
+                nBeamsPerDatagram = ALLdata.EM_AmpPhase.NumberOfBeamsInThisDatagram(iDatagrams); % number of beams in each datagram making up this ping (ex: 56-61-53-28)
                 
                 % assuming transmit sectors data are not split between several datagrams, get that data from the first datagram.
-                nTransmitSectors = FABCdata.WCAP_1P_NumberOfTransmitSectors(1,iP); % number of transmit sectors in this ping
-                FABCdata.WCAP_TP_TiltAngle(1:nTransmitSectors,iP)            = EM_AmpPhase.TiltAngle{iDatagrams(1)};
-                FABCdata.WCAP_TP_CenterFrequency(1:nTransmitSectors,iP)      = EM_AmpPhase.CenterFrequency{iDatagrams(1)};
-                FABCdata.WCAP_TP_TransmitSectorNumber(1:nTransmitSectors,iP) = EM_AmpPhase.TransmitSectorNumber{iDatagrams(1)};
+                nTransmitSectors = fData.WCAP_1P_NumberOfTransmitSectors(1,iP); % number of transmit sectors in this ping
+                fData.WCAP_TP_TiltAngle(1:nTransmitSectors,iP)            = ALLdata.EM_AmpPhase.TiltAngle{iDatagrams(1)};
+                fData.WCAP_TP_CenterFrequency(1:nTransmitSectors,iP)      = ALLdata.EM_AmpPhase.CenterFrequency{iDatagrams(1)};
+                fData.WCAP_TP_TransmitSectorNumber(1:nTransmitSectors,iP) = ALLdata.EM_AmpPhase.TransmitSectorNumber{iDatagrams(1)};
                 
-                % initialize the decimated samples / decimated beams matrix (Watercolumn data)
-                SB2_temp = zeros(maxNSamples_sub,maxNBeams_sub,'int16')-2^15;
-                Ph_temp = zeros(maxNSamples_sub,maxNBeams_sub,'int16');
+                % initialize the water column data matrix for that ping.
+                if file_amp_id >= 0 || file_phase_id >= 0
+                    SB2_temp = zeros(maxNSamples_sub,maxNBeams_sub,'int16') - 2^15;
+                    Ph_temp = zeros(maxNSamples_sub,maxNBeams_sub,'int16');
+                end
                 
                 % and then read the data in each datagram
                 for iD = 1:nDatagrams
@@ -703,81 +955,71 @@ for iF = 1:nFiles
                     % idx_beams = (1:numel(iBeams));
                     
                     % ping x beam data
-                    FABCdata.WCAP_BP_BeamPointingAngle(iBeams,iP)      = EM_AmpPhase.BeamPointingAngle{iDatagrams(iD)}(idx_beams);
-                    FABCdata.WCAP_BP_StartRangeSampleNumber(iBeams,iP) = round(EM_AmpPhase.StartRangeSampleNumber{iDatagrams(iD)}(idx_beams)./dr_sub);
-                    FABCdata.WCAP_BP_NumberOfSamples(iBeams,iP)        = round(EM_AmpPhase.NumberOfSamples{iDatagrams(iD)}(idx_beams)./dr_sub);
-                    FABCdata.WCAP_BP_DetectedRangeInSamples(iBeams,iP) = round(EM_AmpPhase.DetectedRangeInSamples{iDatagrams(iD)}(idx_beams)./dr_sub);
-                    FABCdata.WCAP_BP_TransmitSectorNumber(iBeams,iP)   = EM_AmpPhase.TransmitSectorNumber2{iDatagrams(iD)}(idx_beams);
-                    FABCdata.WCAP_BP_BeamNumber(iBeams,iP)             = EM_AmpPhase.BeamNumber{iDatagrams(iD)}(idx_beams);
-                    if file_amp_id>=0||file_phase_id>=0
-                        % now getting watercolumn data (beams x samples)
+                    fData.WCAP_BP_BeamPointingAngle(iBeams,iP)      = ALLdata.EM_AmpPhase.BeamPointingAngle{iDatagrams(iD)}(idx_beams);
+                    fData.WCAP_BP_StartRangeSampleNumber(iBeams,iP) = round(ALLdata.EM_AmpPhase.StartRangeSampleNumber{iDatagrams(iD)}(idx_beams)./dr_sub);
+                    fData.WCAP_BP_NumberOfSamples(iBeams,iP)        = round(ALLdata.EM_AmpPhase.NumberOfSamples{iDatagrams(iD)}(idx_beams)./dr_sub);
+                    fData.WCAP_BP_DetectedRangeInSamples(iBeams,iP) = round(ALLdata.EM_AmpPhase.DetectedRangeInSamples{iDatagrams(iD)}(idx_beams)./dr_sub);
+                    fData.WCAP_BP_TransmitSectorNumber(iBeams,iP)   = ALLdata.EM_AmpPhase.TransmitSectorNumber2{iDatagrams(iD)}(idx_beams);
+                    fData.WCAP_BP_BeamNumber(iBeams,iP)             = ALLdata.EM_AmpPhase.BeamNumber{iDatagrams(iD)}(idx_beams);
+                    
+                    % now getting watercolumn data (beams x samples)
+                    if file_amp_id >= 0 || file_phase_id >= 0
+                        
                         for iB = 1:numel(iBeams)
+                            
                             % actual number of samples in that beam
-                            Ns = EM_AmpPhase.NumberOfSamples{iDatagrams(iD)}(idx_beams(iB));
+                            Ns = ALLdata.EM_AmpPhase.NumberOfSamples{iDatagrams(iD)}(idx_beams(iB));
+                            
                             % number of samples we're going to record:
                             Ns_sub = ceil(Ns/dr_sub);
+                            
                             % get the data:
-                            if Ns_sub>0
-                                fseek(fid_all,EM_AmpPhase.SamplePhaseAmplitudePosition{iDatagrams(iD)}(idx_beams(iB)),'bof');
-                                idx_in_beam=1:Ns_sub;
-                                tmp=fread(fid_all,Ns_sub,'uint16',2);
-                                SB2_temp(idx_in_beam,iBeams(iB))=int16(20*log10(single(tmp)*0.0001)*40);
-                                fseek(fid_all,EM_AmpPhase.SamplePhaseAmplitudePosition{iDatagrams(iD)}(idx_beams(iB))+1,'bof');
+                            if Ns_sub > 0
                                 
-                                tmp=fread(fid_all,Ns_sub,'int16',2);
-                                Ph_temp(idx_in_beam,iBeams(iB))=-0.0001*single(tmp)*30/pi*180;
+                                fseek(fid_all,ALLdata.EM_AmpPhase.SamplePhaseAmplitudePosition{iDatagrams(iD)}(idx_beams(iB)),'bof');
+                                tmp = fread(fid_all,Ns_sub,'uint16',2);
+                                SB2_temp(1:Ns_sub,iBeams(iB)) = int16(20*log10(single(tmp)*0.0001)*40); % what is this transformation? XXX
+                                
+                                fseek(fid_all,ALLdata.EM_AmpPhase.SamplePhaseAmplitudePosition{iDatagrams(iD)}(idx_beams(iB))+1,'bof');
+                                tmp = fread(fid_all,Ns_sub,'int16',2);
+                                Ph_temp(1:Ns_sub,iBeams(iB)) = -0.0001*single(tmp)*30/pi*180; % what is this transformation? XXX
                                 
                             end
                         end
                     end
                 end
                 
-                if iP==1
-                    
-                    %                 test=single(SB2_temp);
-                    %                 test(SB2_temp==0)=nan;
-                    %                 test=0.0001*test;
-                    %                 figure();
-                    %                 imagesc(test);
-                    %
-                    %                 test=single(Ph_temp);
-                    %                 test(Ph_temp==0)=nan;
-                    %                 test=-0.0001*test;
-                    %                 figure();
-                    %                 imagesc(test);
-                    
-                end
-                % store data
-                if file_amp_id>=0
-                    % write on binary file
+                % store amp data on binary file
+                if file_amp_id >= 0
                     fwrite(file_amp_id,SB2_temp,'int16');
                 end
                 
-                % store data
+                % store phase data on binary file
                 if file_phase_id>=0
-                    % write on binary file
                     fwrite(file_phase_id,Ph_temp,'int16');
                 end
+                
             end
             
-            if file_amp_id>=0
+            % close binary data file
+            if file_amp_id >= 0
                 fclose(file_amp_id);
             end
             
-            if file_phase_id>=0
+            % close binary data file
+            if file_phase_id >= 0
                 fclose(file_phase_id);
             end
             
-            % re-open as memmapfile
-            FABCdata.WCAP_SBP_SampleAmplitudes = memmapfile(file_amp_binary,'Format',{'int16' [maxNSamples_sub maxNBeams_sub nPings] 'val'},'repeat',1,'writable',true);
-            FABCdata.WCAP_SBP_SamplePhase = memmapfile(file_phase_binary,'Format',{'int16' [maxNSamples_sub maxNBeams_sub nPings] 'val'},'repeat',1,'writable',true);
-            
+            % and link to them through memmapfile
+            fData.WCAP_SBP_SampleAmplitudes = memmapfile(file_amp_binary,'Format',{'int16' [maxNSamples_sub maxNBeams_sub nPings] 'val'},'repeat',1,'writable',true);
+            fData.WCAP_SBP_SamplePhase      = memmapfile(file_phase_binary,'Format',{'int16' [maxNSamples_sub maxNBeams_sub nPings] 'val'},'repeat',1,'writable',true);
             
         end
         
     end
     
-    
-    % other types of datagrams not supported yet.
+    % close the original raw file
     fclose(fid_all);
+    
 end

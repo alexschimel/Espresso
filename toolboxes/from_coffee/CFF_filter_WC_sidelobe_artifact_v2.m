@@ -87,7 +87,7 @@ end
 
 if isobject(fData.(sprintf('%sSBP_SampleAmplitudes',start_fmt)))
     memoryMapFlag = 1;
-    wc_dir=get_wc_dir(fData.ALLfilename{1});
+    wc_dir=CFF_WCD_memmap_folder(fData.ALLfilename{1});
 else
     memoryMapFlag = 0;
 end

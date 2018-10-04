@@ -210,7 +210,7 @@ end
 %%
 % Callback when pressing the "Convert" button
 %
-function convert_files_callback(src,~,main_figure,reconvert)
+function convert_files_callback(~,~,main_figure,reconvert)
 
 % PARAMS:
 % list of datagram needed for conversion
@@ -238,13 +238,13 @@ for nF = 1:numel(files_to_convert)
     
     file_to_convert = files_to_convert{nF};
 
-    % check if file not already converted
+    % if file already converted and not asking for reconversion, exit here
     if files_already_converted(nF) && ~reconvert
         fprintf('File "%s" (%i/%i) is already converted.\n',file_to_convert,nF,numel(files_to_convert));
         continue
     end
     
-    % all tests passed. Converting can begin
+    % Otherwise, starting conversion...
     fprintf('Converting file "%s" (%i/%i). Started at %s... \n',file_to_convert,nF,numel(files_to_convert),datestr(now));
     tic
     
@@ -257,9 +257,6 @@ for nF = 1:numel(files_to_convert)
     
     % initialize which datagrams were read
     datags_parsed_idx = zeros(size(dg_wc));
-    
-    % initialize output
-    RAWdata = [];
     
     % check datagrams available in WCD file (if it exists)
     if exist(wcd_file_to_convert,'file')>0
@@ -275,7 +272,7 @@ for nF = 1:numel(files_to_convert)
         if any(datags_parsed_idx)
             datags_to_read_idx = ismember(WCDfile_info.datagTypeNumber,dg_wc(datags_parsed_idx));
             WCDfile_info.parsed(datags_to_read_idx) = 1;
-            RAWdata = CFF_read_all_from_fileinfo(wcd_file_to_convert, WCDfile_info);
+            WCDdata = CFF_read_all_from_fileinfo(wcd_file_to_convert, WCDfile_info);
         end
         
     end
@@ -295,17 +292,26 @@ for nF = 1:numel(files_to_convert)
             
             % if any, read those datagrams
             if any(yesthose_idx)
+                
                 ALLfile_info.parsed(ismember(ALLfile_info.datagTypeNumber,dg_wc(yesthose_idx))) = 1;
                 ALLdata = CFF_read_all_from_fileinfo(all_file_to_convert, ALLfile_info);
-                if ~isempty(RAWdata)
-                    RAWdata = {RAWdata ALLdata};
-                else
-                    RAWdata = {ALLdata};
-                end
+                
                 datags_parsed_idx = datags_parsed_idx | yesthose_idx;
+                
             end
             
         end
+    end
+    
+    % combining existing data
+    if exist('WCDdata','var') && exist('ALLdata','var')
+        EMdata = {WCDdata ALLdata};
+    elseif exist('WCDdata','var') && ~exist('ALLdata','var')
+        EMdata = {WCDdata};
+    elseif ~exist('WCDdata','var') && exist('ALLdata','var')
+        EMdata = {ALLdata};
+    else
+        EMdata = {};
     end
     
     % if not all datagrams were found at this point, message and abort
@@ -324,21 +330,40 @@ for nF = 1:numel(files_to_convert)
         mkdir(MATfilepath);
     end
     
-    % If output file exists and reconversation not required, simply load
-    % it. Otherwise start from scratch 
-    if exist(mat_fdata_file,'file') && reconvert>0
-        fData = load(mat_fdata_file);
-    else
-        fData = {};    
-    end
+    % subsampling factors:
+    dr_sub = 1; % none for now
+    db_sub =1; % none for now
     
-    % have not examined that new function yet. Not sure what's "up" or why
-    % loading two fData? XXX
-    [fData,up] = CFF_convert_struct_to_fabc_v2(RAWdata,fData);
-    
-    if up > 0
+    % converstion and saving on the disk
+    if ~exist(mat_fdata_file,'file') || reconvert
+        
+        % if output file does not exist OR if forcing reconversion, simply
+        % convert and save
+        fData = CFF_convert_struct_to_fabc_v2(EMdata,dr_sub,db_sub);
         save(mat_fdata_file,'-struct','fData','-v7.3');
         clear fData;
+        
+    else
+        
+        % If output file already exists (and not forcing reconversion), see
+        % if existing file cannot be fully or partly reused to save time
+        %
+        % NOTE: as coded now, this will never occur as we have an escape
+        % clause in case the file already exists and asking to "convert"
+        % instead of "reconvert"
+        
+        % load existing file
+        fData = load(mat_fdata_file);
+        
+        % compare data to that already existing
+        [fData,update_flag] = CFF_convert_struct_to_fabc_v2(EMdata,dr_sub,db_sub,fData);
+        
+        % if it's different, update the result
+        if update_flag > 0
+            save(mat_fdata_file,'-struct','fData','-v7.3');
+            clear fData;
+        end
+        
     end
     
     % End of conversion
@@ -361,7 +386,7 @@ end
 %%
 % Callback when pressing the "Load" button
 %
-function load_files_callback(src,~,main_figure)
+function load_files_callback(~,~,main_figure)
 
 % get tab data
 file_tab_comp = getappdata(main_figure,'file_tab');
@@ -426,16 +451,14 @@ for nF = 1:numel(files_to_load)
     
     % getting source of water-column data and prefix right
     if isfield(fData_temp,'WC_SBP_SampleAmplitudes')
-        start_fmt = 'WC_';
-        d_source = 'WC';
+        datagramSource = 'WC';
     elseif isfield(fData_temp,'WCAP_SBP_SampleAmplitudes')
-        start_fmt = 'WCAP_';
-        d_source = 'WCAP';
+        datagramSource = 'WCAP';
     end
     
     % Interpolating navigation data from ancillary sensors to ping time
     fprintf('...Interpolating navigation data from ancillary sensors to ping time...\n');
-    fData_temp = CFF_process_ping_v2(fData_temp,d_source);
+    fData_temp = CFF_process_ping_v2(fData_temp,datagramSource);
     
     % checking UTM zone for projection
     if strcmp(disp_config.MET_tmproj,'')
@@ -450,25 +473,20 @@ for nF = 1:numel(files_to_load)
     
     % Processing bottom detect
     fprintf('...Processing bottom detect...\n');
-    fData_temp = CFF_process_WC_bottom_detect_v2(fData_temp);
+    fData_temp = CFF_process_WC_bottom_detect_v2(fData_temp,datagramSource);
     
-    % what is that for? XXX
+    % Time-tag that fData
     fData_temp.ID = str2double(datestr(now,'yyyymmddHHMMSSFFF'));
     
-    % record raw data memmap filename in fData struct
-    wc_dir = get_wc_dir(fData_temp.ALLfilename{1});
-    memmap_filename = fullfile(wc_dir,[start_fmt 'SBP_SampleAmplitudes']);
-    if isfile(memmap_filename)
-        fData_temp.([start_fmt 'SBP_SampleAmplitudes']).Filename = memmap_filename;
-    end
-    
-    % processed memmap filename
-    file_X_SBP_L1 = fullfile(wc_dir,'X_SBP_Masked.dat');
-    
-    % to comment XXX
-    if isfile(file_X_SBP_L1)
-        [nSamples,nBeams,nPings] = size(fData_temp.([start_fmt 'SBP_SampleAmplitudes']).Data.val);
-        fData_temp.X_SBP_Masked = memmapfile(file_X_SBP_L1, 'Format',{'int8' [nSamples nBeams nPings] 'val'},'repeat',1,'writable',true);
+    % if data have already been processed, load the binary file
+    % NOTE: if data has already been processed, binary files should already
+    % be attached to the fData and no need to re-memmap them...
+    % to be verified...
+    wc_dir = CFF_WCD_memmap_folder(fData_temp.ALLfilename{1});
+    binary_Mask_file = fullfile(wc_dir,'X_SBP_Masked.dat');
+    if isfile(binary_Mask_file)
+        [nSamples,nBeams,nPings] = size(fData_temp.([datagramSource '_SBP_SampleAmplitudes']).Data.val);
+        fData_temp.X_SBP_Masked = memmapfile(binary_Mask_file, 'Format',{'int8' [nSamples nBeams nPings] 'val'},'repeat',1,'writable',true);
     end
     
     % why pause here? XXX

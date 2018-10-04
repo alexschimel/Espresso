@@ -19,9 +19,18 @@ new_entry(:,1) = files;
 new_entry(:,2) = folders;
 loaded = ismember(fullfile(folders,files),loaded_files);
 
-new_entry(~converted,1) = cellfun(@(x) strcat('<html><FONT color="Red"><b>',x,'</b></html>'),new_entry(~converted,1),'UniformOutput',0);
-new_entry(converted&~loaded,1) = cellfun(@(x) strcat('<html><FONT color="Blue"><b>',x,'</b></html>'),new_entry(converted&~loaded,1),'UniformOutput',0);
+% raw files not even converted
+new_entry(~converted,1) = cellfun(@(x) strcat('<html><FONT color="Gray">',x,'</html>'),new_entry(~converted,1),'UniformOutput',0);
+
+% files converted, but not loaded
+new_entry(converted&~loaded,1) = cellfun(@(x) strcat('<html><FONT color="Black"><b>',x,'</b></html>'),new_entry(converted&~loaded,1),'UniformOutput',0);
+
+% files converted and loaded
 new_entry(converted&loaded,1) = cellfun(@(x) strcat('<html><FONT color="Green"><b>',x,'</b></html>'),new_entry(converted&loaded,1),'UniformOutput',0);
+
+% differentiate the loaded files between those that have been processed
+% already, and those that didn't... XXX
+
 
 file_tab_comp.table_main.Data = new_entry;
 file_tab_comp.files = fullfile(folders,files);

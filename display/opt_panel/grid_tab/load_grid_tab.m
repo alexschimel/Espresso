@@ -2,14 +2,19 @@
 %
 % Creates "Mosaicking" tab (#4) in Espresso's Control Panel
 %
+%% Function
 function load_grid_tab(main_figure,parent_tab_group)
 
+%% create tab variable
 switch parent_tab_group.Type
     case 'uitabgroup'
         grid_tab_comp.grid_tab = uitab(parent_tab_group,'Title','Mosaicking','Tag','grid_tab','BackGroundColor','w');
     case 'figure'
         grid_tab_comp.grid_tab = parent_tab_group;
 end
+
+
+%% design
 
 % disp_config = getappdata(main_figure,'disp_config');
 
@@ -59,6 +64,14 @@ setappdata(main_figure,'grid_tab',grid_tab_comp);
 
 end
 
+
+
+%% CALLBACKS
+
+
+%%
+% Callback when ...
+%
 function export_grid_cback(src,~,main_figure)
 
 grids = getappdata(main_figure,'grids');
@@ -105,6 +118,9 @@ end
 end
 
 
+%%
+% Callback when ...
+%
 function delete_grid_cback(src,~,main_figure)
 
 grids = getappdata(main_figure,'grids');
@@ -130,6 +146,10 @@ update_grid_tab(main_figure);
 
 end
 
+
+%%
+% Callback when ...
+%
 function re_grid_cback(src,~,main_figure)
 
 grids = getappdata(main_figure,'grids');
@@ -147,6 +167,9 @@ update_map_tab(main_figure,1,0,[]);
 
 end
 
+%%
+% Callback when ...
+%
 function update_grid_map(src,evt,main_figure)
 
 grids = getappdata(main_figure,'grids');
@@ -173,12 +196,19 @@ update_map_tab(main_figure,1,0,[]);
 
 end
 
+%%
+% Callback when ...
+%
 function grid_tot_cback(~,~,main_figure)
 
 replace_interaction(main_figure,'interaction','WindowButtonDownFcn','id',1,'interaction_fcn',{@create_grid,main_figure});
 
 end
 
+
+%%
+% Callback when ...
+%
 function cell_select_cback(~,evt,main_figure)
 
 grid_tab_comp = getappdata(main_figure,'grid_tab');

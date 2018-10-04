@@ -89,8 +89,7 @@ dr_samples = soundSpeed./(samplingFrequencyHz.*2);
     fData.(sprintf('%sBP_BeamPointingAngle',start_fmt))(:,ip)/100/180*pi);
 
 if isfield(fData,'X_BP_bottomEasting')
-    set(map_tab_comp.ping_line,'XData',fData.X_BP_bottomEasting(:,ip),'YData',fData.X_BP_bottomNorthing(:,ip),...
-        'userdata',s);
+    set(map_tab_comp.ping_line,'XData',fData.X_BP_bottomEasting(:,ip),'YData',fData.X_BP_bottomNorthing(:,ip),'userdata',s);
 else
     return;
 end

@@ -180,13 +180,18 @@ for iB = 1:nBlocks
         sonarH(blockPings),...
         heading(blockPings),...
         sampleUpDist,sampleAcrossDist);
+    
     % get field to grid
     switch dataToGrid
+        
         case 'original'
-            blockL=get_wc_data(fData,sprintf('%sSBP_SampleAmplitudes',start_fmt),blockPings,dr,db);
+            blockL = get_wc_data(fData,sprintf('%sSBP_SampleAmplitudes',start_fmt),blockPings,dr,db);
+            
         case 'processed'
+            
             blockL = single(fData.X_SBP_Masked.Data.val(1:dr:nSamples,1:db:nBeams,blockPings));
-            blockL(blockL==-64)=nan;
+            blockL(blockL==-64) = NaN;
+            
     end
     
     clear blockPings

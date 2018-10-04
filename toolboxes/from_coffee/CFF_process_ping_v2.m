@@ -1,7 +1,7 @@
 %% CFF_process_ping_v2.m
 %
 % Interpolates navigation data from ancillary sensors to ping time (i.e.
-% Easting, Northing, Height, Grid Convergence, Heading).
+% Easting, Northing, Height, Grid Convergence, Heading, Speed).
 %
 %% Help
 %
@@ -42,6 +42,7 @@
 %
 % *NEW FEATURES*
 %
+% * 2018-10-04: Clean up (Alex Schimel)
 % * 2017-10-06: new header update (Alex Schimel).
 % * 2017-10-06: saving as new version (v2) because change in order of
 % dimensions (Alex Schimel).
@@ -54,7 +55,7 @@
 %
 % *AUTHOR, AFFILIATION & COPYRIGHT*
 %
-% Alexandre Schimel, NIWA.
+% Alexandre Schimel, University of Waikato, Deakin University, NIWA.
 
 %% Function
 function [fData] = CFF_process_ping_v2(fData,varargin)
@@ -65,40 +66,45 @@ function [fData] = CFF_process_ping_v2(fData,varargin)
 % varargin{1}, source datagram for ping info:
 if nargin>1
     % datagramSource was specified, get ping time 
+    
     datagramSource = varargin{1};
-    pingTSMIM = fData.([datagramSource '_1P_TimeSinceMidnightInMilliseconds']);
-    date = fData.([datagramSource '_1P_Date']);
+    pingTSMIM    = fData.([datagramSource '_1P_TimeSinceMidnightInMilliseconds']);
+    date         = fData.([datagramSource '_1P_Date']);
     pingCounter  = fData.([datagramSource '_1P_PingCounter']);
 
 else
     % datagramSource was not specified
+    
     fDataFields = fields(fData);
     if sum(strcmp(fDataFields, 'De_1P_Date'))
         datagramSource = 'De';
-        pingTSMIM  = fData.De_1P_TimeSinceMidnightInMilliseconds;
+        pingTSMIM    = fData.De_1P_TimeSinceMidnightInMilliseconds;
         date         = fData.De_1P_Date;
         pingCounter  = fData.De_1P_PingCounter;
-        fprintf(['datagramSource not specified. Using ''' datagramSource '''...\n']);
+        fprintf(['...datagramSource not specified for ping processing. Using ''' datagramSource '''...\n']);
     elseif sum(strcmp(fDataFields, 'X8_1P_Date'))
         datagramSource = 'X8';
-        pingTSMIM  = fData.X8_1P_TimeSinceMidnightInMilliseconds;
+        pingTSMIM    = fData.X8_1P_TimeSinceMidnightInMilliseconds;
         date         = fData.X8_1P_Date;
         pingCounter  = fData.X8_1P_PingCounter;
-        fprintf(['datagramSource not specified. Using ''' datagramSource '''...\n']);
+        fprintf(['...datagramSource not specified for ping processing. Using ''' datagramSource '''...\n']);
     elseif sum(strcmp(fDataFields, 'WC_1P_Date'))
         datagramSource = 'WC';
-        pingTSMIM  = fData.WC_1P_TimeSinceMidnightInMilliseconds;
+        pingTSMIM    = fData.WC_1P_TimeSinceMidnightInMilliseconds;
         date         = fData.WC_1P_Date;
         pingCounter  = fData.WC_1P_PingCounter;
-        fprintf(['datagramSource not specified. Using ''' datagramSource '''...\n']);
+        fprintf(['...datagramSource not specified for ping processing. Using ''' datagramSource '''...\n']);
     else
         error('can''t find a suitable datagramSource')
     end
+    
 end
+
 pingDate = datenum(cellfun(@num2str,num2cell(date),'un',0),'yyyymmdd');
+
 % varargin{2}: ellipsoid for CFF_ll2tm conversion
 if nargin>2
-    ellips=varargin{2};
+    ellips = varargin{2};
 else
     ellips = 'wgs84';
     %fprintf('ellips not specified. Using ''wgs84''...\n');
@@ -106,25 +112,23 @@ end
 
 % varargin{3}: TM projection for CFF_ll2tm conversion
 if nargin>3
-    tmproj=varargin{3};
+    tmproj = varargin{3};
 else
     firstPosLat = fData.Po_1D_Latitude(1)./20000000;
     firstPosLon = fData.Po_1D_Longitude(1)./10000000;
     [~,~,~,~,tmproj] = CFF_ll2tm(firstPosLon,firstPosLat,ellips,'utm');
     tmproj = ['utm' tmproj];
     %fprintf(['tmproj not specified. Using ''' tmproj '''...\n']);
-    
 end
-
 
 % varargin{?}: datum conversion?
 ...
 
 % varargin{4}: navigation latency
-if nargin==5
+if nargin == 5
     navLat = varargin{4};
 else
-    navLat=0;
+    navLat = 0;
     %fprintf('navLat not specified. Using 0...\n');
 end
 
@@ -132,12 +136,14 @@ end
 %% 2. EXTRACT DATA FROM POSITION AND HEIGHT DATAGRAMS
 % in the future, offer possibility to import position/orientation from
 % other files, say SBET
+
 posLatitude  = fData.Po_1D_Latitude./20000000; % now in decimal degrees
 posLongitude = fData.Po_1D_Longitude./10000000; % now in decimal degrees
 posHeading   = fData.Po_1D_HeadingOfVessel./100; % now in degrees relative to north
 posTSMIM     = fData.Po_1D_TimeSinceMidnightInMilliseconds; % in ms
-posDate = datenum(cellfun(@num2str,num2cell(fData.Po_1D_Date),'un',0),'yyyymmdd');
-posSDN     = posDate(:)'+ posTSMIM/(24*60*60*1000);
+
+posDate      = datenum(cellfun(@num2str,num2cell(fData.Po_1D_Date),'un',0),'yyyymmdd');
+posSDN       = posDate(:)'+ posTSMIM/(24*60*60*1000);
 
 
 
@@ -146,12 +152,12 @@ posSDN     = posDate(:)'+ posTSMIM/(24*60*60*1000);
 % and fractional number of days from January 0, 0000) and Time Since
 % Midnight In Milliseconds (TSMIM, Kongsberg).
 
-pingSDN     = pingDate(:)'+ pingTSMIM/(24*60*60*1000) + navLat./(1000.*60.*60.*24);
+pingSDN = pingDate(:)'+ pingTSMIM/(24*60*60*1000) + navLat./(1000.*60.*60.*24);
 
 if isfield(fData,'He_1D_Height')
-    heiHeight    = fData.He_1D_Height./100; % now m
-    heiDate = datenum(cellfun(@num2str,num2cell(fData.He_1D_Date),'un',0),'yyyymmdd');
-    heiSDN     = heiDate(:)'+fData.He_1D_TimeSinceMidnightInMilliseconds/(24*60*60*1000); 
+    heiHeight = fData.He_1D_Height./100; % now m
+    heiDate   = datenum(cellfun(@num2str,num2cell(fData.He_1D_Date),'un',0),'yyyymmdd');
+    heiSDN    = heiDate(:)' + fData.He_1D_TimeSinceMidnightInMilliseconds/(24*60*60*1000); 
 else
     heiHeight=zeros(size(pingTSMIM));
     heiSDN =pingSDN;
@@ -168,16 +174,19 @@ end
 % 360 or inferior to 0 (because every time the vessel crossed the NS
 % line, the heading jumps from 0 to 360 (or from 360 to 0) and this
 % causes a problem for following interpolation):
+
 posJump = find(diff(posHeading)>300);
 negJump = find(diff(posHeading)<-300);
 jumps   = zeros(1,length(posHeading));
+
 if ~isempty(posJump)
-    for jj=1:length(posJump)
+    for jj = 1:length(posJump)
         jumps(posJump(jj)+1:end) = jumps(posJump(jj)+1:end) - 1;
     end
 end
+
 if ~isempty(negJump)
-    for jj=1:length(negJump)
+    for jj = 1:length(negJump)
         jumps(negJump(jj)+1:end) = jumps(negJump(jj)+1:end) + 1;
     end
 end
