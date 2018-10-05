@@ -1,6 +1,40 @@
 %% load_wc_proc_tab.m
 %
-% Creates "WC Processing" tab (#3) in Espresso's Control Panel
+% Creates "WC Processing" tab (#3) in Espresso's Control Panel. Also has
+% callback functions for when interacting with the tab's contents.
+%
+%% Help
+%
+% *USE*
+%
+% TODO: write longer description of function
+%
+% *INPUT VARIABLES*
+%
+% * |input_variable_1|: TODO: write description and info on variable
+%
+% *OUTPUT VARIABLES*
+%
+% * |output_variable_1|: TODO: write description and info on variable
+%
+% *DVPT NOTES*
+%
+% * XXX: check that if asking for "process", redo the "process" from
+% scratch
+%
+% *NEW FEATURES*
+%
+% * 2018-10-05: general editing and commenting (Alex Schimel)
+% * 2017-10-25: first version (Yoann Ladroit)
+%
+% *EXAMPLE*
+%
+% TODO: write examples
+%
+% *AUTHOR, AFFILIATION & COPYRIGHT*
+%
+% Yoann Ladroit, Alexandre Schimel NIWA. Type |help Espresso.m| for
+% copyright information. 
 
 %% Function
 function load_wc_proc_tab(main_figure,parent_tab_group)
@@ -194,10 +228,14 @@ if isempty(idx_fData)
     return;
 end
 
-% hardcoded parameters for now
-flagParams.type = 'all';
-flagParams.variable = 'slope';
-flagParams.threshold = 30;
+% hardcoded parameters for filtering
+botfilter.method = 'filter';
+botfilter.pingBeamWindowSize = [3 3];
+botfilter.maxHorizDist = inf;
+botfilter.flagParams.type = 'all';
+botfilter.flagParams.variable = 'slope';
+botfilter.flagParams.threshold = 30;
+botfilter.interpolate = 'yes';
 
 % init counter
 u = 0;
@@ -215,11 +253,11 @@ for i = idx_fData(:)'
     
     % filtering bottom
     fData_tot{i} = CFF_filter_WC_bottom_detect_v2(fData_tot{i},...
-        'method','filter',...
-        'pingBeamWindowSize',[3 3],...
-        'maxHorizDist',inf,...
-        'flagParams',flagParams,...
-        'interpolate','yes');
+        'method',botfilter.method,...
+        'pingBeamWindowSize',botfilter.pingBeamWindowSize,...
+        'maxHorizDist',botfilter.maxHorizDist,...
+        'flagParams',botfilter.flagParams,...
+        'interpolate',botfilter.interpolate);
     
     % disp
     fprintf('...Done. Elapsed time: %f seconds.\n',toc);
@@ -245,19 +283,32 @@ end
 %
 function update_str_disp_cback(~,~,main_figure)
 
-% if modifying process parameters, show processed data (if it exists)
+% XXX
+%
+% this part sets which of the data to be gridded: original or processed.
+% Theres no reason to do this in Espresso: just grid what you have
+% processed. 
 
 wc_proc_tab_comp = getappdata(main_figure,'wc_proc_tab');
-
 str_disp = 'original';
-
 if wc_proc_tab_comp.masking.Value || wc_proc_tab_comp.sidelobe.Value
     str_disp = 'processed';
 end
-
 wc_proc_tab_comp.str_disp = str_disp;
-
 setappdata(main_figure,'wc_proc_tab',wc_proc_tab_comp);
+
+
+% The only thing this callback should do, if anything, is to switch the WC
+% view to "Processed" so that user sees what processing has been done so
+% far to judge whether or not to redo it (which the button will do). Code
+% should look something like below (copied from process button callback)
+
+% update the WC view to "Processed" if it exists
+% wc_tab_comp = getappdata(main_figure,'wc_tab');
+% wc_tab_strings = wc_tab_comp.data_disp.String;
+% [~,idx] = ismember('Processed',wc_tab_strings);
+% wc_tab_comp.data_disp.Value = idx;
+% update_wc_tab(main_figure);
 
 end
 
@@ -284,9 +335,9 @@ end
 
 % get processing parameters
 wc_proc_tab_comp = getappdata(main_figure,'wc_proc_tab');
-mask_params.angle_mask = str2double(get(wc_proc_tab_comp.angle_mask,'String'));
-mask_params.r_min = str2double(get(wc_proc_tab_comp.r_min,'String'));
-mask_params.r_bot = str2double(get(wc_proc_tab_comp.r_bot,'String'));
+mask_params.remove_angle       =  str2double(get(wc_proc_tab_comp.angle_mask,'String'));
+mask_params.remove_closerange  =  str2double(get(wc_proc_tab_comp.r_min,'String'));
+mask_params.remove_bottomrange = -str2double(get(wc_proc_tab_comp.r_bot,'String')); % NOTE inverting sign here.
 
 % init counter
 u = 0;
@@ -306,7 +357,10 @@ for i = idx_fData(:)'
     if wc_proc_tab_comp.masking.Value
         
         disp('...Creating mask...');
-        fData_tot{i} = CFF_mask_WC_data_v3(fData_tot{i},mask_params.angle_mask,mask_params.r_min,-mask_params.r_bot);
+        fData_tot{i} = CFF_mask_WC_data_v3(fData_tot{i},...
+            mask_params.remove_angle,...
+            mask_params.remove_closerange,...
+            mask_params.remove_bottomrange);
         
     end
     

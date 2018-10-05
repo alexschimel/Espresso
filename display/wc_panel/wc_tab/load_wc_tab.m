@@ -2,6 +2,10 @@
 %
 % Creates "WC" tab in Espresso's Swath Panel
 %
+
+% XXX: switch automatically the WC panel to processed data on startup if
+% processed data exists 
+
 function load_wc_tab(main_figure,parent_tab_group)
 
 disp_config = getappdata(main_figure,'disp_config');

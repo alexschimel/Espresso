@@ -1,7 +1,40 @@
 %% load_grid_tab.m
 %
-% Creates "Mosaicking" tab (#4) in Espresso's Control Panel
+% Creates "Mosaicking" tab (#4) in Espresso's Control Panel. Also has
+% callback functions for when interacting with the tab's contents.
 %
+%% Help
+%
+% *USE*
+%
+% TODO: write longer description of function
+%
+% *INPUT VARIABLES*
+%
+% * |input_variable_1|: TODO: write description and info on variable
+%
+% *OUTPUT VARIABLES*
+%
+% * |output_variable_1|: TODO: write description and info on variable
+%
+% *RESEARCH NOTES*
+%
+% TODO: write research notes
+%
+% *NEW FEATURES*
+%
+% * 2018-10-05: general editing and commenting (Alex Schimel)
+% * 2017-10-25: first version (Yoann Ladroit)
+%
+% *EXAMPLE*
+%
+% TODO: write examples
+%
+% *AUTHOR, AFFILIATION & COPYRIGHT*
+%
+% Yoann Ladroit, Alexandre Schimel NIWA. Type |help Espresso.m| for
+% copyright information. 
+
 %% Function
 function load_grid_tab(main_figure,parent_tab_group)
 
@@ -72,7 +105,7 @@ end
 %%
 % Callback when ...
 %
-function export_grid_cback(src,~,main_figure)
+function export_grid_cback(~,~,main_figure)
 
 grids = getappdata(main_figure,'grids');
 map_tab_comp = getappdata(main_figure,'Map_tab');
@@ -121,7 +154,7 @@ end
 %%
 % Callback when ...
 %
-function delete_grid_cback(src,~,main_figure)
+function delete_grid_cback(~,~,main_figure)
 
 grids = getappdata(main_figure,'grids');
 map_tab_comp = getappdata(main_figure,'Map_tab');
@@ -150,7 +183,7 @@ end
 %%
 % Callback when ...
 %
-function re_grid_cback(src,~,main_figure)
+function re_grid_cback(~,~,main_figure)
 
 grids = getappdata(main_figure,'grids');
 grid_tab_comp = getappdata(main_figure,'grid_tab');
@@ -219,7 +252,7 @@ else
     selected_idx = [];
 end
 
-%selected_idx'
+% selected_idx'
 grid_tab_comp.selected_idx = unique(selected_idx);
 setappdata(main_figure,'grid_tab',grid_tab_comp);
 

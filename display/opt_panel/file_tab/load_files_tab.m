@@ -1,7 +1,7 @@
 %% load_files_tab.m
 %
 % Creates "Data files" tab (#1) in Espresso's Control Panel. Also has
-% callback functions for loading and converting files
+% callback functions for when interacting with the tab's contents.
 %
 %% Help
 %
@@ -23,6 +23,7 @@
 %
 % *NEW FEATURES*
 %
+% * 2018-10-05: general editing and commenting (Alex Schimel)
 % * 2017-10-25: first version (Yoann Ladroit)
 %
 % *EXAMPLE*
@@ -31,7 +32,8 @@
 %
 % *AUTHOR, AFFILIATION & COPYRIGHT*
 %
-% Yoann Ladroit, NIWA. Type |help Espresso.m| for copyright information.
+% Yoann Ladroit, Alexandre Schimel NIWA. Type |help Espresso.m| for
+% copyright information. 
 
 %% Function
 function load_files_tab(main_figure,parent_tab_group)
@@ -478,15 +480,16 @@ for nF = 1:numel(files_to_load)
     % Time-tag that fData
     fData_temp.ID = str2double(datestr(now,'yyyymmddHHMMSSFFF'));
     
-    % if data have already been processed, load the binary file
-    % NOTE: if data has already been processed, binary files should already
-    % be attached to the fData and no need to re-memmap them...
-    % to be verified...
+    % If data have already been processed, load the binary file into fData
+    % NOTE: if data have already been processed, the fData and the binary
+    % files should already exist and should already been attached, without
+    % need to re-memmap them... So verify if there is actual need for this
+    % part... XXX
     wc_dir = CFF_WCD_memmap_folder(fData_temp.ALLfilename{1});
-    binary_Mask_file = fullfile(wc_dir,'X_SBP_Masked.dat');
-    if isfile(binary_Mask_file)
+    WaterColumnProcessed_file = fullfile(wc_dir,'X_SBP_WaterColumnProcessed.dat');
+    if isfile(WaterColumnProcessed_file)
         [nSamples,nBeams,nPings] = size(fData_temp.([datagramSource '_SBP_SampleAmplitudes']).Data.val);
-        fData_temp.X_SBP_Masked = memmapfile(binary_Mask_file, 'Format',{'int8' [nSamples nBeams nPings] 'val'},'repeat',1,'writable',true);
+        fData_temp.X_SBP_WaterColumnProcessed = memmapfile(WaterColumnProcessed_file, 'Format',{'int8' [nSamples nBeams nPings] 'val'},'repeat',1,'writable',true);
     end
     
     % why pause here? XXX

@@ -1,5 +1,5 @@
 %
-% NOTE: if I did the job well, this function is now never called anymore.
+% XXX: if I did the job well, this function is now never called anymore.
 % TO delete... Alex 4th oct 18
 %
 %
@@ -50,7 +50,7 @@ end
 
 
 %% masking and filtering sidelobe artefact
-if ( p.Results.masking>0 && p.Results.process==1 ) || ~isfield(fData,'X_SBP_Masked')
+if ( p.Results.masking>0 && p.Results.process==1 ) || ~isfield(fData,'X_SBP_Mask')
     
     disp('...Creating mask...');
     

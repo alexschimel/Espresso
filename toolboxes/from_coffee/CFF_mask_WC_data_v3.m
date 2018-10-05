@@ -1,4 +1,3 @@
-function [fData] = CFF_mask_WC_data_v3(fData,varargin)
 % [fData] = CFF_mask_WC_data_v2(fData,varargin)
 %
 % DESCRIPTION
@@ -45,96 +44,100 @@ function [fData] = CFF_mask_WC_data_v3(fData,varargin)
 %%%
 % Alex Schimel, Deakin University
 %%%
-if isfield(fData,'WC_SBP_SampleAmplitudes')
-    start_fmt='WC_';
-elseif isfield(fData,'WCAP_SBP_SampleAmplitudes')
-    start_fmt='WCAP_';
-end
 
-%% Extract dimensions
-[nSamples, nBeams, nPings] = size(fData.(sprintf('%sSBP_SampleAmplitudes',start_fmt)).Data.val);
+% XXX: check that masking uses filtered bottom if it exists, original
+% bottom if not
+
+%% Function
+function [fData] = CFF_mask_WC_data_v3(fData,varargin)
 
 
-%% Set methods
+%% INPUT PARSING
+
 remove_angle       = inf; % default
-remove_closerange  = 0; % default
+remove_closerange  = 0;   % default
 remove_bottomrange = inf; % default
-mypolygon          = []; % default
+mypolygon          = [];  % default
+
 if nargin==1
     % fData only. keep defaults
 elseif nargin==2
     remove_angle = varargin{1};
 elseif nargin==3
-    remove_angle = varargin{1};
+    remove_angle      = varargin{1};
     remove_closerange = varargin{2};
 elseif nargin==4
-    remove_angle = varargin{1};
-    remove_closerange = varargin{2};
-    remove_bottomrange =varargin{3};
+    remove_angle       = varargin{1};
+    remove_closerange  = varargin{2};
+    remove_bottomrange = varargin{3};
 elseif nargin==5
-    remove_angle = varargin{1};
-    remove_closerange = varargin{2};
-    remove_bottomrange =varargin{3};
-    mypolygon = varargin{4};
+    remove_angle       = varargin{1};
+    remove_closerange  = varargin{2};
+    remove_bottomrange = varargin{3};
+    mypolygon          = varargin{4};
 else
     error('wrong number of input variables')
 end
 
-%% Memory Map flag
-if isobject(fData.(sprintf('%sSBP_SampleAmplitudes',start_fmt)))
-    memoryMapFlag = 1;
-else
-    memoryMapFlag = 0;
+
+%% Source datagram
+if isfield(fData,'WC_SBP_SampleAmplitudes')
+    datagramSource = 'WC';
+elseif isfield(fData,'WCAP_SBP_SampleAmplitudes')
+    datagramSource = 'WCAP';
 end
 
-if isfield(fData,'X_SBP_Masked')
-     memoryMapFlag = 0;
-end
 
-%% init arrays
+%% Extract dimensions
+[nSamples, nBeams, nPings] = size(fData.(sprintf('%s_SBP_SampleAmplitudes',datagramSource)).Data.val);
 
-if memoryMapFlag
-    % create binary file
-    wc_dir=CFF_WCD_memmap_folder(fData.ALLfilename{1});
-    file_X_SBP_Mask = fullfile(wc_dir,'X_SBP_Masked.dat');
-    fileID_X_SBP_Mask = fopen(file_X_SBP_Mask,'w+');
+
+%% Flag to reuse existing processed data file
+if isfield(fData,'X_SBP_WaterColumnProcessed') && all(size(fData.X_SBP_WaterColumnProcessed.Data.val)==[nSamples,nBeams,nPings])
+    
+    % memmapfile exists and is reuseable. Data will be overwritten through
+    % structure
+    memmapfileAlreadyExists = 1;
+    
+    % re-initialize numerical arrays
+    fData.X_SBP_WaterColumnProcessed.Data.val  = zeros(nSamples,nBeams,nPings,'int8');
+    
 else
-    % initialize numerical arrays
-    fData.X_SBP_Masked.Data.val  = zeros(nSamples,nBeams,nPings,'int8');
+    
+    % memmapfile doesn't exist (or is to be overwritten). Data will be
+    % written through fwrite 
+    memmapfileAlreadyExists = 0;
+
+    % create new memmap file
+    wc_dir = CFF_WCD_memmap_folder(fData.ALLfilename{1});
+    file_X_SBP_WaterColumnProcessed  = fullfile(wc_dir,'X_SBP_WaterColumnProcessed.dat');
+    fidMask = fopen(file_X_SBP_WaterColumnProcessed,'w+');
+    
 end
 
 
 %% Block processing
 
 % main computation section will be done in blocks, and saved as numerical
-% arrays or memmapfile depending on fData.(sprintf('%sSBP_SampleAmplitudes',start_fmt)).
+% arrays or memmapfile depending on fData.(sprintf('%s_SBP_SampleAmplitudes',datagramSource)).
 blockLength = 50;
 nBlocks = ceil(nPings./blockLength);
 blocks = [ 1+(0:nBlocks-1)'.*blockLength , (1:nBlocks)'.*blockLength ];
 blocks(end) = nPings;
 
-soundSpeed          = fData.(sprintf('%s1P_SoundSpeed',start_fmt)).*0.1; %m/s
-samplingFrequencyHz = fData.(sprintf('%s1P_SamplingFrequencyHz',start_fmt)); %Hz
+soundSpeed          = fData.(sprintf('%s_1P_SoundSpeed',datagramSource)).*0.1; %m/s
+samplingFrequencyHz = fData.(sprintf('%s_1P_SamplingFrequencyHz',datagramSource)); %Hz
 dr_samples = soundSpeed./(samplingFrequencyHz.*2);
-
 
 idx_samples = (1:nSamples)';
 
 for iB = 1:nBlocks
     
-    % txt = sprintf('block #%i/%i',iB,nBlocks);
-    % disp(txt);
-    
     % list of pings in this block
     blockPings  = (blocks(iB,1):blocks(iB,2));
     nBlockPings = length(blockPings);
     
-      
-    ranges=get_samples_range(...
-        idx_samples,...
-        fData.(sprintf('%sBP_StartRangeSampleNumber',start_fmt))(:,blockPings),...
-        dr_samples(blockPings));
-    
+    ranges = CFF_get_samples_range( idx_samples, fData.(sprintf('%s_BP_StartRangeSampleNumber',datagramSource))(:,blockPings), dr_samples(blockPings));
     
     % MASK 1: OUTER BEAMS REMOVAL
     if ~isinf(remove_angle)
@@ -143,15 +146,16 @@ for iB = 1:nBlocks
         angles = fData.WC_BP_BeamPointingAngle(:,blockPings);
         
         % build mask: 1: to conserve, 0: to remove
-        X_BP_AngleMask = int8( angles>=-abs(remove_angle)*100 & angles<=abs(remove_angle)*100 );
+        X_BP_OuterBeamsMask = int8( angles>=-abs(remove_angle)*100 & angles<=abs(remove_angle)*100 );
         
-        X_1BP_Mask = permute(X_BP_AngleMask ,[3,1,2]);
+        X_1BP_OuterBeamsMask = permute(X_BP_OuterBeamsMask ,[3,1,2]);
         
-        clear X_BP_AngleMask angles
+        clear X_BP_OuterBeamsMask
         
     else        
+        
         % conserve all data
-        X_1BP_Mask = ones(nSamples,nBeams,nBlockPings,'int8');
+        X_1BP_OuterBeamsMask = ones(1,nBeams,nBlockPings,'int8');
         
     end
     
@@ -172,17 +176,16 @@ for iB = 1:nBlocks
     if ~isinf(remove_bottomrange)
         
         % extract needed data
-        theta=fData.(sprintf('%sBP_BeamPointingAngle',start_fmt))(:,blockPings)/100/180*pi;
+        theta = fData.(sprintf('%s_BP_BeamPointingAngle',datagramSource))(:,blockPings)/100/180*pi;
         
-        psi=1.5/180*pi./sqrt(cos(theta));
+        psi = 1.5/180*pi./sqrt(cos(theta));
         
-        idx_theta_faible=cos(theta)>cos(theta-psi/2);
-        idx_theta_fort=cos(theta)<=cos(theta-psi/2);
+        idx_theta_faible = cos(theta)>cos(theta-psi/2);
+        idx_theta_fort = cos(theta)<=cos(theta-psi/2);
         
-        M=zeros(size(theta),'single');
-        M(idx_theta_faible)=(1./cos(theta(idx_theta_faible)+psi(idx_theta_faible)/2)-1./cos(theta(idx_theta_faible))).*fData.X_BP_bottomRange(idx_theta_faible);
-        M(idx_theta_fort)=(1./cos(theta(idx_theta_fort)+psi(idx_theta_fort)/2)-1./cos(theta(idx_theta_fort)-psi(idx_theta_fort)/2)).*fData.X_BP_bottomRange(idx_theta_fort);
-        
+        M = zeros(size(theta),'single');
+        M(idx_theta_faible) = (1./cos(theta(idx_theta_faible)+psi(idx_theta_faible)/2)-1./cos(theta(idx_theta_faible))).*fData.X_BP_bottomRange(idx_theta_faible);
+        M(idx_theta_fort) = (1./cos(theta(idx_theta_fort)+psi(idx_theta_fort)/2)-1./cos(theta(idx_theta_fort)-psi(idx_theta_fort)/2)).*fData.X_BP_bottomRange(idx_theta_fort);
         
         % calculate max sample beyond which mask is to be applied
         X_BP_maxRange  = fData.X_BP_bottomRange(:,blockPings) + (remove_bottomrange-abs(M));
@@ -200,7 +203,7 @@ for iB = 1:nBlocks
             X_SBP_BottomRangeMask(1:maxSubs(ii,1),maxSubs(ii,2),maxSubs(ii,3)) = 1;
         end
         
-        X_SBP_BottomRangeMask(isnan(X_BP_maxRange))=0;
+        X_SBP_BottomRangeMask(isnan(X_BP_maxRange)) = 0;
         clear PP BB maxSubs X_BP_maxRange X_BP_maxSample
         
     else
@@ -228,17 +231,19 @@ for iB = 1:nBlocks
     end
     
     % MULTIPLYING ALL MASKS
-    X_SBP_Mask = bsxfun(@times,X_1BP_Mask,(X_SBP_CloseRangeMask.*X_SBP_BottomRangeMask.*X_SBP_PolygonMask));
-    amp=get_wc_data(fData,sprintf('%sSBP_SampleAmplitudes',start_fmt),blockPings,1,1);
-
-    amp(X_SBP_Mask==0)=-128/2;
+    X_SBP_TotalMask = bsxfun(@times,X_1BP_OuterBeamsMask,(X_SBP_CloseRangeMask.*X_SBP_BottomRangeMask.*X_SBP_PolygonMask));
+    
+    % get raw data and apply mask
+    [X_SBP_WaterColumnProcessed, nan_val] = CFF_get_wc_data(fData,sprintf('%s_SBP_SampleAmplitudes',datagramSource),blockPings,1,1,'raw');
+    X_SBP_WaterColumnProcessed(X_SBP_TotalMask==0) = nan_val;
+    
     % saving
-    if memoryMapFlag
-        % write into binary files:
-        fwrite(fileID_X_SBP_Mask,amp,'int8');
-    else
+    if memmapfileAlreadyExists
         % save in data
-        fData.X_SBP_Masked.Data.val(:,:,blockPings) = amp;
+        fData.X_SBP_WaterColumnProcessed.Data.val(:,:,blockPings) = X_SBP_WaterColumnProcessed;
+    else
+        % write into binary files:
+        fwrite(fidMask,X_SBP_WaterColumnProcessed,'int8');
     end
     
 end
@@ -246,12 +251,12 @@ end
 %% finalize
 
 % if memmap files, some finishing up code necessary...
-if memoryMapFlag
+if ~memmapfileAlreadyExists
     
-    % close binary files
-    fclose(fileID_X_SBP_Mask);
+    % close binary file
+    fclose(fidMask);
 
-    % re-open files as memmapfile
-    fData.X_SBP_Masked = memmapfile(file_X_SBP_Mask, 'Format',{'int8' [nSamples nBeams nPings] 'val'},'repeat',1,'writable',true);
+    % add to fData as memmapfile
+    fData.X_SBP_WaterColumnProcessed = memmapfile(file_X_SBP_WaterColumnProcessed, 'Format',{'int8' [nSamples nBeams nPings] 'val'},'repeat',1,'writable',true);
 
 end

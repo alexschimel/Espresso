@@ -65,6 +65,9 @@
 %% function starts
 function [fData] = CFF_filter_WC_sidelobe_artifact_v3(fData,varargin)
 
+% XXX: check that sidelobe filtering uses masked data if it exists,
+% original data if not
+
 %% Set methods
 method_spec = 2; % default
 if nargin == 1
@@ -89,7 +92,7 @@ else
     memoryMapFlag = 0;
 end
 
-if isfield(fData,'X_SBP_Masked')
+if isfield(fData,'X_SBP_WaterColumnProcessed')
      memoryMapFlag = 0;
 end
 
@@ -105,7 +108,7 @@ switch method_spec
         % init arrays
         if memoryMapFlag
             % create binary file
-            file_X_SBP_L1 = fullfile(wc_dir,'X_SBP_Masked.dat');
+            file_X_SBP_L1 = fullfile(wc_dir,'X_SBP_WaterColumnProcessed.dat');
             fileID_X_SBP_L1 = fopen(file_X_SBP_L1,'w+');
         end
         
@@ -123,8 +126,8 @@ switch method_spec
         for iB = 1:nBlocks
             
             % grab data
-            thisPing=get_wc_data(fData,sprintf('%sSBP_SampleAmplitudes',start_fmt),blocks(iB,1):blocks(iB,2),1,1);
-            idx_nan=isnan(thisPing);
+            thisPing = CFF_get_wc_data(fData,sprintf('%sSBP_SampleAmplitudes',start_fmt),blocks(iB,1):blocks(iB,2),1,1);
+            idx_nan = isnan(thisPing);
             thisBottom = fData.X_BP_bottomSample(:,blocks(iB,1):blocks(iB,2));
             
             % mean level across all beams for each range (and each ping)
@@ -164,8 +167,8 @@ switch method_spec
                 fwrite(fileID_X_SBP_L1,X_SBP_L1,'int8');
             else
                 % save in array
-                X_SBP_L1(fData.X_SBP_Masked.Data.val(:,:,blocks(iB,1):blocks(iB,2))==-128/2)=-128/2;
-                fData.X_SBP_Masked.Data.val(:,:,blocks(iB,1):blocks(iB,2)) = X_SBP_L1;
+                X_SBP_L1(fData.X_SBP_WaterColumnProcessed.Data.val(:,:,blocks(iB,1):blocks(iB,2))==-128/2)=-128/2;
+                fData.X_SBP_WaterColumnProcessed.Data.val(:,:,blocks(iB,1):blocks(iB,2)) = X_SBP_L1;
             end
             
             clear X_SBP_L1 thisPing thisBottom meanAcrossBeams
@@ -179,7 +182,7 @@ switch method_spec
             fclose(fileID_X_SBP_L1);
             
             % re-open files as memmapfile
-            fData.X_SBP_Masked = memmapfile(file_X_SBP_L1, 'Format',{'int8' [nSamples nBeams nPings] 'val'},'repeat',1,'writable',true);
+            fData.X_SBP_WaterColumnProcessed = memmapfile(file_X_SBP_L1, 'Format',{'int8' [nSamples nBeams nPings] 'val'},'repeat',1,'writable',true);
             
         end
         

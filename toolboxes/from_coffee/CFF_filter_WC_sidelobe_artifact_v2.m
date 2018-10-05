@@ -109,7 +109,7 @@ switch method_spec
             % open
             fileID_X_SBP_L1 = fopen(file_X_SBP_L1,'w+');
             % write
-            fwrite(fileID_X_SBP_L1, get_wc_data(fData,sprintf('%sSBP_SampleAmplitudes',start_fmt),[],1,1),'int8');
+            fwrite(fileID_X_SBP_L1, CFF_get_wc_data(fData,sprintf('%sSBP_SampleAmplitudes',start_fmt),[],1,1),'int8');
             % close
             fclose(fileID_X_SBP_L1);
             % Dimensions
@@ -117,7 +117,7 @@ switch method_spec
             % re-open as memmapfile
             fData.X_SBP_L1 = memmapfile(file_X_SBP_L1, 'Format',{'int8' [nSamples nBeams nPings] 'val'},'repeat',1,'writable',true);
         else
-            fData.X_SBP_L1.Data.val =  get_wc_data(fData,sprintf('%sSBP_SampleAmplitudes',start_fmt),[],1,1);
+            fData.X_SBP_L1.Data.val =  CFF_get_wc_data(fData,sprintf('%sSBP_SampleAmplitudes',start_fmt),[],1,1);
         end
         
     case 1
@@ -139,10 +139,10 @@ switch method_spec
         end
         
         % Compute mean level across beams:
-        meanAcrossBeams   = nanmean(get_wc_data(fData,sprintf('%sSBP_SampleAmplitudes',start_fmt),[],1,1),2);
+        meanAcrossBeams   = nanmean(CFF_get_wc_data(fData,sprintf('%sSBP_SampleAmplitudes',start_fmt),[],1,1),2);
         
         % remove this mean:
-        X_SBP_L1 = bsxfun(@minus,get_wc_data(fData,sprintf('%sSBP_SampleAmplitudes',start_fmt),[],1,1),meanAcrossBeams); % removing mean across beams
+        X_SBP_L1 = bsxfun(@minus,CFF_get_wc_data(fData,sprintf('%sSBP_SampleAmplitudes',start_fmt),[],1,1),meanAcrossBeams); % removing mean across beams
         
         % note the same technique could maybe be applied in other
         % dimensions? across samples?
@@ -212,7 +212,7 @@ switch method_spec
         for iB = 1:nBlocks
             
             % grab data
-            thisPing =  get_wc_data(fData,sprintf('%sSBP_SampleAmplitudes',start_fmt),blocks(iB,1):blocks(iB,2),1,1);
+            thisPing =  CFF_get_wc_data(fData,sprintf('%sSBP_SampleAmplitudes',start_fmt),blocks(iB,1):blocks(iB,2),1,1);
             idx_nan=isnan(thisPing);
             thisPing(idx_nan)=nan;
             thisBottom = fData.X_BP_bottomSample(:,blocks(iB,1):blocks(iB,2));
@@ -293,7 +293,7 @@ switch method_spec
         for ip = 1:nPings
             
             % grab data
-            thisPing = double(get_wc_data(fData,sprintf('%sSBP_SampleAmplitudes',start_fmt),ip,1,1));
+            thisPing = double(CFF_get_wc_data(fData,sprintf('%sSBP_SampleAmplitudes',start_fmt),ip,1,1));
             
             % calculate 75th percentile
             sevenfiveperc = nan(nSamples,1);

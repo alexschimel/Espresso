@@ -132,10 +132,7 @@ for iB = 1:nBlocks
     nBlockPings = length(blockPings);
     
       
-    ranges=get_samples_range(...
-        idx_samples,...
-        fData.WC_BP_StartRangeSampleNumber(:,blockPings),...
-        dr_samples(blockPings));
+    ranges = CFF_get_samples_range( idx_samples, fData.WC_BP_StartRangeSampleNumber(:,blockPings), dr_samples(blockPings));
     
     
     % MASK 1: OUTER BEAMS REMOVAL
