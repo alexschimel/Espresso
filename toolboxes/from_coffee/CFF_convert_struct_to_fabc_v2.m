@@ -58,6 +58,7 @@
 % the structure "FABCdata", and accessible as FABCdata.a_b_c, where:
 %     * a: code indicating data origin:
 %         * IP: installation parameters
+%         * Ru: Runtime Parameters
 %         * De: depth datagram
 %         * He: height datagram
 %         * X8: XYZ88 datagram
@@ -121,6 +122,7 @@
 %
 % *NEW FEATURES*
 %
+% * 2018-10-09: started adding runtime params
 % * 2017-10-06: remove the possibility to load FABCdata as a matfile. Was
 % too slow (Alex Schimel)
 % * 2017-10-04: complete re-ordering of dimensions, no backward
@@ -300,6 +302,32 @@ for iF = 1:nStruct
         
     end
     
+    
+    %% EM_Runtime (v2 VERIFIED)
+    
+    if isfield(ALLdata,'EM_Runtime')
+        
+        % only convert these datagrams if this type doesn't already exist in output
+        if ~isfield(fData,'Ru_1D_Date')
+            
+            if update_mode
+                update_flag = 1;
+            end
+            
+            % NumberOfDatagrams  = length(ALLdata.EM_Runtime.TypeOfDatagram);
+            % MaxNumberOfEntries = max(ALLdata.EM_Runtime.NumberOfEntries);
+            
+            fData.Ru_1D_Date                            = ALLdata.EM_Runtime.Date;
+            fData.Ru_1D_TimeSinceMidnightInMilliseconds = ALLdata.EM_Runtime.TimeSinceMidnightInMilliseconds;
+            fData.Ru_1D_PingCounter                     = ALLdata.EM_Runtime.PingCounter;
+            % the rest to code... XXX
+            fData.Ru_1D_ReceiveBeamwidth                = ALLdata.EM_Runtime.ReceiveBeamwidth;
+            % the rest to code... XXX
+            
+        end
+        
+    end
+
     
     %% EM_SoundSpeedProfile (v2 VERIFIED)
     
@@ -840,6 +868,11 @@ for iF = 1:nStruct
             % and link to it through memmapfile
             fData.WC_SBP_SampleAmplitudes = memmapfile(file_binary,'Format',{'int8' [maxNSamples_sub maxNBeams_sub nPings] 'val'},'repeat',1,'writable',true);
             
+            % save info about data format for later access
+            fData.WC_1_SampleAmplitudes_Class = 'int8';
+            fData.WC_1_SampleAmplitudes_Nanval = -128;
+            fData.WC_1_SampleAmplitudes_Factor = 1/2;
+            
         end
     end
     
@@ -1014,6 +1047,14 @@ for iF = 1:nStruct
             % and link to them through memmapfile
             fData.WCAP_SBP_SampleAmplitudes = memmapfile(file_amp_binary,'Format',{'int16' [maxNSamples_sub maxNBeams_sub nPings] 'val'},'repeat',1,'writable',true);
             fData.WCAP_SBP_SamplePhase      = memmapfile(file_phase_binary,'Format',{'int16' [maxNSamples_sub maxNBeams_sub nPings] 'val'},'repeat',1,'writable',true);
+            
+            % save info about data format for later access
+            fData.WCAP_1_SampleAmplitudes_Class  = 'int16';
+            fData.WCAP_1_SampleAmplitudes_Nanval = int16(-inf);
+            fData.WCAP_1_SampleAmplitudes_Factor = 1/40;
+            fData.WCAP_1_SamplePhase_Class  = 'int16';
+            fData.WCAP_1_SamplePhase_Nanval = 0;
+            fData.WCAP_1_SamplePhase_Factor = 1/30;
             
         end
         

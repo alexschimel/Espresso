@@ -4,7 +4,7 @@
 % true value.
 
 %% Function
-function [data,nan_val] = CFF_get_wc_data(fData,fieldN,varargin)
+function data = CFF_get_wc_data(fData,fieldN,varargin)
 
 
 %% input parsing
@@ -20,7 +20,7 @@ addRequired(p,'fieldN',@ischar);
 addOptional(p,'iPing',[],@(x) isnumeric(x) ||isempty(x));
 addOptional(p,'dr_sub',1,@(x) isnumeric(x) && x>0);
 addOptional(p,'db_sub',1,@(x) isnumeric(x) && x>0);
-addOptional(p,'fmt','true',@(x) ischar(x) && ismember(x,{'raw' 'true'}));
+addOptional(p,'output_format','true',@(x) ischar(x) && ismember(x,{'raw' 'true'}));
 
 % parse
 parse(p,fData,fieldN,varargin{:})
@@ -29,29 +29,8 @@ parse(p,fData,fieldN,varargin{:})
 iPing = p.Results.iPing;
 dr_sub = p.Results.dr_sub;
 db_sub = p.Results.db_sub;
-fmt = p.Results.fmt;
+output_format = p.Results.output_format;
 clear p
-
-
-%% get proper info depending on field required
-
-switch fieldN
-    case 'WCAP_SBP_SampleAmplitudes'
-        fact = 1/40;
-        nan_val = -2^15;
-    case 'WCAP_SBP_SamplePhase'
-        fact = 1/30;
-        nan_val = 0;
-    case 'WC_SBP_SampleAmplitudes'
-        fact = 1/2;
-        nan_val = -128;
-    case 'X_SBP_WaterColumnProcessed'
-        fact = 1/2;
-        nan_val = -128;
-    otherwise
-        fact = 1;
-        nan_val = [];
-end
 
 %% get raw data
 if ~isempty(iPing)
@@ -60,37 +39,27 @@ else
     data = fData.(fieldN).Data.val(1:dr_sub:end,1:db_sub:end,:);
 end
 
+
 %% transform to true values if required
-switch fmt
+switch output_format
+    
     case 'true'
-        data = single(data)*fact;
-        if ~isempty(nan_val)
-            data(data==nan_val) = NaN;
-        end
+        
+        % get info about data
+        idx_undsc = regexp(fieldN,'_');
+        fact    = fData.(sprintf('%s_1_%s_Factor',fieldN(1:idx_undsc(1)-1),fieldN(idx_undsc(2)+1:end)));
+        nan_val = fData.(sprintf('%s_1_%s_Nanval',fieldN(1:idx_undsc(1)-1),fieldN(idx_undsc(2)+1:end)));
+        
+        % convert to single class
+        data = single(data);
+        
+        % add nans
+        data(data==nan_val) = NaN;
+        
+        % factor top get true values
+        data = data*fact;
+        
 end
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

@@ -218,7 +218,7 @@ function convert_files_callback(~,~,main_figure,reconvert)
 % list of datagram needed for conversion
 wc_d = 107; % for traditional water column datagram
 % wc_d = 114; % for amplitude and phase datagram
-dg_wc = [73 80 wc_d];
+dg_wc = [73 80 82 wc_d];
 
 % get tab data
 file_tab_comp = getappdata(main_figure,'file_tab');

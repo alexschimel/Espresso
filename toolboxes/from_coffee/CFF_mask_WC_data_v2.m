@@ -1,4 +1,3 @@
-function [fData] = CFF_mask_WC_data_v2(fData,varargin)
 % [fData] = CFF_mask_WC_data_v2(fData,varargin)
 %
 % DESCRIPTION
@@ -45,6 +44,9 @@ function [fData] = CFF_mask_WC_data_v2(fData,varargin)
 %%%
 % Alex Schimel, Deakin University
 %%%
+
+%% Function
+function [fData] = CFF_mask_WC_data_v2(fData,varargin)
 
 if isfield(fData,'WC_SBP_SampleAmplitudes')
     start_fmt='WC_';

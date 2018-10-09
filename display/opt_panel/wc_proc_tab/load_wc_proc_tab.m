@@ -285,9 +285,14 @@ function update_str_disp_cback(~,~,main_figure)
 
 % XXX
 %
-% this part sets which of the data to be gridded: original or processed.
-% Theres no reason to do this in Espresso: just grid what you have
-% processed. 
+% This callback sets "str_disp" from the "WC proc" tab (not WC display, but
+% the processing) either to "original" or "processed", which is used to
+% flag which of the data to grid. If any of checkbox is checked, grid will
+% grid the processed data, whereas if none are checked, it will grid the
+% original data. 
+% 
+% I think it's a bad one. Use instead whatever is being displayed in the WC
+% tab. But will keep this for now...
 
 wc_proc_tab_comp = getappdata(main_figure,'wc_proc_tab');
 str_disp = 'original';
@@ -353,6 +358,18 @@ for i = idx_fData(:)'
     fprintf('Processing file "%s" (%i/%i). Started at %s...\n',fData_tot{i}.ALLfilename{1},u,numel(idx_fData),datestr(now));
     tic
     
+    % initialize processing
+    disp('...Initializing processing...');
+    fData_tot{i} = CFF_initialize_WC_processing(fData_tot{i},'fast');
+    
+    % filtering sidelobe artefact
+    if wc_proc_tab_comp.sidelobe.Value
+        
+        disp('...Filtering sidelobe artifacts...');
+        fData_tot{i} = CFF_filter_WC_sidelobe_artifact_v3(fData_tot{i},2);
+        
+    end
+
     % masking 
     if wc_proc_tab_comp.masking.Value
         
@@ -363,15 +380,7 @@ for i = idx_fData(:)'
             mask_params.remove_bottomrange);
         
     end
-    
-    % filtering sidelobe artefact
-    if wc_proc_tab_comp.sidelobe.Value
-        
-        disp('...Filtering sidelobe artifacts...');
-        fData_tot{i} = CFF_filter_WC_sidelobe_artifact_v3(fData_tot{i},2);
-        
-    end
-    
+
     % disp
     fprintf('...Done. Elapsed time: %f seconds.\n',toc);
     

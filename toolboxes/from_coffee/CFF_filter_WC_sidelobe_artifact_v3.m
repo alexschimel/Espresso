@@ -53,6 +53,12 @@
 %
 % NEW FEATURES
 %
+% * 2018-10-09: in this new version, the filtering is using
+% fData.X_SBP_WaterColumnProcessed as source data, whatever it is. By
+% running this function just after CFF_initialize_WC_processing that copy
+% the original data into fData.X_SBP_WaterColumnProcessed, one can filter
+% the original data. If you mask after initialization, the filtering will
+% be applied to that masked original data, etc.
 % * 2016-10-10: v2 for new datasets recorded as SBP instead of PBS (Alex
 % Schimel)
 % - 2016-11-07: First version. Code taken from CFF_filter_watercolumn.m (Alex
@@ -62,13 +68,11 @@
 % Alex Schimel, Deakin University
 %%%
 
-%% function starts
+%% Function
 function [fData] = CFF_filter_WC_sidelobe_artifact_v3(fData,varargin)
 
-% XXX: check that sidelobe filtering uses masked data if it exists,
-% original data if not
+%% INPUT PARSING
 
-%% Set methods
 method_spec = 2; % default
 if nargin == 1
     % fData only. keep default
@@ -78,71 +82,68 @@ else
     error('wrong number of input variables')
 end
 
-%% Memory Map flag
-if isfield(fData,'WC_SBP_SampleAmplitudes')
-    start_fmt='WC_';
-elseif isfield(fData,'WCAP_SBP_SampleAmplitudes')
-    start_fmt='WCAP_';
-end
 
-if isobject(fData.(sprintf('%sSBP_SampleAmplitudes',start_fmt)))
-    memoryMapFlag = 1;
-    wc_dir=CFF_WCD_memmap_folder(fData.ALLfilename{1});
-else
-    memoryMapFlag = 0;
-end
+%% Extract info about WCD
+wcdata_class  = fData.X_1_WaterColumnProcessed_Class; % int8 or int16
+wcdata_factor = fData.X_1_WaterColumnProcessed_Factor; 
+wcdata_nanval = fData.X_1_WaterColumnProcessed_Nanval;
+[nSamples, nBeams, nPings] = size(fData.X_SBP_WaterColumnProcessed.Data.val);
 
-if isfield(fData,'X_SBP_WaterColumnProcessed')
-     memoryMapFlag = 0;
-end
 
-% MAIN PROCESSING SWITCH
+%% MAIN PROCESSING METHOD SWITCH
 switch method_spec
     
     case 2
         
-        % same but a little bit more complex       
-        % Dimensions
-        [nSamples,nBeams,nPings] = size(fData.(sprintf('%sSBP_SampleAmplitudes',start_fmt)).Data.val);
         
-        % init arrays
-        if memoryMapFlag
-            % create binary file
-            file_X_SBP_L1 = fullfile(wc_dir,'X_SBP_WaterColumnProcessed.dat');
-            fileID_X_SBP_L1 = fopen(file_X_SBP_L1,'w+');
-        end
+        %% prep
         
         % define 11 middle beams for reference level
         nadirBeams = (floor((nBeams./2)-5):ceil((nBeams./2)+5)); % middle beams
         
+        %% Block processing
+                
         % block processing setup
         blockLength = 10;
         nBlocks = ceil(nPings./blockLength);
         blocks = [ 1+(0:nBlocks-1)'.*blockLength , (1:nBlocks)'.*blockLength ];
         blocks(end,2) = nPings;
         
-        % per-block processing
-    
         for iB = 1:nBlocks
             
+            % list of pings in this block
+            blockPings  = (blocks(iB,1):blocks(iB,2));
+            nBlockPings = length(blockPings);
+            
             % grab data
-            thisPing = CFF_get_wc_data(fData,sprintf('%sSBP_SampleAmplitudes',start_fmt),blocks(iB,1):blocks(iB,2),1,1);
-            idx_nan = isnan(thisPing);
-            thisBottom = fData.X_BP_bottomSample(:,blocks(iB,1):blocks(iB,2));
+            data = CFF_get_wc_data(fData,'X_SBP_WaterColumnProcessed',blockPings,1,1,'true');
+            
+            % grab bottom detect
+            bottom = fData.X_BP_bottomSample(:,blockPings);
             
             % mean level across all beams for each range (and each ping)
-            meanAcrossBeams = mean(thisPing,2,'omitnan');
+            meanAcrossBeams = mean(data,2,'omitnan');
             
             % find the reference level as the median level of all samples above the median bottom sample in nadir beams:
-            nadirBottom = median(thisBottom(nadirBeams,:)); % median value -> bottom
-            meanRefLevel = nanmean(reshape(thisPing((1:min(nadirBottom)),nadirBeams,:),1,[]));
-            % question, should we calculate the mean in natural or in dB?
+            nadirBottom = median(bottom(nadirBeams,:)); % median value -> bottom            
+            refLevel = nan(1,1,nBlockPings);
+            for iP = 1:nBlockPings
+                refLevel(1,1,iP) = nanmedian(reshape(data(1:nadirBottom(iP),nadirBeams,:),1,[]));
+            end
             
             % statistical compensation. removing mean, then adding
             % reference level, like everyone does (correction "a" in
             % Parnum's thesis)
-            X_SBP_L1 = bsxfun(@minus,thisPing,(meanAcrossBeams)) + (meanRefLevel);
-            X_SBP_L1(idx_nan)=-128/2;
+            data = bsxfun(@plus,bsxfun(@minus,data,meanAcrossBeams),refLevel);
+            
+            % convert result back into proper format
+            data = data./wcdata_factor;
+            data(isnan(data)) = wcdata_nanval;
+            data = cast(data,wcdata_class);
+            
+            % save in array
+            fData.X_SBP_WaterColumnProcessed.Data.val(:,:,blockPings) = data;
+            
             % note that other compensations of that style are possible (to
             % be tested for performance
             
@@ -154,39 +155,16 @@ switch method_spec
             % Or we can make the compensation more complicated, for example
             % including normalization for std (correction "b" in Parnum):
             % stdAcrossBeams  = std(thisPing,[],2,'omitnan');
-            % X_SBP_L1 = bsxfun(@rdivide,bsxfun(@minus,thisPing,meanAcrossBeams),stdAcrossBeams) + meanRefLevel;
+            % X_SBP_L1 = bsxfun(@rdivide,bsxfun(@minus,thisPing,meanAcrossBeams),stdAcrossBeams) + refLevel;
             
             % Or, going even further, re-introducing a reference standard
             % deviation:
             % stdRefLevel = std(reshape(thisPing((1:nadirBottom),nadirBeams),1,[]),'omitnan');
-            % X_SBP_L1 = bsxfun(@rdivide,bsxfun(@minus,thisPing,meanAcrossBeams),stdAcrossBeams).*stdRefLevel + meanRefLevel;
-            
-            % saving result
-            if memoryMapFlag
-                % write into binary files:
-                fwrite(fileID_X_SBP_L1,X_SBP_L1,'int8');
-            else
-                % save in array
-                X_SBP_L1(fData.X_SBP_WaterColumnProcessed.Data.val(:,:,blocks(iB,1):blocks(iB,2))==-128/2)=-128/2;
-                fData.X_SBP_WaterColumnProcessed.Data.val(:,:,blocks(iB,1):blocks(iB,2)) = X_SBP_L1;
-            end
-            
-            clear X_SBP_L1 thisPing thisBottom meanAcrossBeams
-            
+            % X_SBP_L1 = bsxfun(@rdivide,bsxfun(@minus,thisPing,meanAcrossBeams),stdAcrossBeams).*stdRefLevel + refLevel;
+
         end
-        
-        % finalize if memmap files, some finishing up code necessary...
-        if memoryMapFlag
-            
-            % close binary files
-            fclose(fileID_X_SBP_L1);
-            
-            % re-open files as memmapfile
-            fData.X_SBP_WaterColumnProcessed = memmapfile(file_X_SBP_L1, 'Format',{'int8' [nSamples nBeams nPings] 'val'},'repeat',1,'writable',true);
-            
-        end
-        
-  
+
+
     otherwise
         
         error('method_spec not recognised')
