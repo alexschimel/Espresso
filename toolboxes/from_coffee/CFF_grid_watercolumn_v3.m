@@ -12,7 +12,6 @@ p = inputParser;
 addRequired(p,'fData',@isstruct);
 
 % optional
-addParameter(p,'dataToGrid','processed',@(x) ischar(x));
 addParameter(p,'res',1,@(x) isnumeric(x)&&x>0);
 addParameter(p,'vert_res',1,@(x) isnumeric(x)&&x>0);
 addParameter(p,'dim','3D',@(x) ismember(x,{'2D' '3D'}));
@@ -25,76 +24,74 @@ addParameter(p,'n_lim',[],@isnumeric);
 parse(p,fData,varargin{:})
 
 % get results
-dataToGrid = p.Results.dataToGrid;
-res        = p.Results.res;
-vert_res   = p.Results.vert_res;
-dim        = p.Results.dim;
-dr_sub     = p.Results.dr_sub;
-db_sub     = p.Results.db_sub;
+res       = p.Results.res;
+vert_res  = p.Results.vert_res;
+dim       = p.Results.dim;
+dr_sub    = p.Results.dr_sub;
+db_sub    = p.Results.db_sub;
 
 
-%% pre processing
+%% Extract info about WCD
+[nSamples, nBeams, nPings] = size(fData.X_SBP_WaterColumnProcessed.Data.val);
 
-% source datagram
+
+%% Prep
+
+% Source datagram
 if isfield(fData,'WC_SBP_SampleAmplitudes')
     datagramSource = 'WC';
 elseif isfield(fData,'WCAP_SBP_SampleAmplitudes')
     datagramSource = 'WCAP';
 end
 
-% get dimensions
-[~,nBeams,nPings] = size(fData.(sprintf('%s_SBP_SampleAmplitudes',datagramSource)).Data.val);
+% inter-sample distance
+soundSpeed          = fData.(sprintf('%s_1P_SoundSpeed',datagramSource)).*0.1; %m/s
+samplingFrequencyHz = fData.(sprintf('%s_1P_SamplingFrequencyHz',datagramSource)); %Hz
+dr_samples = soundSpeed./(samplingFrequencyHz.*2);
 
-% block processing setup
-blockLength   = 10;
-nBlocks       = ceil(nPings./blockLength);
-blocks        = [ 1+(0:nBlocks-1)'.*blockLength , (1:nBlocks)'.*blockLength ];
+% sonar location
+sonarH = fData.X_1P_pingH; %m
+sonarE = fData.X_1P_pingE; %m
+sonarN = fData.X_1P_pingN; %m
+
+% heading
+% XXX wait, wasn't that done with georeferencing pings already?
+gridConvergenceDeg    = fData.X_1P_pingGridConv; %deg
+vesselHeadingDeg      = fData.X_1P_pingHeading; %deg
+sonarHeadingOffsetDeg = fData.IP_ASCIIparameters.S1H; %deg
+heading = - mod( gridConvergenceDeg + vesselHeadingDeg + sonarHeadingOffsetDeg, 360 )/180*pi;
+
+
+%% block processing setup
+blockLength = 10;
+nBlocks = ceil(nPings./blockLength);
+blocks = [ 1+(0:nBlocks-1)'.*blockLength , (1:nBlocks)'.*blockLength ];
 blocks(end,2) = nPings;
 
 
 %% find grid limits
 
-% init vectors
+% initialize vectors
 minBlockE = nan(1,nBlocks);
 minBlockN = nan(1,nBlocks);
 maxBlockE = nan(1,nBlocks);
 maxBlockN = nan(1,nBlocks);
-
 switch dim
     case '3D'
         minBlockH = nan(1,nBlocks);
         maxBlockH = nan(1,nBlocks);
 end
 
-% block processing
-nSamples = max(fData.WC_BP_DetectedRangeInSamples(:));
-
-soundSpeed          = fData.WC_1P_SoundSpeed.*0.1; %m/s
-samplingFrequencyHz = fData.WC_1P_SamplingFrequencyHz; %Hz
-dr_samples          = soundSpeed./(samplingFrequencyHz.*2);
-
-gridConvergenceDeg    = fData.X_1P_pingGridConv; %deg
-vesselHeadingDeg      = fData.X_1P_pingHeading; %deg
-sonarHeadingOffsetDeg = fData.IP_ASCIIparameters.S1H; %deg
-
-fData.res = res;
-fData.vert_res = vert_res;
-
-sonarH =fData.X_1P_pingH; %m
-sonarE = fData.X_1P_pingE; %m
-sonarN = fData.X_1P_pingN; %m
-heading = - mod( gridConvergenceDeg + vesselHeadingDeg + sonarHeadingOffsetDeg, 360 )/180*pi;
-
 for iB = 1:nBlocks
     
     % list of pings in this block
-    blockPings = (blocks(iB,1):blocks(iB,2));
+    blockPings = blocks(iB,1):blocks(iB,2);
     
     % Get easting, northing and height of the first and last samples in the
     % outer beams and the central beam, for all pings in that block (aka
     % 2x3xblockLength matrices).
-    sampleRange                     = CFF_get_samples_range([1 nSamples]',fData.WC_BP_StartRangeSampleNumber([1 round(nBeams./2) nBeams],blockPings),dr_samples(blockPings));
-    [sampleAcrossDist,sampleUpDist] = CFF_get_samples_dist(sampleRange,fData.WC_BP_BeamPointingAngle([1 round(nBeams./2) nBeams],blockPings)/100/180*pi);    
+    sampleRange                     = CFF_get_samples_range([1 nSamples]',fData.(sprintf('%s_BP_StartRangeSampleNumber',datagramSource))([1 round(nBeams./2) nBeams],blockPings),dr_samples(blockPings));
+    [sampleAcrossDist,sampleUpDist] = CFF_get_samples_dist(sampleRange,fData.(sprintf('%s_BP_BeamPointingAngle',datagramSource))([1 round(nBeams./2) nBeams],blockPings)/100/180*pi);    
     [blockE,blockN,blockH]          = CFF_get_samples_ENH( sonarE(blockPings), sonarN(blockPings), sonarH(blockPings), heading(blockPings), sampleAcrossDist, sampleUpDist );
     
     % these subset of all samples should be enough to find the bounds for the entire block
@@ -146,33 +143,19 @@ end
 
 %% fill the grids with block processing
 
-nSamples_tot = max(fData.WC_BP_DetectedRangeInSamples);
-
 for iB = 1:nBlocks
     
     % list of pings in this block
-    blockPings  = (blocks(iB,1):blocks(iB,2));
+    blockPings  = blocks(iB,1):blocks(iB,2);
     
     % Get easting, northing and height of all desired samples
-    nSamples    = max(nSamples_tot(blockPings));
     idx_samples = (1:dr_sub:nSamples)';
-    sampleRange                     = CFF_get_samples_range(idx_samples,fData.WC_BP_StartRangeSampleNumber(1:db_sub:end,blockPings),dr_samples(blockPings));
-    [sampleAcrossDist,sampleUpDist] = CFF_get_samples_dist(sampleRange,fData.WC_BP_BeamPointingAngle(1:db_sub:end,blockPings)/100/180*pi);
+    sampleRange                     = CFF_get_samples_range(idx_samples,fData.(sprintf('%s_BP_StartRangeSampleNumber',datagramSource))(1:db_sub:end,blockPings),dr_samples(blockPings));
+    [sampleAcrossDist,sampleUpDist] = CFF_get_samples_dist(sampleRange,fData.(sprintf('%s_BP_BeamPointingAngle',datagramSource))(1:db_sub:end,blockPings)/100/180*pi);
     [blockE,blockN,blockH]          = CFF_get_samples_ENH( sonarE(blockPings), sonarN(blockPings), sonarH(blockPings), heading(blockPings), sampleAcrossDist,sampleUpDist );
     
-    % get field to grid
-    switch dataToGrid
-        
-        case 'original'
-            
-            blockL = CFF_get_wc_data(fData,sprintf('%s_SBP_SampleAmplitudes',datagramSource),blockPings,dr_sub,db_sub);
-            
-        case 'processed'
-            
-            blockL = single(fData.X_SBP_WaterColumnProcessed.Data.val(1:dr_sub:nSamples,1:db_sub:nBeams,blockPings));
-            blockL(blockL==-64) = NaN;
-            
-    end
+    % get data to grid
+    blockL = CFF_get_wc_data(fData,'X_SBP_WaterColumnProcessed',blockPings,dr_sub,db_sub,'true');
     
     % remove nans:
     indNan = isnan(blockL);
@@ -194,7 +177,7 @@ for iB = 1:nBlocks
     end
     
     % pass grid Level in natural before gridding
-    blockL = (10.^(blockL./10));
+    blockL = 10.^(blockL./10);
     
     % data indices in full grid
     E_idx = round((blockE-minGridE)/res+1);
@@ -265,14 +248,20 @@ for iB = 1:nBlocks
 end
 
 % average, and back in dB
-fData.X_NEH_gridLevel   = single(10.*log10(gridSum./gridCount));
-fData.X_NEH_gridDensity = gridCount;
+gridLevel = 10.*log10(gridSum./gridCount);
 
-%% saving more results
+%% saving results:
+
+fData.X_NEH_gridLevel   = gridLevel;
+fData.X_NEH_gridDensity = gridCount;
 fData.X_1E_gridEasting  = (0:numElemGridE-1) .*res + minGridE;
 fData.X_N1_gridNorthing = (0:numElemGridN-1)'.*res + minGridN;
+fData.X_1_gridHorizontalResolution = res;
 
 switch dim
     case '3D'
         fData.X_11H_gridHeight  = permute((0:numElemGridH-1).*res + minGridH,[3,1,2]);
+        fData.X_1_gridVerticalResolution = vert_res;
 end
+
+

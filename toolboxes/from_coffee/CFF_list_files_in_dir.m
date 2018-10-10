@@ -35,7 +35,7 @@
 % Yoann Ladroit, NIWA. Type |help Espresso.m| for copyright information.
 
 %% Function
-function [folders,files,converted] = list_files_in_dir(folder_init)
+function [folders,files,converted] = CFF_list_files_in_dir(folder_init)
 
 % init
 folders = {};
@@ -43,14 +43,14 @@ files = {};
 converted = [];
 
 % get .all files
-AllFilename_list = subdir(fullfile(folder_init,'*.all'));
+AllFilename_list = CFF_subdir(fullfile(folder_init,'*.all'));
 if isempty(AllFilename_list)
     return;
 else
     AllFilename_cell = {AllFilename_list([AllFilename_list(:).isdir]==0).name};
 end
 % get .wcd files
-WCDFilename_list = subdir(fullfile(folder_init,'*.wcd'));
+WCDFilename_list = CFF_subdir(fullfile(folder_init,'*.wcd'));
 if isempty(WCDFilename_list)
     return;
 else
@@ -73,7 +73,9 @@ all_files = fullfile(all_folders,all_files);
 %files_full = all_files;
 [folders,files,~] = cellfun(@fileparts,files_full,'UniformOutput',0);
 
-mat_fdata_files=fdata_filenames_from_all_filenames(files_full);
+% list of fData files (aka, converted files)
+wc_dir = CFF_converted_data_folder(files_full);
+mat_fdata_files = fullfile(wc_dir,'fData.mat');
 
 % boolean for whether these mat files exist
 converted = cellfun(@(x) exist(x,'file')>0,mat_fdata_files);

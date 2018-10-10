@@ -63,7 +63,6 @@ wc_proc_tab_comp.masking = uicontrol(wc_proc_tab_comp.wc_proc_tab,'style','check
     'BackgroundColor','White',...
     'units','normalized',...
     'position',[0.05 0.8 0.5 0.05],...
-    'callback',{@update_str_disp_cback,main_figure},...
     'Value',1);
 text_angle = uicontrol(wc_proc_tab_comp.wc_proc_tab,'style','text','String',['Outer Beams (' char(hex2dec('00B0')) ')'],...
     'BackgroundColor','White',...
@@ -105,7 +104,6 @@ wc_proc_tab_comp.sidelobe = uicontrol(wc_proc_tab_comp.wc_proc_tab,'style','chec
     'BackgroundColor','White',...
     'units','normalized',...
     'position',[0.05 0.6 0.5 0.05],...
-    'callback',{@update_str_disp_cback,main_figure},...
     'Value',1);
 
 % process push button
@@ -200,7 +198,6 @@ wc_proc_tab_comp.clim_max_wc = uicontrol(wc_proc_tab_comp.wc_proc_tab,'style','e
 
 
 setappdata(main_figure,'wc_proc_tab',wc_proc_tab_comp);
-update_str_disp_cback([],[],main_figure)
 
 end
 
@@ -274,46 +271,6 @@ disp_config = getappdata(main_figure,'disp_config');
 disp_config.Fdata_idx = idx_fData(end);
 
 update_wc_tab(main_figure);
-
-end
-
-
-%%
-% Callback when checking/unchecking any of the process checkboxes
-%
-function update_str_disp_cback(~,~,main_figure)
-
-% XXX
-%
-% This callback sets "str_disp" from the "WC proc" tab (not WC display, but
-% the processing) either to "original" or "processed", which is used to
-% flag which of the data to grid. If any of checkbox is checked, grid will
-% grid the processed data, whereas if none are checked, it will grid the
-% original data. 
-% 
-% I think it's a bad one. Use instead whatever is being displayed in the WC
-% tab. But will keep this for now...
-
-wc_proc_tab_comp = getappdata(main_figure,'wc_proc_tab');
-str_disp = 'original';
-if wc_proc_tab_comp.masking.Value || wc_proc_tab_comp.sidelobe.Value
-    str_disp = 'processed';
-end
-wc_proc_tab_comp.str_disp = str_disp;
-setappdata(main_figure,'wc_proc_tab',wc_proc_tab_comp);
-
-
-% The only thing this callback should do, if anything, is to switch the WC
-% view to "Processed" so that user sees what processing has been done so
-% far to judge whether or not to redo it (which the button will do). Code
-% should look something like below (copied from process button callback)
-
-% update the WC view to "Processed" if it exists
-% wc_tab_comp = getappdata(main_figure,'wc_tab');
-% wc_tab_strings = wc_tab_comp.data_disp.String;
-% [~,idx] = ismember('Processed',wc_tab_strings);
-% wc_tab_comp.data_disp.Value = idx;
-% update_wc_tab(main_figure);
 
 end
 
@@ -427,8 +384,11 @@ end
 
 % getting gridding parameters
 wc_proc_tab_comp = getappdata(main_figure,'wc_proc_tab');
-res = str2double(get(wc_proc_tab_comp.grid_val,'String'));
+res      = str2double(get(wc_proc_tab_comp.grid_val,'String'));
 vert_res = str2double(get(wc_proc_tab_comp.vert_grid_val,'String'));
+grid_dim = wc_proc_tab_comp.dim_grid.String{wc_proc_tab_comp.dim_grid.Value};
+dr_sub = 4;
+db_sub = 2;
 
 % init counter
 u = 0;
@@ -446,12 +406,11 @@ for i = idx_fData(:)'
     
     % gridding
     fData_tot{i} = CFF_grid_watercolumn_v3(fData_tot{i},...
-        'dataToGrid',wc_proc_tab_comp.str_disp,...
         'res',res,...
         'vert_res',vert_res,...
-        'dim',wc_proc_tab_comp.dim_grid.String{wc_proc_tab_comp.dim_grid.Value},...
-        'dr_sub',4,...
-        'db_sub',2,...
+        'dim',grid_dim,...
+        'dr_sub',dr_sub,...
+        'db_sub',db_sub,...
         'e_lim',[],...
         'n_lim',[]);
     
@@ -469,8 +428,8 @@ setappdata(main_figure,'fData',fData_tot);
 disp_config = getappdata(main_figure,'disp_config');
 disp_config.Fdata_idx = idx_fData(end);
 
+% update WC view and main tab
 update_wc_tab(main_figure);
-
 update_map_tab(main_figure,1,0,[]);
 
 end

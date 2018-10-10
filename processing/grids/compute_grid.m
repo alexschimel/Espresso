@@ -23,7 +23,7 @@ for iF = 1:numel(fData_tot)
     L = fData.X_NEH_gridLevel;
     
     if size(L,3) > 1
-        data = pow2db_perso(nanmean(db2pow(L),3));
+        data = pow2db_perso(nanmean(10.^(L/10),3));
     else
         data = L;
     end
@@ -77,5 +77,16 @@ for iF = 1:numel(fData_tot)
 end
 
 grid.grid_level = single(10.*log10(gridSum./gridCount));
+
+end
+
+
+
+function db = pow2db_perso(pow)
+
+pow(pow<0) = nan;
+db = 10*log10(pow);
+
+end
 
 

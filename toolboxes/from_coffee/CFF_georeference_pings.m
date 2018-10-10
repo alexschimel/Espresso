@@ -1,4 +1,4 @@
-%% CFF_process_ping_v2.m
+%% CFF_georeference_pings.m
 %
 % Interpolates navigation data from ancillary sensors to ping time (i.e.
 % Easting, Northing, Height, Grid Convergence, Heading, Speed).
@@ -58,7 +58,7 @@
 % Alexandre Schimel, University of Waikato, Deakin University, NIWA.
 
 %% Function
-function [fData] = CFF_process_ping_v2(fData,varargin)
+function [fData] = CFF_georeference_pings(fData,varargin)
 
 
 %% 1. VARARGIN CHECKS

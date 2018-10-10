@@ -240,8 +240,8 @@ for iF = 1:nStruct
     % open the original raw file in case we need to grab WC data from it
     fid_all = fopen(fData.ALLfilename{iF},'r',ALLdata.datagramsformat);
     
-    % get folder where WC data will be recorded as memmap files
-    wc_dir = CFF_WCD_memmap_folder(fData.ALLfilename{iF});
+    % get folder for converted data
+    wc_dir = CFF_converted_data_folder(fData.ALLfilename{iF});
     
     % now reading each type of datagram...
     

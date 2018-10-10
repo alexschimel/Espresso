@@ -99,7 +99,7 @@ end
 
 if memoryMapFlag
     % create binary file
-    wc_dir=CFF_WCD_memmap_folder(fData.ALLfilename{1});
+    wc_dir = CFF_converted_data_folder(fData.ALLfilename{1});
     file_X_SBP_Mask = fullfile(wc_dir,'X_SBP_Mask.dat');
     fileID_X_SBP_Mask = fopen(file_X_SBP_Mask,'w+');
 else

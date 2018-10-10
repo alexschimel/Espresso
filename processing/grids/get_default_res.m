@@ -16,7 +16,7 @@ for iF = 1:numel(fData_tot)
     L = fData.X_NEH_gridLevel;
     
     if size(L,3)>1
-        data = pow2db_perso(nanmean(db2pow(L),3));
+        data = pow2db_perso(nanmean(10.^(L/10),3));
     else
         data = L;
     end
@@ -32,7 +32,7 @@ for iF = 1:numel(fData_tot)
     if isempty(data)
         continue;
     end
-    grid.res = nanmax(fData.res,grid.res);
+    grid.res = nanmax(fData.X_1_gridHorizontalResolution,grid.res);
 end
 
 numElemGridE = ceil((E_lim(2)-E_lim(1))./grid.res)+1;
@@ -43,4 +43,14 @@ if grid.res>0
     grid.grid_level = zeros(numElemGridN,numElemGridE,'single');
 else
     grid.grid_level = single([]);
+end
+
+
+end
+
+function db = pow2db_perso(pow)
+
+pow(pow<0) = nan;
+db = 10*log10(pow);
+
 end

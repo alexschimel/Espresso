@@ -31,8 +31,10 @@ if isempty(idx_up)
     idx_up = 1:length(fData_tot);
 end
 
+% for each line
 for i = idx_up
     
+    % settings for navigation lines
     if idx_zoom(i)
         % selected line
         vis = 'on';
@@ -43,7 +45,10 @@ for i = idx_up
         col = [0.7 0.7 0.7]; % very light gray
     end
     
+    % get data
     fData = fData_tot{i};
+    
+    
     % times1 = datestr(fData.X_1P_pingSDN,'dd-mmm-yyyy HH:MM:SS.FFF');
     % times2 = datestr(fData.X_1P_pingSDN,'HH:MM:SS.FFF');
     tag_id = num2str(fData.ID,'%.0f');
@@ -72,6 +77,7 @@ for i = idx_up
         set(obj(arrayfun(@(x) strcmp(x.Type,'line'),obj)),'Color',col);
     end
     
+    % zoom extents based on navigation
     if idx_zoom(i)
         xlim(1) = nanmin(xlim(1),nanmin(fData.X_1P_pingE));
         xlim(2) = nanmax(xlim(2),nanmax(fData.X_1P_pingE));
@@ -86,6 +92,7 @@ for i = idx_up
         obj_wc = [];
     end
     
+    % gridded data display
     if isempty(obj_wc) && isfield(fData,'X_NEH_gridLevel')
         
         % grab data
@@ -93,11 +100,11 @@ for i = idx_up
         N = fData.X_N1_gridNorthing;
         L = fData.X_NEH_gridLevel;
         
-        % get mean        
+        % get vertical mean whether data is in 2D already or in 3D        
         switch disp_config.Var_disp
             case 'wc_int'
                 if size(L,3)>1
-                    data = pow2db_perso(nanmean(db2pow(L),3));
+                    data = pow2db_perso(nanmean(10.^(L/10),3));
                 else
                     data = L;
                 end
@@ -153,6 +160,7 @@ if nansum(idx_zoom) == 0
 end
 
 
+% display mosaics
 for igrid = 1:numel(grids)
     
     if idx_zoom_grid(igrid)
@@ -200,7 +208,7 @@ if~any(idx_zoom)
     return;
 end
 
-if new_zoom>0&& all(~isnan(xlim))&& all(~isnan(ylim))
+if new_zoom>0 && all(~isnan(xlim))&& all(~isnan(ylim))
     pos = getpixelposition(ax);
     ratio = pos(4)/pos(3);
     dx = nanmax([diff(xlim) diff(ylim)]);
@@ -229,5 +237,13 @@ fmt = '%.2f';
 % update strings
 set(ax,'yticklabel',y_labels);
 set(ax,'xticklabel',x_labels);
+
+end
+
+
+function db = pow2db_perso(pow)
+
+pow(pow<0) = nan;
+db = 10*log10(pow);
 
 end

@@ -40,7 +40,7 @@ end
 
 
 %% processed data folder
-wc_dir = CFF_WCD_memmap_folder(fData.ALLfilename{1});
+wc_dir = CFF_converted_data_folder(fData.ALLfilename{1});
 
 %% Info about original data
 wcdata_class = fData.(sprintf('%s_1_SampleAmplitudes_Class',datagramSource)); % int8 or int16

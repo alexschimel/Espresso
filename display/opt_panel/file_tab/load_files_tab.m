@@ -238,6 +238,7 @@ timer_start = now;
 % for each file
 for nF = 1:numel(files_to_convert)
     
+    % get file to convert
     file_to_convert = files_to_convert{nF};
 
     % if file already converted and not asking for reconversion, exit here
@@ -254,8 +255,11 @@ for nF = 1:numel(files_to_convert)
     all_file_to_convert = strcat(file_to_convert,'.all');
     wcd_file_to_convert = strcat(file_to_convert,'.wcd');
     
-    % converted filename
-    mat_fdata_file = char(fdata_filenames_from_all_filenames(file_to_convert));
+    % get folder for converted data
+    folder_for_converted_data = CFF_converted_data_folder(file_to_convert);
+    
+    % converted filename fData
+    mat_fdata_file = fullfile(folder_for_converted_data,'fdata.mat');
     
     % initialize which datagrams were read
     datags_parsed_idx = zeros(size(dg_wc));
@@ -430,8 +434,9 @@ for nF = 1:numel(files_to_load)
         continue
     end
         
-    % converted filename
-    mat_fdata_file = char(fdata_filenames_from_all_filenames(file_to_load));
+    % converted filename fData
+    folder_for_converted_data = CFF_converted_data_folder(file_to_load);
+    mat_fdata_file = fullfile(folder_for_converted_data,'fdata.mat');
     
     % check if converted file exists
     if ~isfile(mat_fdata_file)
@@ -446,11 +451,6 @@ for nF = 1:numel(files_to_load)
     % loading temp
     fData_temp = load(mat_fdata_file);
     
-    % update raw data filenames in fData_temp
-    [~,file_names,f_ext] = cellfun(@fileparts,fData_temp.ALLfilename,'un',0);
-    folder_tmp = fileparts(fileparts(mat_fdata_file));
-    fData_temp.ALLfilename = cellfun(@(x,y) fullfile(folder_tmp,[x y]),file_names,f_ext,'un',0);
-    
     % getting source of water-column data and prefix right
     if isfield(fData_temp,'WC_SBP_SampleAmplitudes')
         datagramSource = 'WC';
@@ -460,7 +460,7 @@ for nF = 1:numel(files_to_load)
     
     % Interpolating navigation data from ancillary sensors to ping time
     fprintf('...Interpolating navigation data from ancillary sensors to ping time...\n');
-    fData_temp = CFF_process_ping_v2(fData_temp,datagramSource);
+    fData_temp = CFF_georeference_pings(fData_temp,datagramSource);
     
     % checking UTM zone for projection
     if strcmp(disp_config.MET_tmproj,'')
@@ -480,17 +480,17 @@ for nF = 1:numel(files_to_load)
     % Time-tag that fData
     fData_temp.ID = str2double(datestr(now,'yyyymmddHHMMSSFFF'));
     
-    % If data have already been processed, load the binary file into fData
-    % NOTE: if data have already been processed, the fData and the binary
-    % files should already exist and should already been attached, without
-    % need to re-memmap them... So verify if there is actual need for this
-    % part... XXX
-    wc_dir = CFF_WCD_memmap_folder(fData_temp.ALLfilename{1});
-    WaterColumnProcessed_file = fullfile(wc_dir,'X_SBP_WaterColumnProcessed.dat');
-    if isfile(WaterColumnProcessed_file)
-        [nSamples,nBeams,nPings] = size(fData_temp.([datagramSource '_SBP_SampleAmplitudes']).Data.val);
-        fData_temp.X_SBP_WaterColumnProcessed = memmapfile(WaterColumnProcessed_file, 'Format',{'int8' [nSamples nBeams nPings] 'val'},'repeat',1,'writable',true);
-    end
+%     % If data have already been processed, load the binary file into fData
+%     % NOTE: if data have already been processed, the fData and the binary
+%     % files should already exist and should already been attached, without
+%     % need to re-memmap them... So verify if there is actual need for this
+%     % part... XXX
+%     wc_dir = CFF_converted_data_folder(fData_temp.ALLfilename{1});
+%     WaterColumnProcessed_file = fullfile(wc_dir,'X_SBP_WaterColumnProcessed.dat');
+%     if isfile(WaterColumnProcessed_file)
+%         [nSamples,nBeams,nPings] = size(fData_temp.([datagramSource '_SBP_SampleAmplitudes']).Data.val);
+%         fData_temp.X_SBP_WaterColumnProcessed = memmapfile(WaterColumnProcessed_file, 'Format',{'int8' [nSamples nBeams nPings] 'val'},'repeat',1,'writable',true);
+%     end
     
     % why pause here? XXX
     pause(1e-3);
