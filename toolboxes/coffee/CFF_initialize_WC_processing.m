@@ -1,8 +1,73 @@
-
-% Initialize, or re-initialize, a fData structure for processing aka:
-% * copy original data binary file as "processed data" binary file
-% * memmap this file as X_SBP_WaterColumnProcessed
+%% CFF_initialize_WC_processing.m
 %
+% Initialize (or re-initialize) a fData structure for water-column data
+% processing. 
+%
+%% Help
+%
+% *USE*
+%
+% fData = CFF_initialize_WC_processing(fData,'fast') copies the original
+% data binary file ('WC_SBP_SamplesAmplitude.dat') as a processed data
+% binary file ('X_SBP_WaterColumnProcessed.dat') and memmap this file as
+% field fData.X_SBP_WaterColumnProcessed. If X_SBP_WaterColumnProcessed.dat
+% exists and is compatible, it is simply repurposed.
+%
+% Now the issue is that the original data may be in a low-resolution format
+% (e.g. watercolumn data at 0.5dB resolution, recorded as int8) while the
+% result of processing might be higher resolution and need recording on 4
+% bits. So the process above will quantize the result. For a more precise
+% output that conserves the full resolution of processed data, use
+% fData = CFF_initialize_WC_processing(fData,'precise') but be aware it
+% will take more disk space and be slower to use.
+%
+% *INPUT VARIABLES*
+%
+% * |fData|: Required. Structure for the storage of kongsberg EM series
+% multibeam data in a format more convenient for processing. The data is
+% recorded as fields coded "a_b_c" where "a" is a code indicating data
+% origing, "b" is a code indicating data dimensions, and "c" is the data
+% name. See the help of function CFF_convert_ALLdata_to_fData.m for
+% description of codes. 
+% * |method|: 'fast' (default) or 'precise'
+%
+% *OUTPUT VARIABLES*
+%
+% * |fData|: fData structure updated with "X_SBP_WaterColumnProcessed"
+% field that memmaps the processed data binary file.
+%
+% *DEVELOPMENT NOTES*
+%
+% _This section describes what features are temporary, needed future
+% developments and paper references. Example below to replace. Delete these
+% lines XXX._ 
+%
+% * research point 1. XXX
+% * research point 2. XXX
+%
+% *NEW FEATURES*
+%
+% _This section contains dates and descriptions of major updates. Example
+% below to replace. Delete these lines XXX._
+%
+% * 2018-10-11: updated header before adding to Coffee v3
+% * 2018-10-08: first version inspired from Yoann's Espresso code.
+%
+% *EXAMPLE*
+%
+% _This section contains examples of valid function calls. Note that
+% example lines start with 3 white spaces so that the publish function
+% shows them correctly as matlab code. Example below to replace. Delete
+% these lines XXX._ 
+%
+%   example_use_1; % comment on what this does. XXX
+%   example_use_2: % comment on what this line does. XXX
+%
+% *AUTHOR, AFFILIATION & COPYRIGHT*
+%
+% Alexandre Schimel, Yoann Ladroit, NIWA.
+
+
 %% Function
 function [fData] = CFF_initialize_WC_processing(fData,varargin)
 
@@ -34,8 +99,8 @@ clear p
 %% Source datagram and WC data format
 if isfield(fData,'WC_SBP_SampleAmplitudes')
     datagramSource = 'WC';
-elseif isfield(fData,'WCAP_SBP_SampleAmplitudes')
-    datagramSource = 'WCAP';
+elseif isfield(fData,'AP_SBP_SampleAmplitudes')
+    datagramSource = 'AP';
 end
 
 
@@ -123,7 +188,7 @@ switch method
                 blockPings  = (blocks(iB,1):blocks(iB,2));
                 
                 % get original data in true values
-                data = CFF_get_wc_data(fData,sprintf('%s_SBP_SampleAmplitudes',datagramSource),blockPings,1,1,'true');
+                data = CFF_get_WC_data(fData,sprintf('%s_SBP_SampleAmplitudes',datagramSource),blockPings,1,1,'true');
                 
                 % Add to processed
                 fData.X_SBP_WaterColumnProcessed.Data.val(:,:,blockPings) = data;
@@ -158,7 +223,7 @@ switch method
                 blockPings  = (blocks(iB,1):blocks(iB,2));
                 
                 % get original data in true values
-                data = CFF_get_wc_data(fData,sprintf('%s_SBP_SampleAmplitudes',datagramSource),blockPings,1,1,'true');
+                data = CFF_get_WC_data(fData,sprintf('%s_SBP_SampleAmplitudes',datagramSource),blockPings,1,1,'true');
                 
                 % write
                 fwrite(fid,data,wcdataproc_class);

@@ -1,4 +1,4 @@
-%% CFF_georeference_pings.m
+%% CFF_compute_ping_navigation.m
 %
 % Interpolates navigation data from ancillary sensors to ping time (i.e.
 % Easting, Northing, Height, Grid Convergence, Heading, Speed).
@@ -7,58 +7,68 @@
 %
 % *USE*
 %
+% _This section contains a more detailed description of what the function
+% does and how to use it, for the interested user to have an overall
+% understanding of its function. Example below to replace. Delete these
+% lines XXX._  
+%
 % TODO: write longer description of function
 %
 % *INPUT VARIABLES*
 %
-% * |fData|: FABCdata structure for the storage of EM series multibeam data,
-% as created by convmat2fabc
-%
+% * |fData|: Required. Structure for the storage of kongsberg EM series
+% multibeam data in a format more convenient for processing. The data is
+% recorded as fields coded "a_b_c" where "a" is a code indicating data
+% origing, "b" is a code indicating data dimensions, and "c" is the data
+% name. See the help of function CFF_convert_ALLdata_to_fData.m for
+% description of codes. 
 % * |datagramSource| (optional): 'De', 'SI', 'WC', etc... as the
 % source datagram to use for time/date/pingcounter. If not specified,
 % function will look in order for "De", "X8" or "WC". Returns error if
 % can't find any of these three.
-%
 % * |ellips| (optional): see "CFF_ll2tm.m" for options. If not
 % specified, function will use 'wgs84'
-%
 % * |tmproj| (optional): see "CFF_ll2tm.m" for options. If not
 % specified, function will use the UTM projection for the first position
 % fix location.
-%
 % * |navLat| (optional): navigation latency to introduce, in
 % milliseconds. If not specified, function will use navLat = 0;
 %
 % *OUTPUT VARIABLES*
 %
-% * |fData|: updated FABCdata structure
+% * |fData|: fData structure updated with ping navigation fields
 %
-% *RESEARCH NOTES*
+% *DEVELOPMENT NOTES*
 %
-% new developments needed:
-% this function is to obtain best info on sonar location (E,N,H) and
-% orientation (azimuth, depression, heading) at time of ping. In the
-% future, maybe develop here to accept SBET.
+% * new developments needed: this function is to obtain best info on sonar
+% location (E,N,H) and orientation (azimuth, depression, heading) at time
+% of ping. In the future, maybe develop here to accept SBET.
+% * function formerly named CFF_process_ping.m
 %
 % *NEW FEATURES*
 %
-% * 2018-10-04: Clean up (Alex Schimel)
-% * 2017-10-06: new header update (Alex Schimel).
+% * 2018-10-11: Added speed. Updated header before adding to Coffee v3
+% * 2017-10-06: new header update
 % * 2017-10-06: saving as new version (v2) because change in order of
-% dimensions (Alex Schimel).
+% dimensions
 % * 2014-02-28: first version Code adapted from old processing scripts
-% (Alex Schimel).
 %
 % *EXAMPLE*
 %
-% TODO: write examples
+% _This section contains examples of valid function calls. Note that
+% example lines start with 3 white spaces so that the publish function
+% shows them correctly as matlab code. Example below to replace. Delete
+% these lines XXX._ 
+%
+%   example_use_1; % comment on what this does. XXX
+%   example_use_2: % comment on what this line does. XXX
 %
 % *AUTHOR, AFFILIATION & COPYRIGHT*
 %
-% Alexandre Schimel, University of Waikato, Deakin University, NIWA.
+% Alexandre Schimel, Waikato University, Deakin University, NIWA.
 
 %% Function
-function [fData] = CFF_georeference_pings(fData,varargin)
+function [fData] = CFF_compute_ping_navigation(fData,varargin)
 
 
 %% 1. VARARGIN CHECKS
@@ -140,6 +150,7 @@ end
 posLatitude  = fData.Po_1D_Latitude./20000000; % now in decimal degrees
 posLongitude = fData.Po_1D_Longitude./10000000; % now in decimal degrees
 posHeading   = fData.Po_1D_HeadingOfVessel./100; % now in degrees relative to north
+posSpeed     = fData.Po_1D_SpeedOfVesselOverGround./100; % now in m/s
 posTSMIM     = fData.Po_1D_TimeSinceMidnightInMilliseconds; % in ms
 
 posDate      = datenum(cellfun(@num2str,num2cell(fData.Po_1D_Date),'un',0),'yyyymmdd');
@@ -198,6 +209,7 @@ pingE        = nan(size(pingTSMIM));
 pingN        = nan(size(pingTSMIM));
 pingGridConv = nan(size(pingTSMIM));
 pingHeading  = nan(size(pingTSMIM));
+pingSpeed    = nan(size(pingTSMIM));
 
 % interpolate Easting, Northing, Grid Convergence and Heading at ping times
 for jj = 1:length(pingTSMIM)
@@ -209,18 +221,21 @@ for jj = 1:length(pingTSMIM)
         pingN(jj) = posN(2) + (posN(2)-posN(1)).*(pingSDN(jj)-posSDN(2))./(posSDN(2)-posSDN(1));
         pingGridConv(jj) = posGridConv(2) + (posGridConv(2)-posGridConv(1)).*(pingSDN(jj)-posSDN(2))./(posSDN(2)-posSDN(1));
         pingHeading(jj) = posHeading(2) + (posHeading(2)-posHeading(1)).*(pingSDN(jj)-posSDN(2))./(posSDN(2)-posSDN(1));
+        pingSpeed(jj) = posSpeed(2) + (posSpeed(2)-posSpeed(1)).*(pingTSMIM(jj)-posTSMIM(2))./(posTSMIM(2)-posTSMIM(1));
     elseif A < 0
         % the ping time is more recent than any navigation time, extrapolate from the last items in navigation array.
         pingE(jj) = posE(end) + (posE(end)-posE(end-1)).*(pingSDN(jj)-posSDN(end))./(posSDN(end)-posSDN(end-1));
         pingN(jj) = posN(end) + (posN(end)-posN(end-1)).*(pingSDN(jj)-posSDN(end))./(posSDN(end)-posSDN(end-1));
         pingGridConv(jj) = posGridConv(end) + (posGridConv(end)-posGridConv(end-1)).*(pingSDN(jj)-posSDN(end))./(posSDN(end)-posSDN(end-1));
         pingHeading(jj) = posHeading(end) + (posHeading(end)-posHeading(end-1)).*(pingSDN(jj)-posSDN(end))./(posSDN(end)-posSDN(end-1));
+        pingSpeed(jj) = posSpeed(end) + (posSpeed(end)-posSpeed(end-1)).*(pingTSMIM(jj)-posTSMIM(end))./(posTSMIM(end)-posTSMIM(end-1));
     elseif ~isempty(iA)
         % the ping time corresponds to an existing navigation time, get easting and northing from it.
         pingE(jj) = posE(iA);
         pingN(jj) = posN(iA);
         pingGridConv(jj) = posGridConv(iA);
         pingHeading(jj) = posHeading(iA);
+        pingSpeed(jj) = posSpeed(iA);
     else
         % the ping time is within the limits of the navigation time array but doesn't correspond to any value in it, interpolate from nearest values
         iNegA = find(A<0);
@@ -234,6 +249,7 @@ for jj = 1:length(pingTSMIM)
         pingN(jj) = posN(iA(2)) + (posN(iA(2))-posN(iA(1))).*(pingSDN(jj)-posSDN(iA(2)))./(posSDN(iA(2))-posSDN(iA(1)));
         pingGridConv(jj) = posGridConv(iA(2)) + (posGridConv(iA(2))-posGridConv(iA(1))).*(pingSDN(jj)-posSDN(iA(2)))./(posSDN(iA(2))-posSDN(iA(1)));
         pingHeading(jj) = posHeading(iA(2)) + (posHeading(iA(2))-posHeading(iA(1))).*(pingSDN(jj)-posSDN(iA(2)))./(posSDN(iA(2))-posSDN(iA(1)));
+        pingSpeed(jj) = posSpeed(iA(2)) + (posSpeed(iA(2))-posSpeed(iA(1))).*(pingTSMIM(jj)-posTSMIM(iA(2)))./(posTSMIM(iA(2))-posTSMIM(iA(1)));
     end
 end
 
@@ -292,6 +308,7 @@ fData.X_1P_pingN        = pingN;
 fData.X_1P_pingH        = pingH;
 fData.X_1P_pingGridConv = pingGridConv;
 fData.X_1P_pingHeading  = pingHeading;
+fData.X_P1_pingSpeed    = pingSpeed;
 
 % fData.X_1P_pingAzimuth?
 % fData.X_1P_pingDepression?

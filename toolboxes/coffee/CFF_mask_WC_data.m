@@ -1,55 +1,77 @@
-% [fData] = CFF_mask_WC_data_v2(fData,varargin)
+%% CFF_mask_WC_data.m
 %
-% DESCRIPTION
+% Mask water-column data to remove unwanted samples
 %
-% Create a mask (PBS format) to remove parts of the data
+%% Help
 %
-% INPUT VARIABLES
+% *USE*
 %
-% - varargin{1} "remove_angle": steering angle beyond which outer beams are
-% removed (in deg ref acoustic axis)
-%   - eg: 55 -> angles>55 and <-55 are removed
-%   - inf (default) -> all angles are conserved
+% _This section contains a more detailed description of what the function
+% does and how to use it, for the interested user to have an overall
+% understanding of its function. Example below to replace. Delete these
+% lines XXX._  
 %
-% - varargin{2} "remove_closerange": range from sonar (in m) within which
-% samples are removed
-%   - eg: 4 -> all samples within 4m range from sonar are removed
-%   - 0 (default) -> all samples are conserved
+% This is a text file containing the basic comment template to add at the
+% start of any new ESP3 function to serve as function help. XXX 
 %
-% -varargin{3} "remove_bottomrange": range from bottom (in m) beyond which
+% *INPUT VARIABLES*
+%
+% * |fData|: Required. Structure for the storage of kongsberg EM series
+% multibeam data in a format more convenient for processing. The data is
+% recorded as fields coded "a_b_c" where "a" is a code indicating data
+% origing, "b" is a code indicating data dimensions, and "c" is the data
+% name. See the help of function CFF_convert_ALLdata_to_fData.m for
+% description of codes. 
+% * |remove_angle|: Optional. Steering angle beyond which outer beams are
+% removed (in deg ref acoustic axis). Example: 55 -> angles>55 and <-55 are
+% removed. Default: inf (all angles are conserved).
+% * |remove_closerange|: Optional. Range from sonar (in m) within which
+% samples are removed. Example: 4 -> all samples within 4m range from sonar
+% are removed. Default: 0 (all samples are conserved).
+% * |remove_bottomrange|: Optional. Range from bottom (in m) beyond which
 % samples are removed. Range after bottom if positive, before bottom if
-% negative
-%   - eg: 2 -> all samples 2m AFTER bottom detect and beyond are removed
-%   - eg: -3 -> all samples 3m BEFORE bottom detect and beyond are removed
-%   (therefore including bottom detect)
-%   - inf (default) -> all samples are conserved.
+% negative. Example: 2 -> all samples 2m AFTER bottom detect and beyond are
+% removed. Example: -3 -> all samples 3m BEFORE bottom detect and beyond
+% are removed (therefore including bottom detect). Default: inf (all
+% samples are conserved). 
+% * |mypolygon|: Optional. Horizontal polygon (in Easting, Northing
+% coordinates) outside of which samples are removed. Defualt: [] (all
+% samples are conserved). 
 %
-% - varargin{4} "mypolygon": horizontal polygon (in Easting, Northing
-% coordinates) outside of which samples are removed.
-%   - [] (default) -> all samples are conserved.
+% *OUTPUT VARIABLES*
 %
-% OUTPUT VARIABLES
+% * |fData|: fData structure updated with "X_SBP_WaterColumnProcessed" now
+% masked.
 %
-% - fData
+% *DEVELOPMENT NOTES*
 %
-% RESEARCH NOTES
+% * check that masking uses filtered bottom if it exists, original bottom
+% if not.
 %
-% NEW FEATURES
+% *NEW FEATURES*
 %
+% * 2018-10-11: Updated header before adding to Coffee v3
 % * 2017-10-10: new v2 functions because of dimensions swap (Alex Schimel)
 % - 2016-12-01: Updating bottom range removal after change of bottom
 % processing
 % - 2016-11-07: First version. Code taken from CFF_filter_watercolumn.m
 %
-%%%
-% Alex Schimel, Deakin University
-%%%
-
-% XXX: check that masking uses filtered bottom if it exists, original
-% bottom if not
+% *EXAMPLE*
+%
+% _This section contains examples of valid function calls. Note that
+% example lines start with 3 white spaces so that the publish function
+% shows them correctly as matlab code. Example below to replace. Delete
+% these lines XXX._ 
+%
+%   example_use_1; % comment on what this does. XXX
+%   example_use_2: % comment on what this line does. XXX
+%
+% *AUTHOR, AFFILIATION & COPYRIGHT*
+%
+% Alexandre Schimel, Deakin University, NIWA. Yoann Ladroit, NIWA.
 
 %% Function
-function [fData] = CFF_mask_WC_data_v3(fData,varargin)
+function [fData] = CFF_mask_WC_data(fData,varargin)
 
 
 %% INPUT PARSING
@@ -92,8 +114,8 @@ wcdata_nanval = fData.X_1_WaterColumnProcessed_Nanval;
 % Source datagram
 if isfield(fData,'WC_SBP_SampleAmplitudes')
     datagramSource = 'WC';
-elseif isfield(fData,'WCAP_SBP_SampleAmplitudes')
-    datagramSource = 'WCAP';
+elseif isfield(fData,'AP_SBP_SampleAmplitudes')
+    datagramSource = 'AP';
 end
 
 % inter-sample distance
@@ -215,7 +237,7 @@ for iB = 1:nBlocks
     mask = bsxfun(@and,X_1BP_OuterBeamsMask,(X_SBP_CloseRangeMask & X_SBP_BottomRangeMask & X_SBP_PolygonMask));
     
     % get raw data and apply mask
-    data = CFF_get_wc_data(fData,'X_SBP_WaterColumnProcessed',blockPings,1,1,'raw');
+    data = CFF_get_WC_data(fData,'X_SBP_WaterColumnProcessed',blockPings,1,1,'raw');
     data(~mask) = fData.X_1_WaterColumnProcessed_Nanval;
     
     % saving

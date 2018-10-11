@@ -25,12 +25,12 @@ end
 fData = fData_tot{disp_config.Fdata_idx};
 
 if isfield(fData,'WC_SBP_SampleAmplitudes')
-    start_fmt = 'WC_';
-elseif isfield(fData,'WCAP_SBP_SampleAmplitudes')
-    start_fmt = 'WCAP_';
+    datagramSource = 'WC';
+elseif isfield(fData,'AP_SBP_SampleAmplitudes')
+    datagramSource = 'AP';
 end
 
-if ip > numel(fData.(sprintf('%s1P_PingCounter',start_fmt)))
+if ip > numel(fData.(sprintf('%s_1P_PingCounter',datagramSource)))
     ip = 1;
     disp_config.Iping = 1;
 end
@@ -54,22 +54,22 @@ cax = [cax_min cax_max];
 switch str_disp
     
     case 'Original'
-        amp = CFF_get_wc_data(fData,sprintf('%sSBP_SampleAmplitudes',start_fmt),ip,1,1);
+        amp = CFF_get_WC_data(fData,sprintf('%s_SBP_SampleAmplitudes',datagramSource),ip,1,1);
         idx_keep = amp >= cax(1);
         
     case 'Phase'
-        if isfield(fData,'WCAP_SBP_SamplePhase')
-            amp = CFF_get_wc_data(fData,sprintf('%sSBP_SamplePhase',start_fmt),ip,1,1);
+        if isfield(fData,'AP_SBP_SamplePhase')
+            amp = CFF_get_WC_data(fData,sprintf('%s_SBP_SamplePhase',datagramSource),ip,1,1);
             cax = [-180 180];
             idx_keep = amp ~= 0;
         else
-            amp = CFF_get_wc_data(fData,sprintf('%sSBP_SampleAmplitudes',start_fmt),ip,1,1);
+            amp = CFF_get_WC_data(fData,sprintf('%s_SBP_SampleAmplitudes',datagramSource),ip,1,1);
             set(wc_tab_comp.data_disp,'Value',find(contains(wc_str,'Original')));
             idx_keep = amp >= cax(1);
         end
         
     case 'Processed'
-        amp = CFF_get_wc_data(fData,'X_SBP_WaterColumnProcessed',ip,1,1);
+        amp = CFF_get_WC_data(fData,'X_SBP_WaterColumnProcessed',ip,1,1);
         idx_keep = amp >= cax(1);
         
 end
@@ -77,15 +77,15 @@ end
 s.ID = fData.ID;
 s.ip = ip;
 
-soundSpeed          = fData.(sprintf('%s1P_SoundSpeed',start_fmt)).*0.1; %m/s
-samplingFrequencyHz = fData.(sprintf('%s1P_SamplingFrequencyHz',start_fmt)); %Hz
+soundSpeed          = fData.(sprintf('%s_1P_SoundSpeed',datagramSource)).*0.1; %m/s
+samplingFrequencyHz = fData.(sprintf('%s_1P_SamplingFrequencyHz',datagramSource)); %Hz
 dr_samples = soundSpeed./(samplingFrequencyHz.*2);
 
 [nsamples,~] = size(amp);
 
 % get distances across and upwards for XXX?
-sampleRange = CFF_get_samples_range((1:nsamples)',fData.(sprintf('%sBP_StartRangeSampleNumber',start_fmt))(:,ip),dr_samples(ip));
-[sampleAcrossDist,sampleUpDist] = CFF_get_samples_dist(sampleRange,fData.(sprintf('%sBP_BeamPointingAngle',start_fmt))(:,ip)/100/180*pi);
+sampleRange = CFF_get_samples_range((1:nsamples)',fData.(sprintf('%s_BP_StartRangeSampleNumber',datagramSource))(:,ip),dr_samples(ip));
+[sampleAcrossDist,sampleUpDist] = CFF_get_samples_dist(sampleRange,fData.(sprintf('%s_BP_BeamPointingAngle',datagramSource))(:,ip)/100/180*pi);
 
 
 if isfield(fData,'X_BP_bottomEasting')
@@ -96,7 +96,7 @@ end
 
 fname = fData.ALLfilename{1};
 [~,fnamet,~] = fileparts(fname);
-tt = sprintf('File: %s Ping # %.0f/%.0f Time: %s',fnamet,ip,numel(fData.(sprintf('%s1P_PingCounter',start_fmt))),datestr(fData.X_1P_pingSDN(ip),'HH:MM:SS'));
+tt = sprintf('File: %s Ping # %.0f/%.0f Time: %s',fnamet,ip,numel(fData.(sprintf('%s_1P_PingCounter',datagramSource))),datestr(fData.X_1P_pingSDN(ip),'HH:MM:SS'));
 
 xlim = [-max(abs(sampleAcrossDist(idx_keep))) max(abs(sampleAcrossDist(idx_keep)))];
 ylim = [min(nanmin(fData.X_BP_bottomUpDist(:,ip)),nanmin(sampleUpDist(idx_keep))) 0];

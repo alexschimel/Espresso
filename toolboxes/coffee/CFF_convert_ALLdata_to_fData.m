@@ -1,20 +1,16 @@
-%% CFF_convert_struct_to_fabc_v2.m
+%% CFF_convert_ALLdata_to_fData.m
 %
-% Converts the Kongsberg EM series data files in MAT format (containing the
-% KONGSBERG datagrams) to the FABC format for use in processing.
-%
-% Note: v2 has a few major changes including change in order of dimensions
-%
-% Based on CFF_convert_mat_to_fabc_v2
+% Converts the Kongsberg EM series data files in ALLdata format (containing
+% the KONGSBERG datagrams) to the fData format used in processing.
 %
 %% Help
 %
 % *USE*
 %
-% fData = CFF_convert_struct_to_fabc_v2(ALLdata) converts the contents of
+% fData = CFF_convert_ALLdata_to_fData(ALLdata) converts the contents of
 % one ALLdata structure to a structure in the fData format.
-
-% fData = CFF_convert_struct_to_fabc_v2({ALLdata;WCDdata}) converts two
+%
+% fData = CFF_convert_ALLdata_to_fData({ALLdata;WCDdata}) converts two
 % ALLdata structures into one fData sructure. While many more structures
 % can thus be loaded, this is typically done because ALLdata structures
 % exist on a per-file basis and Kongsberg raw data often come in pairs of
@@ -27,12 +23,12 @@
 % structures from different acquisition files. It will not work. Convert
 % each into its own fData structure.
 %
-% fData = CFF_convert_struct_to_fabc_v2(ALLdata,10,2) operates the
-% converstion with sub-sampling in range and in beams. For example, to
+% fData = CFF_convert_ALLdata_to_fData(ALLdata,10,2) operates the
+% conversion with sub-sampling in range and in beams. For example, to
 % sub-sample range by a factor of 10 and beams by a factor of 2, use fData
-% = CFF_convert_struct_to_fabc_v2(ALLdata,10,2).
+% = CFF_convert_ALLdata_to_fData(ALLdata,10,2).
 %
-% [fData,update_flag] = CFF_convert_struct_to_fabc_v2(ALLdata,1,1,fData);
+% [fData,update_flag] = CFF_convert_ALLdata_to_fData(ALLdata,1,1,fData);
 % takes the result of a precedent conversion in input to allow potentially
 % saving time. The function will start by loading the result of the
 % precedent conversion, check that what you're trying to add to it comes
@@ -45,17 +41,20 @@
 %
 % *INPUT VARIABLES*
 %
-% REQUIRED:
-% * |ALLdataGroup|: ALLdata structure or cells of ALLdata structures.
-%
-% OPTIONAL:
-% * to write XXX
+% * |ALLdataGroup|: Required. ALLdata structure or cells of ALLdata
+% structures. 
+% * |dr_sub|: Optional. Scalar for decimation in range. Default: 1 (no
+% decimation). 
+% * |db_sub|: Optional. Scalar for decimation in beams. Default: 1 (no
+% decimation). 
+% * |fData|: Optional. Existing fData structure to add to. 
 %
 % *OUTPUT VARIABLES*
 %
-% * |FABCdata|: structure for the storage of data in a format easier to use
-% than the EM datagrams. The data is recorded as fields coded "a_b_c" of
-% the structure "FABCdata", and accessible as FABCdata.a_b_c, where:
+% * |fData|: structure for the storage of kongsberg EM series multibeam
+% data in a format more convenient for processing. The data is recorded as
+% fields coded "a_b_c" where "a" is a code indicating data origing, "b" is
+% a code indicating data dimensions, and "c" is the data name.
 %     * a: code indicating data origin:
 %         * IP: installation parameters
 %         * Ru: Runtime Parameters
@@ -68,10 +67,10 @@
 %         * Po: position datagram
 %         * At: attitude datagram
 %         * SS: sound speed profile datagram
+%         * AP: "Amplitude and phase" water-column data
 %     More codes for the 'a' part will be created if more datagrams are
-%     parsed. As further codes work with the data contained in FABC
-%     structure, these derived data can be recorded back into the FABC,
-%     with the 'a' code set to 'X'.
+%     parsed. Data derived from computations can be recorded back into
+%     fData using 'X' for the "a" code. 
 %     * b: code indicating data dimensions (rows/columns)
 %         * 1P: ping-like single-row-vector
 %         * B1: beam-like single-column-vector
@@ -85,10 +84,8 @@
 %         position data)
 %         * SBP: sample/beam/ping array (water-column data)
 %     More codes for the 'b' part will be created if the storage of other
-%     datagrams needs them. As subsequent functions work with the data
-%     contained in FABC structure to generate derived data, these derived
-%     data can be recorded with other dimensions types. They are not listed
-%     fully here but they may include:
+%     datagrams needs them. Data derived from computations can be recorded
+%     back into fData using appropriate "b" codes such as:
 %         * RP: range (choose distance, time or sample) / ping
 %         * SP: swathe (meters) / ping
 %         * LL: lat/long (WGS84)
@@ -99,42 +96,29 @@
 %     * c: data type, obtained from the original variable name in the
 %     Kongsberg datagram, or from the user's imagination for derived data
 %     obtained from subsequent functions.
+% * |update_flag|: 1 if a fData was given in input and was modified with
+% this function
 %
 % *DEVELOPMENT NOTES*
 %
-% * FOR NOW, PARSING DIFFERENT FILES DO NOT APPEND DATA TO EXISTING
-% FIELDS. ONLY NEW DATAGRAMS ARE COPIED. So if file 1 has Depth datagrams,
-% and file 2 has depth and watercolumn datagrams, the function will save
-% all datagrams in file 1 first (aka, Depth), and then IGNORE THE DEPTH
-% DATAGRAMS IN THE SECOND FILE, only recording the water-column one. This
-% is because I could not be bothered having to test for redundant dagrams
-% in both files. In theory, this code is to use on a single file only, with
-% the option to load several files being only used to load data from a .all
-% file and its corresponding .wcd file.
-%
+% * only water column data can be subsampled, all other datagrams are
+% converted in full. To be consistent, develop code to subsample all
+% datagrams as desired in parameters. Add a subsampling in pings while
+% you're at it.
 % * Have not tested the loading of data from 'EM_Depth' and
 % 'EM_SeabedImage' in the new format version (v2). Might need debugging.
-%
-% * only water column data is subsampled, all other
-% datagrams are converted in full. To be consistent, develop code to
-% subsample all datagrams as desired in parameters. Add a subsampling in
-% pings while you're at it.
+% * Since v2, a few major changes including change in order of dimensions.
+% * Based on CFF_convert_mat_to_fabc_v2
 %
 % *NEW FEATURES*
 %
+% * 2018-10-11: updated header before adding to Coffee v3
 % * 2018-10-09: started adding runtime params
-% * 2017-10-06: remove the possibility to load FABCdata as a matfile. Was
-% too slow (Alex Schimel)
 % * 2017-10-04: complete re-ordering of dimensions, no backward
-% compatibility so saving as a new function (v2) (Alex Schimel).
-% * 2017-09-28: revamped code to allow loading data in a matfile, rather
-% than in memory, as possible fix for large-memory files. Still to be fully
-% tested (see research notes) (Alex Schimel).
 % * 2017-09-28: updated header to new format, and updated contents, in
-% preparation for revamping to handle large water-column data (Alex
-% Schimel).
+% preparation for revamping to handle large water-column data
 % * 2014-04-28: Fixed watercolumn data parsing for when some
-% datagrams are missing. height datagram supported (Alex Schimel).
+% datagrams are missing. height datagram supported
 % * ????-??-??: Added support for XYZ88, seabed image 89 and WC
 % * ????-??-??: Splitted seabed image samples per beam. Still not sorted
 % * ????-??-??: Made all types of datagram optional
@@ -150,15 +134,15 @@
 % info = CFF_all_file_info(ALLfilename);
 % info.parsed(:)=1; % to save all the datagrams
 % ALLdata = CFF_read_all_from_fileinfo(ALLfilename, info);
-% FABCdata = CFF_convert_struct_to_fabc_v2(ALLdata);
+% fData = CFF_convert_ALLdata_to_fData(ALLdata);
 %
 % *AUTHOR, AFFILIATION & COPYRIGHT*
 %
 % Alexandre Schimel,Deakin University, NIWA.
 % Yoann Ladroit, NIWA.
-%
+
 %% Function
-function [fData,update_flag] = CFF_convert_struct_to_fabc_v2(ALLdataGroup,varargin)
+function [fData,update_flag] = CFF_convert_ALLdata_to_fData(ALLdataGroup,varargin)
 
 %% input parsing
 
@@ -882,7 +866,7 @@ for iF = 1:nStruct
     if isfield(ALLdata,'EM_AmpPhase')
         
         % only convert these datagrams if this type doesn't already exist in output
-        if ~isfield(fData,'WCAP_1P_Date') || fData.dr_sub~=dr_sub || fData.db_sub~=db_sub
+        if ~isfield(fData,'AP_1P_Date') || fData.dr_sub~=dr_sub || fData.db_sub~=db_sub
             
             if update_mode
                 update_flag = 1;
@@ -902,35 +886,35 @@ for iF = 1:nStruct
             maxNSamples_sub     = ceil(maxNSamples/dr_sub); % number of samples to extract
             
             % read data per ping from first datagram of each ping
-            fData.WCAP_1P_Date                            = ALLdata.EM_AmpPhase.Date(iFirstDatagram);
-            fData.WCAP_1P_TimeSinceMidnightInMilliseconds = ALLdata.EM_AmpPhase.TimeSinceMidnightInMilliseconds(iFirstDatagram);
-            fData.WCAP_1P_PingCounter                     = ALLdata.EM_AmpPhase.PingCounter(iFirstDatagram);
-            fData.WCAP_1P_NumberOfDatagrams               = ALLdata.EM_AmpPhase.NumberOfDatagrams(iFirstDatagram);
-            fData.WCAP_1P_NumberOfTransmitSectors         = ALLdata.EM_AmpPhase.NumberOfTransmitSectors(iFirstDatagram);
-            fData.WCAP_1P_TotalNumberOfReceiveBeams       = ALLdata.EM_AmpPhase.TotalNumberOfReceiveBeams(iFirstDatagram);
-            fData.WCAP_1P_SoundSpeed                      = ALLdata.EM_AmpPhase.SoundSpeed(iFirstDatagram);
-            fData.WCAP_1P_SamplingFrequencyHz             = (ALLdata.EM_AmpPhase.SamplingFrequency(iFirstDatagram).*0.01)./dr_sub; % in Hz
-            fData.WCAP_1P_TXTimeHeave                     = ALLdata.EM_AmpPhase.TXTimeHeave(iFirstDatagram);
-            fData.WCAP_1P_TVGFunctionApplied              = ALLdata.EM_AmpPhase.TVGFunctionApplied(iFirstDatagram);
-            fData.WCAP_1P_TVGOffset                       = ALLdata.EM_AmpPhase.TVGOffset(iFirstDatagram);
-            fData.WCAP_1P_ScanningInfo                    = ALLdata.EM_AmpPhase.ScanningInfo(iFirstDatagram);
+            fData.AP_1P_Date                            = ALLdata.EM_AmpPhase.Date(iFirstDatagram);
+            fData.AP_1P_TimeSinceMidnightInMilliseconds = ALLdata.EM_AmpPhase.TimeSinceMidnightInMilliseconds(iFirstDatagram);
+            fData.AP_1P_PingCounter                     = ALLdata.EM_AmpPhase.PingCounter(iFirstDatagram);
+            fData.AP_1P_NumberOfDatagrams               = ALLdata.EM_AmpPhase.NumberOfDatagrams(iFirstDatagram);
+            fData.AP_1P_NumberOfTransmitSectors         = ALLdata.EM_AmpPhase.NumberOfTransmitSectors(iFirstDatagram);
+            fData.AP_1P_TotalNumberOfReceiveBeams       = ALLdata.EM_AmpPhase.TotalNumberOfReceiveBeams(iFirstDatagram);
+            fData.AP_1P_SoundSpeed                      = ALLdata.EM_AmpPhase.SoundSpeed(iFirstDatagram);
+            fData.AP_1P_SamplingFrequencyHz             = (ALLdata.EM_AmpPhase.SamplingFrequency(iFirstDatagram).*0.01)./dr_sub; % in Hz
+            fData.AP_1P_TXTimeHeave                     = ALLdata.EM_AmpPhase.TXTimeHeave(iFirstDatagram);
+            fData.AP_1P_TVGFunctionApplied              = ALLdata.EM_AmpPhase.TVGFunctionApplied(iFirstDatagram);
+            fData.AP_1P_TVGOffset                       = ALLdata.EM_AmpPhase.TVGOffset(iFirstDatagram);
+            fData.AP_1P_ScanningInfo                    = ALLdata.EM_AmpPhase.ScanningInfo(iFirstDatagram);
             
             % initialize data per transmit sector and ping
-            fData.WCAP_TP_TiltAngle            = nan(maxNTransmitSectors,nPings);
-            fData.WCAP_TP_CenterFrequency      = nan(maxNTransmitSectors,nPings);
-            fData.WCAP_TP_TransmitSectorNumber = nan(maxNTransmitSectors,nPings);
+            fData.AP_TP_TiltAngle            = nan(maxNTransmitSectors,nPings);
+            fData.AP_TP_CenterFrequency      = nan(maxNTransmitSectors,nPings);
+            fData.AP_TP_TransmitSectorNumber = nan(maxNTransmitSectors,nPings);
             
             % initialize data per decimated beam and ping
-            fData.WCAP_BP_BeamPointingAngle      = nan(maxNBeams_sub,nPings);
-            fData.WCAP_BP_StartRangeSampleNumber = nan(maxNBeams_sub,nPings);
-            fData.WCAP_BP_NumberOfSamples        = nan(maxNBeams_sub,nPings);
-            fData.WCAP_BP_DetectedRangeInSamples = zeros(maxNBeams_sub,nPings);
-            fData.WCAP_BP_TransmitSectorNumber   = nan(maxNBeams_sub,nPings);
-            fData.WCAP_BP_BeamNumber             = nan(maxNBeams_sub,nPings);
+            fData.AP_BP_BeamPointingAngle      = nan(maxNBeams_sub,nPings);
+            fData.AP_BP_StartRangeSampleNumber = nan(maxNBeams_sub,nPings);
+            fData.AP_BP_NumberOfSamples        = nan(maxNBeams_sub,nPings);
+            fData.AP_BP_DetectedRangeInSamples = zeros(maxNBeams_sub,nPings);
+            fData.AP_BP_TransmitSectorNumber   = nan(maxNBeams_sub,nPings);
+            fData.AP_BP_BeamNumber             = nan(maxNBeams_sub,nPings);
             
             % path to binary file for WC data
-            file_amp_binary   = fullfile(wc_dir,'WCAP_SBP_SampleAmplitudes.dat');
-            file_phase_binary = fullfile(wc_dir,'WCAP_SBP_SamplePhase.dat');
+            file_amp_binary   = fullfile(wc_dir,'AP_SBP_SampleAmplitudes.dat');
+            file_phase_binary = fullfile(wc_dir,'AP_SBP_SamplePhase.dat');
             
             % if file does not exist or we're re-sampling it, create a new
             % one ready for writing
@@ -955,8 +939,8 @@ for iF = 1:nStruct
             for iP = 1:nPings
                 
                 % find datagrams composing this ping
-                pingCounter = fData.WCAP_1P_PingCounter(1,iP); % ping number (ex: 50455)
-                % nDatagrams  = fData.WCAP_1P_NumberOfDatagrams(1,iP); % theoretical number of datagrams for this ping (ex: 7)
+                pingCounter = fData.AP_1P_PingCounter(1,iP); % ping number (ex: 50455)
+                % nDatagrams  = fData.AP_1P_NumberOfDatagrams(1,iP); % theoretical number of datagrams for this ping (ex: 7)
                 iDatagrams  = find(ALLdata.EM_AmpPhase.PingCounter==pingCounter); % index of the datagrams making up this ping in ALLdata.EM_AmpPhase (ex: 58-59-61-64)
                 nDatagrams  = length(iDatagrams); % actual number of datagrams available (ex: 4)
                 
@@ -967,10 +951,10 @@ for iF = 1:nStruct
                 nBeamsPerDatagram = ALLdata.EM_AmpPhase.NumberOfBeamsInThisDatagram(iDatagrams); % number of beams in each datagram making up this ping (ex: 56-61-53-28)
                 
                 % assuming transmit sectors data are not split between several datagrams, get that data from the first datagram.
-                nTransmitSectors = fData.WCAP_1P_NumberOfTransmitSectors(1,iP); % number of transmit sectors in this ping
-                fData.WCAP_TP_TiltAngle(1:nTransmitSectors,iP)            = ALLdata.EM_AmpPhase.TiltAngle{iDatagrams(1)};
-                fData.WCAP_TP_CenterFrequency(1:nTransmitSectors,iP)      = ALLdata.EM_AmpPhase.CenterFrequency{iDatagrams(1)};
-                fData.WCAP_TP_TransmitSectorNumber(1:nTransmitSectors,iP) = ALLdata.EM_AmpPhase.TransmitSectorNumber{iDatagrams(1)};
+                nTransmitSectors = fData.AP_1P_NumberOfTransmitSectors(1,iP); % number of transmit sectors in this ping
+                fData.AP_TP_TiltAngle(1:nTransmitSectors,iP)            = ALLdata.EM_AmpPhase.TiltAngle{iDatagrams(1)};
+                fData.AP_TP_CenterFrequency(1:nTransmitSectors,iP)      = ALLdata.EM_AmpPhase.CenterFrequency{iDatagrams(1)};
+                fData.AP_TP_TransmitSectorNumber(1:nTransmitSectors,iP) = ALLdata.EM_AmpPhase.TransmitSectorNumber{iDatagrams(1)};
                 
                 % initialize the water column data matrix for that ping.
                 if file_amp_id >= 0 || file_phase_id >= 0
@@ -988,12 +972,12 @@ for iF = 1:nStruct
                     % idx_beams = (1:numel(iBeams));
                     
                     % ping x beam data
-                    fData.WCAP_BP_BeamPointingAngle(iBeams,iP)      = ALLdata.EM_AmpPhase.BeamPointingAngle{iDatagrams(iD)}(idx_beams);
-                    fData.WCAP_BP_StartRangeSampleNumber(iBeams,iP) = round(ALLdata.EM_AmpPhase.StartRangeSampleNumber{iDatagrams(iD)}(idx_beams)./dr_sub);
-                    fData.WCAP_BP_NumberOfSamples(iBeams,iP)        = round(ALLdata.EM_AmpPhase.NumberOfSamples{iDatagrams(iD)}(idx_beams)./dr_sub);
-                    fData.WCAP_BP_DetectedRangeInSamples(iBeams,iP) = round(ALLdata.EM_AmpPhase.DetectedRangeInSamples{iDatagrams(iD)}(idx_beams)./dr_sub);
-                    fData.WCAP_BP_TransmitSectorNumber(iBeams,iP)   = ALLdata.EM_AmpPhase.TransmitSectorNumber2{iDatagrams(iD)}(idx_beams);
-                    fData.WCAP_BP_BeamNumber(iBeams,iP)             = ALLdata.EM_AmpPhase.BeamNumber{iDatagrams(iD)}(idx_beams);
+                    fData.AP_BP_BeamPointingAngle(iBeams,iP)      = ALLdata.EM_AmpPhase.BeamPointingAngle{iDatagrams(iD)}(idx_beams);
+                    fData.AP_BP_StartRangeSampleNumber(iBeams,iP) = round(ALLdata.EM_AmpPhase.StartRangeSampleNumber{iDatagrams(iD)}(idx_beams)./dr_sub);
+                    fData.AP_BP_NumberOfSamples(iBeams,iP)        = round(ALLdata.EM_AmpPhase.NumberOfSamples{iDatagrams(iD)}(idx_beams)./dr_sub);
+                    fData.AP_BP_DetectedRangeInSamples(iBeams,iP) = round(ALLdata.EM_AmpPhase.DetectedRangeInSamples{iDatagrams(iD)}(idx_beams)./dr_sub);
+                    fData.AP_BP_TransmitSectorNumber(iBeams,iP)   = ALLdata.EM_AmpPhase.TransmitSectorNumber2{iDatagrams(iD)}(idx_beams);
+                    fData.AP_BP_BeamNumber(iBeams,iP)             = ALLdata.EM_AmpPhase.BeamNumber{iDatagrams(iD)}(idx_beams);
                     
                     % now getting watercolumn data (beams x samples)
                     if file_amp_id >= 0 || file_phase_id >= 0
@@ -1045,16 +1029,16 @@ for iF = 1:nStruct
             end
             
             % and link to them through memmapfile
-            fData.WCAP_SBP_SampleAmplitudes = memmapfile(file_amp_binary,'Format',{'int16' [maxNSamples_sub maxNBeams_sub nPings] 'val'},'repeat',1,'writable',true);
-            fData.WCAP_SBP_SamplePhase      = memmapfile(file_phase_binary,'Format',{'int16' [maxNSamples_sub maxNBeams_sub nPings] 'val'},'repeat',1,'writable',true);
+            fData.AP_SBP_SampleAmplitudes = memmapfile(file_amp_binary,'Format',{'int16' [maxNSamples_sub maxNBeams_sub nPings] 'val'},'repeat',1,'writable',true);
+            fData.AP_SBP_SamplePhase      = memmapfile(file_phase_binary,'Format',{'int16' [maxNSamples_sub maxNBeams_sub nPings] 'val'},'repeat',1,'writable',true);
             
             % save info about data format for later access
-            fData.WCAP_1_SampleAmplitudes_Class  = 'int16';
-            fData.WCAP_1_SampleAmplitudes_Nanval = int16(-inf);
-            fData.WCAP_1_SampleAmplitudes_Factor = 1/40;
-            fData.WCAP_1_SamplePhase_Class  = 'int16';
-            fData.WCAP_1_SamplePhase_Nanval = 0;
-            fData.WCAP_1_SamplePhase_Factor = 1/30;
+            fData.AP_1_SampleAmplitudes_Class  = 'int16';
+            fData.AP_1_SampleAmplitudes_Nanval = int16(-inf);
+            fData.AP_1_SampleAmplitudes_Factor = 1/40;
+            fData.AP_1_SamplePhase_Class  = 'int16';
+            fData.AP_1_SamplePhase_Nanval = 0;
+            fData.AP_1_SamplePhase_Factor = 1/30;
             
         end
         

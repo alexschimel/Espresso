@@ -1,4 +1,81 @@
-function fData = CFF_grid_watercolumn_v3(fData,varargin)
+%% CFF_grid_WC_data.m
+%
+% _This section contains a very short description of the function, for the
+% user to know this function is part of the software and what it does for
+% it. Example below to replace. Delete these lines XXX._ 
+%
+% Template of ESP3 function header. XXX
+%
+%% Help
+%
+% *USE*
+%
+% _This section contains a more detailed description of what the function
+% does and how to use it, for the interested user to have an overall
+% understanding of its function. Example below to replace. Delete these
+% lines XXX._  
+%
+% This is a text file containing the basic comment template to add at the
+% start of any new ESP3 function to serve as function help. XXX 
+%
+% *INPUT VARIABLES*
+%
+% _This section contains bullet points of input variables with description
+% and information. Put input variable and other valid entries or defaults
+% between | symbols so it shows as monospace. Information section to
+% contain, in order: requirement (i.e. Required/Optional/Paramter), valid
+% type (e.g. Num, Positive num, char, 1xN cell array, etc.) and default
+% value if there is one (e.g. Default: '10'). Example below to replace.
+% Delete these lines XXX._
+% 
+% * |fData|: Required. Structure for the storage of kongsberg EM series
+% multibeam data in a format more convenient for processing. The data is
+% recorded as fields coded "a_b_c" where "a" is a code indicating data
+% origing, "b" is a code indicating data dimensions, and "c" is the data
+% name. See the help of function CFF_convert_ALLdata_to_fData.m for
+% description of codes. 
+% * |res|: Description (Information). Default: 1 XXX
+% * |vert_res|: Description (Information). Default: 1 XXX
+% * |dim|: Description (Information). '2D' or '3D' (default) XXX
+% * |dr_sub|: Description (Information). Default: 4 XXX
+% * |db_sub|: Description (Information). Default: 2 XXX
+% * |e_lim|: Description (Information). Default: [] XXX
+% * |n_lim|: Description (Information). Default: [] XXX
+%
+% *OUTPUT VARIABLES*
+%
+% * |fData|: fData structure updated with fields for gridded data
+%
+% *DEVELOPMENT NOTES*
+%
+% * function formerly named CFF_grid_watercolumn.m
+%
+% *NEW FEATURES*
+%
+% _This section contains dates and descriptions of major updates. Example
+% below to replace. Delete these lines XXX._
+%
+% * 2018-10-11: Updated header before adding to Coffee v3
+% * YYYY-MM-DD: first version. XXX
+%
+% *EXAMPLE*
+%
+% _This section contains examples of valid function calls. Note that
+% example lines start with 3 white spaces so that the publish function
+% shows them correctly as matlab code. Example below to replace. Delete
+% these lines XXX._ 
+%
+%   example_use_1; % comment on what this does. XXX
+%   example_use_2: % comment on what this line does. XXX
+%
+% *AUTHOR, AFFILIATION & COPYRIGHT*
+%
+% Alexandre Schimel, Deakin University, NIWA. 
+% Yoann Ladroit, NIWA.
+
+
+%% Function
+function fData = CFF_grid_WC_data(fData,varargin)
 
 % XXX: check that gridding uses processed data if it exists, original data
 % if not (instead of using the checkboxes)
@@ -35,31 +112,30 @@ db_sub    = p.Results.db_sub;
 [nSamples, nBeams, nPings] = size(fData.X_SBP_WaterColumnProcessed.Data.val);
 
 
-%% Prep
+%% Prepare needed 1xP data
 
 % Source datagram
 if isfield(fData,'WC_SBP_SampleAmplitudes')
     datagramSource = 'WC';
-elseif isfield(fData,'WCAP_SBP_SampleAmplitudes')
-    datagramSource = 'WCAP';
+elseif isfield(fData,'AP_SBP_SampleAmplitudes')
+    datagramSource = 'AP';
 end
 
 % inter-sample distance
-soundSpeed          = fData.(sprintf('%s_1P_SoundSpeed',datagramSource)).*0.1; %m/s
-samplingFrequencyHz = fData.(sprintf('%s_1P_SamplingFrequencyHz',datagramSource)); %Hz
-dr_samples = soundSpeed./(samplingFrequencyHz.*2);
+soundSpeed           = fData.(sprintf('%s_1P_SoundSpeed',datagramSource)).*0.1; %m/s
+samplingFrequencyHz  = fData.(sprintf('%s_1P_SamplingFrequencyHz',datagramSource)); %Hz
+interSamplesDistance = soundSpeed./(samplingFrequencyHz.*2); % in m
 
 % sonar location
-sonarH = fData.X_1P_pingH; %m
-sonarE = fData.X_1P_pingE; %m
-sonarN = fData.X_1P_pingN; %m
+sonarEasting  = fData.X_1P_pingE; %m
+sonarNorthing = fData.X_1P_pingN; %m
+sonarHeight   = fData.X_1P_pingH; %m
 
-% heading
-% XXX wait, wasn't that done with georeferencing pings already?
-gridConvergenceDeg    = fData.X_1P_pingGridConv; %deg
-vesselHeadingDeg      = fData.X_1P_pingHeading; %deg
-sonarHeadingOffsetDeg = fData.IP_ASCIIparameters.S1H; %deg
-heading = - mod( gridConvergenceDeg + vesselHeadingDeg + sonarHeadingOffsetDeg, 360 )/180*pi;
+% sonar heading
+gridConvergence    = fData.X_1P_pingGridConv; %deg
+vesselHeading      = fData.X_1P_pingHeading; %deg
+sonarHeadingOffset = fData.IP_ASCIIparameters.S1H; %deg
+sonarHeading       = deg2rad(-mod(gridConvergence + vesselHeading + sonarHeadingOffset,360));
 
 
 %% block processing setup
@@ -87,13 +163,17 @@ for iB = 1:nBlocks
     % list of pings in this block
     blockPings = blocks(iB,1):blocks(iB,2);
     
-    % Get easting, northing and height of the first and last samples in the
-    % outer beams and the central beam, for all pings in that block (aka
-    % 2x3xblockLength matrices).
-    sampleRange                     = CFF_get_samples_range([1 nSamples]',fData.(sprintf('%s_BP_StartRangeSampleNumber',datagramSource))([1 round(nBeams./2) nBeams],blockPings),dr_samples(blockPings));
-    [sampleAcrossDist,sampleUpDist] = CFF_get_samples_dist(sampleRange,fData.(sprintf('%s_BP_BeamPointingAngle',datagramSource))([1 round(nBeams./2) nBeams],blockPings)/100/180*pi);    
-    [blockE,blockN,blockH]          = CFF_get_samples_ENH( sonarE(blockPings), sonarN(blockPings), sonarH(blockPings), heading(blockPings), sampleAcrossDist, sampleUpDist );
+    % Sx1 vector of samples number (first and last samples only) and BxP
+    % arrays of start sample number and beam pointing angle (outer beams
+    % and central beam, for ping block, only)
+    idxSamples = [1 nSamples]';
+    startSampleNumber = fData.(sprintf('%s_BP_StartRangeSampleNumber',datagramSource))([1 round(nBeams./2) nBeams],blockPings);
+    beamPointingAngle = deg2rad(fData.(sprintf('%s_BP_BeamPointingAngle',datagramSource))([1 round(nBeams./2) nBeams],blockPings)/100);
     
+    % Get easting, northing and height
+    [blockE, blockN, blockH] = CFF_georeference_sample(idxSamples, startSampleNumber, interSamplesDistance(blockPings), beamPointingAngle, ...
+        sonarEasting(blockPings), sonarNorthing(blockPings), sonarHeight(blockPings), sonarHeading(blockPings));
+
     % these subset of all samples should be enough to find the bounds for the entire block
     minBlockE(iB) = min(blockE(:));
     maxBlockE(iB) = max(blockE(:));
@@ -148,14 +228,19 @@ for iB = 1:nBlocks
     % list of pings in this block
     blockPings  = blocks(iB,1):blocks(iB,2);
     
-    % Get easting, northing and height of all desired samples
-    idx_samples = (1:dr_sub:nSamples)';
-    sampleRange                     = CFF_get_samples_range(idx_samples,fData.(sprintf('%s_BP_StartRangeSampleNumber',datagramSource))(1:db_sub:end,blockPings),dr_samples(blockPings));
-    [sampleAcrossDist,sampleUpDist] = CFF_get_samples_dist(sampleRange,fData.(sprintf('%s_BP_BeamPointingAngle',datagramSource))(1:db_sub:end,blockPings)/100/180*pi);
-    [blockE,blockN,blockH]          = CFF_get_samples_ENH( sonarE(blockPings), sonarN(blockPings), sonarH(blockPings), heading(blockPings), sampleAcrossDist,sampleUpDist );
+    % Sx1 vector of (decimated) samples number and (beam-decimated) BxP
+    % arrays of start sample number and beam pointing angle (for ping
+    % block, only)
+    idxSamples = (1:dr_sub:nSamples)';
+    startSampleNumber = fData.(sprintf('%s_BP_StartRangeSampleNumber',datagramSource))(1:db_sub:end,blockPings);
+    beamPointingAngle = deg2rad(fData.(sprintf('%s_BP_BeamPointingAngle',datagramSource))(1:db_sub:end,blockPings)/100);
     
+    % Get easting, northing and height
+    [blockE, blockN, blockH] = CFF_georeference_sample(idxSamples, startSampleNumber, interSamplesDistance(blockPings), beamPointingAngle, ...
+        sonarEasting(blockPings), sonarNorthing(blockPings), sonarHeight(blockPings), sonarHeading(blockPings));
+
     % get data to grid
-    blockL = CFF_get_wc_data(fData,'X_SBP_WaterColumnProcessed',blockPings,dr_sub,db_sub,'true');
+    blockL = CFF_get_WC_data(fData,'X_SBP_WaterColumnProcessed',blockPings,dr_sub,db_sub,'true');
     
     % remove nans:
     indNan = isnan(blockL);

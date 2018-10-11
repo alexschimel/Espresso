@@ -1,4 +1,4 @@
-function varargout = CFF_subdir(varargin)
+function varargout = subdir(varargin)
 %SUBDIR Performs a recursive file search
 %
 % subdir

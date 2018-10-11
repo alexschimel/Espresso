@@ -13,27 +13,34 @@
 %
 % *INPUT VARIABLES*
 %
-% REQUIRED:
-% * |ALLfilename|: string filename to parse (extension in .all or .wcd)
-%
-% * |ALLfileinfo|: structure containing informaton about datagrams in
-% ALLfilename, as outputted by CFF_all_file_info.m. It contains fields:
-%   * |ALLfilename|: input file name
-%   * |filesize|: file size in bytes
-%   * |datagsizeformat|: endianness of the datagram size field 'b' or 'l'
-%   * |datagramsformat|: endianness of the datagrams 'b' or 'l'
-%   * |datagNumberInFile|: number of datagram in file
-%   * |datagPositionInFile|: position of beginning of datagram in file
-%   * |datagTypeNumber|: for each datagram, SIMRAD datagram type in decimal
-%   * |datagTypeText|: for each datagram, SIMRAD datagram type description
-%   * |parsed|: for each datagram, 1 if datagram has been parsed (or is to be parsed), 0 otherwise
-%   * |counter|: the counter of this type of datagram in the file (ie first datagram of that type is 1 and last datagram is the total number of datagrams of that type)
-%   * |number|: the number/counter found in the datagram (usually different to counter)
-%   * |size|: for each datagram, datagram size in bytes
-%   * |syncCounter|: for each datagram, the number of bytes founds between this datagram and the previous one (any number different than zero indicates a sync error)
-%   * |emNumber|: EM Model number (eg 2045 for EM2040c)
-%   * |date|: datagram date in YYYMMDD
-%   * |timeSinceMidnightInMilliseconds|: time since midnight in msecs
+% * |ALLfilename|: Required. String filename to parse (extension in .all or
+% .wcd). 
+% * |ALLfileinfo|: structure containing information about datagrams in
+% ALLfilename, with fields:  
+%     * |ALLfilename|: input file name
+%     * |filesize|: file size in bytes
+%     * |datagsizeformat|: endianness of the datagram size field 'b' or 'l'
+%     * |datagramsformat|: endianness of the datagrams 'b' or 'l'
+%     * |datagNumberInFile|: number of datagram in file
+%     * |datagPositionInFile|: position of beginning of datagram in file
+%     * |datagTypeNumber|: for each datagram, SIMRAD datagram type in
+%     decimal 
+%     * |datagTypeText|: for each datagram, SIMRAD datagram type
+%     description 
+%     * |parsed|: 0 for each datagram at this stage. To be later turned to
+%     1 for parsing 
+%     * |counter|: the counter of this type of datagram in the file (ie
+%     first datagram of that type is 1 and last datagram is the total
+%     number of datagrams of that type)
+%     * |number|: the number/counter found in the datagram (usually
+%     different to counter) 
+%     * |size|: for each datagram, datagram size in bytes
+%     * |syncCounter|: for each datagram, the number of bytes founds
+%     between this datagram and the previous one (any number different than
+%     zero indicates a sync error)
+%     * |emNumber|: EM Model number (eg 2045 for EM2040c)
+%     * |date|: datagram date in YYYMMDD
+%     * |timeSinceMidnightInMilliseconds|: time since midnight in msecs 
 %
 % *OUTPUT VARIABLES*
 %
@@ -41,7 +48,7 @@
 % different type of datagram. The field |ALLdata.info| contains a copy of
 % ALLfileinfo described above.
 %
-% *RESEARCH NOTES*
+% *DEVELOPMENT NOTES*
 %
 % * PU Status output datagram structure seems different to the datagram
 % manual description. Find the good description.#edit 21aug2013: updated to
@@ -50,8 +57,12 @@
 %
 % *NEW FEATURES*
 %
-% * 2017-06-29: header cleaned up. Changed ALLfile for ALLdata internally for consistency with other functions (Alex Schimel).
-% * 2015-09-30: first version taking from last version of convert_all_to_mat (Alex Schimel).
+% * 2018-10-11: updated header before adding to Coffee v3
+% * 2018: added amplitude and phase datagram
+% * 2017-06-29: header cleaned up. Changed ALLfile for ALLdata internally
+% for consistency with other functions
+% * 2015-09-30: first version taking from last version of
+% convert_all_to_mat
 %
 % *EXAMPLE*
 %
@@ -62,7 +73,7 @@
 %
 % *AUTHOR, AFFILIATION & COPYRIGHT*
 %
-% Alexandre Schimel, NIWA.
+% Alexandre Schimel, Waikato University, Deakin University, NIWA.
 
 %% Function
 function ALLdata = CFF_read_all_from_fileinfo(ALLfilename, ALLfileinfo,varargin)
@@ -146,7 +157,8 @@ for iDatag = datagToParse'
             try i49=i49+1; catch, i49=1; end
             
             % parsing
-            % SOMETHING WRONG WITH THIS DATAGRAM, NEW TEMPLATE? REWRITE USING LATEST KONGSBERG DOCUMENTATION
+            % SOMETHING WRONG WITH THIS DATAGRAM, NEW TEMPLATE? REWRITE
+            % USING LATEST KONGSBERG DOCUMENTATION XXX
             %             ALLdata.EM_PUStatus.STX(i49)                                    = stxDatag;
             %             ALLdata.EM_PUStatus.TypeOfDatagram(i49)                         = datagTypeNumber;
             %             ALLdata.EM_PUStatus.EMModelNumber(i49)                          = emNumber;

@@ -22,15 +22,13 @@
 %
 % *INPUT VARIABLES*
 %
-% REQUIRED:
-% * |ALLfilename|: string filename to parse (extension in .all or .wcd).
-%
-% OPTIONAL:
-% * |datagrams|: character string, or cell array of character string, or
-% numeric values designating the types of datagrams to be parsed. If
-% character string or cell array of character string, the string must match
-% the datagTypeText of the datagram. If numeric, it must matches the
-% datagTypeNumber. The possible values are:
+% * |ALLfilename|: Required. String filename to parse (extension in .all or
+% .wcd).
+% * |datagrams|: Optional. character string, or cell array of character
+% string, or numeric values designating the types of datagrams to be
+% parsed. If character string or cell array of character string, the string
+% must match the datagTypeText of the datagram. If numeric, it must matches
+% the datagTypeNumber. The possible values are:  
 %     datagTypeNumber = 49. datagTypeText = 'PU STATUS OUTPUT (31H)';
 %     datagTypeNumber = 65. datagTypeText = 'ATTITUDE (41H)';
 %     datagTypeNumber = 67. datagTypeText = 'CLOCK (43H)';
@@ -51,36 +49,46 @@
 %     datagTypeNumber = 107. datagTypeText = 'WATER COLUMN DATAGRAM (6BH)';
 %     datagTypeNumber = 110. datagTypeText = 'NETWORK ATTITUDE VELOCITY DATAGRAM 110 (6EH)';
 %     datagTypeNumber = 114. datagTypeText = 'AMPLITUDE AND PHASE WC DATAGRAM 114 (72H)';
+%
 % *OUTPUT VARIABLES*
 %
 % * |ALLdata|: structure containing the data. Each field corresponds a
-% different type of datagram. The field |ALLdata.info| contains information
-% about the datagrams in the original input file, with fields: 
-%   * |ALLfilename|: input file name
-%   * |filesize|: file size in bytes
-%   * |datagsizeformat|: endianness of the datagram size field 'b' or 'l'
-%   * |datagramsformat|: endianness of the datagrams 'b' or 'l'
-%   * |datagNumberInFile|: number of datagram in file
-%   * |datagPositionInFile|: position of beginning of datagram in file
-%   * |datagTypeNumber|: for each datagram, SIMRAD datagram type in decimal
-%   * |datagTypeText|: for each datagram, SIMRAD datagram type description
-%   * |parsed|: for each datagram, 1 if datagram has been parsed (or is to be parsed), 0 otherwise
-%   * |counter|: the counter of this type of datagram in the file (ie first datagram of that type is 1 and last datagram is the total number of datagrams of that type)
-%   * |number|: the number/counter found in the datagram (usually different to counter)
-%   * |size|: for each datagram, datagram size in bytes
-%   * |syncCounter|: for each datagram, the number of bytes founds between this datagram and the previous one (any number different than zero indicates a sync error)
-%   * |emNumber|: EM Model number (eg 2045 for EM2040c)
-%   * |date|: datagram date in YYYMMDD
-%   * |timeSinceMidnightInMilliseconds|: time since midnight in msecs 
+% different type of datagram. The field |ALLfileinfo| is a structure
+% containing information about datagrams in ALLfilename, with fields:  
+%     * |ALLfilename|: input file name
+%     * |filesize|: file size in bytes
+%     * |datagsizeformat|: endianness of the datagram size field 'b' or 'l'
+%     * |datagramsformat|: endianness of the datagrams 'b' or 'l'
+%     * |datagNumberInFile|: number of datagram in file
+%     * |datagPositionInFile|: position of beginning of datagram in file
+%     * |datagTypeNumber|: for each datagram, SIMRAD datagram type in
+%     decimal 
+%     * |datagTypeText|: for each datagram, SIMRAD datagram type
+%     description 
+%     * |parsed|: 0 for each datagram at this stage. To be later turned to
+%     1 for parsing 
+%     * |counter|: the counter of this type of datagram in the file (ie
+%     first datagram of that type is 1 and last datagram is the total
+%     number of datagrams of that type)
+%     * |number|: the number/counter found in the datagram (usually
+%     different to counter) 
+%     * |size|: for each datagram, datagram size in bytes
+%     * |syncCounter|: for each datagram, the number of bytes founds
+%     between this datagram and the previous one (any number different than
+%     zero indicates a sync error)
+%     * |emNumber|: EM Model number (eg 2045 for EM2040c)
+%     * |date|: datagram date in YYYMMDD
+%     * |timeSinceMidnightInMilliseconds|: time since midnight in msecs 
 %
-% *RESEARCH NOTES*
+% *DEVELOPMENT NOTES*
 %
 % * Research notes for CFF_all_file_info.m and CFF_read_all_from_fileinfo.m
 % apply. 
 %
 % *NEW FEATURES*
 %
-% * 2017-06-28: first version. Adapated from CFF_convert_all_to_mat_v2.m (Alex Schimel). 
+% * 2018-10-11: updated header before adding to Coffee v3
+% * 2017-06-28: first version. Adapated from CFF_convert_all_to_mat_v2.m
 %
 % *EXAMPLE*
 %
@@ -93,7 +101,7 @@
 %
 % *AUTHOR, AFFILIATION & COPYRIGHT*
 %
-% Alexandre Schimel, NIWA.
+% Alexandre Schimel, Waikato University, Deakin University, NIWA.
 
 %% Function
 function ALLdata = CFF_read_all(ALLfilename, varargin)

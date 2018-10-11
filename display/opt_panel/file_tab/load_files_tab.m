@@ -345,7 +345,7 @@ for nF = 1:numel(files_to_convert)
         
         % if output file does not exist OR if forcing reconversion, simply
         % convert and save
-        fData = CFF_convert_struct_to_fabc_v2(EMdata,dr_sub,db_sub);
+        fData = CFF_convert_ALLdata_to_fData(EMdata,dr_sub,db_sub);
         save(mat_fdata_file,'-struct','fData','-v7.3');
         clear fData;
         
@@ -362,7 +362,7 @@ for nF = 1:numel(files_to_convert)
         fData = load(mat_fdata_file);
         
         % compare data to that already existing
-        [fData,update_flag] = CFF_convert_struct_to_fabc_v2(EMdata,dr_sub,db_sub,fData);
+        [fData,update_flag] = CFF_convert_ALLdata_to_fData(EMdata,dr_sub,db_sub,fData);
         
         % if it's different, update the result
         if update_flag > 0
@@ -454,13 +454,13 @@ for nF = 1:numel(files_to_load)
     % getting source of water-column data and prefix right
     if isfield(fData_temp,'WC_SBP_SampleAmplitudes')
         datagramSource = 'WC';
-    elseif isfield(fData_temp,'WCAP_SBP_SampleAmplitudes')
-        datagramSource = 'WCAP';
+    elseif isfield(fData_temp,'AP_SBP_SampleAmplitudes')
+        datagramSource = 'AP';
     end
     
     % Interpolating navigation data from ancillary sensors to ping time
     fprintf('...Interpolating navigation data from ancillary sensors to ping time...\n');
-    fData_temp = CFF_georeference_pings(fData_temp,datagramSource);
+    fData_temp = CFF_compute_ping_navigation(fData_temp,datagramSource);
     
     % checking UTM zone for projection
     if strcmp(disp_config.MET_tmproj,'')
@@ -475,7 +475,7 @@ for nF = 1:numel(files_to_load)
     
     % Processing bottom detect
     fprintf('...Processing bottom detect...\n');
-    fData_temp = CFF_process_WC_bottom_detect_v2(fData_temp,datagramSource);
+    fData_temp = CFF_georeference_WC_bottom_detect(fData_temp,datagramSource);
     
     % Time-tag that fData
     fData_temp.ID = str2double(datestr(now,'yyyymmddHHMMSSFFF'));

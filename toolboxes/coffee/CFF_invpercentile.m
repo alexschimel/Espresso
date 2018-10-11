@@ -1,10 +1,6 @@
-%% this_function_name.m
+%% CFF_invpercentile.m
 %
-% _This section contains a very short description of the function, for the
-% user to know this function is part of the software and what it does for
-% it. Example below to replace. Delete these lines XXX._ 
-%
-% Template of ESP3 function header. XXX
+% Calculates inverse percentile
 %
 %% Help
 %
@@ -28,9 +24,8 @@
 % value if there is one (e.g. Default: '10'). Example below to replace.
 % Delete these lines XXX._
 % 
-% * |input_variable_1|: Description (Information). XXX
-% * |input_variable_2|: Description (Information). XXX
-% * |input_variable_3|: Description (Information). XXX
+% * |X|: Required. Description (Information). XXX
+% * |P|: Required. Description (Information). XXX
 %
 % *OUTPUT VARIABLES*
 %
@@ -38,8 +33,7 @@
 % and information. See input variables for template. Example below to
 % replace. Delete these lines XXX._
 %
-% * |output_variable_1|: Description (Information). XXX
-% * |output_variable_2|: Description (Information). XXX
+% * |V|: Description (Information). XXX
 %
 % *DEVELOPMENT NOTES*
 %
@@ -55,7 +49,7 @@
 % _This section contains dates and descriptions of major updates. Example
 % below to replace. Delete these lines XXX._
 %
-% * YYYY-MM-DD: second version. Describes the update. XXX
+% * 2018-10-11: header
 % * YYYY-MM-DD: first version. XXX
 %
 % *EXAMPLE*
@@ -70,9 +64,18 @@
 %
 % *AUTHOR, AFFILIATION & COPYRIGHT*
 %
-% _This last section contains at least author name and affiliation. Delete
-% these lines XXX._ 
-%
-% Yoann Ladroit, Alexandre Schimel, NIWA. XXX
+% Alexandre Schimel, Deakin University, NIWA. 
 
 %% Function
+function [V] = CFF_invpercentile(X,P)
+
+if all(isnan(X))
+    V = NaN;
+    return
+end
+
+X = X(:);
+X = X(~isnan(X));
+X = sort(X);
+iP = round(P.*numel(X)./100);
+V = X(iP);
