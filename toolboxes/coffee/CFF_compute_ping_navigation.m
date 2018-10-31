@@ -10,7 +10,7 @@
 % _This section contains a more detailed description of what the function
 % does and how to use it, for the interested user to have an overall
 % understanding of its function. Example below to replace. Delete these
-% lines XXX._  
+% lines XXX._
 %
 % TODO: write longer description of function
 %
@@ -21,7 +21,7 @@
 % recorded as fields coded "a_b_c" where "a" is a code indicating data
 % origing, "b" is a code indicating data dimensions, and "c" is the data
 % name. See the help of function CFF_convert_ALLdata_to_fData.m for
-% description of codes. 
+% description of codes.
 % * |datagramSource| (optional): 'De', 'SI', 'WC', etc... as the
 % source datagram to use for time/date/pingcounter. If not specified,
 % function will look in order for "De", "X8" or "WC". Returns error if
@@ -58,7 +58,7 @@
 % _This section contains examples of valid function calls. Note that
 % example lines start with 3 white spaces so that the publish function
 % shows them correctly as matlab code. Example below to replace. Delete
-% these lines XXX._ 
+% these lines XXX._
 %
 %   example_use_1; % comment on what this does. XXX
 %   example_use_2: % comment on what this line does. XXX
@@ -75,40 +75,40 @@ function [fData] = CFF_compute_ping_navigation(fData,varargin)
 
 % varargin{1}, source datagram for ping info:
 if nargin>1
-    % datagramSource was specified, get ping time 
     
     datagramSource = varargin{1};
-    pingTSMIM    = fData.([datagramSource '_1P_TimeSinceMidnightInMilliseconds']);
-    date         = fData.([datagramSource '_1P_Date']);
-    pingCounter  = fData.([datagramSource '_1P_PingCounter']);
-
+    
 else
-    % datagramSource was not specified
     
-    fDataFields = fields(fData);
-    if sum(strcmp(fDataFields, 'De_1P_Date'))
-        datagramSource = 'De';
-        pingTSMIM    = fData.De_1P_TimeSinceMidnightInMilliseconds;
-        date         = fData.De_1P_Date;
-        pingCounter  = fData.De_1P_PingCounter;
-        fprintf(['...datagramSource not specified for ping processing. Using ''' datagramSource '''...\n']);
-    elseif sum(strcmp(fDataFields, 'X8_1P_Date'))
-        datagramSource = 'X8';
-        pingTSMIM    = fData.X8_1P_TimeSinceMidnightInMilliseconds;
-        date         = fData.X8_1P_Date;
-        pingCounter  = fData.X8_1P_PingCounter;
-        fprintf(['...datagramSource not specified for ping processing. Using ''' datagramSource '''...\n']);
-    elseif sum(strcmp(fDataFields, 'WC_1P_Date'))
-        datagramSource = 'WC';
-        pingTSMIM    = fData.WC_1P_TimeSinceMidnightInMilliseconds;
-        date         = fData.WC_1P_Date;
-        pingCounter  = fData.WC_1P_PingCounter;
-        fprintf(['...datagramSource not specified for ping processing. Using ''' datagramSource '''...\n']);
+    % datagramSource was not specified, check fData for it
+    if isfield(fData,'MET_datagramSource')
+        datagramSource = fData.MET_datagramSource;
     else
-        error('can''t find a suitable datagramSource')
+        % not in fData eiter, check for possible sources
+        fDataFields = fields(fData);
+        if sum(strcmp(fDataFields, 'De_1P_Date'))
+            datagramSource = 'De';
+            fprintf(['...datagramSource not specified for ping processing. Using ''' datagramSource '''...\n']);
+        elseif sum(strcmp(fDataFields, 'X8_1P_Date'))
+            datagramSource = 'X8';
+            fprintf(['...datagramSource not specified for ping processing. Using ''' datagramSource '''...\n']);
+        elseif sum(strcmp(fDataFields, 'WC_1P_Date'))
+            datagramSource = 'WC';
+            fprintf(['...datagramSource not specified for ping processing. Using ''' datagramSource '''...\n']);
+        elseif sum(strcmp(fDataFields, 'AP_1P_Date'))
+            datagramSource = 'AP';
+            fprintf(['...datagramSource not specified for ping processing. Using ''' datagramSource '''...\n']);
+        else
+            error('can''t find a suitable datagramSource')
+        end
     end
-    
 end
+
+% get ping time
+pingTSMIM    = fData.([datagramSource '_1P_TimeSinceMidnightInMilliseconds']);
+date         = fData.([datagramSource '_1P_Date']);
+pingCounter  = fData.([datagramSource '_1P_PingCounter']);
+
 
 pingDate = datenum(cellfun(@num2str,num2cell(date),'un',0),'yyyymmdd');
 
@@ -133,7 +133,7 @@ end
 
 % varargin{?}: datum conversion?
 ...
-
+    
 % varargin{4}: navigation latency
 if nargin == 5
     navLat = varargin{4};
@@ -168,7 +168,7 @@ pingSDN = pingDate(:)'+ pingTSMIM/(24*60*60*1000) + navLat./(1000.*60.*60.*24);
 if isfield(fData,'He_1D_Height')
     heiHeight = fData.He_1D_Height./100; % now m
     heiDate   = datenum(cellfun(@num2str,num2cell(fData.He_1D_Date),'un',0),'yyyymmdd');
-    heiSDN    = heiDate(:)' + fData.He_1D_TimeSinceMidnightInMilliseconds/(24*60*60*1000); 
+    heiSDN    = heiDate(:)' + fData.He_1D_TimeSinceMidnightInMilliseconds/(24*60*60*1000);
 else
     heiHeight=zeros(size(pingTSMIM));
     heiSDN =pingSDN;

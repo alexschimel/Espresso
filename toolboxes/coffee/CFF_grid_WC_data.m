@@ -115,11 +115,8 @@ db_sub    = p.Results.db_sub;
 %% Prepare needed 1xP data
 
 % Source datagram
-if isfield(fData,'WC_SBP_SampleAmplitudes')
-    datagramSource = 'WC';
-elseif isfield(fData,'AP_SBP_SampleAmplitudes')
-    datagramSource = 'AP';
-end
+datagramSource = fData.MET_datagramSource;
+
 
 % inter-sample distance
 soundSpeed           = fData.(sprintf('%s_1P_SoundSpeed',datagramSource)).*0.1; %m/s

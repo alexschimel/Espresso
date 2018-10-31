@@ -176,6 +176,8 @@ switch src.Style
         new_path = uigetdir(path_ori,'Select folder of raw data files (.wcd) to open');
         
         if new_path ~= 0
+            % get warnings for this initial load
+            CFF_list_files_in_dir(new_path,'warning_on');
             % update the tab
             set(file_tab_comp.path_box,'string',new_path);
             update_file_tab(main_figure);
@@ -214,10 +216,28 @@ end
 %
 function convert_files_callback(~,~,main_figure,reconvert)
 
-% PARAMS:
-% list of datagram needed for conversion
-wc_d = 107; % for traditional water column datagram
-% wc_d = 114; % for amplitude and phase datagram
+% HARD-CODED PARAMETER:
+% the source datagram that will be used throughout the program for
+% processing 
+% by default is 'WC' but 'AP' can be used for Amplitude-Phase datagrams
+% instead. If there is no water-column datagram, you can still use Espresso
+% to convert and load and display data, using the depths datagrams 'De' or
+% 'X8'
+datagramSource = 'WC'; % 'WC', 'AP', 'De', 'X8'
+
+switch datagramSource
+    case 'WC'
+        wc_d = 107;
+    case 'AP'
+        wc_d = 114;
+    case 'De'
+        wc_d = 68;
+    case 'X8'
+        wc_d = 88;
+end
+
+% adding position, attitude, and runtime datagrams to the list of datagrams
+% to parse 
 dg_wc = [73 80 82 wc_d];
 
 % get tab data
@@ -251,75 +271,9 @@ for nF = 1:numel(files_to_convert)
     fprintf('Converting file "%s" (%i/%i). Started at %s... \n',file_to_convert,nF,numel(files_to_convert),datestr(now));
     tic
     
-    % original files to convert
-    all_file_to_convert = strcat(file_to_convert,'.all');
-    wcd_file_to_convert = strcat(file_to_convert,'.wcd');
-    
-    % get folder for converted data
-    folder_for_converted_data = CFF_converted_data_folder(file_to_convert);
-    
-    % converted filename fData
-    mat_fdata_file = fullfile(folder_for_converted_data,'fdata.mat');
-    
-    % initialize which datagrams were read
-    datags_parsed_idx = zeros(size(dg_wc));
-    
-    % check datagrams available in WCD file (if it exists)
-    if exist(wcd_file_to_convert,'file')>0
-        
-        % get WCD file info and find list of datagrams available
-        WCDfile_info = CFF_all_file_info(wcd_file_to_convert);
-        WCDfile_datag_types = unique(WCDfile_info.datagTypeNumber);
-        
-        % find which datagrams can be read here
-        datags_parsed_idx = ismember(dg_wc,WCDfile_datag_types);
-        
-        % if any, read those datagrams
-        if any(datags_parsed_idx)
-            datags_to_read_idx = ismember(WCDfile_info.datagTypeNumber,dg_wc(datags_parsed_idx));
-            WCDfile_info.parsed(datags_to_read_idx) = 1;
-            WCDdata = CFF_read_all_from_fileinfo(wcd_file_to_convert, WCDfile_info);
-        end
-        
-    end
-    
-    if ~all(datags_parsed_idx) 
-        % if not all datagrams needed were in the WCD file...
-        
-        % ...check the all file (if it exists)
-        if exist(all_file_to_convert,'file')>0
-
-            % get ALL file info and find list of datagrams available
-            ALLfile_info = CFF_all_file_info(all_file_to_convert);
-            ALLfile_datag_types = unique(ALLfile_info.datagTypeNumber);
-            
-            % find which remaining datagram types can be read here
-            yesthose_idx = ismember(dg_wc,ALLfile_datag_types) & ~datags_parsed_idx;
-            
-            % if any, read those datagrams
-            if any(yesthose_idx)
-                
-                ALLfile_info.parsed(ismember(ALLfile_info.datagTypeNumber,dg_wc(yesthose_idx))) = 1;
-                ALLdata = CFF_read_all_from_fileinfo(all_file_to_convert, ALLfile_info);
-                
-                datags_parsed_idx = datags_parsed_idx | yesthose_idx;
-                
-            end
-            
-        end
-    end
-    
-    % combining existing data
-    if exist('WCDdata','var') && exist('ALLdata','var')
-        EMdata = {WCDdata ALLdata};
-    elseif exist('WCDdata','var') && ~exist('ALLdata','var')
-        EMdata = {WCDdata};
-    elseif ~exist('WCDdata','var') && exist('ALLdata','var')
-        EMdata = {ALLdata};
-    else
-        EMdata = {};
-    end
-    
+    % conversion to ALLdata format
+    [EMdata,datags_parsed_idx] = CFF_read_all(file_to_convert, dg_wc);
+       
     % if not all datagrams were found at this point, message and abort
     if ~all(datags_parsed_idx)
         if ismember(wc_d,dg_wc(~datags_parsed_idx))
@@ -330,6 +284,12 @@ for nF = 1:numel(files_to_convert)
         continue
     end
     
+    % get folder for converted data
+    folder_for_converted_data = CFF_converted_data_folder(file_to_convert);
+    
+    % converted filename fData
+    mat_fdata_file = fullfile(folder_for_converted_data,'fdata.mat');
+    
     % if output folder doesn't exist, create it
     MATfilepath = fileparts(mat_fdata_file);
     if ~exist(MATfilepath,'dir') && ~isempty(MATfilepath)
@@ -338,14 +298,18 @@ for nF = 1:numel(files_to_convert)
     
     % subsampling factors:
     dr_sub = 1; % none for now
-    db_sub =1; % none for now
+    db_sub = 1; % none for now
     
     % converstion and saving on the disk
     if ~exist(mat_fdata_file,'file') || reconvert
         
-        % if output file does not exist OR if forcing reconversion, simply
-        % convert and save
+        % if output file does not exist OR if forcing reconversion, simply convert
         fData = CFF_convert_ALLdata_to_fData(EMdata,dr_sub,db_sub);
+        
+        % add datagram source
+        fData.MET_datagramSource = datagramSource;
+        
+        % and save
         save(mat_fdata_file,'-struct','fData','-v7.3');
         clear fData;
         
@@ -451,16 +415,9 @@ for nF = 1:numel(files_to_load)
     % loading temp
     fData_temp = load(mat_fdata_file);
     
-    % getting source of water-column data and prefix right
-    if isfield(fData_temp,'WC_SBP_SampleAmplitudes')
-        datagramSource = 'WC';
-    elseif isfield(fData_temp,'AP_SBP_SampleAmplitudes')
-        datagramSource = 'AP';
-    end
-    
     % Interpolating navigation data from ancillary sensors to ping time
     fprintf('...Interpolating navigation data from ancillary sensors to ping time...\n');
-    fData_temp = CFF_compute_ping_navigation(fData_temp,datagramSource);
+    fData_temp = CFF_compute_ping_navigation(fData_temp);
     
     % checking UTM zone for projection
     if strcmp(disp_config.MET_tmproj,'')
@@ -474,8 +431,10 @@ for nF = 1:numel(files_to_load)
     end
     
     % Processing bottom detect
-    fprintf('...Processing bottom detect...\n');
-    fData_temp = CFF_georeference_WC_bottom_detect(fData_temp,datagramSource);
+    if ismember(fData_temp.MET_datagramSource,{'WC' 'AP'})
+        fprintf('...Processing bottom detect...\n');
+        fData_temp = CFF_georeference_WC_bottom_detect(fData_temp);
+    end
     
     % Time-tag that fData
     fData_temp.ID = str2double(datestr(now,'yyyymmddHHMMSSFFF'));

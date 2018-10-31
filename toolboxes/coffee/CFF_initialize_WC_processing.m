@@ -97,12 +97,7 @@ clear p
 
 
 %% Source datagram and WC data format
-if isfield(fData,'WC_SBP_SampleAmplitudes')
-    datagramSource = 'WC';
-elseif isfield(fData,'AP_SBP_SampleAmplitudes')
-    datagramSource = 'AP';
-end
-
+datagramSource = fData.MET_datagramSource;
 
 %% processed data folder
 wc_dir = CFF_converted_data_folder(fData.ALLfilename{1});

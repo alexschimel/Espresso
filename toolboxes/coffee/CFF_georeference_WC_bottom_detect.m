@@ -24,8 +24,6 @@
 % origing, "b" is a code indicating data dimensions, and "c" is the data
 % name. See the help of function CFF_convert_ALLdata_to_fData.m for
 % description of codes. 
-% * |datagramSource|: Source datagram where to extract bottom detect
-% samples from 'WC' or 'AP'
 %
 % *OUTPUT VARIABLES*
 %
@@ -38,6 +36,7 @@
 %
 % *NEW FEATURES*
 %
+% * 2018-10-12: using default datagramSource. Not in input anymore.
 % * 2018-10-11: Moved the georeferencing part into its own subfunction.
 % Updated header before adding to Coffee v3 
 % * 2018-10-04: updated varargin management to find datagramSource, to
@@ -65,32 +64,12 @@
 % Alexandre Schimel, NIWA.
 
 %% Function
-function [fData] = CFF_georeference_WC_bottom_detect(fData,varargin)
-
-
-%% input parsing
-
-% varargin{1}, source datagram for ping info:
-if nargin>1
-
-    datagramSource = varargin{1};
-
-else
-    % datagramSource was not specified
-
-    if isfield(fData,'WC_SBP_SampleAmplitudes')
-        datagramSource = 'WC';
-    elseif isfield(fData,'AP_SBP_SampleAmplitudes')
-        datagramSource = 'AP';
-    end
-    
-end
-
-
+function [fData] = CFF_georeference_WC_bottom_detect(fData)
 
 %% info extraction
 
 % Extract needed ping info
+datagramSource = fData.MET_datagramSource;
 X_1P_soundSpeed           = fData.(sprintf('%s_1P_SoundSpeed',datagramSource)).*0.1; %m/s
 X_1P_samplingFrequencyHz  = fData.(sprintf('%s_1P_SamplingFrequencyHz',datagramSource)); %Hz
 X_1P_sonarHeight          = fData.X_1P_pingH; %m

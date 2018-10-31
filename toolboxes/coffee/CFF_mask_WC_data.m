@@ -112,11 +112,8 @@ wcdata_nanval = fData.X_1_WaterColumnProcessed_Nanval;
 %% Prep
 
 % Source datagram
-if isfield(fData,'WC_SBP_SampleAmplitudes')
-    datagramSource = 'WC';
-elseif isfield(fData,'AP_SBP_SampleAmplitudes')
-    datagramSource = 'AP';
-end
+datagramSource = fData.MET_datagramSource;
+
 
 % inter-sample distance
 soundSpeed          = fData.(sprintf('%s_1P_SoundSpeed',datagramSource)).*0.1; %m/s
