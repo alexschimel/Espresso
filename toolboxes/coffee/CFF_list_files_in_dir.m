@@ -175,11 +175,10 @@ else
     wc_dir = CFF_converted_data_folder(files_full);
     mat_fdata_files = fullfile(wc_dir,'fData.mat');
     
+    % boolean for whether these mat files exist
     if ischar(mat_fdata_files)
         mat_fdata_files = {mat_fdata_files};
     end
+    converted = cellfun(@(x) exist(x,'file')>0,mat_fdata_files);    
     
-    % boolean for whether these mat files exist
-    converted = cellfun(@(x) exist(x,'file')>0,mat_fdata_files);
-     
 end

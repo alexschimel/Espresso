@@ -329,20 +329,78 @@ for iB = 1:nBlocks
     
 end
 
-% average, and back in dB
+
+%% crop the results (remove nans on the edges)
+switch dim
+    
+    case '2D'
+        
+        % dimensional sums
+        sumGridCount_N = sum(gridCount,2);
+        sumGridCount_E = sum(gridCount,1);
+        
+        % min and max indices for cropping
+        minNidx = find(sumGridCount_N,1,'first');
+        maxNidx = find(sumGridCount_N,1,'last');
+        minEidx = find(sumGridCount_E,1,'first');
+        maxEidx = find(sumGridCount_E,1,'last');
+        
+        % crop count and sum
+        gridCount = gridCount(minNidx:maxNidx,minEidx:maxEidx);
+        gridSum   = gridSum(minNidx:maxNidx,minEidx:maxEidx);
+        
+        % define and crop dim vectors
+        gridNorthing = (0:numElemGridN-1)'.*res + minGridN;
+        gridEasting  = (0:numElemGridE-1) .*res + minGridE;
+        gridNorthing = gridNorthing(minNidx:maxNidx);
+        gridEasting  = gridEasting(:,minEidx:maxEidx);
+        
+    case '3D'
+        
+        % dimensional sums
+        sumGridCount_1EH = sum(gridCount,1);
+        sumGridCount_N1H = sum(gridCount,2);
+        sumGridCount_N = sum(sumGridCount_N1H,3);
+        sumGridCount_E = sum(sumGridCount_1EH,3);
+        sumGridCount_H = sum(sumGridCount_1EH,2);
+        
+        % min and max indices for cropping
+        minNidx = find(sumGridCount_N,1,'first');
+        maxNidx = find(sumGridCount_N,1,'last');
+        minEidx = find(sumGridCount_E,1,'first');
+        maxEidx = find(sumGridCount_E,1,'last');
+        minHidx = find(sumGridCount_H,1,'first');
+        maxHidx = find(sumGridCount_H,1,'last');
+        
+        % crop count and sum
+        gridCount = gridCount(minNidx:maxNidx,minEidx:maxEidx,minHidx:maxHidx);
+        gridSum   = gridSum(minNidx:maxNidx,minEidx:maxEidx,minHidx:maxHidx);
+        
+        % define and crop dim vectors
+        gridNorthing = (0:numElemGridN-1)'.*res + minGridN;
+        gridEasting  = (0:numElemGridE-1) .*res + minGridE;
+        gridHeight   = permute((0:numElemGridH-1).*res + minGridH,[3,1,2]);
+        gridNorthing = gridNorthing(minNidx:maxNidx);
+        gridEasting  = gridEasting(:,minEidx:maxEidx);
+        gridHeight   = gridHeight(:,:,minHidx:maxHidx);
+       
+end
+
+% final calculation average and back in dB
 gridLevel = 10.*log10(gridSum./gridCount);
+
 
 %% saving results:
 
 fData.X_NEH_gridLevel   = gridLevel;
 fData.X_NEH_gridDensity = gridCount;
-fData.X_1E_gridEasting  = (0:numElemGridE-1) .*res + minGridE;
-fData.X_N1_gridNorthing = (0:numElemGridN-1)'.*res + minGridN;
+fData.X_1E_gridEasting  = gridEasting;
+fData.X_N1_gridNorthing = gridNorthing;
 fData.X_1_gridHorizontalResolution = res;
 
 switch dim
     case '3D'
-        fData.X_11H_gridHeight  = permute((0:numElemGridH-1).*res + minGridH,[3,1,2]);
+        fData.X_11H_gridHeight  = gridHeight;
         fData.X_1_gridVerticalResolution = vert_res;
 end
 
