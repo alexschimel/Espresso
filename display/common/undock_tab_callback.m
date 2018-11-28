@@ -46,7 +46,7 @@ function close_tab(src,~,main_figure)
 
 tag = src.Tag;
 delete(src);
-dest_fig = getappdata(main_figure,'wc_panel');
+dest_fig = getappdata(main_figure,'swath_panel');
 
 switch tag
     case 'wc'
