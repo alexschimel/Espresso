@@ -308,7 +308,7 @@ fData.X_1P_pingN        = pingN;
 fData.X_1P_pingH        = pingH;
 fData.X_1P_pingGridConv = pingGridConv;
 fData.X_1P_pingHeading  = pingHeading;
-fData.X_P1_pingSpeed    = pingSpeed;
+fData.X_1P_pingSpeed    = pingSpeed;
 
 % fData.X_1P_pingAzimuth?
 % fData.X_1P_pingDepression?
