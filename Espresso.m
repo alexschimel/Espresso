@@ -31,7 +31,11 @@ if ~isdeployed()
     end
 end
 
-
+%% Software main path
+main_path = whereisroot();
+if ~isdeployed
+    update_path(main_path);
+end
 
 %% Get monitor's dimensions
 size_max = get(0, 'MonitorPositions');
@@ -66,23 +70,20 @@ end
 set(0,'DefaultUicontrolFontSize',10);
 set(0,'DefaultUipanelFontSize',12);
 
-%% Software main path
-main_path = whereisroot();
-if ~isdeployed
-    update_path(main_path);
-end
-
 disp_config = display_config_cl();
 setappdata(main_figure,'disp_config',disp_config);
 setappdata(main_figure,'fData',{});
 setappdata(main_figure,'grids',[]);
 setappdata(main_figure,'ext_figs',[]);
+setappdata(main_figure,'features',[]);
+
 
 %% Create the contents of main figure
 fprintf('...Creating main figure...\n');
 initialize_display(main_figure);
 
 %% Initialize controls with main figure
+
 fprintf('...Initializing controls...\n');
 init_listeners(main_figure);
 initialize_interactions_v2(main_figure);

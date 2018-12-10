@@ -11,6 +11,9 @@ classdef display_config_cl <handle
         Iping
         AcrossDist
         MET_tmproj
+        Mode
+        StackPingWidth
+        StackAngularWidth
     end
     
     methods
@@ -23,11 +26,11 @@ classdef display_config_cl <handle
             addParameter(p,'Cax_wc',[-50 -10],@isnumeric);
             addParameter(p,'Cax_bs',[-40 -15],@isnumeric);
             addParameter(p,'Cax_bathy',[-50 -10],@isnumeric);
+            addParameter(p,'Mode','normal',@ischar);
             addParameter(p,'MET_tmproj','',@ischar);
-            
             addParameter(p,'Fdata_idx',1,@isnumeric);
-            addParameter(p,'Iping',1,@isnumeric);
-            addParameter(p,'AcrossDist',1,@isnumeric);
+            addParameter(p,'StackPingWidth',50,@isnumeric);
+            addParameter(p,'StackAngularWidth',[-5 5],@isnumeric);
             
             parse(p,varargin{:});
             results = p.Results;

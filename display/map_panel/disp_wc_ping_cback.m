@@ -57,8 +57,13 @@ switch current_figure.SelectionType
         disp_config.AcrossDist = sign(z)*across_dist;
         disp_config.Iping = ip;
         disp_config.Fdata_idx = find(idx_fData);
+   
+        map_tab_comp = getappdata(main_figure,'Map_tab');
         
-        update_wc_tab(main_figure);
+        map_tab_comp.ping_line.UserData.ip=ip;
+        map_tab_comp.ping_line.UserData.ID=ID;
+
+        grab_ping_line_cback([],[],main_figure);
         
 end
 

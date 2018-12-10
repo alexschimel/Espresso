@@ -40,12 +40,6 @@ end
 
 interactions_id.(p.Results.interaction)(p.Results.id) = iptaddcallback(curr_fig,(p.Results.interaction),fcn);
 
-if isappdata(curr_fig,'Curr_disp') && isempty(p.Results.pointer)
-    curr_disp = getappdata(curr_fig,'Curr_disp');
-    setptr(curr_fig,curr_disp.get_pointer());
-elseif ~isempty(p.Results.pointer)
-    setptr(curr_fig,p.Results.pointer);
-end
 
 setappdata(curr_fig,'interactions_id',interactions_id);
 

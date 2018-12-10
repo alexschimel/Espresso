@@ -5,6 +5,11 @@ switch tab
         wc_tab_comp = getappdata(main_figure,'wc_tab');
         tab_h = wc_tab_comp.wc_tab;
         tt = 'Water Column';
+        
+    case 'stacked_wc'
+        stacked_wc_tab_comp = getappdata(main_figure,'stacked_wc_tab');
+        tab_h = stacked_wc_tab_comp.wc_tab;
+        tt = 'Stacked Water Column';
 end
 
 if~isvalid(tab_h)
@@ -14,7 +19,7 @@ end
 delete(tab_h);
 
 switch dest
-    case 'wc_tab'
+    case {'wc_tab','stacked_wc_tab'}
         dest_fig = getappdata(main_figure,'wc_panel');
     case 'new_fig'
         size_max  =  get(0, 'MonitorPositions');
@@ -38,6 +43,8 @@ end
 switch tab
     case 'wc'
         load_wc_tab(main_figure,dest_fig);
+    case 'stacked_wc'
+        load_stacked_wc_tab(main_figure,dest_fig);
 end
 
 end
@@ -51,6 +58,8 @@ dest_fig = getappdata(main_figure,'swath_panel');
 switch tag
     case 'wc'
         load_wc_tab(main_figure,dest_fig);
+    case 'stacked_wc'
+        load_stacked_wc_tab(main_figure,dest_fig);
 end
 
 end
