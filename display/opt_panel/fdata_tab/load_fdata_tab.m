@@ -183,9 +183,12 @@ for i = idx_rem(:)'
     % times2 = datestr(fData.X_1P_pingSDN,'HH:MM:SS.FFF');
     tag_id = num2str(id,'%.0f');
     tag_id_wc = num2str(id,'wc%.0f');
+    tag_id_poly = sprintf('poly_%.0f0',id);
     
     obj = findobj(ax,'Tag',tag_id,'-or','Tag',tag_id_wc);
     delete(obj);
+    obj_poly = findobj(ax,'Tag',tag_id_poly);
+    obj_poly.Shape.Vertices=[];
 end
 
 fdata(idx_rem) = [];
@@ -196,14 +199,12 @@ if isempty(fdata)
     disp_config = getappdata(main_figure,'disp_config');
     disp_config.MET_tmproj = '';
 end
-
-disp_config.Fdata_idx = numel(fdata);
-disp_config.Iping = 1;
-disp_config.AcrossDist = 0;
-
 update_fdata_tab(main_figure);
 update_file_tab(main_figure);
 update_map_tab(main_figure,0,1,[]);
-update_wc_tab(main_figure);
+disp_config.Fdata_idx = numel(fdata);
+disp_config.AcrossDist = 0;
+disp_config.Iping = 1;
+
 
 end

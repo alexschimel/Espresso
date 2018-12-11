@@ -20,6 +20,7 @@ stacked_wc_tab_comp.wc_axes = axes(stacked_wc_tab_comp.wc_tab,'Units','normalize
 
 colorbar(stacked_wc_tab_comp.wc_axes,'southoutside');
 colormap(stacked_wc_tab_comp.wc_axes,cmap);
+title(stacked_wc_tab_comp.wc_axes,'','Interpreter','none');
 caxis(stacked_wc_tab_comp.wc_axes,disp_config.Cax_wc);
 xlabel(stacked_wc_tab_comp.wc_axes,'Ping Number');
 ylabel(stacked_wc_tab_comp.wc_axes,'Range');
@@ -27,8 +28,9 @@ grid(stacked_wc_tab_comp.wc_axes,'on');
 box(stacked_wc_tab_comp.wc_axes,'on')
 axis(stacked_wc_tab_comp.wc_axes,'ij');
 stacked_wc_tab_comp.wc_gh = pcolor(stacked_wc_tab_comp.wc_axes,[],[],[]);
+stacked_wc_tab_comp.wc_gh.ButtonDownFcn={@goToPing_cback,main_figure};
 set(stacked_wc_tab_comp.wc_gh,'facealpha','flat','LineStyle','none','AlphaData',[]);
-% stacked_wc_tab_comp.ac_gh = plot(stacked_wc_tab_comp.wc_axes,nan,nan,'--k','Tag','ac','linewidth',2);
+stacked_wc_tab_comp.ping_gh = plot(stacked_wc_tab_comp.wc_axes,nan,nan,'--k','Tag','ac','linewidth',2);
 % stacked_wc_tab_comp.bot_gh = plot(stacked_wc_tab_comp.wc_axes,nan,nan,'.k','Tag','ac','markersize',4);
 
 
@@ -42,5 +44,12 @@ end
 update_wc_tab(main_figure);
 
 end
+
+function goToPing_cback(src,evt,main_figure)
+disp_config = getappdata(main_figure,'disp_config');
+disp_config.Iping=round(evt.IntersectionPoint(1));
+
+end
+
 
 

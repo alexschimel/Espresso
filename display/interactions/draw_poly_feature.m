@@ -3,7 +3,10 @@
 function draw_poly_feature(src,evt,main_figure)
 
 disp_config=getappdata(main_figure,'disp_config');
-
+fData_tot=getappdata(main_figure,'fData');
+if isempty(fData_tot)
+    return;
+end
 map_tab_comp = getappdata(main_figure,'Map_tab');
 
 ah=map_tab_comp.map_axes;
@@ -39,8 +42,11 @@ if xinit(1)<x_lim(1)||xinit(1)>x_lim(end)||yinit(1)<y_lim(1)||yinit(1)>y_lim(end
 end
 
 col_line='r';
+zone = disp_config.get_zone();
+
+[lat,lon] = utm2ll(cp(1,1),cp(1,2),zone);
 hp=plot(ah,xinit,yinit,'color',col_line,'linewidth',1,'Tag','feature_temp');
-txt=text(ah,cp(1,1),cp(1,2),sprintf('%.2f m',cp(1,2)),'color',col_line,'Tag','feature_temp');
+txt=text(ah,cp(1,1),cp(1,2),sprintf('%.6f,%.6f',lat,lon),'color',col_line,'Tag','feature_temp');
 
 replace_interaction(main_figure,'interaction','WindowButtonMotionFcn','id',2,'interaction_fcn',@wbmcb_ext);
 replace_interaction(main_figure,'interaction','WindowButtonDownFcn','id',1,'interaction_fcn',@wbdcb_ext);
@@ -58,11 +64,13 @@ replace_interaction(main_figure,'interaction','WindowButtonDownFcn','id',1,'inte
             hp=plot(ah,xinit,yinit,'color',col_line,'linewidth',1,'Tag','feature_temp');
         end
         
+        [lat,lon] = utm2ll(cp(1,1),cp(1,2),zone);
         if isvalid(txt)
-            set(txt,'position',[cp(1,1) cp(1,2) 0],'string',sprintf('(%.2f,%.2f)',cp(2,1),cp(1,2)));
+            set(txt,'position',[cp(1,1) cp(1,2) 0],'string',sprintf('%.6f,%.6f',lat,lon));
         else
-            txt=text(ah,cp(1,1),cp(1,2),sprintf('%.2f m',cp(1,2)),'color',col_line,'Tag','feature_temp');
+           txt=text(ah,cp(1,1),cp(1,2),sprintf('%.6f,%.6f',lat,lon),'color',col_line,'Tag','feature_temp');
         end
+        
    end
 
     function wbdcb_ext(~,~)
@@ -124,16 +132,22 @@ replace_interaction(main_figure,'interaction','WindowButtonDownFcn','id',1,'inte
 
         %feval(func,main_figure,poly_r,poly_pings);
         features=getappdata(main_figure,'features');
+         if isempty(features)
+            ID=1;
+         else
+          
+          ID=nanmax([features(:).ID])+1;
+        end
         poly=polyshape(xinit,yinit);
-        new_feature=feature_cl('Polygon',poly,'Projection',disp_config.MET_tmproj);
+        new_feature=feature_cl('Polygon',poly,'Projection',disp_config.MET_tmproj,'ID',ID);
         if isempty(features)
             features=new_feature;
         else
             features=[features new_feature];
         end
         setappdata(main_figure,'features',features);
-        display_features(main_figure,new_feature.Unique_ID);
-        
+        display_features(main_figure,{});
+        update_feature_list_tab(main_figure);
     end
 
     

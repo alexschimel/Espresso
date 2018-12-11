@@ -64,7 +64,12 @@ for i = idx_up
         plot(ax,fData.X_1P_pingE(1),fData.X_1P_pingN(1),'o','Tag',tag_id,'Visible','on','Color',col);
         
         % line navigation
-        plot(ax,fData.X_1P_pingE,fData.X_1P_pingN,'Tag',tag_id,'Visible','on','Color',col,'ButtonDownFcn',{@disp_wc_ping_cback,main_figure});
+        handle_plot=plot(ax,fData.X_1P_pingE,fData.X_1P_pingN,'Tag',tag_id,'Visible','on','Color',col,'ButtonDownFcn',{@disp_wc_ping_cback,main_figure});
+        pointerBehavior.enterFcn = @(figHandle, currentPoint) set(figHandle, 'Pointer', 'crosshair');
+        pointerBehavior.exitFcn  = @(figHandle, currentPoint) set(figHandle, 'Pointer', 'crosshair');
+        pointerBehavior.traverseFcn = @(figHandle, currentPoint) set(figHandle, 'Pointer', 'crosshair');
+        
+        iptSetPointerBehavior(handle_plot,pointerBehavior);
         
         % plot subsampled navigation
         plot(ax,[fData.X_1P_pingE(1:df:end),fData.X_1P_pingE(end)],[fData.X_1P_pingN(1:df:end),fData.X_1P_pingN(end)],'.','Tag',tag_id,'Visible','on','Color',col);

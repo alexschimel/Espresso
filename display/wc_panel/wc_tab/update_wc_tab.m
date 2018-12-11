@@ -30,7 +30,7 @@ datagramSource = fData.MET_datagramSource;
 % the rest only applies if data is water column
 if ismember(datagramSource,{'WC' 'AP'})
     
-     if isempty(ip)
+    if isempty(ip)
         ip = 1;
         disp_config.Iping = 1;
     end
@@ -55,13 +55,69 @@ if ismember(datagramSource,{'WC' 'AP'})
     cax_min = str2double(wc_proc_tab_comp.clim_min_wc.String);
     cax_max = str2double(wc_proc_tab_comp.clim_max_wc.String);
     cax = [cax_min cax_max];
-     idx_pings=nanmax(1,ip-disp_config.StackPingWidth):nanmin(ip+disp_config.StackPingWidth-1,size(fData.X_BP_bottomEasting,2));
-     idx_a=~(disp_config.StackAngularWidth(1)/180*pi<=fData.X_PB_beamPointingAngleRad(:,idx_pings)&disp_config.StackAngularWidth(2)/180*pi>=fData.X_PB_beamPointingAngleRad(:,idx_pings));
+    
+    nb_pings=size(fData.X_BP_bottomEasting,2);
+    idx_pings=ip-disp_config.StackPingWidth:ip+disp_config.StackPingWidth-1;
+    
+    id_min=nansum(idx_pings<1);
+    idx_pings=idx_pings+id_min;
+    
+    id_max=nansum(idx_pings>nb_pings);
+    idx_pings=idx_pings-id_max;
+    
+    idx_pings(idx_pings<1|idx_pings>nb_pings)=[];
+    
+    idx_a=~(disp_config.StackAngularWidth(1)/180*pi<=fData.X_PB_beamPointingAngleRad(:,idx_pings)&disp_config.StackAngularWidth(2)/180*pi>=fData.X_PB_beamPointingAngleRad(:,idx_pings));
    
-     switch str_disp        
+    ip_sub=ip-idx_pings(1)+1;
+    
+    usrdata.idx_angles=idx_a;
+    usrdata.idx_pings=idx_pings;
+    usrdata.ID=fData.ID;
+    usrdata.str_disp=str_disp;
+    
+    if isfield(stacked_wc_tab_comp.wc_gh.UserData,'idx_pings')
+        up_stacked_wc_bool=~isempty(setdiff(idx_pings,stacked_wc_tab_comp.wc_gh.UserData.idx_pings))||...
+            ~(fData.ID==stacked_wc_tab_comp.wc_gh.UserData.ID)||...
+            ~isempty(setdiff(idx_a,stacked_wc_tab_comp.wc_gh.UserData.idx_angles))||...
+             ~strcmpi(str_disp,stacked_wc_tab_comp.wc_gh.UserData.str_disp);
+    else
+        up_stacked_wc_bool=true;
+    end
+    
+    if  ~up_stacked_wc_bool
+        idx_pings=ip;
+        ip_sub=1;
+    else
+        if isfield(fData,'X_BP_bottomEasting')
+            
+            e_p=fData.X_BP_bottomEasting(:,idx_pings);
+            e_p_s = arrayfun(@(col) e_p(find(~isnan(e_p(:, col)),1,'first'),col), ...
+                1:size(e_p, 2), 'UniformOutput', 1);
+            e_p_e = arrayfun(@(col) e_p(find(~isnan(e_p(:, col)),1,'last'),col), ...
+                1:size(e_p, 2), 'UniformOutput', 1);
+            
+            n_p=fData.X_BP_bottomNorthing(:,idx_pings);
+            n_p_s = arrayfun(@(col) n_p(find(~isnan(n_p(:, col)),1,'first'),col), ...
+                1:size(e_p, 2), 'UniformOutput', 1);
+            n_p_e = arrayfun(@(col) n_p(find(~isnan(n_p(:, col)),1,'last'),col), ...
+                1:size(e_p, 2), 'UniformOutput', 1);
+            new_vert=[[e_p_s fliplr(e_p_e)];[n_p_s fliplr(n_p_e)]]';
+            
+            
+            map_tab_comp.ping_poly.Shape.Vertices=new_vert;
+            map_tab_comp.ping_poly.Tag=sprintf('poly_%.0f0',fData.ID);
+            
+        end
+        
+    end
+    set(map_tab_comp.ping_line,'XData',fData.X_BP_bottomEasting(:,ip),'YData',fData.X_BP_bottomNorthing(:,ip));
+    
+    
+    switch str_disp
         case 'Original'
             wc_data=CFF_get_WC_data(fData,sprintf('%s_SBP_SampleAmplitudes',datagramSource),idx_pings,1,1);
-            amp = nanmean(wc_data,3);
+            amp = wc_data(:,:,ip_sub);
             wc_data(:,idx_a)=nan;
             amp_al=squeeze(nanmean(wc_data,2));
             idx_keep = amp >= cax(1);
@@ -70,17 +126,17 @@ if ismember(datagramSource,{'WC' 'AP'})
             if isfield(fData,'AP_SBP_SamplePhase')
                 wc_data = CFF_get_WC_data(fData,sprintf('%s_SBP_SamplePhase',datagramSource),idx_pings,1,1);
                 cax = [-180 180];
-                amp = nanmean((wc_data),3);
+                amp = wc_data(:,:,ip_sub);
                 wc_data(:,idx_a)=nan;
                 amp_al=squeeze(nanmean(wc_data,2));
                 
                 idx_keep = amp ~= 0;
-                 idx_keep_al = amp_al ~= 0;
+                idx_keep_al = amp_al ~= 0;
             else
                 wc_data = CFF_get_WC_data(fData,sprintf('%s_SBP_SampleAmplitudes',datagramSource),idx_pings,1,1);
-                amp = nanmean((wc_data),3);
+                amp = wc_data(:,:,ip_sub);
                 wc_data(:,idx_a)=nan;
-                  amp_al=squeeze(nanmean(wc_data,2));
+                amp_al=squeeze(nanmean(wc_data,2));
                 set(wc_tab_comp.data_disp,'Value',find(contains(wc_str,'Original')));
                 idx_keep = amp >= cax(1);
                 idx_keep_al = amp_al >= cax(1);
@@ -88,13 +144,13 @@ if ismember(datagramSource,{'WC' 'AP'})
             
         case 'Processed'
             wc_data = CFF_get_WC_data(fData,'X_SBP_WaterColumnProcessed',idx_pings,1,1);
-            amp = nanmean((wc_data),3);
+            amp = wc_data(:,:,ip_sub);
             wc_data(:,idx_a)=nan;
             amp_al=squeeze(nanmean(wc_data,2));
             idx_keep = amp >= cax(1);
             idx_keep_al = amp_al >= cax(1);
     end
-
+    
     
     soundSpeed          = fData.(sprintf('%s_1P_SoundSpeed',datagramSource)).*0.1; %m/s
     samplingFrequencyHz = fData.(sprintf('%s_1P_SamplingFrequencyHz',datagramSource)); %Hz
@@ -129,20 +185,25 @@ if ismember(datagramSource,{'WC' 'AP'})
         'YData',sampleUpDist,'ZData',zeros(size(amp)),...
         'CData',(amp),'AlphaData',(idx_keep));
     
+    if up_stacked_wc_bool
         set(stacked_wc_tab_comp.wc_gh,'XData',idx_pings,...
-        'YData',sampleRangeAl,'ZData',zeros(size(amp_al)),...
-        'CData',(amp_al),'AlphaData',(idx_keep_al));
+            'YData',sampleRangeAl,'ZData',zeros(size(amp_al)),...
+            'CData',(amp_al),'AlphaData',(idx_keep_al),'Userdata',usrdata);
+        set(stacked_wc_tab_comp.wc_axes,'XLim',xlim_stacked,'Ylim',ylim_stacked,'Layer','top','UserData',usrdata);
+    end
+    set(stacked_wc_tab_comp.ping_gh,'XData',ones(1,2)*idx_pings(ip_sub),'YData',ylim_stacked);
     
     set(wc_tab_comp.ac_gh,'XData',[across_dist across_dist],...
         'YData',get(wc_tab_comp.wc_axes,'YLim'));
     
     set(wc_tab_comp.bot_gh,'XData',fData.X_BP_bottomAcrossDist(:,ip),...
         'YData',fData.X_BP_bottomUpDist(:,ip));
+    
     set(wc_tab_comp.wc_axes,'XLim',xlim,'Ylim',ylim,'Layer','top');
     
-    set(stacked_wc_tab_comp.wc_axes,'XLim',xlim_stacked,'Ylim',ylim_stacked,'Layer','top');
-    title(wc_tab_comp.wc_axes,tt,'Interpreter','none');
-    title(stacked_wc_tab_comp.wc_axes,tt,'Interpreter','none');
+    
+    wc_tab_comp.wc_axes.Title.String=tt;
+    stacked_wc_tab_comp.wc_axes.Title.String=tt;
     uistack(map_tab_comp.ping_line,'top');
     if any(disp_config.Cax_wc~=cax)
         disp_config.Cax_wc = cax;

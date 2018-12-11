@@ -14,6 +14,7 @@ classdef display_config_cl <handle
         Mode
         StackPingWidth
         StackAngularWidth
+        Act_features
     end
     
     methods
@@ -29,8 +30,9 @@ classdef display_config_cl <handle
             addParameter(p,'Mode','normal',@ischar);
             addParameter(p,'MET_tmproj','',@ischar);
             addParameter(p,'Fdata_idx',1,@isnumeric);
-            addParameter(p,'StackPingWidth',50,@isnumeric);
-            addParameter(p,'StackAngularWidth',[-5 5],@isnumeric);
+            addParameter(p,'StackPingWidth',200,@isnumeric);
+            addParameter(p,'StackAngularWidth',[-10 10],@isnumeric);
+            addParameter(p,'Act_features',{},@iscell);
             
             parse(p,varargin{:});
             results = p.Results;

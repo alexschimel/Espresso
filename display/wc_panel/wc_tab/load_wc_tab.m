@@ -26,7 +26,7 @@ wc_tab_comp.data_disp = uicontrol(wc_tab_comp.wc_tab,'style','popup','Units','pi
 wc_tab_comp.wc_axes = axes(wc_tab_comp.wc_tab,'Units','normalized','outerposition',[0 0 1 1],'nextplot','add','YDir','normal');
 
 [cmap,col_ax,col_lab,col_grid,col_bot,col_txt] = init_cmap(disp_config.Cmap);
-
+title(wc_tab_comp.wc_axes,'','Interpreter','none');
 colorbar(wc_tab_comp.wc_axes,'southoutside');
 colormap(wc_tab_comp.wc_axes,cmap);
 caxis(wc_tab_comp.wc_axes,disp_config.Cax_wc);

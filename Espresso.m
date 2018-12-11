@@ -59,12 +59,8 @@ main_figure = figure('Units','pixels',...
 iptPointerManager(main_figure);
 
 %% Get Javaframe from Figure to set the Icon
-if ispc
-    javaFrame = get(main_figure,'JavaFrame');
-    javaFrame.fHG2Client.setClientDockable(true);
-    set(javaFrame,'GroupName','Espresso');
-    javaFrame.setFigureIcon(javax.swing.ImageIcon(fullfile(whereisroot(),'icons','Espresso.png')));
-end
+set_icon_espresso(main_figure);
+
 
 %% Default font size for Controls and Panels
 set(0,'DefaultUicontrolFontSize',10);

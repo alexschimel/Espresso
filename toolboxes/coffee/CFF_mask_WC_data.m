@@ -179,18 +179,18 @@ for iB = 1:nBlocks
         
         % beamwidth (nominal and with steering)
         psi = deg2rad(fData.Ru_1D_ReceiveBeamwidth(1)./10);
-        psi = psi./cos(theta);
-        
+        psi = psi./cos(abs(theta)).^2/2;
+
         % transition between normal and grazing incidence
-        theta_lim = psi/2;
-        idx_normal = abs(theta) < theta_lim;
-        idx_grazing = ~idx_normal;
-        
+%         theta_lim = psi/2;
+%         idx_normal = abs(theta) < theta_lim;
+%         idx_grazing = ~idx_normal;
+%         
         % length of bottom echo? XXX
-        M = zeros(size(theta),'single');
-        M(idx_normal)  = ( 1./cos(theta(idx_normal)+psi(idx_normal)/2)   - 1./cos(theta(idx_normal)) ) .* fData.X_BP_bottomRange(idx_normal);
-        M(idx_grazing) = ( 1./cos(theta(idx_grazing)+psi(idx_grazing)/2) - 1./cos(theta(idx_grazing)-psi(idx_grazing)/2) ) .* fData.X_BP_bottomRange(idx_grazing);
-        
+   %    M = zeros(size(theta),'single');
+%         M(idx_normal)  = ( 1./cos(theta(idx_normal)+psi(idx_normal)/2)   - 1./cos(theta(idx_normal)) ) .* fData.X_BP_bottomRange(idx_normal,blockPings);
+%         M(idx_grazing) = 2*( sin(theta(idx_grazing)+psi(idx_grazing)/2) - sin(theta(idx_grazing)-psi(idx_grazing)/2) ) .* fData.X_BP_bottomRange(idx_grazing,blockPings);
+         M =2* (sin(abs(theta)+psi/2) - sin(abs(theta)-psi/2) ) .* fData.X_BP_bottomRange(:,blockPings);
         % calculate max sample beyond which mask is to be applied
         X_BP_maxRange  = fData.X_BP_bottomRange(:,blockPings) + remove_bottomrange - abs(M);
         X_BP_maxSample = bsxfun(@rdivide,X_BP_maxRange,dr_samples(blockPings));

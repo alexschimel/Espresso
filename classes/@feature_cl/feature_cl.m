@@ -9,6 +9,7 @@ classdef feature_cl
         Projection=' ';
         Depth_min=0;
         Depth_max=inf;
+        ID=1;
         
     end
     
@@ -25,7 +26,8 @@ classdef feature_cl
             addParameter(p,'Polygon',[]);
              addParameter(p,'Point',[]);
             addParameter(p,'Depth_min',0,@isnumeric);
-            addParameter(p,'Depth_max',0,@isnumeric);
+            addParameter(p,'Depth_max',inf,@isnumeric);
+            addParameter(p,'ID',1,@isnumeric);
             
             
             parse(p,varargin{:});
@@ -60,12 +62,12 @@ classdef feature_cl
 %             
 %          end
         
-        function  [h_p,h_t]=draw_feature(obj,ax)
+        function  [h_p,h_t]=draw_feature(obj,ax,col)
             
             if ~isempty(obj.Polygon)
-                h_p=plot(ax,obj.Polygon, 'FaceColor','r',...
+                h_p=plot(ax,obj.Polygon, 'FaceColor',col,...
                     'parent',ax,'FaceAlpha',0.2,...
-                    'EdgeColor','r',...
+                    'EdgeColor',col,...
                     'LineWidth',1,...
                     'tag','feature',...
                     'UserData',obj.Unique_ID);
@@ -76,7 +78,7 @@ classdef feature_cl
         end
         
         function  str=disp_str(obj)
-            str=sprintf('%s %s',obj.Tag, obj.Type);
+            str=sprintf('%s %s (%d)',obj.Type,obj.Tag,obj.ID);
         end
         
         
