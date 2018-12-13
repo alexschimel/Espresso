@@ -87,6 +87,7 @@ switch src.ColumnName{idx_data}
         end
         features(idx_feature).Depth_max=nData;
 end
+features(idx_feature).feature_to_shapefile(fullfile(whereisroot,'feature_files'));
 setappdata(main_figure,'features',features);
 
 display_features(main_figure,selected_features);

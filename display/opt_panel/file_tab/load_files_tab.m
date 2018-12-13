@@ -388,7 +388,7 @@ for nF = 1:numel(files_to_load)
     
     % check if file was converted
     if files_not_converted(nF)
-        fprintf('File "%s" (%i/%i) has not been converted yet. Loading aborted.\n',nF,numel(files_to_load),file_to_load);
+        fprintf('File "%s" (%i/%i) has not been converted yet. Loading aborted.\n',file_to_load,nF,numel(files_to_load));
         continue
     end
         

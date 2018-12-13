@@ -14,8 +14,13 @@ col(idx_act)={'r'};
 col(~idx_act)={[0.1 0.1 0.1]};
 
 for ii=1:numel(idx_act)
+    if  strcmpi(features_h(ii).Type,'Line')
+        features_h(ii).Color=col{ii};
+        features_h(ii).MarkerFaceColor=col{ii};
+    else
     features_h(ii).EdgeColor=col{ii};
     features_h(ii).FaceColor=col{ii};
+    end
 end
 
 end

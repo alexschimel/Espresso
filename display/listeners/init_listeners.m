@@ -16,6 +16,8 @@ ls = [ls addlistener(disp_config_obj,'Var_disp','PostSet',@(src,envdata)listenVa
 ls = [ls addlistener(disp_config_obj,'Cmap','PostSet',@(src,envdata)listenCmap(src,envdata,main_figure))];
 ls = [ls addlistener(disp_config_obj,'Mode','PostSet',@(src,envdata)listenMode(src,envdata,main_figure))];
 ls = [ls addlistener(disp_config_obj,'Iping','PostSet',@(src,envdata)listenIping(src,envdata,main_figure))];
+ls = [ls addlistener(disp_config_obj,'StackPingWidth','PostSet',@(src,envdata)listenIping(src,envdata,main_figure))];
+ls = [ls addlistener(disp_config_obj,'StackAngularWidth','PostSet',@(src,envdata)listenIping(src,envdata,main_figure))];
 ls = [ls addlistener(disp_config_obj,'Act_features','PostSet',@(src,envdata)listenAct_features(src,envdata,main_figure))];
 
 

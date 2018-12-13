@@ -4,6 +4,14 @@ function draw_poly_feature(src,evt,main_figure)
 
 disp_config=getappdata(main_figure,'disp_config');
 fData_tot=getappdata(main_figure,'fData');
+features=getappdata(main_figure,'features');
+if isempty(features)
+    ID=1;
+else
+    
+    ID=nanmax([features(:).ID])+1;
+end
+
 if isempty(fData_tot)
     return;
 end
@@ -14,16 +22,7 @@ ah=map_tab_comp.map_axes;
 
 features_h=findobj(ah,{'tag','feature_temp'});
 delete(features_h);
-features_h=findobj(ah,{'tag','reg_tmp'});
-delete(features_h);
 
-switch main_figure.SelectionType
-    case 'normal'
-        
-    otherwise
-
-        return;
-end
 
 cp = ah.CurrentPoint;
 
@@ -43,20 +42,31 @@ end
 
 col_line='r';
 zone = disp_config.get_zone();
-
 [lat,lon] = utm2ll(cp(1,1),cp(1,2),zone);
-hp=plot(ah,xinit,yinit,'color',col_line,'linewidth',1,'Tag','feature_temp');
-txt=text(ah,cp(1,1),cp(1,2),sprintf('%.6f,%.6f',lat,lon),'color',col_line,'Tag','feature_temp');
+switch main_figure.SelectionType
+    case 'normal'
+        
+        hp=plot(ah,xinit,yinit,'color',col_line,'linewidth',1,'Tag','feature_temp');
+        txt=text(ah,cp(1,1),cp(1,2),sprintf('%.6f,%.6f',lat,lon),'color',col_line,'Tag','feature_temp');
+        
+        replace_interaction(main_figure,'interaction','WindowButtonMotionFcn','id',2,'interaction_fcn',@wbmcb_ext);
+        replace_interaction(main_figure,'interaction','WindowButtonDownFcn','id',1,'interaction_fcn',@wbdcb_ext);
+    case {'open' 'alt'}
+        new_feature=feature_cl('Point',[xinit(1) yinit(1)],'Zone',disp_config.get_zone(),'ID',ID);
+        new_feature.feature_to_shapefile(fullfile(whereisroot,'feature_files'));
+        save_new_feature();
+    otherwise
+        return;
+end
 
-replace_interaction(main_figure,'interaction','WindowButtonMotionFcn','id',2,'interaction_fcn',@wbmcb_ext);
-replace_interaction(main_figure,'interaction','WindowButtonDownFcn','id',1,'interaction_fcn',@wbdcb_ext);
 
-   function wbmcb_ext(~,~)
-       
+
+    function wbmcb_ext(~,~)
+        
         cp=ah.CurrentPoint;
         xinit(u)=cp(1,1);
         yinit(u)=cp(1,2);
-
+        
         
         if isvalid(hp)
             set(hp,'XData',xinit,'YData',yinit);
@@ -68,16 +78,16 @@ replace_interaction(main_figure,'interaction','WindowButtonDownFcn','id',1,'inte
         if isvalid(txt)
             set(txt,'position',[cp(1,1) cp(1,2) 0],'string',sprintf('%.6f,%.6f',lat,lon));
         else
-           txt=text(ah,cp(1,1),cp(1,2),sprintf('%.6f,%.6f',lat,lon),'color',col_line,'Tag','feature_temp');
+            txt=text(ah,cp(1,1),cp(1,2),sprintf('%.6f,%.6f',lat,lon),'color',col_line,'Tag','feature_temp');
         end
         
-   end
+    end
 
     function wbdcb_ext(~,~)
         
         switch main_figure.SelectionType
             case {'open' 'alt'}
-
+                
                 wbucb(main_figure,[]);
                 replace_interaction(main_figure,'interaction','WindowButtonDownFcn','id',1,'interaction_fcn',{@draw_poly_feature,main_figure});
                 return;
@@ -100,19 +110,26 @@ replace_interaction(main_figure,'interaction','WindowButtonDownFcn','id',1,'inte
         yinit(isnan(yinit))=[];
         x_rem=xinit>x_lim(end)|xinit<x_lim(1);
         y_rem=yinit>y_lim(end)|yinit<y_lim(1);
-
+        
         xinit(x_rem|y_rem)=[];
         yinit(x_rem|y_rem)=[];
         
-%         [x_f,IA,~] = unique(xinit);
-%         y_f=yinit(IA);
+        %         [x_f,IA,~] = unique(xinit);
+        %         y_f=yinit(IA);
     end
 
     function wbucb(main_figure,~)
         
         replace_interaction(main_figure,'interaction','WindowButtonMotionFcn','id',2);
         
-
+        if u<=2
+            features_h=findobj(ah,{'tag','feature_temp'});
+            delete(features_h);
+            return;
+        end
+        
+        xinit(u+1)=xinit(1);
+        yinit(u+1)=yinit(1);
         xinit(isnan(xinit))=[];
         yinit(isnan(yinit))=[];
         xinit(xinit>x_lim(end))=x_lim(end);
@@ -120,26 +137,27 @@ replace_interaction(main_figure,'interaction','WindowButtonDownFcn','id',1,'inte
         
         yinit(yinit>y_lim(end))=y_lim(end);
         yinit(yinit<y_lim(1))=y_lim(1);
-       
+        
         
         delete(txt);
         delete(hp);
         
         if length(yinit)<=2
+            features_h=findobj(ah,{'tag','feature_temp'});
+            delete(features_h);
             return;
         end
-
-
+        
+      
         %feval(func,main_figure,poly_r,poly_pings);
-        features=getappdata(main_figure,'features');
-         if isempty(features)
-            ID=1;
-         else
-          
-          ID=nanmax([features(:).ID])+1;
-        end
+                
         poly=polyshape(xinit,yinit);
-        new_feature=feature_cl('Polygon',poly,'Projection',disp_config.MET_tmproj,'ID',ID);
+        new_feature=feature_cl('Polygon',poly,'Zone',disp_config.get_zone(),'ID',ID);
+        new_feature.feature_to_shapefile(fullfile(whereisroot,'feature_files'));
+        save_new_feature();
+    end
+
+    function save_new_feature()
         if isempty(features)
             features=new_feature;
         else
@@ -150,5 +168,4 @@ replace_interaction(main_figure,'interaction','WindowButtonDownFcn','id',1,'inte
         update_feature_list_tab(main_figure);
     end
 
-    
 end
