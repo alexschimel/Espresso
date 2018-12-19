@@ -2,7 +2,7 @@
 %
 % _This section contains a very short description of the function, for the
 % user to know this function is part of the software and what it does for
-% it. Example below to replace. Delete these lines XXX._ 
+% it. Example below to replace. Delete these lines XXX._
 %
 % Template of ESP3 function header. XXX
 %
@@ -13,10 +13,10 @@
 % _This section contains a more detailed description of what the function
 % does and how to use it, for the interested user to have an overall
 % understanding of its function. Example below to replace. Delete these
-% lines XXX._  
+% lines XXX._
 %
 % This is a text file containing the basic comment template to add at the
-% start of any new ESP3 function to serve as function help. XXX 
+% start of any new ESP3 function to serve as function help. XXX
 %
 % *INPUT VARIABLES*
 %
@@ -27,7 +27,7 @@
 % type (e.g. Num, Positive num, char, 1xN cell array, etc.) and default
 % value if there is one (e.g. Default: '10'). Example below to replace.
 % Delete these lines XXX._
-% 
+%
 % * |input_variable_1|: Description (Information). XXX
 % * |input_variable_2|: Description (Information). XXX
 % * |input_variable_3|: Description (Information). XXX
@@ -45,7 +45,7 @@
 %
 % _This section describes what features are temporary, needed future
 % developments and paper references. Example below to replace. Delete these
-% lines XXX._ 
+% lines XXX._
 %
 % * research point 1. XXX
 % * research point 2. XXX
@@ -63,7 +63,7 @@
 % _This section contains examples of valid function calls. Note that
 % example lines start with 3 white spaces so that the publish function
 % shows them correctly as matlab code. Example below to replace. Delete
-% these lines XXX._ 
+% these lines XXX._
 %
 %   example_use_1; % comment on what this does. XXX
 %   example_use_2: % comment on what this line does. XXX
@@ -71,7 +71,7 @@
 % *AUTHOR, AFFILIATION & COPYRIGHT*
 %
 % _This last section contains at least author name and affiliation. Delete
-% these lines XXX._ 
+% these lines XXX._
 %
 % Yoann Ladroit, Alexandre Schimel, NIWA. XXX
 

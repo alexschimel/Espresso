@@ -33,7 +33,7 @@
 % *AUTHOR, AFFILIATION & COPYRIGHT*
 %
 % Yoann Ladroit, Alexandre Schimel NIWA. Type |help Espresso.m| for
-% copyright information. 
+% copyright information.
 
 %% Function
 function load_grid_tab(main_figure,parent_tab_group)

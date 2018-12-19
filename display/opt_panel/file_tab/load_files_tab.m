@@ -33,7 +33,7 @@
 % *AUTHOR, AFFILIATION & COPYRIGHT*
 %
 % Yoann Ladroit, Alexandre Schimel NIWA. Type |help Espresso.m| for
-% copyright information. 
+% copyright information.
 
 %% Function
 function load_files_tab(main_figure,parent_tab_group)
@@ -218,7 +218,7 @@ function convert_files_callback(~,~,main_figure,reconvert)
 
 % HARD-CODED PARAMETER:
 % the source datagram that will be used throughout the program for
-% processing 
+% processing
 % by default is 'WC' but 'AP' can be used for Amplitude-Phase datagrams
 % instead. If there is no water-column datagram, you can still use Espresso
 % to convert and load and display data, using the depths datagrams 'De' or
@@ -237,7 +237,7 @@ switch datagramSource
 end
 
 % adding position, attitude, and runtime datagrams to the list of datagrams
-% to parse 
+% to parse
 dg_wc = [73 80 82 wc_d];
 
 % get tab data
@@ -260,7 +260,7 @@ for nF = 1:numel(files_to_convert)
     
     % get file to convert
     file_to_convert = files_to_convert{nF};
-
+    
     % if file already converted and not asking for reconversion, exit here
     if files_already_converted(nF) && ~reconvert
         fprintf('File "%s" (%i/%i) is already converted.\n',file_to_convert,nF,numel(files_to_convert));
@@ -273,7 +273,7 @@ for nF = 1:numel(files_to_convert)
     
     % conversion to ALLdata format
     [EMdata,datags_parsed_idx] = CFF_read_all(file_to_convert, dg_wc);
-       
+    
     % if not all datagrams were found at this point, message and abort
     if ~all(datags_parsed_idx)
         if ismember(wc_d,dg_wc(~datags_parsed_idx))
@@ -383,7 +383,7 @@ timer_start = now;
 
 % for each file
 for nF = 1:numel(files_to_load)
-
+    
     file_to_load = files_to_load{nF};
     
     % check if file was converted
@@ -391,13 +391,13 @@ for nF = 1:numel(files_to_load)
         fprintf('File "%s" (%i/%i) has not been converted yet. Loading aborted.\n',file_to_load,nF,numel(files_to_load));
         continue
     end
-        
+    
     % check if file not already loaded
     if files_already_loaded(nF)
         fprintf('File "%s" (%i/%i) is already loaded.\n',file_to_load,nF,numel(files_to_load));
         continue
     end
-        
+    
     % converted filename fData
     folder_for_converted_data = CFF_converted_data_folder(file_to_load);
     mat_fdata_file = fullfile(folder_for_converted_data,'fdata.mat');
@@ -439,17 +439,17 @@ for nF = 1:numel(files_to_load)
     % Time-tag that fData
     fData_temp.ID = str2double(datestr(now,'yyyymmddHHMMSSFFF'));
     
-%     % If data have already been processed, load the binary file into fData
-%     % NOTE: if data have already been processed, the fData and the binary
-%     % files should already exist and should already been attached, without
-%     % need to re-memmap them... So verify if there is actual need for this
-%     % part... XXX
-%     wc_dir = CFF_converted_data_folder(fData_temp.ALLfilename{1});
-%     WaterColumnProcessed_file = fullfile(wc_dir,'X_SBP_WaterColumnProcessed.dat');
-%     if isfile(WaterColumnProcessed_file)
-%         [nSamples,nBeams,nPings] = size(fData_temp.([datagramSource '_SBP_SampleAmplitudes']).Data.val);
-%         fData_temp.X_SBP_WaterColumnProcessed = memmapfile(WaterColumnProcessed_file, 'Format',{'int8' [nSamples nBeams nPings] 'val'},'repeat',1,'writable',true);
-%     end
+    %     % If data have already been processed, load the binary file into fData
+    %     % NOTE: if data have already been processed, the fData and the binary
+    %     % files should already exist and should already been attached, without
+    %     % need to re-memmap them... So verify if there is actual need for this
+    %     % part... XXX
+    %     wc_dir = CFF_converted_data_folder(fData_temp.ALLfilename{1});
+    %     WaterColumnProcessed_file = fullfile(wc_dir,'X_SBP_WaterColumnProcessed.dat');
+    %     if isfile(WaterColumnProcessed_file)
+    %         [nSamples,nBeams,nPings] = size(fData_temp.([datagramSource '_SBP_SampleAmplitudes']).Data.val);
+    %         fData_temp.X_SBP_WaterColumnProcessed = memmapfile(WaterColumnProcessed_file, 'Format',{'int8' [nSamples nBeams nPings] 'val'},'repeat',1,'writable',true);
+    %     end
     
     % why pause here? XXX
     pause(1e-3);

@@ -34,7 +34,7 @@
 % *AUTHOR, AFFILIATION & COPYRIGHT*
 %
 % Yoann Ladroit, Alexandre Schimel NIWA. Type |help Espresso.m| for
-% copyright information. 
+% copyright information.
 
 %% Function
 function load_wc_proc_tab(main_figure,parent_tab_group)
@@ -55,7 +55,7 @@ disp_config = getappdata(main_figure,'disp_config');
 % filter bottom push button
 uicontrol(wc_proc_tab_comp.wc_proc_tab,'Style','pushbutton','String','Filter bottom of selected lines',...
     'units','normalized',...
-     'pos',[0.2 0.87 0.5 0.08],...
+    'pos',[0.2 0.87 0.5 0.08],...
     'callback',{@filter_bottom_cback,main_figure});
 
 % mask selected data
@@ -326,8 +326,8 @@ for i = idx_fData(:)'
         fData_tot{i} = CFF_filter_WC_sidelobe_artifact(fData_tot{i},2);
         
     end
-
-    % masking 
+    
+    % masking
     if wc_proc_tab_comp.masking.Value
         
         disp('...Creating mask...');
@@ -337,7 +337,7 @@ for i = idx_fData(:)'
             mask_params.remove_bottomrange);
         
     end
-
+    
     % disp
     fprintf('...Done. Elapsed time: %f seconds.\n',toc);
     

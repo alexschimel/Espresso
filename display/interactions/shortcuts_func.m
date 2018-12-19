@@ -1,43 +1,138 @@
+%% this_function_name.m
+%
+% _This section contains a very short description of the function, for the
+% user to know this function is part of the software and what it does for
+% it. Example below to replace. Delete these lines XXX._
+%
+% Template of ESP3 function header. XXX
+%
+%% Help
+%
+% *USE*
+%
+% _This section contains a more detailed description of what the function
+% does and how to use it, for the interested user to have an overall
+% understanding of its function. Example below to replace. Delete these
+% lines XXX._
+%
+% This is a text file containing the basic comment template to add at the
+% start of any new ESP3 function to serve as function help. XXX
+%
+% *INPUT VARIABLES*
+%
+% _This section contains bullet points of input variables with description
+% and information. Put input variable and other valid entries or defaults
+% between | symbols so it shows as monospace. Information section to
+% contain, in order: requirement (i.e. Required/Optional/Paramter), valid
+% type (e.g. Num, Positive num, char, 1xN cell array, etc.) and default
+% value if there is one (e.g. Default: '10'). Example below to replace.
+% Delete these lines XXX._
+%
+% * |input_variable_1|: Description (Information). XXX
+% * |input_variable_2|: Description (Information). XXX
+% * |input_variable_3|: Description (Information). XXX
+%
+% *OUTPUT VARIABLES*
+%
+% _This section contains bullet points of output variables with description
+% and information. See input variables for template. Example below to
+% replace. Delete these lines XXX._
+%
+% * |output_variable_1|: Description (Information). XXX
+% * |output_variable_2|: Description (Information). XXX
+%
+% *DEVELOPMENT NOTES*
+%
+% _This section describes what features are temporary, needed future
+% developments and paper references. Example below to replace. Delete these
+% lines XXX._
+%
+% * research point 1. XXX
+% * research point 2. XXX
+%
+% *NEW FEATURES*
+%
+% _This section contains dates and descriptions of major updates. Example
+% below to replace. Delete these lines XXX._
+%
+% * YYYY-MM-DD: second version. Describes the update. XXX
+% * YYYY-MM-DD: first version. XXX
+%
+% *EXAMPLE*
+%
+% _This section contains examples of valid function calls. Note that
+% example lines start with 3 white spaces so that the publish function
+% shows them correctly as matlab code. Example below to replace. Delete
+% these lines XXX._
+%
+%   example_use_1; % comment on what this does. XXX
+%   example_use_2: % comment on what this line does. XXX
+%
+% *AUTHOR, AFFILIATION & COPYRIGHT*
+%
+% _This last section contains at least author name and affiliation. Delete
+% these lines XXX._
+%
+% Yoann Ladroit, Alexandre Schimel, NIWA. XXX
 
 %% Function
 function shortcuts_func(src,callbackdata,main_figure)
 
-disp_config=getappdata(main_figure,'disp_config');
-fData_tot=getappdata(main_figure,'fData');
+% get data
+disp_config = getappdata(main_figure,'disp_config');
+fData_tot = getappdata(main_figure,'fData');
+
 if isempty(fData_tot)
     return;
 end
-fData=fData_tot{disp_config.Fdata_idx};
-nb_pings=numel(fData.WC_1P_Date);
+
+% get relevant fData
+fData = fData_tot{disp_config.Fdata_idx};
+
+% total number of pings
+nb_pings = numel(fData.WC_1P_Date);
+
+% ?
 replace_interaction(src,'interaction','KeyPressFcn','id',1);
 
 try
-    switch callbackdata.Key        
-        case {'0' 'numpad0'}
-            disp_config.Mode='Normal';
-        case {'1' 'numpad1'}
-            disp_config.Mode='DrawPolyFeature';
-        case {'2' 'numpad2'}
-           
-        case {'3' 'numpad3'}
+    switch callbackdata.Key
         
+        case {'0' 'numpad0'}
+            % Normal interaction with map
+            disp_config.Mode = 'Normal';
+            
+        case {'1' 'numpad1'}
+            % Mode to draw features on map
+            disp_config.Mode = 'DrawNewFeature';
+            
+        case {'2' 'numpad2'}
+            
+        case {'3' 'numpad3'}
+            
         case {'4' 'numpad4'}
-          
+            
         case {'6' 'numpad6'}
-          
+            
         case {'5' 'numpad5'}
             
         case {'uparrow'}
-            disp_config.Iping=nanmin(disp_config.Iping+ceil(disp_config.StackPingWidth/5),nb_pings);
+            % Use Up/Down arrow to move pings by a set offset
+            disp_config.Iping = nanmin(disp_config.Iping+ceil(disp_config.StackPingWidth/5),nb_pings);
+            
         case {'downarrow'}
-            disp_config.Iping=nanmax(disp_config.Iping-ceil(disp_config.StackPingWidth/5),1);        
+            % Use Up/Down arrow to move pings by a set offset
+            disp_config.Iping = nanmax(disp_config.Iping-ceil(disp_config.StackPingWidth/5),1);
+            
     end
+    
 catch
-    if~isdeployed
+    if ~isdeployed
         disp('Error in Keyboard_func');
     end
 end
-replace_interaction(src,'interaction','KeyPressFcn','id',1,'interaction_fcn',{@shortcuts_func,main_figure});
 
+% ?
+replace_interaction(src,'interaction','KeyPressFcn','id',1,'interaction_fcn',{@shortcuts_func,main_figure});
 
 end

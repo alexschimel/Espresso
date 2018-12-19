@@ -1,3 +1,70 @@
+%% display_config_cl.m
+%
+% Class for Espresso features (polygon and points)
+%
+%% Help
+%
+% *PROPERTIES*
+%
+% * |Var_disp|: Description (Default: ).
+% * |Cax_wc_int|: Description (Default: ).
+% * |Cax_wc|: Description (Default: ).
+% * |Cax_bs|: Description (Default: ).
+% * |Cax_bathy|: Description (Default: ).
+% * |Cmap|: Description (Default: ).
+% * |Fdata_idx|: Description (Default: ).
+% * |Iping|: Description (Default: ).
+% * |AcrossDist|: Description (Default: ).
+% * |MET_tmproj|: Description (Default: ).
+% * |Mode|: Description (Default: ).
+% * |StackPingWidth|: Description (Default: ).
+% * |StackAngularWidth|: Description (Default: ).
+% * |Act_features|: Description (Default: ).
+%
+% *METHODS*
+%
+% _This section contains bullet points of output variables with description
+% and information. See input variables for template. Example below to
+% replace. Delete these lines XXX._
+%
+% * |output_variable_1|: Description (Information). XXX
+% * |output_variable_2|: Description (Information). XXX
+%
+% *DEVELOPMENT NOTES*
+%
+% _This section describes what features are temporary, needed future
+% developments and paper references. Example below to replace. Delete these
+% lines XXX._
+%
+% * research point 1. XXX
+% * research point 2. XXX
+%
+% *NEW FEATURES*
+%
+% _This section contains dates and descriptions of major updates. Example
+% below to replace. Delete these lines XXX._
+%
+% * YYYY-MM-DD: second version. Describes the update. XXX
+% * YYYY-MM-DD: first version. XXX
+%
+% *EXAMPLE*
+%
+% _This section contains examples of valid function calls. Note that
+% example lines start with 3 white spaces so that the publish function
+% shows them correctly as matlab code. Example below to replace. Delete
+% these lines XXX._
+%
+%   example_use_1; % comment on what this does. XXX
+%   example_use_2: % comment on what this line does. XXX
+%
+% *AUTHOR, AFFILIATION & COPYRIGHT*
+%
+% _This last section contains at least author name and affiliation. Delete
+% these lines XXX._
+%
+% Yoann Ladroit, Alexandre Schimel, NIWA. XXX
+
+%% Function
 classdef display_config_cl <handle
     
     properties (SetObservable = true)
@@ -71,6 +138,8 @@ classdef display_config_cl <handle
         end
         
         function zone = get_zone(obj)
+            % get UTM zone as numerical
+            
             tmp = textscan(obj.MET_tmproj,'utm%2d%c');
             zone = double(tmp{1});
             switch tmp{2}

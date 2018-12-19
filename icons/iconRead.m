@@ -1,13 +1,13 @@
 function cdata = iconRead(filename,guessalpha)
 % ICONREAD read an image file and convert it to CData for a HG icon.
 %
-% CDATA=ICONREAD(FILENAME)
+% CDATA = ICONREAD(FILENAME)
 %   Read an image file and convert it to CData with automatic transparency
 %   handling. If the image has transparency data, PNG files sometimes do,
 %   the transparency data is used. If the image has no CData, the top left
 %   pixel is treated as the transparent color.
 %
-% CDATA=ICONREAD(FILENAME, FALSE)
+% CDATA = ICONREAD(FILENAME, FALSE)
 %   Same as above but supress the usage of the top left pixel for images
 %   with no transparency data. This may require the caller to handle the
 %   transparency explicitly. View the contents of this m-file for an
@@ -31,7 +31,7 @@ end
 if isequal(lower(ext),'.mat')
     cdata = [];
     s = whos('-file',filename);
-    for i=1:length(s)
+    for i = 1:length(s)
         if ~isempty(strfind(lower(s(i).name), 'cdata'))
             data = load(filename,s(i).name);
             cdata = data.(s(i).name);
@@ -48,10 +48,10 @@ end
 if isempty(map)
     if isinteger(cdata)
         cname = class(cdata);
-        cdata=double(cdata);
+        cdata = double(cdata);
         cdata = cdata/double(intmax(cname));
     else
-        cdata=double(cdata);
+        cdata = double(cdata);
         cdata = cdata/255;
     end
 else
