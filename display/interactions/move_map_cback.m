@@ -82,17 +82,21 @@ current_figure = gcf;
 
 switch current_figure.SelectionType
     
-    case 'alt'
+    case 'normal'
         
         map_tab_comp = getappdata(main_figure,'Map_tab');
         
         % get axes, its boundaries, and current point
         ax = map_tab_comp.map_axes;
-        xlim = ax.XLim;
-        ylim = ax.YLim;        
         pt0 = ax.CurrentPoint;
         
-        replace_interaction(current_figure,'interaction','WindowButtonMotionFcn','id',2,'Pointer','hand');
+        % exit if cursor outside of window
+        if pt0(1,1)<ax.XLim(1) || pt0(1,1)>ax.XLim(2) || pt0(1,2)<ax.YLim(1) || pt0(1,2)>ax.YLim(2)
+            return;
+        end
+        
+        % setptr(main_figure,'hand');
+        replace_interaction(current_figure,'interaction','WindowButtonMotionFcn','id',2,'Pointer','hand','interaction_fcn',@wbmfcb);
         replace_interaction(current_figure,'interaction','WindowButtonUpFcn','id',2,'interaction_fcn',@wbucb);
         
     otherwise
@@ -101,18 +105,23 @@ switch current_figure.SelectionType
         
 end
 
-    function wbucb(~,~)
-        
+    function wbmfcb(~,~)
+        xlim = ax.XLim;
+        ylim = ax.YLim;
         pt = ax.CurrentPoint;
-        
         xlim_n = xlim-(pt(1,1)-pt0(1,1));
-        
         ylim_n = ylim-(pt(1,2)-pt0(1,2));
-        
         set(ax,'XLim',xlim_n,'YLim',ylim_n);
+        
+    end
+
+
+    function wbucb(~,~)
         
         replace_interaction(current_figure,'interaction','WindowButtonMotionFcn','id',2,'Pointer','arrow');
         replace_interaction(current_figure,'interaction','WindowButtonUpFcn','id',2);
+        
+        % setptr(main_figure,'arrow');
         
     end
 

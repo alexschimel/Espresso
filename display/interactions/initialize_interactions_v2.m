@@ -80,19 +80,22 @@ function initialize_interactions_v2(main_figure)
 
 interactions = getappdata(main_figure,'interactions_id');
 
+% if this is the first time, initialize list of callback identifiers
 if isempty(interactions)
-    interactions.WindowButtonDownFcn = nan(1,2);
-    interactions.WindowButtonMotionFcn = nan(1,3);
-    interactions.WindowButtonUpFcn = nan(1,2);
-    interactions.WindowKeyPressFcn = nan(1,2);
-    interactions.KeyPressFcn = nan(1,2);
-    interactions.WindowKeyReleaseFcn = nan(1,2);
-    interactions.KeyReleaseFcn = nan(1,2);
-    interactions.WindowScrollWheelFcn = nan(1,2);
+    interactions.WindowButtonDownFcn   = nan(1,2); % End user presses a mouse button while the pointer is in the figure window.
+    interactions.WindowButtonMotionFcn = nan(1,3); % End user moves the pointer within the figure window.
+    interactions.WindowButtonUpFcn     = nan(1,2); % End user releases a mouse button.
+    interactions.WindowKeyPressFcn     = nan(1,2); % End user presses a key while the pointer is on the figure or any of its child objects.
+    interactions.KeyPressFcn           = nan(1,2); % End user presses a keyboard key while the pointer is on the object.
+    interactions.WindowKeyReleaseFcn   = nan(1,2); % End user releases a key while the pointer is on the figure or any of its child objects.
+    interactions.KeyReleaseFcn         = nan(1,2);
+    interactions.WindowScrollWheelFcn  = nan(1,2); % End user turns the mouse wheel while the pointer is on the figure.
 end
 
+% list of interaction types
 field_interaction = fieldnames(interactions);
 
+% remove all callbacks and nan all callback identifiers
 for i = 1:numel(field_interaction)
     for ir = 1:numel(interactions.(field_interaction{i}))
         iptremovecallback(main_figure,field_interaction{i}, interactions.(field_interaction{i})(ir));
@@ -100,23 +103,18 @@ for i = 1:numel(field_interaction)
     end
 end
 
-%%% Set Interactions
+%% now set initial interactions
 
-% Pointer to Arrow
+% Set pointer to arrow
 setptr(main_figure,'arrow');
 
-% Initialize Mouse interactions in the figure
-interactions.WindowButtonDownFcn(1) = iptaddcallback(main_figure,'WindowButtonDownFcn',' ');
-
-% Initialize Keyboard interactions in the figure
+% Set normal interactions in the figure
+interactions.WindowButtonDownFcn(1) = iptaddcallback(main_figure,'WindowButtonDownFcn',{@move_map_cback,main_figure});
 interactions.KeyPressFcn(1) = iptaddcallback(main_figure,'KeyPressFcn',{@shortcuts_func,main_figure});
-
-% Set wheel mouse scroll cback
 interactions.WindowScrollWheelFcn(1) = iptaddcallback(main_figure,'WindowScrollWheelFcn',{@scroll_fcn_callback,main_figure});
-
-% Set pointer motion cback
 interactions.WindowButtonMotionFcn(1) = iptaddcallback(main_figure,'WindowButtonMotionFcn',{@disp_cursor_info,main_figure});
 
+% add interactions to appdata
 setappdata(main_figure,'interactions_id',interactions);
 
 end

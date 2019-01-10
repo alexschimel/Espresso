@@ -118,6 +118,11 @@ end
 % and add the new callback in its place, saving handle to interactions_id
 interactions_id.(p.Results.interaction)(p.Results.id) = iptaddcallback(curr_fig,(p.Results.interaction),fcn);
 
+% modify the pointer
+if ~isempty(p.Results.pointer)
+    setptr(curr_fig,p.Results.pointer);
+end
+
 % and save interactions_id back into figure
 setappdata(curr_fig,'interactions_id',interactions_id);
 

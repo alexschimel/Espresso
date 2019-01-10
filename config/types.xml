@@ -1,7 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <type_file version="0.1">
 	<Type name=" " descr="Default type"/>
-   <Type name="Plumes" descr="Bubbly bubbles"/>
-   <Type name="Shipwreck" descr=""/>
+	<Type name="Cray pot/float" descr=""/>
+	<Type name="Hard pinnacles" descr=""/>
+	<Type name="Biomass/fish" descr=""/>
+	<Type name="Turbulence / air bubbles" descr=""/>
+	<Type name="Kelp - short" descr="less than 1m above seafloor"/>
+	<Type name="Kelp - tall" descr="more than 1m above seafloor"/>
+	<Type name="Kelp - mixed sizes" descr=""/>
+	<Type name="Seep - Solitary (a)" descr=""/>
+	<Type name="Seeps - Field of seeps (b)" descr="6 to 8 seeps well-spaced and distinct"/>
+	<Type name="Seeps - Field of seeps (b, extreme)" descr="as above, extreme example"/>
+	<Type name="Seeps - Seep Field (c)" descr="multiple seeps, individually indistinct"/>
+	<Type name="Seeps - Seep Field (c, extreme)" descr="as above, but with few primary seeps"/>
+	<Type name="Seeps - Dominant seep (Class 1)" descr="strong signature, persistent through MORE than two-thirds of the water-column"/>
+	<Type name="Seeps - Minor seep (Class 2)" descr="strong signature, persistent through LESS than two-thirds of the water-column"/>
+	<Type name="Seeps - Dominant diffuse seep (Class 3)" descr="diffuse signature, persistent through MORE than two-thirds of the water-column"/>
+	<Type name="Seeps - Minor diffuse seep (Class 4)" descr="diffuse signature, persistent through LESS than two-thirds of the water-column"/>
  </type_file>
-

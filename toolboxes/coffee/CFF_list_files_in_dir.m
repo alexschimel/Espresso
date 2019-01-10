@@ -88,14 +88,15 @@ clear p
 
 
 %% get .all files
-AllFilename_list = subdir(fullfile(folder_init,'*.all'));
+AllFilename_list = dir(fullfile(folder_init,'*.all'));
+% AllFilename_list = subdir(fullfile(folder_init,'*.all')); % including subdirectories
 
 if ~isempty(AllFilename_list)
     
-    AllFilename_cell = {AllFilename_list([AllFilename_list(:).isdir]==0).name};
-    
     % split in folders and file names and recombine
-    [all_folders,all_files,~] = cellfun(@fileparts,AllFilename_cell,'UniformOutput',0);
+    AllFilename_cell = {AllFilename_list([AllFilename_list(:).isdir]==0).name};
+    [~,all_files,~] = cellfun(@fileparts,AllFilename_cell,'UniformOutput',0);
+    all_folders = {AllFilename_list([AllFilename_list(:).isdir]==0).folder};
     all_files = fullfile(all_folders,all_files);
     
 else
@@ -103,14 +104,15 @@ else
 end
 
 %% get .wcd files
-WCDFilename_list = subdir(fullfile(folder_init,'*.wcd'));
+WCDFilename_list = dir(fullfile(folder_init,'*.wcd'));
+% WCDFilename_list = subdir(fullfile(folder_init,'*.wcd')); % including subdirectories
 
 if ~isempty(WCDFilename_list)
     
-    WCDFilename_cell = {WCDFilename_list([WCDFilename_list(:).isdir]==0).name};
-    
     % split in folders and file names and recombine
-    [wcd_folders,wcd_files,~] = cellfun(@fileparts,WCDFilename_cell,'UniformOutput',0);
+    WCDFilename_cell = {WCDFilename_list([WCDFilename_list(:).isdir]==0).name};
+    [~,wcd_files,~] = cellfun(@fileparts,WCDFilename_cell,'UniformOutput',0);
+    wcd_folders = {WCDFilename_list([WCDFilename_list(:).isdir]==0).folder};
     wcd_files = fullfile(wcd_folders,wcd_files);
     
 else

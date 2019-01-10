@@ -143,9 +143,9 @@ for i = idx_up
         
         % line navigation
         handle_plot=plot(ax,fData.X_1P_pingE,fData.X_1P_pingN,'Tag',tag_id,'Visible','on','Color',col,'ButtonDownFcn',{@disp_wc_ping_cback,main_figure});
-        pointerBehavior.enterFcn = @(figHandle, currentPoint) set(figHandle, 'Pointer', 'crosshair');
-        pointerBehavior.exitFcn  = @(figHandle, currentPoint) set(figHandle, 'Pointer', 'crosshair');
-        pointerBehavior.traverseFcn = @(figHandle, currentPoint) set(figHandle, 'Pointer', 'crosshair');
+        pointerBehavior.enterFcn = @(figHandle, currentPoint) set(figHandle, 'Pointer', 'hand');
+        pointerBehavior.exitFcn  = @(figHandle, currentPoint) set(figHandle, 'Pointer', 'hand');
+        pointerBehavior.traverseFcn = @(figHandle, currentPoint) set(figHandle, 'Pointer', 'hand');
         
         iptSetPointerBehavior(handle_plot,pointerBehavior);
         

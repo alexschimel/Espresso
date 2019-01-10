@@ -86,14 +86,18 @@ if ~isempty(map_tab_comp)
     ylim = ax.YLim;
     pos = getpixelposition(ax);
     
-    % calculate ration
+    % calculate new window height/width ratio
     ratio = pos(4)/pos(3);
-    dx = nanmax([diff(xlim) diff(ylim)]);
+    
+    % ensure xlim and ylim maintain that ratio for equal units
+    dx = diff(xlim);
     dy = dx*ratio;
     
-    xlim = mean(xlim)+[-11*dx/20 +11*dx/20];
-    ylim = mean(ylim)+[-11*dy/20 +11*dy/20];
+    % calculate new xlim and ylim
+    xlim = mean(xlim)+[-dx/2 dx/2];
+    ylim = mean(ylim)+[-dy/2 dy/2];
     
+    % set
     set(ax,'YLim',ylim,'XLim',xlim);
     
 end
