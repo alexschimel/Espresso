@@ -86,7 +86,7 @@ X_BP_beamPointingAngleRad   = deg2rad(X_BP_beamPointingAngleDeg);
 
 % Grab sample corresponding to bottom:
 if isfield(fData, 'X_BP_bottomSample')
-    % if fData contains a 'X_BP_bottomSample' field already, it means we
+    % if fData contains a '   X_BP_bottomSample' field already, it means we
     % are requesting all other bottom values to be recalculated from this
     % (probably filtered) value.  
     X_BP_bottomSample = fData.X_BP_bottomSample;

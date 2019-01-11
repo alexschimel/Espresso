@@ -124,7 +124,7 @@ maxHorizDist       = p.Results.maxHorizDist;
 flagParams         = p.Results.flagParams;
 interpolateFlag    = p.Results.interpolate;
 clear p
-
+  
 
 %% PRE-PROCESSING
 
@@ -283,6 +283,13 @@ end
 
 %% SAVING RESULTS
 fData.X_BP_bottomSample = b1;
+
+% and parameters
+fData.X_1_bottomFilterParameters.method             = method;
+fData.X_1_bottomFilterParameters.pingBeamWindowSize = pingBeamWindowSize;
+fData.X_1_bottomFilterParameters.maxHorizDist       = maxHorizDist;
+fData.X_1_bottomFilterParameters.flagParams         = flagParams;
+fData.X_1_bottomFilterParameters.interpolateFlag    = interpolate;
 
 %% RE-PROCESSING BOTTOM FROM RESULTS
 fData = CFF_georeference_WC_bottom_detect(fData);
