@@ -37,7 +37,7 @@ function icon = get_icons_cdata(icon_dir)
 
 icon.folder = iconRead(fullfile(icon_dir,'foldericon.gif'));
 
-% icon.pointer = iconRead(fullfile(icon_dir,'tool_pointer.png'));
+icon.pointer = iconRead(fullfile(icon_dir,'tool_pointer.png'));
 % icon.zin = iconRead(fullfile(icon_dir,'tool_zoom_in.png'));
 % icon.zout = iconRead(fullfile(icon_dir,'tool_zoom_out.png'));
 % icon.fplot = iconRead(fullfile(icon_dir,'freq_plot.png'));
@@ -45,7 +45,7 @@ icon.folder = iconRead(fullfile(icon_dir,'foldericon.gif'));
 % icon.pan = iconRead(fullfile(icon_dir,'pan.png'));
 % icon.ts_cal = iconRead(fullfile(icon_dir,'ts_cal.png'));
 % icon.eba_cal = iconRead(fullfile(icon_dir,'eba_cal.png'));
-% icon.edit_bot = iconRead(fullfile(icon_dir,'edit_bot.png'));
+icon.edit_bot = iconRead(fullfile(icon_dir,'edit_bot.png'));
 % icon.eraser = iconRead(fullfile(icon_dir,'eraser.png'));
 % icon.edit_bot_spline = iconRead(fullfile(icon_dir,'edit_bot_spline.png'));
 % icon.del_lay = iconRead(fullfile(icon_dir,'delete.png'));

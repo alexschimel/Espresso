@@ -289,7 +289,7 @@ fData.X_1_bottomFilterParameters.method             = method;
 fData.X_1_bottomFilterParameters.pingBeamWindowSize = pingBeamWindowSize;
 fData.X_1_bottomFilterParameters.maxHorizDist       = maxHorizDist;
 fData.X_1_bottomFilterParameters.flagParams         = flagParams;
-fData.X_1_bottomFilterParameters.interpolateFlag    = interpolate;
+fData.X_1_bottomFilterParameters.interpolateFlag    = interpolateFlag;
 
 %% RE-PROCESSING BOTTOM FROM RESULTS
 fData = CFF_georeference_WC_bottom_detect(fData);

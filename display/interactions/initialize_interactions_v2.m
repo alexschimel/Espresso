@@ -109,9 +109,9 @@ end
 setptr(main_figure,'arrow');
 
 % Set normal interactions in the figure
-interactions.WindowButtonDownFcn(1) = iptaddcallback(main_figure,'WindowButtonDownFcn',{@move_map_cback,main_figure});
-interactions.KeyPressFcn(1) = iptaddcallback(main_figure,'KeyPressFcn',{@shortcuts_func,main_figure});
-interactions.WindowScrollWheelFcn(1) = iptaddcallback(main_figure,'WindowScrollWheelFcn',{@scroll_fcn_callback,main_figure});
+interactions.WindowButtonDownFcn(1)   = iptaddcallback(main_figure,'WindowButtonDownFcn',{@move_map_cback,main_figure});
+interactions.KeyPressFcn(1)           = iptaddcallback(main_figure,'KeyPressFcn',{@shortcuts_func,main_figure});
+interactions.WindowScrollWheelFcn(1)  = iptaddcallback(main_figure,'WindowScrollWheelFcn',{@scroll_fcn_callback,main_figure});
 interactions.WindowButtonMotionFcn(1) = iptaddcallback(main_figure,'WindowButtonMotionFcn',{@disp_cursor_info,main_figure});
 
 % add interactions to appdata

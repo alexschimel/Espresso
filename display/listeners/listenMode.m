@@ -82,11 +82,22 @@ switch listdata.AffectedObject.Mode
     
     case 'Normal'
         
-        replace_interaction(main_figure,'interaction','WindowButtonDownFcn','id',1,'interaction_fcn','');
+        replace_interaction(main_figure,'interaction','WindowButtonDownFcn','id',1,'interaction_fcn',{@move_map_cback,main_figure},'pointer','arrow');
+        
+        map_tab_comp = getappdata(main_figure,'Map_tab');
+        set(map_tab_comp.tgbt1,'Value',1);
+        set(map_tab_comp.tgbt2,'Value',0);
+        setappdata(main_figure,'Map_tab',map_tab_comp);
+
         
     case 'DrawNewFeature'
         
         replace_interaction(main_figure,'interaction','WindowButtonDownFcn','id',1,'interaction_fcn',{@draw_new_feature,main_figure},'pointer','crosshair');
+        
+        map_tab_comp = getappdata(main_figure,'Map_tab');
+        set(map_tab_comp.tgbt1,'Value',0);
+        set(map_tab_comp.tgbt2,'Value',1);
+        setappdata(main_figure,'Map_tab',map_tab_comp);
         
 end
 

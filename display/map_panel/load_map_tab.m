@@ -110,6 +110,23 @@ grid(map_tab_comp.map_axes,'on');
 xlabel(map_tab_comp.map_axes,'Longitude (^\circ)')
 ylabel(map_tab_comp.map_axes,'Latitude (^\circ)')
 
+% get icons
+icon = get_icons_cdata(fullfile(whereisroot(),'icons'));
+
+map_tab_comp.tgbt1 = uicontrol(map_tab_comp.map_tab ,'Style','togglebutton','String','1',...
+    'units','normalized',...
+    'pos',[0.01 0.95 0.025 0.035],...
+    'String','',...
+    'Cdata',icon.pointer,...
+    'Callback',{@test1,main_figure});
+
+map_tab_comp.tgbt2 = uicontrol(map_tab_comp.map_tab ,'Style','togglebutton','String','2',...
+    'units','normalized',...
+    'pos',[0.01 0.91 0.025 0.035],...
+    'String','',...
+    'Cdata',icon.edit_bot,...
+    'Callback',{@test2,main_figure});
+
 map_tab_comp.ping_line = plot(map_tab_comp.map_axes,nan,nan,'k','linewidth',2,'ButtonDownFcn',{@grab_ping_line_cback,main_figure});
 
 map_tab_comp.ping_poly = plot(polyshape(nan(1,3),nan(1,3)),...
@@ -125,5 +142,19 @@ pointerBehavior.traverseFcn = @(figHandle, currentPoint) set(figHandle, 'Pointer
 iptSetPointerBehavior(map_tab_comp.ping_line,pointerBehavior);
 
 setappdata(main_figure,'Map_tab',map_tab_comp);
+
+end
+
+function test1(~,~,main_figure)
+
+disp_config =  getappdata(main_figure,'disp_config');
+disp_config.Mode = 'Normal';
+
+end
+
+function test2(~,~,main_figure)
+
+disp_config = getappdata(main_figure,'disp_config');
+disp_config.Mode = 'DrawNewFeature';
 
 end
