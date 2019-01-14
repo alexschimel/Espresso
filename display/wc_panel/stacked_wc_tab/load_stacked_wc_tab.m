@@ -97,10 +97,10 @@ stacked_wc_tab_comp.wc_axes = axes(stacked_wc_tab_comp.wc_tab,'Units','normalize
 
 colorbar(stacked_wc_tab_comp.wc_axes,'southoutside');
 colormap(stacked_wc_tab_comp.wc_axes,cmap);
-title(stacked_wc_tab_comp.wc_axes,'','Interpreter','none');
+title(stacked_wc_tab_comp.wc_axes,'N/A','Interpreter','none','FontSize',10,'FontWeight','normal');
 caxis(stacked_wc_tab_comp.wc_axes,disp_config.Cax_wc);
-xlabel(stacked_wc_tab_comp.wc_axes,'Ping Number');
-ylabel(stacked_wc_tab_comp.wc_axes,'Range');
+xlabel(stacked_wc_tab_comp.wc_axes,'Ping Number (#)','FontSize',10);
+ylabel(stacked_wc_tab_comp.wc_axes,'Range (m)','FontSize',10);
 grid(stacked_wc_tab_comp.wc_axes,'on');
 box(stacked_wc_tab_comp.wc_axes,'on')
 axis(stacked_wc_tab_comp.wc_axes,'ij');

@@ -56,11 +56,8 @@ setappdata(main_figure,'swath_panel',swath_panel);
 
 % create tabs in panel
 load_wc_tab(main_figure,swath_panel);
-
 load_stacked_wc_tab(main_figure,swath_panel);
-
 load_feature_list_tab(main_figure,swath_panel);
-
 
 
 %% MAP PANEL

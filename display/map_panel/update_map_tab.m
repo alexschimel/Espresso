@@ -230,7 +230,7 @@ for i = idx_up
     uistack(obj_wc,'bottom');
     
     
-    %% Zoom extents
+    %% Calculate zoom extents
     if idx_active_lines(i)
         
         if isfield(fData,'X_NEH_gridLevel')
@@ -260,7 +260,6 @@ end
 
 
 %% MOSAICS
-
 for imosaic = 1:numel(mosaics)
     
     if idx_active_lines_mosaic(imosaic)
@@ -308,15 +307,30 @@ if ~any(idx_active_lines)
     return;
 end
 
-% set the zoom extent
+%% set the zoom extent
 if new_zoom>0 && all(~isnan(xlim)) && all(~isnan(ylim))
+    
+    % get current window size ratio
     pos = getpixelposition(ax);
-    ratio = pos(4)/pos(3);
-    dx = nanmax([diff(xlim) diff(ylim)]);
-    dy = dx*ratio;
-    xlim = nanmean(xlim)+[-11*dx/20 +11*dx/20];
-    ylim = nanmean(ylim)+[-11*dy/20 +11*dy/20];
-    set(ax,'YLim',ylim,'XLim',xlim);
+    ratio_window = pos(4)/pos(3);
+    
+    ratio_data = diff(ylim)./diff(xlim);
+    
+    if ratio_data>ratio_window
+        % ylim_new = [ylim(1) ylim(2)];
+        ylim_new = [-diff(ylim),diff(ylim)]*1.2/2 + ylim(1) + diff(ylim)/2;
+        dx = diff(ylim)/ratio_window;
+        xlim_new = [-dx/2,dx/2] + xlim(1) + diff(xlim)/2;
+    else
+        % xlim_new = xlim;
+        xlim_new = [-diff(xlim),diff(xlim)]*1.2/2 + xlim(1) + diff(xlim)/2;
+        dy = diff(xlim)*ratio_window;
+        ylim_new = [-dy/2,dy/2] + ylim(1) + diff(ylim)/2;
+    end
+
+    % set those new values to window
+    set(ax,'YLim',ylim_new,'XLim',xlim_new);
+       
 end
 
 % get current ticks position

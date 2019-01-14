@@ -88,12 +88,12 @@ wc_tab_comp.data_disp = uicontrol(wc_tab_comp.wc_tab,'style','popup','Units','pi
 wc_tab_comp.wc_axes = axes(wc_tab_comp.wc_tab,'Units','normalized','outerposition',[0 0 1 1],'nextplot','add','YDir','normal');
 
 [cmap,col_ax,col_lab,col_grid,col_bot,col_txt] = init_cmap(disp_config.Cmap);
-title(wc_tab_comp.wc_axes,'','Interpreter','none');
+title(wc_tab_comp.wc_axes,'N/A','Interpreter','none','FontSize',10,'FontWeight','normal');
 colorbar(wc_tab_comp.wc_axes,'southoutside');
 colormap(wc_tab_comp.wc_axes,cmap);
 caxis(wc_tab_comp.wc_axes,disp_config.Cax_wc);
-xlabel(wc_tab_comp.wc_axes,'Across Distance (m)');
-ylabel(wc_tab_comp.wc_axes,'Depth (m)');
+xlabel(wc_tab_comp.wc_axes,'Across Distance (m)','FontSize',10);
+ylabel(wc_tab_comp.wc_axes,'Depth (m)','FontSize',10);
 grid(wc_tab_comp.wc_axes,'on');
 box(wc_tab_comp.wc_axes,'on')
 wc_tab_comp.wc_gh = pcolor(wc_tab_comp.wc_axes,[],[],[]);

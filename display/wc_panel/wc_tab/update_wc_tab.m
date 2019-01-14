@@ -256,14 +256,14 @@ if ismember(datagramSource,{'WC' 'AP'})
         return;
     end
     
-    fname = fData.ALLfilename{1};
-    [~,fnamet,~] = fileparts(fname);
-    tt = sprintf('File: %s Ping # %.0f/%.0f Time: %s',fnamet,ip,numel(fData.(sprintf('%s_1P_PingCounter',datagramSource))),datestr(fData.X_1P_pingSDN(ip),'HH:MM:SS'));
-    
+
     xlim = [-max(abs(sampleAcrossDist(idx_keep))) max(abs(sampleAcrossDist(idx_keep)))];
     ylim = [min(nanmin(fData.X_BP_bottomUpDist(:,ip)),nanmin(sampleUpDist(idx_keep))) 0];
-    amp_mean=nanmean(amp_al,2);
-    idx_al=nansum(~isnan(amp_mean));
+    
+    amp_mean = nanmean(amp_al,2);
+    
+    idx_al = nansum(~isnan(amp_mean));
+    
     xlim_stacked = [idx_pings(1) idx_pings(end)];
     ylim_stacked = [sampleRangeAl(1) sampleRangeAl(idx_al)];
     
@@ -287,9 +287,13 @@ if ismember(datagramSource,{'WC' 'AP'})
     
     set(wc_tab_comp.wc_axes,'XLim',xlim,'Ylim',ylim,'Layer','top');
     
+    % set title
+    fname = fData.ALLfilename{1};
+    [~,fnamet,~] = fileparts(fname);
+    tt = sprintf('File: %s. Ping: %.0f/%.0f. Time: %s.',fnamet,ip,numel(fData.(sprintf('%s_1P_PingCounter',datagramSource))),datestr(fData.X_1P_pingSDN(ip),'HH:MM:SS'));
+    wc_tab_comp.wc_axes.Title.String = tt;
+    stacked_wc_tab_comp.wc_axes.Title.String = tt;
     
-    wc_tab_comp.wc_axes.Title.String=tt;
-    stacked_wc_tab_comp.wc_axes.Title.String=tt;
     uistack(map_tab_comp.ping_swathe,'top');
     if any(disp_config.Cax_wc~=cax)
         disp_config.Cax_wc = cax;

@@ -82,7 +82,7 @@ ah = map_tab_comp.map_axes;
 x_lim = get(ah,'XLim');
 y_lim = get(ah,'YLim');
 
-% cursor positio
+% cursor position
 if src == main_figure
     set(ah,'units','pixels');
     pos = ah.CurrentPoint(1,1:2);
