@@ -139,7 +139,11 @@ classdef feature_cl
             geostruct.Zone = obj.Zone;
             
             % save that shapefile. Using Unique_ID for filename
-            shapewrite(geostruct,fullfile(folder,obj.Unique_ID));
+            try
+                shapewrite(geostruct,fullfile(folder,obj.Unique_ID));
+            catch
+                warning('Could not use Map toolbox function shapewrite. Feature created but not saved.')
+            end
             
         end
         

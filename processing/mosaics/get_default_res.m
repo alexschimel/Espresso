@@ -76,21 +76,66 @@
 % Yoann Ladroit, Alexandre Schimel, NIWA. XXX
 
 %% Function
-function grid = init_grid(E_lim,N_lim,res)
+function mosaic = get_default_res(mosaic,fData_tot)
 
-numElemGridE = ceil((E_lim(2)-E_lim(1))./res)+1;
-numElemGridN = ceil((N_lim(2)-N_lim(1))./res)+1;
-grid.name = 'New Grid';
+E_lim = mosaic.E_lim;
+N_lim = mosaic.N_lim;
 
-if res > 0
-    grid.grid_level = zeros(numElemGridN,numElemGridE,'single');
-else
-    grid.grid_level = single([]);
+for iF = 1:numel(fData_tot)
+    
+    fData = fData_tot{iF};
+    
+    mosaic.fData_ID(iF) = fData.ID;
+    
+    if ~isfield(fData,'X_1E_gridEasting')
+        continue;
+    end
+    
+    E = fData.X_1E_gridEasting;
+    N = fData.X_N1_gridNorthing;
+    L = fData.X_NEH_gridLevel;
+    
+    if size(L,3)>1
+        data = pow2db_perso(nanmean(10.^(L/10),3));
+    else
+        data = L;
+    end
+    
+    idx_keep_E = E>E_lim(1) & E<E_lim(2);
+    idx_keep_N = N>N_lim(1) & N<N_lim(2);
+    
+    data(~idx_keep_N,:) = [];
+    data(:,~idx_keep_E) = [];
+    
+    idx_nan = isnan(data);
+    data(idx_nan) = [];
+    
+    if isempty(data)
+        % no data within requested mosaic bounds for that fData
+        continue;
+    else
+        mosaic.res = nanmax(fData.X_1_gridHorizontalResolution,mosaic.res);
+    end
+    
 end
 
-grid.E_lim  = E_lim;
-grid.N_lim = N_lim;
-grid.res = res;
-grid.ID = str2double(datestr(now,'yyyymmddHHMMSSFFF'));
-grid.fData_ID = [];
+if mosaic.res>0
+    numElemMosaicE = ceil((E_lim(2)-E_lim(1))./mosaic.res)+1;
+    numElemMosaicN = ceil((N_lim(2)-N_lim(1))./mosaic.res)+1;
+    mosaic.mosaic_level = zeros(numElemMosaicN,numElemMosaicE,'single');
+else
+    mosaic.mosaic_level = single([]);
+end
 
+
+end
+
+
+
+%% subfunctions
+
+
+function db = pow2db_perso(pow)
+pow(pow<0) = nan;
+db = 10*log10(pow);
+end

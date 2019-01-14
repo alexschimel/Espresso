@@ -76,6 +76,10 @@
 % Yoann Ladroit, Alexandre Schimel, NIWA. XXX
 
 %% Function
-function create_grid(~,~,main_figure)
+function create_mosaic(~,~,main_figure)
 
-select_rect_area(main_figure,@compute_and_add_grid);
+select_rect_area(main_figure,@compute_and_add_mosaic);
+
+
+
+

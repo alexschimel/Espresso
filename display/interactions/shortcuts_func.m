@@ -98,23 +98,21 @@ replace_interaction(src,'interaction','KeyPressFcn','id',1);
 try
     switch callbackdata.Key
         
-        case {'0' 'numpad0'}
+        case {'1' 'numpad0'}
             % Normal interaction with map
             disp_config.Mode = 'Normal';
             
-        case {'1' 'numpad1'}
+        case {'2' 'numpad1'}
             % Mode to draw features on map
             disp_config.Mode = 'DrawNewFeature';
-            
-        case {'2' 'numpad2'}
             
         case {'3' 'numpad3'}
             
         case {'4' 'numpad4'}
             
-        case {'6' 'numpad6'}
+        case {'5' 'numpad6'}
             
-        case {'5' 'numpad5'}
+        case {'6' 'numpad5'}
             
         case {'uparrow'}
             % Use Up/Down arrow to move pings by a set offset

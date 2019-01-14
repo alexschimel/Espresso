@@ -76,24 +76,95 @@
 % Yoann Ladroit, Alexandre Schimel, NIWA. XXX
 
 %% Function
-function update_grid_tab(main_figure)
+function mosaic = compute_mosaic(mosaic,fData_tot)
 
-grid_tab_comp = getappdata(main_figure,'grid_tab');
-grids = getappdata(main_figure,'grids');
+E_lim = mosaic.E_lim;
+N_lim = mosaic.N_lim;
+res   = mosaic.res;
 
-nb_grids = numel(grids);
+% initialize Sum and Count grids
+[numElemGridN,numElemGridE] = size(mosaic.mosaic_level);
+mosaicSum   = zeros(numElemGridN,numElemGridE,'single');
+mosaicCount = zeros(numElemGridN,numElemGridE,'single');
 
-if nb_grids >= 1
+for iF = 1:numel(fData_tot)
     
-    new_entry = cell(nb_grids,4);
-    new_entry(:,1) = {grids(:).name};
-    new_entry(:,2) = num2cell([grids(:).res]);
-    new_entry(:,3) = num2cell(ones(1,nb_grids) == 1);
-    new_entry(:,4) = num2cell([grids(:).ID]);
-    grid_tab_comp.table_main.Data = new_entry;
+    fData = fData_tot{iF};
+    mosaic.fData_ID(iF) = fData.ID;
     
-else
-    grid_tab_comp.table_main.Data = {};
+    if ~isfield(fData,'X_1E_gridEasting')
+        continue;
+    end
+    
+    E = fData.X_1E_gridEasting;
+    N = fData.X_N1_gridNorthing;
+    L = fData.X_NEH_gridLevel;
+    
+    if size(L,3) > 1
+        data = pow2db_perso(nanmean(10.^(L/10),3));
+    else
+        data = L;
+    end
+    
+    idx_keep_E = E>E_lim(1) & E<E_lim(2);
+    idx_keep_N = N>N_lim(1) & N<N_lim(2);
+    
+    E(~idx_keep_E) = [];
+    N(~idx_keep_N) = [];
+    data(~idx_keep_N,:) = [];
+    data(:,~idx_keep_E) = [];
+    
+    idx_nan = isnan(data);
+    data(idx_nan) = [];
+    
+    if isempty(data)
+        continue;
+    end
+    
+    E_mat = repmat(E,numel(N),1);
+    N_mat = repmat(N,1,numel(E));
+    
+    N_mat(idx_nan) = [];
+    E_mat(idx_nan) = [];
+    data = (10.^(data./10));
+    
+    E_idx = round((E_mat-E_lim(1))/res+1);
+    N_idx = round((N_mat-N_lim(1))/res+1);
+    
+    idx_E_start = min(E_idx);
+    idx_N_start = min(N_idx);
+    
+    E_idx = E_idx - min(E_idx) + 1;
+    N_idx = N_idx - min(N_idx) + 1;
+    
+    N_E = max(E_idx);
+    N_N = max(N_idx);
+    
+    subs = single([N_idx(:) E_idx(:)]);
+    
+    mosaicCountTemp = accumarray(subs, ones(size(data(:)'),'single'), single([N_N N_E]), @sum, single(0));
+    
+    mosaicSumTemp = accumarray(subs,data(:)',single([N_N N_E]),@sum,single(0));
+    
+    mosaicCount(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1) = mosaicCount(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1)+mosaicCountTemp;
+    
+    mosaicSum(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1) = mosaicSum(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1)+mosaicSumTemp;
+    
+    mosaic.fData_ID = [mosaic.fData_ID fData.ID];
+    
 end
 
+mosaic.mosaic_level = single(10.*log10(mosaicSum./mosaicCount));
+
 end
+
+%% subfunctions
+
+function db = pow2db_perso(pow)
+
+pow(pow<0) = nan;
+db = 10*log10(pow);
+
+end
+
+

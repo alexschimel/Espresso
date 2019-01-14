@@ -76,41 +76,61 @@
 % Yoann Ladroit, Alexandre Schimel, NIWA. XXX
 
 %% Function
-function compute_and_add_grid(main_figure,E_lim,N_lim)
+function compute_and_add_mosaic(main_figure,E_lim,N_lim)
 
 fData_tot = getappdata(main_figure,'fData');
+fdata_tab_comp = getappdata(main_figure,'fdata_tab');
+fData_tot = fData_tot([fdata_tab_comp.table.Data{:,3}]);
 
 if isempty(fData_tot)
     return;
 end
 
-grid = init_grid(E_lim,N_lim,0);
-grid = get_default_res(grid,fData_tot);
+mosaic = init_mosaic(E_lim,N_lim,0);
 
-if grid.res == 0
-    replace_interaction(main_figure,'interaction','WindowButtonDownFcn','id',1);
-    disp('Nothing to grid in there');
+mosaic = get_default_res(mosaic,fData_tot);
+
+% mosaic requested outside of data available
+if mosaic.res == 0
+    
+    disp('No mosaic was created because there were no data within requested bounds.');
+    
+    % reset normal interaction
+    replace_interaction(main_figure,'interaction','WindowButtonDownFcn','id',1,'interaction_fcn',{@move_map_cback,main_figure},'pointer','arrow');
+    
     return;
+    
 end
 
-grid = compute_grid(grid,fData_tot);
+mosaic = compute_mosaic(mosaic,fData_tot);
 
-grids = getappdata(main_figure,'grids');
+mosaics = getappdata(main_figure,'mosaics');
 
-if numel(grids) >= 1
-    id_g = grids(:).ID;
-    idx_grid = find(id_g==grid.ID);
-    if isempty(idx_grid)
-        idx_grid = numel(grids)+1;
+if numel(mosaics) >= 1
+    
+    id_g = mosaics(:).ID;
+    
+    idx_mosaic = find(id_g==mosaic.ID);
+    
+    if isempty(idx_mosaic)
+        idx_mosaic = numel(mosaics)+1;
     end
-    grids(idx_grid) = grid;
+    
+    mosaics(idx_mosaic) = mosaic;
+    
 else
-    grids = grid;
+    
+    mosaics = mosaic;
+    
 end
 
-setappdata(main_figure,'grids',grids);
-replace_interaction(main_figure,'interaction','WindowButtonDownFcn','id',1);
+setappdata(main_figure,'mosaics',mosaics);
 
-update_grid_tab(main_figure);
+replace_interaction(main_figure,'interaction','WindowButtonDownFcn','id',1,'interaction_fcn',{@move_map_cback,main_figure},'pointer','arrow');
+
+update_mosaic_tab(main_figure);
 
 update_map_tab(main_figure,0,0,[]);
+
+
+

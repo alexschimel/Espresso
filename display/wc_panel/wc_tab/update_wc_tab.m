@@ -84,7 +84,7 @@ map_tab_comp = getappdata(main_figure,'Map_tab');
 fData_tot    = getappdata(main_figure,'fData');
 
 if isempty(fData_tot)
-    set(map_tab_comp.ping_line,'XData',nan,'YData',nan);
+    set(map_tab_comp.ping_swathe,'XData',nan,'YData',nan);
     set(wc_tab_comp.wc_gh,'XData',[], 'YData',[],'ZData',[], 'CData',[],'AlphaData',[]);
     set(wc_tab_comp.ac_gh,'XData',[],'YData',[]);
     set(wc_tab_comp.bot_gh,'XData',[],'YData',[]);
@@ -164,32 +164,40 @@ if ismember(datagramSource,{'WC' 'AP'})
     end
     
     if  ~up_stacked_wc_bool
-        idx_pings=ip;
-        ip_sub=1;
+        
+        idx_pings = ip;
+        ip_sub = 1;
+        
     else
         if isfield(fData,'X_BP_bottomEasting')
             
-            e_p=fData.X_BP_bottomEasting(:,idx_pings);
+            % easting
+            e_p = fData.X_BP_bottomEasting(:,idx_pings);
+            
             e_p_s = arrayfun(@(col) e_p(find(~isnan(e_p(:, col)),1,'first'),col), ...
                 1:size(e_p, 2), 'UniformOutput', 1);
             e_p_e = arrayfun(@(col) e_p(find(~isnan(e_p(:, col)),1,'last'),col), ...
                 1:size(e_p, 2), 'UniformOutput', 1);
             
-            n_p=fData.X_BP_bottomNorthing(:,idx_pings);
+            % northing
+            n_p = fData.X_BP_bottomNorthing(:,idx_pings);
+            
             n_p_s = arrayfun(@(col) n_p(find(~isnan(n_p(:, col)),1,'first'),col), ...
                 1:size(e_p, 2), 'UniformOutput', 1);
             n_p_e = arrayfun(@(col) n_p(find(~isnan(n_p(:, col)),1,'last'),col), ...
                 1:size(e_p, 2), 'UniformOutput', 1);
-            new_vert=[[e_p_s fliplr(e_p_e)];[n_p_s fliplr(n_p_e)]]';
             
+            % compiling vertices
+            new_vert = [[e_p_s fliplr(e_p_e)];[n_p_s fliplr(n_p_e)]]';
             
-            map_tab_comp.ping_poly.Shape.Vertices=new_vert;
-            map_tab_comp.ping_poly.Tag=sprintf('poly_%.0f0',fData.ID);
+            % update vertices and tag in ping_window
+            map_tab_comp.ping_window.Shape.Vertices = new_vert;
+            map_tab_comp.ping_window.Tag = sprintf('%.0f0_pingwindow',fData.ID);
             
         end
         
     end
-    set(map_tab_comp.ping_line,'XData',fData.X_BP_bottomEasting(:,ip),'YData',fData.X_BP_bottomNorthing(:,ip));
+    set(map_tab_comp.ping_swathe,'XData',fData.X_BP_bottomEasting(:,ip),'YData',fData.X_BP_bottomNorthing(:,ip));
     
     
     switch str_disp
@@ -243,7 +251,7 @@ if ismember(datagramSource,{'WC' 'AP'})
     sampleRangeAl=nanmean(sampleRange(:,nansum(~idx_a,2)>0),2);
     
     if isfield(fData,'X_BP_bottomEasting')
-        %set(map_tab_comp.ping_line,'XData',fData.X_BP_bottomEasting(:,ip),'YData',fData.X_BP_bottomNorthing(:,ip),'userdata',s);
+        %set(map_tab_comp.ping_swathe,'XData',fData.X_BP_bottomEasting(:,ip),'YData',fData.X_BP_bottomNorthing(:,ip),'userdata',s);
     else
         return;
     end
@@ -282,7 +290,7 @@ if ismember(datagramSource,{'WC' 'AP'})
     
     wc_tab_comp.wc_axes.Title.String=tt;
     stacked_wc_tab_comp.wc_axes.Title.String=tt;
-    uistack(map_tab_comp.ping_line,'top');
+    uistack(map_tab_comp.ping_swathe,'top');
     if any(disp_config.Cax_wc~=cax)
         disp_config.Cax_wc = cax;
     end

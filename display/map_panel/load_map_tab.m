@@ -110,6 +110,10 @@ grid(map_tab_comp.map_axes,'on');
 xlabel(map_tab_comp.map_axes,'Longitude (^\circ)')
 ylabel(map_tab_comp.map_axes,'Latitude (^\circ)')
 
+
+
+%% toggle buttons on map for modes
+
 % get icons
 icon = get_icons_cdata(fullfile(whereisroot(),'icons'));
 
@@ -127,11 +131,14 @@ map_tab_comp.tgbt2 = uicontrol(map_tab_comp.map_tab ,'Style','togglebutton','Str
     'Cdata',icon.edit_bot,...
     'Callback',{@test2,main_figure});
 
-map_tab_comp.ping_line = plot(map_tab_comp.map_axes,nan,nan,'k','linewidth',2,'ButtonDownFcn',{@grab_ping_line_cback,main_figure});
+%% initialize ping_swathe and ping_window
 
-map_tab_comp.ping_poly = plot(polyshape(nan(1,3),nan(1,3)),...
+map_tab_comp.ping_swathe = plot(map_tab_comp.map_axes,nan,nan,'k','linewidth',2,'ButtonDownFcn',{@grab_ping_line_cback,main_figure});
+
+map_tab_comp.ping_window = plot(polyshape([0 0 1 1]-999,[1 0 0 1]-999),...
     'FaceColor','g',...
-    'parent',map_tab_comp.map_axes,'FaceAlpha',0.2,...
+    'parent',map_tab_comp.map_axes,...
+    'FaceAlpha',0.2,...
     'EdgeColor','g',...
     'LineWidth',1);
 
@@ -139,11 +146,13 @@ pointerBehavior.enterFcn = @(figHandle, currentPoint) set(figHandle, 'Pointer', 
 pointerBehavior.exitFcn  = @(figHandle, currentPoint) set(figHandle, 'Pointer', 'fleur');
 pointerBehavior.traverseFcn = @(figHandle, currentPoint) set(figHandle, 'Pointer', 'fleur');
 
-iptSetPointerBehavior(map_tab_comp.ping_line,pointerBehavior);
+iptSetPointerBehavior(map_tab_comp.ping_swathe,pointerBehavior);
 
 setappdata(main_figure,'Map_tab',map_tab_comp);
 
 end
+
+%% callbacks for toggle buttons
 
 function test1(~,~,main_figure)
 

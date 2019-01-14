@@ -45,7 +45,7 @@ setappdata(main_figure,'control_panel',control_panel);
 load_files_tab(main_figure,control_panel);
 load_fdata_tab(main_figure,control_panel);
 load_wc_proc_tab(main_figure,control_panel);
-load_grid_tab(main_figure,control_panel);
+load_mosaic_tab(main_figure,control_panel);
 
 
 %% SWATHE PANEL

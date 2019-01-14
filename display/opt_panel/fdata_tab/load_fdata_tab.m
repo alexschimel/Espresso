@@ -178,19 +178,26 @@ ax = map_tab_comp.map_axes;
 fdata = getappdata(main_figure,'fData');
 idx_rem = find([fdata_tab_comp.table.Data{:,end-1}]);
 
+% for each line, remove navigation and grid from map
 for i = idx_rem(:)'
+    
     id = fdata{i}.ID;
-    % times2 = datestr(fData.X_1P_pingSDN,'HH:MM:SS.FFF');
     tag_id = num2str(id,'%.0f');
     tag_id_wc = num2str(id,'wc%.0f');
-    tag_id_poly = sprintf('poly_%.0f0',id);
-    
     obj = findobj(ax,'Tag',tag_id,'-or','Tag',tag_id_wc);
     delete(obj);
-    obj_poly = findobj(ax,'Tag',tag_id_poly);
-    obj_poly.Shape.Vertices=[];
+    
 end
 
+% if all lines are gone, reinitialize (hide) ping swathe and ping window
+if numel(idx_rem) == numel(fdata)
+    
+    set(map_tab_comp.ping_swathe,'XData',nan,'YData',nan);
+    map_tab_comp.ping_window.Shape.Vertices = [0,0,1,1;1,0,0,1]'-999;
+    
+end
+
+% then remove the fData itself
 fdata(idx_rem) = [];
 
 setappdata(main_figure,'fData',fdata);
@@ -199,9 +206,11 @@ if isempty(fdata)
     disp_config = getappdata(main_figure,'disp_config');
     disp_config.MET_tmproj = '';
 end
+
 update_fdata_tab(main_figure);
 update_file_tab(main_figure);
 update_map_tab(main_figure,0,1,[]);
+
 disp_config.Fdata_idx = numel(fdata);
 disp_config.AcrossDist = 0;
 disp_config.Iping = 1;

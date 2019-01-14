@@ -1,10 +1,6 @@
 %% this_function_name.m
 %
-% _This section contains a very short description of the function, for the
-% user to know this function is part of the software and what it does for
-% it. Example below to replace. Delete these lines XXX._
-%
-% Template of ESP3 function header. XXX
+% Initialize a new mosaic in Espresso
 %
 %% Help
 %
@@ -76,59 +72,21 @@
 % Yoann Ladroit, Alexandre Schimel, NIWA. XXX
 
 %% Function
-function grid = get_default_res(grid,fData_tot)
+function mosaic = init_mosaic(E_lim,N_lim,res)
 
-E_lim = grid.E_lim ;
-N_lim = grid.N_lim;
+mosaic.name     = 'New Mosaic';
+mosaic.E_lim    = E_lim;
+mosaic.N_lim    = N_lim;
+mosaic.res      = res;
+mosaic.ID       = str2double(datestr(now,'yyyymmddHHMMSSFFF'));
+mosaic.fData_ID = [];
 
-for iF = 1:numel(fData_tot)
-    fData = fData_tot{iF};
-    grid.fData_ID(iF) = fData.ID;
-    
-    if ~isfield(fData,'X_1E_gridEasting')
-        continue;
-    end
-    
-    E = fData.X_1E_gridEasting;
-    N = fData.X_N1_gridNorthing;
-    L = fData.X_NEH_gridLevel;
-    
-    if size(L,3)>1
-        data = pow2db_perso(nanmean(10.^(L/10),3));
-    else
-        data = L;
-    end
-    
-    idx_keep_E = E>E_lim(1)&E<E_lim(2);
-    idx_keep_N = N>N_lim(1)&N<N_lim(2);
-    
-    data(~idx_keep_N,:) = [];
-    data(:,~idx_keep_E) = [];
-    
-    idx_nan = isnan(data);
-    data(idx_nan) = [];
-    if isempty(data)
-        continue;
-    end
-    grid.res = nanmax(fData.X_1_gridHorizontalResolution,grid.res);
-end
-
-numElemGridE = ceil((E_lim(2)-E_lim(1))./grid.res)+1;
-numElemGridN = ceil((N_lim(2)-N_lim(1))./grid.res)+1;
-
-grid.name = 'New Grid';
-if grid.res>0
-    grid.grid_level = zeros(numElemGridN,numElemGridE,'single');
+if res > 0
+    numElemMosaicE = ceil((E_lim(2)-E_lim(1))./res)+1;
+    numElemMosaicN = ceil((N_lim(2)-N_lim(1))./res)+1;
+    mosaic.mosaic_level = zeros(numElemMosaicN,numElemMosaicE,'single');
 else
-    grid.grid_level = single([]);
+    mosaic.mosaic_level = single([]);
 end
 
 
-end
-
-function db = pow2db_perso(pow)
-
-pow(pow<0) = nan;
-db = 10*log10(pow);
-
-end
