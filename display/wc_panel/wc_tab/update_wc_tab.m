@@ -92,14 +92,13 @@ if isempty(fData_tot)
     return;
 end
 
+% get file, ping and across-dist to be displayed
 disp_config = getappdata(main_figure,'disp_config');
-
-ip = disp_config.Iping;
-across_dist = disp_config.AcrossDist;
-
 if disp_config.Fdata_idx > numel(fData_tot)
     disp_config.Fdata_idx = numel(fData_tot);
 end
+ip = disp_config.Iping;
+across_dist = disp_config.AcrossDist;
 
 fData = fData_tot{disp_config.Fdata_idx};
 
@@ -134,33 +133,37 @@ if ismember(datagramSource,{'WC' 'AP'})
     cax_max = str2double(wc_proc_tab_comp.clim_max_wc.String);
     cax = [cax_min cax_max];
     
-    nb_pings=size(fData.X_BP_bottomEasting,2);
-    idx_pings=ip-disp_config.StackPingWidth:ip+disp_config.StackPingWidth-1;
+    nb_pings = size(fData.X_BP_bottomEasting,2);
+    idx_pings = ip-disp_config.StackPingWidth:ip+disp_config.StackPingWidth-1;
     
-    id_min=nansum(idx_pings<1);
-    idx_pings=idx_pings+id_min;
+    id_min = nansum(idx_pings<1);
+    idx_pings = idx_pings+id_min;
     
-    id_max=nansum(idx_pings>nb_pings);
-    idx_pings=idx_pings-id_max;
+    id_max = nansum(idx_pings>nb_pings);
+    idx_pings = idx_pings-id_max;
     
-    idx_pings(idx_pings<1|idx_pings>nb_pings)=[];
+    idx_pings(idx_pings<1|idx_pings>nb_pings) = [];
     
-    idx_a=~(disp_config.StackAngularWidth(1)/180*pi<=fData.X_PB_beamPointingAngleRad(:,idx_pings)&disp_config.StackAngularWidth(2)/180*pi>=fData.X_PB_beamPointingAngleRad(:,idx_pings));
+    idx_a = ~(disp_config.StackAngularWidth(1)/180*pi<=fData.X_PB_beamPointingAngleRad(:,idx_pings)&disp_config.StackAngularWidth(2)/180*pi>=fData.X_PB_beamPointingAngleRad(:,idx_pings));
     
-    ip_sub=ip-idx_pings(1)+1;
+    ip_sub = ip-idx_pings(1)+1;
     
-    usrdata.idx_angles=idx_a;
-    usrdata.idx_pings=idx_pings;
-    usrdata.ID=fData.ID;
-    usrdata.str_disp=str_disp;
+    usrdata.idx_angles = idx_a;
+    usrdata.idx_pings = idx_pings;
+    usrdata.ID = fData.ID;
+    usrdata.str_disp = str_disp;
     
     if isfield(stacked_wc_tab_comp.wc_gh.UserData,'idx_pings')
-        up_stacked_wc_bool=~isempty(setdiff(idx_pings,stacked_wc_tab_comp.wc_gh.UserData.idx_pings))||...
+        
+        up_stacked_wc_bool = ~isempty(setdiff(idx_pings,stacked_wc_tab_comp.wc_gh.UserData.idx_pings))||...
             ~(fData.ID==stacked_wc_tab_comp.wc_gh.UserData.ID)||...
             ~isempty(setdiff(idx_a,stacked_wc_tab_comp.wc_gh.UserData.idx_angles))||...
             ~strcmpi(str_disp,stacked_wc_tab_comp.wc_gh.UserData.str_disp);
+        
     else
-        up_stacked_wc_bool=true;
+        
+        up_stacked_wc_bool = true;
+        
     end
     
     if  ~up_stacked_wc_bool
@@ -197,8 +200,8 @@ if ismember(datagramSource,{'WC' 'AP'})
         end
         
     end
-    set(map_tab_comp.ping_swathe,'XData',fData.X_BP_bottomEasting(:,ip),'YData',fData.X_BP_bottomNorthing(:,ip));
     
+    set(map_tab_comp.ping_swathe,'XData',fData.X_BP_bottomEasting(:,ip),'YData',fData.X_BP_bottomNorthing(:,ip));
     
     switch str_disp
         case 'Original'
@@ -213,9 +216,8 @@ if ismember(datagramSource,{'WC' 'AP'})
                 wc_data = CFF_get_WC_data(fData,sprintf('%s_SBP_SamplePhase',datagramSource),idx_pings,1,1);
                 cax = [-180 180];
                 amp = wc_data(:,:,ip_sub);
-                wc_data(:,idx_a)=nan;
-                amp_al=squeeze(nanmean(wc_data,2));
-                
+                wc_data(:,idx_a) = nan;
+                amp_al = squeeze(nanmean(wc_data,2));
                 idx_keep = amp ~= 0;
                 idx_keep_al = amp_al ~= 0;
             else
@@ -231,8 +233,8 @@ if ismember(datagramSource,{'WC' 'AP'})
         case 'Processed'
             wc_data = CFF_get_WC_data(fData,'X_SBP_WaterColumnProcessed',idx_pings,1,1);
             amp = wc_data(:,:,ip_sub);
-            wc_data(:,idx_a)=nan;
-            amp_al=squeeze(nanmean(wc_data,2));
+            wc_data(:,idx_a) = nan;
+            amp_al = squeeze(nanmean(wc_data,2));
             idx_keep = amp >= cax(1);
             idx_keep_al = amp_al >= cax(1);
     end
@@ -299,6 +301,25 @@ if ismember(datagramSource,{'WC' 'AP'})
         disp_config.Cax_wc = cax;
     end
     
+end
+
+% ensure that the line now displayed in WC is selected in the list of
+% files loaded
+line_idx = disp_config.Fdata_idx;
+fdata_tab_comp = getappdata(main_figure,'fdata_tab');
+if ~ismember(line_idx,fdata_tab_comp.selected_idx)
+    
+    % select the cell in the table. Unfortunately, findjobj takes a while
+    % but seems the only solution to select a cell programmatically 
+    jUIScrollPane = findjobj(fdata_tab_comp.table);
+    jUITable = jUIScrollPane.getViewport.getView;
+    jUITable.changeSelection(line_idx-1,0, false, false);
+    
+    % and update selected_idx
+    fdata_tab_comp.selected_idx = unique([fdata_tab_comp.selected_idx;line_idx]);
+
+    % and save back
+    setappdata(main_figure,'fdata_tab',fdata_tab_comp);
 end
 
 

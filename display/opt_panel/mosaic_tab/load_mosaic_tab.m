@@ -119,8 +119,8 @@ zone = disp_config.get_zone();
 
 for i = mosaic_tab_comp.selected_idx(:)'
     
-    % tag_id_mosaic = num2str(mosaics(i).ID,'mosaic%.0f');
-    % tag_id_box = num2str(mosaics(i).ID,'box%.0f');
+    % tag_id_mosaic = num2str(mosaics(i).ID,'%.0f_mosaic');
+    % tag_id_box = num2str(mosaics(i).ID,'%.0f_box');
     % mosaic_obj = findobj(ax,'Tag',tag_id_mosaic);
     
     [fileN, pathname] = uiputfile({'*.tif'},...
@@ -156,16 +156,17 @@ end
 %
 function delete_mosaic_cback(~,~,main_figure)
 
-mosaics = getappdata(main_figure,'mosaics');
-map_tab_comp = getappdata(main_figure,'Map_tab');
+mosaics         = getappdata(main_figure,'mosaics');
+map_tab_comp    = getappdata(main_figure,'Map_tab');
 mosaic_tab_comp = getappdata(main_figure,'mosaic_tab');
+
 ax = map_tab_comp.map_axes;
 idx_rem = [];
 
 for i = mosaic_tab_comp.selected_idx(:)'
     if i <= numel(mosaics)
-        tag_id_mosaic = num2str(mosaics(i).ID,'mosaic%.0f');
-        tag_id_box = num2str(mosaics(i).ID,'box%.0f');
+        tag_id_mosaic = num2str(mosaics(i).ID,'%.0f_mosaic');
+        tag_id_box = num2str(mosaics(i).ID,'%.0f_box');
         obj = findobj(ax,'Tag',tag_id_mosaic,'-or','Tag',tag_id_box);
         delete(obj);
         idx_rem = union(i,idx_rem);

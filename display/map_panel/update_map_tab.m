@@ -269,8 +269,8 @@ for imosaic = 1:numel(mosaics)
     end
     
     mosaic = mosaics(imosaic);
-    tag_id_mosaic = num2str(mosaic.ID,'mosaic%.0f');
-    tag_id_box = num2str(mosaic.ID,'box%.0f');
+    tag_id_mosaic = num2str(mosaic.ID,'%.0f_mosaic');
+    tag_id_box = num2str(mosaic.ID,'%.0f_box');
     [numElemGridN,numElemGridE] = size(mosaic.mosaic_level);
     mosaicEasting  = (0:numElemGridE-1) .*mosaic.res + mosaic.E_lim(1);
     mosaicNorthing = (0:numElemGridN-1)'.*mosaic.res +mosaic.N_lim(1);

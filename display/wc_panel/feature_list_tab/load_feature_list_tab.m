@@ -78,7 +78,7 @@
 %% Function
 function load_feature_list_tab(main_figure,parent_tab_group)
 
-%disp_config = getappdata(main_figure,'disp_config');
+% disp_config = getappdata(main_figure,'disp_config');
 
 switch parent_tab_group.Type
     case 'uitabgroup'
@@ -89,8 +89,8 @@ switch parent_tab_group.Type
     case 'figure'
         feature_list_tab_comp.feature_list_tab = parent_tab_group;
 end
-% pos = getpixelposition(feature_list_tab_comp.wc_tab);
 
+% pos = getpixelposition(feature_list_tab_comp.wc_tab);
 
 columnname = {'ID','Tag','Type','Shape','Depth Min','Depth Max','Unique_ID'};
 columnformat = {'numeric','char',init_feature_type,{'Point','Polygon'},'numeric','numeric','char'};
@@ -113,16 +113,22 @@ set(feature_list_tab_comp.table,'CellSelectionCallback',{@activate_features_call
 set(feature_list_tab_comp.feature_list_tab,'SizeChangedFcn',{@resize_table,feature_list_tab_comp.table});
 set(feature_list_tab_comp.table,'KeyPressFcn','');
 
-
+%% Define right-click menu
 rc_menu = uicontextmenu(ancestor(parent_tab_group,'figure'));
-feature_list_tab_comp.table.UIContextMenu =rc_menu;
-str_delete='<HTML><center><FONT color="REd"><b>Delete Features(s)</b></Font> ';
 
+feature_list_tab_comp.table.UIContextMenu = rc_menu;
+
+str_export = '<HTML><center><FONT color="Black">Export Selected Feature(s)</Font> ';
+uimenu(rc_menu,'Label',str_export,'Callback',{@export_features_callback,main_figure,{}});
+
+str_delete = '<HTML><center><FONT color="Red"><b>Delete Selected Feature(s)</b></Font> ';
 uimenu(rc_menu,'Label',str_delete,'Callback',{@delete_features_callback,main_figure,{}});
 
-setappdata(main_figure,'feature_list_tab',feature_list_tab_comp);
-features = getappdata(main_figure,'features');
+%%
 
+setappdata(main_figure,'feature_list_tab',feature_list_tab_comp);
+
+features = getappdata(main_figure,'features');
 if isempty(features)
     return;
 end
@@ -131,20 +137,27 @@ update_feature_list_tab(main_figure);
 
 end
 
+%%
+% Callback when table is edited
+%
 function edit_features_callback(src,evt,main_figure)
-features=getappdata(main_figure,'features');
+
+features = getappdata(main_figure,'features');
+
 if isempty(features)
     return;
 end
 
 if isempty(evt.Indices)
-    selected_features={};
+    selected_features = {};
 else
-    selected_features=src.Data(evt.Indices(:,1),end);
-    idx_data=evt.Indices(:,2);
+    selected_features = src.Data(evt.Indices(:,1),end);
+    idx_data = evt.Indices(:,2);
 end
-nData=evt.NewData;
-idx_feature=contains({features(:).Unique_ID},selected_features);
+
+nData = evt.NewData;
+
+idx_feature = contains({features(:).Unique_ID},selected_features);
 
 switch src.ColumnName{idx_data}
     case 'Type'
@@ -164,26 +177,135 @@ switch src.ColumnName{idx_data}
         end
         features(idx_feature).Depth_max=nData;
 end
+
 features(idx_feature).feature_to_shapefile(fullfile(whereisroot,'feature_files'));
+
 setappdata(main_figure,'features',features);
 
 display_features(main_figure,selected_features);
 
 end
 
-
-
+%%
+% Callback when element in table is selected
+%
 function activate_features_callback(src,evt,main_figure)
 
 if isempty(evt.Indices)
-    selected_features={};
+    selected_features = {};
 else
-    selected_features=src.Data(evt.Indices(:,1),end);
+    selected_features = src.Data(evt.Indices(:,1),end);
 end
 
 disp_config = getappdata(main_figure,'disp_config');
 
-disp_config.Act_features=selected_features;
+disp_config.Act_features = selected_features;
 
 end
 
+
+%%
+% Callback when calling for exporting selected features
+%
+function export_features_callback(~,~,main_figure,IDs)
+
+disp_config = getappdata(main_figure,'disp_config');
+
+features = getappdata(main_figure,'features');
+
+if ~iscell(IDs)
+    IDs = {IDs};
+end
+
+if isempty(IDs)
+    IDs = disp_config.Act_features;
+end
+
+if isempty(IDs)
+    return;
+end
+
+if isempty(features)
+    return;
+end
+
+% select directory for export
+file_tab_comp = getappdata(main_figure,'file_tab');
+path_ori = get(file_tab_comp.path_box,'string');
+folder_name = uigetdir(path_ori,'Select folder for features to export');
+
+% features to export
+features_id = {features(:).Unique_ID};
+idx_feature_to_export = ismember(features_id,IDs);
+idx_exp = find(idx_feature_to_export);
+
+% find shapefiles to export
+shp_files = dir(fullfile(whereisroot,'feature_files'));
+idx_file_to_export = contains({shp_files(:).name},features_id(idx_feature_to_export));
+files_to_export = cellfun(@(x) fullfile(whereisroot,'feature_files',x),{shp_files(idx_file_to_export).name},'un',0);
+
+% output files
+if numel(files_to_export) == idx_exp
+    
+    for ii = 1:numel(idx_exp)
+        output_file = fullfile(folder_name,sprintf('%i_%s_%s',features(idx_exp(ii)).Type,features(idx_exp(ii)).ID,features(idx_exp(ii)).Tag),'.shp');
+        copyfile(files_to_export{ii},output_file);
+    end
+    
+else
+    
+    disp('error: all or some shapefiles are missing. Features were not exported.');
+    
+end
+
+end
+
+
+%%
+% Callback when calling for deleting selected features
+%
+function delete_features_callback(~,~,main_figure,IDs)
+
+disp_config = getappdata(main_figure,'disp_config');
+
+features = getappdata(main_figure,'features');
+
+if ~iscell(IDs)
+    IDs = {IDs};
+end
+
+if isempty(IDs)
+    IDs = disp_config.Act_features;
+end
+
+if isempty(IDs)
+    return;
+end
+
+if isempty(features)
+    return;
+end
+
+features_id = {features(:).Unique_ID};
+
+idx_rem = ismember(features_id,IDs);
+
+shp_files = dir(fullfile(whereisroot,'feature_files'));
+
+idx_f_to_rem = contains({shp_files(:).name},features_id(idx_rem));
+
+files_to_rem = cellfun(@(x) fullfile(whereisroot,'feature_files',x),{shp_files(idx_f_to_rem).name},'un',0);
+
+cellfun(@delete,files_to_rem);
+
+features(idx_rem) = [];
+
+setappdata(main_figure,'features',features);
+
+update_feature_list_tab(main_figure);
+
+display_features(main_figure,{});
+
+disp_config.Act_features = {};
+
+end

@@ -79,6 +79,7 @@
 function listenAct_features(~,~,main_figure)
 
 disp_config = getappdata(main_figure,'disp_config');
+
 map_tab_comp = getappdata(main_figure,'Map_tab');
 
 features_h = findobj(map_tab_comp.map_axes,{'tag','feature'});
@@ -87,20 +88,24 @@ if isempty(features_h)
     return;
 end
 
-idx_act = ismember({features_h(:).UserData},disp_config.Act_features);
+% colours: first for inactive, second for active
+col = {[0.1 0.1 0.1],'r'};
 
-col = cell(1,numel(idx_act));
-col(idx_act) = {'r'};
-col(~idx_act) = {[0.1 0.1 0.1]};
-
-for ii = 1:numel(idx_act)
+for ii = 1:numel(features_h)
     
-    if strcmpi(features_h(ii).Type,'Line')
-        features_h(ii).Color = col{ii};
-        features_h(ii).MarkerFaceColor = col{ii};
-    else
-        features_h(ii).EdgeColor = col{ii};
-        features_h(ii).FaceColor = col{ii};
+    isAct = ismember(features_h(ii).UserData,disp_config.Act_features);
+    
+    switch features_h(ii).Type
+        
+        case 'line'
+            
+            features_h(ii).Color = col{isAct+1};
+            features_h(ii).MarkerFaceColor = col{isAct+1};
+            
+        case 'polygon'
+
+            features_h(ii).EdgeColor = col{isAct+1};
+            features_h(ii).FaceColor = col{isAct+1};
     end
 end
 

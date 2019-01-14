@@ -45,7 +45,7 @@ switch parent_tab_group.Type
         fdata_tab_comp.fdata_tab = parent_tab_group;
 end
 
-% create the table of lines
+% create the table of lines loaded
 fdata_tab_comp.table = uitable( 'Parent',fdata_tab_comp.fdata_tab,...
     'Data', [],...
     'ColumnName', {'Lines' 'Folder' 'Disp' 'ID'},...
@@ -58,9 +58,9 @@ fdata_tab_comp.table = uitable( 'Parent',fdata_tab_comp.fdata_tab,...
     'CellEditCallback',{@update_map_cback,main_figure},...
     'BusyAction','cancel');
 
+% set its location
 pos_t = getpixelposition(fdata_tab_comp.table);
 set(fdata_tab_comp.table,'ColumnWidth',{3*pos_t(3)/10,6*pos_t(3)/10,pos_t(3)/10, 0});
-
 set(fdata_tab_comp.fdata_tab,'SizeChangedFcn',{@resize_table,fdata_tab_comp.table});
 
 % initially, blank selection
@@ -89,30 +89,34 @@ end
 %
 function cell_select_cback(~,evt,main_figure)
 
-% selected line
+% indices of selected line
 if ~isempty(evt.Indices)
     selected_idx = (evt.Indices(:,1));
 else
     selected_idx = [];
 end
 
-% update fdata_tab in main_figure's appdata
+% update the selected lines in fdata_tab
 fdata_tab_comp = getappdata(main_figure,'fdata_tab');
 fdata_tab_comp.selected_idx = unique(selected_idx);
 setappdata(main_figure,'fdata_tab',fdata_tab_comp);
 
-% update disp_config
+% update the displays if the new selection does not include the line
+% currently displayed
 disp_config = getappdata(main_figure,'disp_config');
-if ~isempty(selected_idx)
-    disp_config.Fdata_idx = selected_idx(end);
-else
-    disp_config.Fdata_idx = 1;
+if ~isempty(selected_idx) && ~ismember(disp_config.Fdata_idx,selected_idx)
+    % update only if selected lines do not include the one currently
+    % displayed
+    
+    % udpate in disp_config
+    disp_config.Fdata_idx = selected_idx(1);
+    disp_config.Iping = 1; % this updates the WC view with listenIping
+    disp_config.AcrossDist = 0;
+    
+    % and update the wc display
+    update_wc_tab(main_figure);
+    
 end
-disp_config.Iping = 1;
-disp_config.AcrossDist = 0;
-
-% update ? XXX
-update_wc_tab(main_figure);
 
 end
 
@@ -171,11 +175,11 @@ end
 %
 function remove_lines_cback(~,~,main_figure)
 
+fdata = getappdata(main_figure,'fData');
 fdata_tab_comp = getappdata(main_figure,'fdata_tab');
 map_tab_comp = getappdata(main_figure,'Map_tab');
-ax = map_tab_comp.map_axes;
 
-fdata = getappdata(main_figure,'fData');
+ax = map_tab_comp.map_axes;
 idx_rem = find([fdata_tab_comp.table.Data{:,end-1}]);
 
 % for each line, remove navigation and grid from map
@@ -183,7 +187,7 @@ for i = idx_rem(:)'
     
     id = fdata{i}.ID;
     tag_id = num2str(id,'%.0f');
-    tag_id_wc = num2str(id,'wc%.0f');
+    tag_id_wc = num2str(id,'%.0f_wc');
     obj = findobj(ax,'Tag',tag_id,'-or','Tag',tag_id_wc);
     delete(obj);
     

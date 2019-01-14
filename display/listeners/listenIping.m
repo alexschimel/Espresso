@@ -78,12 +78,12 @@
 %% Function
 function listenIping(~,~,main_figure)
 
-fData_tot   = getappdata(main_figure,'fData');
+fData_tot = getappdata(main_figure,'fData');
 
 if isempty(fData_tot)
     return;
 end
 
-update_wc_tab(main_figure)
+update_wc_tab(main_figure);
 
 end
