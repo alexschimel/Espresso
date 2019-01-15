@@ -105,7 +105,7 @@ grid(stacked_wc_tab_comp.wc_axes,'on');
 box(stacked_wc_tab_comp.wc_axes,'on')
 axis(stacked_wc_tab_comp.wc_axes,'ij');
 stacked_wc_tab_comp.wc_gh = pcolor(stacked_wc_tab_comp.wc_axes,[],[],[]);
-stacked_wc_tab_comp.wc_gh.ButtonDownFcn={@goToPing_cback,main_figure};
+stacked_wc_tab_comp.wc_gh.ButtonDownFcn = {@goToPing_cback,main_figure};
 set(stacked_wc_tab_comp.wc_gh,'facealpha','flat','LineStyle','none','AlphaData',[]);
 stacked_wc_tab_comp.ping_gh = plot(stacked_wc_tab_comp.wc_axes,nan,nan,'--k','Tag','ac','linewidth',2);
 % stacked_wc_tab_comp.bot_gh = plot(stacked_wc_tab_comp.wc_axes,nan,nan,'.k','Tag','ac','markersize',4);
@@ -122,9 +122,10 @@ update_wc_tab(main_figure);
 
 end
 
-function goToPing_cback(src,evt,main_figure)
+function goToPing_cback(~,evt,main_figure)
+
 disp_config = getappdata(main_figure,'disp_config');
-disp_config.Iping=round(evt.IntersectionPoint(1));
+disp_config.Iping = round(evt.IntersectionPoint(1));
 
 end
 

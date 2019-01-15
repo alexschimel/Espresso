@@ -82,10 +82,9 @@ if ~iscell(IDs)
     IDs = {};
 end
 
-disp_config = getappdata(main_figure,'disp_config');
-
+disp_config  = getappdata(main_figure,'disp_config');
 map_tab_comp = getappdata(main_figure,'Map_tab');
-features = getappdata(main_figure,'features');
+features     = getappdata(main_figure,'features');
 
 if ~isempty(features)
     id_features = {features(:).Unique_ID};
