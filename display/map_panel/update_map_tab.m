@@ -76,41 +76,54 @@
 % Yoann Ladroit, Alexandre Schimel, NIWA. XXX
 
 %% Function
-function update_map_tab(main_figure,new_res,new_zoom,idx_up)
+function update_map_tab(main_figure,varargin)
 
-map_tab_comp = getappdata(main_figure,'Map_tab');
+
+%% INTRO
+
+% input parser
+p = inputParser;
+addOptional(p,'new_grid_flag',0);
+addOptional(p,'new_mosaic_flag',0);
+addOptional(p,'auto_zoom_extent_flag',0);
+addOptional(p,'update_line_index',[]); % if empty update all lines
+parse(p,varargin{:});
+new_grid_flag = p.Results.new_grid_flag;
+new_mosaic_flag = p.Results.new_mosaic_flag;
+auto_zoom_extent_flag = p.Results.auto_zoom_extent_flag;
+update_line_index = p.Results.update_line_index;
+
+% exit if no data loaded
 fData_tot = getappdata(main_figure,'fData');
-mosaics = getappdata(main_figure,'mosaics');
-
 if isempty(fData_tot)
     return;
 end
 
-fdata_tab_comp = getappdata(main_figure,'fdata_tab');
-mosaic_tab_comp = getappdata(main_figure,'mosaic_tab');
+% get disp config
 disp_config = getappdata(main_figure,'disp_config');
 
-idx_active_lines = cell2mat(fdata_tab_comp.table.Data(:,3));
-
-if ~isempty(mosaic_tab_comp.table_main.Data)
-    idx_active_lines_mosaic = cell2mat(mosaic_tab_comp.table_main.Data(:,3));
-else
-    idx_active_lines_mosaic = [];
-end
-
+% get map axes
+map_tab_comp = getappdata(main_figure,'Map_tab');
 ax = map_tab_comp.map_axes;
 
-% initialize xlim and ylim
+% initialize xlim and ylim for zoom extent
 xlim = [nan nan];
 ylim = [nan nan];
 
-if isempty(idx_up)
-    idx_up = 1:length(fData_tot);
+
+
+%% DISPLAY LINES' NAVIGATION AND GRIDS
+
+% if empty update_line_index in input, take all available
+if isempty(update_line_index)
+    update_line_index = 1:length(fData_tot);
 end
 
+% set of active lines
+fdata_tab_comp = getappdata(main_figure,'fdata_tab');
+idx_active_lines = cell2mat(fdata_tab_comp.table.Data(:,3));
 
-%% Display of navigation and grids
-for i = idx_up
+for i = update_line_index
     
     % settings for navigation lines
     if idx_active_lines(i)
@@ -124,23 +137,17 @@ for i = idx_up
     end
     
     % get data
-    fData = fData_tot{i};
-    
-    % get line ID
-    tag_id_line = num2str(fData.ID,'%.0f_line');
-    obj_line = findobj(ax,'Tag',tag_id_line);
-    set(obj_line,'Visible',wc_vis);
-    
+    fData = fData_tot{i};    
     
     %% Navigation
-    tag_id = num2str(fData.ID,'%.0f');
-    obj = findobj(ax,'Tag',tag_id);
+    tag_id_nav = num2str(fData.ID,'%.0f_nav');
+    obj = findobj(ax,'Tag',tag_id_nav);
     
     if isempty(obj)
         % line to be drawn for the first time
         
         % draw line navigation and ID it
-        handle_plot = plot(ax,fData.X_1P_pingE,fData.X_1P_pingN,'Tag',tag_id,'Visible','on','Color',nav_col,'ButtonDownFcn',{@disp_wc_ping_cback,main_figure});
+        handle_plot = plot(ax,fData.X_1P_pingE,fData.X_1P_pingN,'Tag',tag_id_nav,'Visible','on','Color',nav_col,'ButtonDownFcn',{@disp_wc_ping_cback,main_figure});
         
         % set hand pointer when on that line
         pointerBehavior.enterFcn    = @(figHandle, currentPoint) set(figHandle, 'Pointer', 'hand');
@@ -149,17 +156,17 @@ for i = idx_up
         iptSetPointerBehavior(handle_plot,pointerBehavior);
         
         % draw circle as start of line
-        plot(ax,fData.X_1P_pingE(1),fData.X_1P_pingN(1),'o','Tag',tag_id,'Visible','on','Color',nav_col);
+        plot(ax,fData.X_1P_pingE(1),fData.X_1P_pingN(1),'o','Tag',tag_id_nav,'Visible','on','Color',nav_col);
        
         % draw dots as subsampled navigation
         df = 10;
-        plot(ax,[fData.X_1P_pingE(1:df:end),fData.X_1P_pingE(end)],[fData.X_1P_pingN(1:df:end),fData.X_1P_pingN(end)],'.','Tag',tag_id,'Visible','on','Color',nav_col);
+        plot(ax,[fData.X_1P_pingE(1:df:end),fData.X_1P_pingE(end)],[fData.X_1P_pingN(1:df:end),fData.X_1P_pingN(end)],'.','Tag',tag_id_nav,'Visible','on','Color',nav_col);
         
         % draw end of line
-        % plot(ax,fData.X_1P_pingE(end),fData.X_1P_pingN(end),'s','Tag',tag_id,'Visible','on','Color',nav_col);
+        % plot(ax,fData.X_1P_pingE(end),fData.X_1P_pingN(end),'s','Tag',tag_id_nav,'Visible','on','Color',nav_col);
         
     else
-        % line already exists, just make visible
+        % line already exists, just set to proper color
         
         set(obj,'Visible','on');
         set(obj(arrayfun(@(x) strcmp(x.Type,'line'),obj)),'Color',nav_col);
@@ -168,11 +175,12 @@ for i = idx_up
     
     
     %% Processed water column grid
-    tag_id_wc   = num2str(fData.ID,'%.0f_wc');
+    tag_id_wc = num2str(fData.ID,'%.0f_wc');
     obj_wc = findobj(ax,'Tag',tag_id_wc);
     
-    % if requesting a new resolution, delete existing grid
-    if new_res
+    % if new grid was computed delete existing image object before
+    % recreating it
+    if new_grid_flag
         delete(obj_wc);
         obj_wc = [];
     end
@@ -202,13 +210,10 @@ for i = idx_up
         end
         
         % draw grid as imagesc. Tag appropriately
-        % temporary removing the callback here as I don't think it's
-        % necessary anymore since we added panning to the entire map
-        % obj_wc = imagesc(ax,E,N,data,'Visible',wc_vis,'Tag',tag_id_wc,'ButtonDownFcn',{@disp_wc_ping_cback,main_figure});
-        obj_wc = imagesc(ax,E,N,data,'Visible',wc_vis,'Tag',tag_id_wc);
+        obj_wc = imagesc(ax,E,N,data,'Visible',wc_vis,'Tag',tag_id_wc,'ButtonDownFcn',{@disp_wc_ping_cback,main_figure});
         
     else
-        % grid already exists, just make visible if needed
+        % grid already exists, just make visible if disp is checked
         
         set(obj_wc,'Visible',wc_vis);
 
@@ -253,62 +258,178 @@ for i = idx_up
     
 end
 
-% in case no lines are active, set the ping swathe line to nan
-if nansum(idx_active_lines) == 0
-    set(map_tab_comp.ping_swathe,'XData',nan,'YData',nan);
-end
 
 
 %% MOSAICS
+
+mosaics = getappdata(main_figure,'mosaics');
+mosaic_tab_comp = getappdata(main_figure,'mosaic_tab');
+
+if ~isempty(mosaic_tab_comp.table_main.Data)
+    idx_active_mosaics = cell2mat(mosaic_tab_comp.table_main.Data(:,3));
+else
+    idx_active_mosaics = [];
+end
+
 for imosaic = 1:numel(mosaics)
     
-    if idx_active_lines_mosaic(imosaic)
-        vis = 'on';
-    else
-        vis = 'off';
-    end
-    
+    % get this mosaic
     mosaic = mosaics(imosaic);
-    tag_id_mosaic = num2str(mosaic.ID,'%.0f_mosaic');
-    tag_id_box = num2str(mosaic.ID,'%.0f_box');
-    [numElemGridN,numElemGridE] = size(mosaic.mosaic_level);
-    mosaicEasting  = (0:numElemGridE-1) .*mosaic.res + mosaic.E_lim(1);
-    mosaicNorthing = (0:numElemGridN-1)'.*mosaic.res +mosaic.N_lim(1);
-    alphadata = mosaic.mosaic_level>disp_config.Cax_wc_int(1);
-    obj_mosaic = findobj(ax,'Tag',tag_id_mosaic);
-    obj_box = findobj(ax,'Tag',tag_id_box);
     
+    % mosaic box
+    tag_id_box = num2str(mosaic.ID,'%.0f_box');
+    obj_box = findobj(ax,'Tag',tag_id_box);
     if isempty(obj_box)
+        % not created yet, create now
         rectangle(ax,'Position',[mosaic.E_lim(1),mosaic.N_lim(1),diff(mosaic.E_lim),diff(mosaic.N_lim)],'Tag',tag_id_box,'EdgeColor','b');
     else
-        set(obj_box,'Position',[mosaic.E_lim(1),mosaic.N_lim(1),diff(mosaic.E_lim),diff(mosaic.N_lim)]);
+        % already exists. Update position in case of (but this should not
+        % change as these limits are set at creation and never updated
+        % after
+        % set(obj_box,'Position',[mosaic.E_lim(1),mosaic.N_lim(1),diff(mosaic.E_lim),diff(mosaic.N_lim)]);
     end
     
-    if new_res
+    % get the mosaic object 
+    tag_id_mosaic = num2str(mosaic.ID,'%.0f_mosaic');
+    obj_mosaic = findobj(ax,'Tag',tag_id_mosaic);
+    
+    % if mosaic was updated, delete the existing image object before
+    % recreating it
+    if new_mosaic_flag
         delete(obj_mosaic);
         obj_mosaic = [];
     end
+   
+    % compute X and Y vectors and alphadata
+    [numElemGridN,numElemGridE] = size(mosaic.mosaic_level);
+    mosaicEasting  = (0:numElemGridE-1) .*mosaic.res + mosaic.E_lim(1);
+    mosaicNorthing = (0:numElemGridN-1)'.*mosaic.res + mosaic.N_lim(1);
+    alphadata = mosaic.mosaic_level>disp_config.Cax_wc_int(1);
     
     if isempty(obj_mosaic)
-        obj_mosaic = imagesc(ax,mosaicEasting,mosaicNorthing,mosaic.mosaic_level,'Tag',tag_id_mosaic,'alphadata',alphadata,'ButtonDownFcn',{@move_map_cback,main_figure});
+        % mosaic does not exist yet or was deleted. (re)Create now.
+        
+        % the mosaic object used to have the panning interaction but now
+        % it's the default behaviour on the map so remove it
+        % obj_mosaic = imagesc(ax,mosaicEasting,mosaicNorthing,mosaic.mosaic_level,'Tag',tag_id_mosaic,'alphadata',alphadata,'ButtonDownFcn',{@move_map_cback,main_figure});
+        obj_mosaic = imagesc(ax,mosaicEasting,mosaicNorthing,mosaic.mosaic_level,'Tag',tag_id_mosaic,'alphadata',alphadata);
     else
+        % mosaic already exists. 
         set(obj_mosaic,'XData',mosaicEasting,'YData',mosaicNorthing,'CData',mosaic.mosaic_level,'alphadata',alphadata);
     end
     
-    set(obj_mosaic,'Visible',vis);
+    % set the appropriate visibility
+    if idx_active_mosaics(imosaic)
+        set(obj_mosaic,'Visible','on');
+    else
+        set(obj_mosaic,'Visible','off');
+    end
+    
+    % set image at bottom of stack display (aka, under the line grids)
     uistack(obj_mosaic,'bottom');
     
 end
 
+% set colour axis
 cax = disp_config.get_cax();
 caxis(ax,cax);
 
+
+
+%% IF NO LINE IS ACTIVE, STOP HERE
 if ~any(idx_active_lines)
+    map_tab_comp.ping_window.Shape.Vertices = [NaN NaN];
+    set(map_tab_comp.ping_swathe,'XData',nan,'YData',nan);
     return;
 end
 
-%% set the zoom extent
-if new_zoom>0 && all(~isnan(xlim)) && all(~isnan(ylim))
+
+
+
+%% SLIDING WINDOW POLYGON
+
+% get fdata of current line and current ping
+fData       = fData_tot{disp_config.Fdata_idx};
+ip          = disp_config.Iping;
+
+% save info in usrdata as an ID
+usrdata.ID = fData.ID;
+wc_tab_comp  = getappdata(main_figure,'wc_tab');
+wc_str = wc_tab_comp.data_disp.String;
+str_disp = wc_str{wc_tab_comp.data_disp.Value};
+usrdata.str_disp = str_disp;
+
+% calculate pings making up the stack
+idx_pings = ip-disp_config.StackPingWidth:ip+disp_config.StackPingWidth-1;
+id_min = nansum(idx_pings<1);
+idx_pings = idx_pings + id_min;
+nb_pings = size(fData.X_BP_bottomEasting,2);
+id_max = nansum(idx_pings>nb_pings);
+idx_pings = idx_pings-id_max;
+idx_pings(idx_pings<1|idx_pings>nb_pings) = [];
+
+% indices of beams to keep for computation of stack view
+idx_angles = ~( disp_config.StackAngularWidth(1)/180*pi<=fData.X_PB_beamPointingAngleRad(:,idx_pings) & disp_config.StackAngularWidth(2)/180*pi>=fData.X_PB_beamPointingAngleRad(:,idx_pings) );
+
+% save all of these in usrdata for later retrieval in stacked view
+usrdata.idx_pings  = idx_pings;
+usrdata.idx_angles = idx_angles;
+
+% next, list the pinge we'll actually use to form the rough polygon
+ping_decimate_factor = 3;
+dp_sub = ceil(numel(idx_pings)./ping_decimate_factor);
+idx_poly_pings = unique([1:dp_sub:numel(idx_pings),numel(idx_pings)]);
+
+% get easting coordinates of sliding window polygon
+e_p = fData.X_BP_bottomEasting(:,idx_pings);
+e_p(idx_angles) = NaN;
+e_p = e_p(:,idx_poly_pings);
+e_p = e_p(:,~all(isnan(e_p),1));
+e_p_s = arrayfun(@(col) e_p(find(~isnan(e_p(:, col)),1,'first'),col), 1:size(e_p,2), 'UniformOutput', 1);
+e_p_e = arrayfun(@(col) e_p(find(~isnan(e_p(:, col)),1,'last'),col), 1:size(e_p,2), 'UniformOutput', 1);
+
+% get northing coordinates of sliding window polygon
+n_p = fData.X_BP_bottomNorthing(:,idx_pings);
+n_p(idx_angles) = NaN;
+n_p = n_p(:,idx_poly_pings);
+n_p = n_p(:,~all(isnan(n_p),1));
+n_p_s = arrayfun(@(col) n_p(find(~isnan(n_p(:, col)),1,'first'),col), 1:size(n_p,2), 'UniformOutput', 1);
+n_p_e = arrayfun(@(col) n_p(find(~isnan(n_p(:, col)),1,'last'),col), 1:size(n_p,2), 'UniformOutput', 1);
+
+% compiling vertices for polygon
+new_vert = [[e_p_s fliplr(e_p_e)];[n_p_s fliplr(n_p_e)]]';
+
+% update vertices and tag in sliding window polygon
+map_tab_comp.ping_window.Shape.Vertices = new_vert;
+map_tab_comp.ping_window.Tag = sprintf('%.0f0_pingwindow',fData.ID);
+
+% add usrdata for later retrieval in stacked view
+map_tab_comp.ping_window.UserData = usrdata;
+
+% update xlim and ylim
+xlim(1) = nanmin(xlim(1),nanmin(new_vert(:,1)));
+xlim(2) = nanmax(xlim(2),nanmax(new_vert(:,1)));
+ylim(1) = nanmin(ylim(1),nanmin(new_vert(:,2)));
+ylim(2) = nanmax(ylim(2),nanmax(new_vert(:,2)));
+
+
+%% CURRENT PING SWATH LINE
+set(map_tab_comp.ping_swathe,'XData',fData.X_BP_bottomEasting(:,ip),'YData',fData.X_BP_bottomNorthing(:,ip));
+
+
+% update xlim and ylim
+xlim(1) = nanmin(xlim(1),nanmin(fData.X_BP_bottomEasting(:,ip)));
+xlim(2) = nanmax(xlim(2),nanmax(fData.X_BP_bottomEasting(:,ip)));
+ylim(1) = nanmin(ylim(1),nanmin(fData.X_BP_bottomNorthing(:,ip)));
+ylim(2) = nanmax(ylim(2),nanmax(fData.X_BP_bottomNorthing(:,ip)));
+
+% set ping swathe back ontop so it can be grabbed
+uistack(map_tab_comp.ping_swathe,'top');
+
+
+
+%% ZOOM VIEW ADJUST
+if auto_zoom_extent_flag>0 && all(~isnan(xlim)) && all(~isnan(ylim))
     
     % get current window size ratio
     pos = getpixelposition(ax);
@@ -316,7 +437,7 @@ if new_zoom>0 && all(~isnan(xlim)) && all(~isnan(ylim))
     
     ratio_data = diff(ylim)./diff(xlim);
     
-    if ratio_data>ratio_window
+    if ratio_data > ratio_window
         % ylim_new = [ylim(1) ylim(2)];
         ylim_new = [-diff(ylim),diff(ylim)]*1.2/2 + ylim(1) + diff(ylim)/2;
         dx = diff(ylim)/ratio_window;
@@ -333,25 +454,20 @@ if new_zoom>0 && all(~isnan(xlim)) && all(~isnan(ylim))
        
 end
 
-% get current ticks position
+
+%% xlabel and ylabel
 ytick = get(ax,'ytick');
 xtick = get(ax,'xtick');
-
-disp_config = getappdata(main_figure,'disp_config');
-
 zone = disp_config.get_zone();
-
 [lat,~] = utm2ll(xtick,ylim(1)*ones(size(xtick)),zone);
 [~,lon] = utm2ll(xlim(1)*ones(size(ytick)),ytick,zone);
 lon(lon>180) = lon(lon>180)-360;
-
 fmt = '%.2f';
 [~,x_labels] = cellfun(@(x,y) latlon2str(x,y,fmt),num2cell(lon),num2cell(lon),'un',0);
 [y_labels,~] = cellfun(@(x,y) latlon2str(x,y,fmt),num2cell(lat),num2cell(lat),'un',0);
-
-% update strings
 set(ax,'yticklabel',y_labels);
 set(ax,'xticklabel',x_labels);
+
 
 end
 

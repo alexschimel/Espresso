@@ -83,7 +83,13 @@ switch parent_tab_group.Type
 end
 
 % pos = getpixelposition(wc_tab_comp.wc_tab);
-wc_tab_comp.data_disp = uicontrol(wc_tab_comp.wc_tab,'style','popup','Units','pixels','position',[20 20 120 20],'String',{'Original' 'Phase' 'Processed'},'Value',1,'Callback',{@change_wc_disp_cback,main_figure});
+wc_tab_comp.data_disp = uicontrol(wc_tab_comp.wc_tab,...
+    'style','popup',...
+    'Units','pixels',...
+    'position',[20 20 120 20],...
+    'String',{'Original' 'Phase' 'Processed'},...
+    'Value',1,...
+    'Callback',{@change_wc_disp_cback,main_figure});
 
 wc_tab_comp.wc_axes = axes(wc_tab_comp.wc_tab,'Units','normalized','outerposition',[0 0 1 1],'nextplot','add','YDir','normal');
 
@@ -117,6 +123,7 @@ end
 function change_wc_disp_cback(~,~,main_figure)
 
 update_wc_tab(main_figure);
+update_stacked_wc_tab(main_figure);
 
 end
 

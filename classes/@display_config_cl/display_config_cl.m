@@ -88,18 +88,20 @@ classdef display_config_cl <handle
         function obj = display_config_cl(varargin)
             
             p = inputParser;
-            addParameter(p,'Var_disp','wc_int',@(x) ismember(x,{'wc_int' 'bs' 'bathy'}));
+            addParameter(p,'Var_disp','wc_int',@(x) ismember(x,{'wc_int' 'bs' 'bathy'})); % variable to be displayed on the map
             addParameter(p,'Cmap','ek60',@(x) ismember(x,{'jet' 'parula' 'ek60' 'gray'}));
-            addParameter(p,'Cax_wc_int',[-35 -15],@isnumeric);
-            addParameter(p,'Cax_wc',[-50 -10],@isnumeric);
-            addParameter(p,'Cax_bs',[-40 -15],@isnumeric);
-            addParameter(p,'Cax_bathy',[-50 -10],@isnumeric);
-            addParameter(p,'Mode','normal',@ischar);
-            addParameter(p,'MET_tmproj','',@ischar);
-            addParameter(p,'Fdata_idx',1,@isnumeric);
-            addParameter(p,'StackPingWidth',200,@isnumeric);
-            addParameter(p,'StackAngularWidth',[-10 10],@isnumeric);
-            addParameter(p,'Act_features',{},@iscell);
+            addParameter(p,'Cax_wc_int',[-35 -15],@isnumeric); % colour axis limits for the map when variable displayed is integrated water column
+            addParameter(p,'Cax_wc',[-50 -10],@isnumeric); % colour axis limits for the WC view
+            addParameter(p,'Cax_bs',[-40 -15],@isnumeric); % colour axis limits for the map when variable displayed is backscatter
+            addParameter(p,'Cax_bathy',[-50 -10],@isnumeric); % colour axis limits for the map when variable displayed is bathymetry
+            addParameter(p,'Mode','Normal',@ischar); % Mode of mouse interaction with the map
+            addParameter(p,'MET_tmproj','',@ischar); % UTM projection of the map
+            addParameter(p,'Fdata_idx',1,@isinteger); % Index of active line
+            addParameter(p,'Iping',1,@isinteger); % Index of current ping number
+            addParameter(p,'AcrossDist',0,@isnumeric); % Across distance for pointer
+            addParameter(p,'StackPingWidth',200,@isnumeric); % half-length of ping window for stacked view computation
+            addParameter(p,'StackAngularWidth',[-10 10],@isnumeric); % angular aperture for stacked view computation (in degrees)
+            addParameter(p,'Act_features',{},@iscell); % active features
             
             parse(p,varargin{:});
             results = p.Results;
@@ -146,6 +148,42 @@ classdef display_config_cl <handle
                 case 'S'
                     zone = -zone;
             end
+        end
+        
+        function cleanup(obj,main_figure)
+            
+            %% re-initialize if there are no data to display
+            
+            fData_tot = getappdata(main_figure,'fData');
+            
+            if isempty(fData_tot)
+                
+                % clear all visible data
+                no_data_clear_all_displays(main_figure);
+                
+                % reinitialize disp_config
+                disp_config = display_config_cl();
+                setappdata(main_figure,'disp_config',disp_config);
+                
+                return;
+            end
+            
+            
+            %% ensure disp_config info is correct
+
+            % disp_config "Fdata_idx" should not exceed total number of fData loaded
+            if obj.Fdata_idx > numel(fData_tot)
+                obj.Fdata_idx = numel(fData_tot);
+                obj.Iping = 1;
+            end
+            
+            % Iping should not be superior to total number of pings in currenf fData
+            fData = fData_tot{obj.Fdata_idx};
+            datagramSource = fData.MET_datagramSource;
+            if obj.Iping > numel(fData.(sprintf('%s_1P_PingCounter',datagramSource)))
+                obj.Iping = 1;
+            end
+            
         end
         
     end

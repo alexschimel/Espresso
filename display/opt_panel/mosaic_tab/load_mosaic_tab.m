@@ -63,7 +63,7 @@ mosaic_tab_comp.table_main = uitable('Parent',mosaic_tab_comp.mosaic_tab,...
     'ColumnName', columnname,...
     'ColumnFormat', columnformat,...
     'CellSelectionCallback',{@cell_select_cback,main_figure},...
-    'CellEditCallback',{@update_mosaic_map,main_figure},...
+    'CellEditCallback',{@edit_mosaic,main_figure},...
     'ColumnEditable', [true true true false],...
     'Units','Normalized','Position',[0 0.1 1 0.9],...
     'RowName',[]);
@@ -203,14 +203,15 @@ end
 
 setappdata(main_figure,'mosaics',mosaics);
 
-update_map_tab(main_figure,1,0,[]);
+% update map with new mosaic, no zoom adjustement
+update_map_tab(main_figure,0,1,0,[]);
 
 end
 
 %%
-% Callback when ...
+% Callback when editing mosaic (name or resolution)
 %
-function update_mosaic_map(src,evt,main_figure)
+function edit_mosaic(src,evt,main_figure)
 
 mosaics = getappdata(main_figure,'mosaics');
 fData_tot = getappdata(main_figure,'fData');
@@ -218,21 +219,26 @@ idx_mosaic = cell2mat(src.Data(evt.Indices(1),4)) == [mosaics(:).ID];
 
 switch evt.Indices(2)
     case 1
+        % name update
         mosaics(idx_mosaic).name = evt.NewData;
     case 2
-        if ~isnan(evt.NewData)&&evt.NewData>0
+        % resolution update
+        if ~isnan(evt.NewData) && evt.NewData>0
+            
             mosaics(idx_mosaic).res = evt.NewData;
             mosaics(idx_mosaic) = get_default_res(mosaics(idx_mosaic),fData_tot);
-            
             mosaics(idx_mosaic) = compute_mosaic(mosaics(idx_mosaic),fData_tot);
+            
         else
+            % not a valid new resolution
             src.Data{evt.Indices(1),evt.Indices(2)} = evt.PreviousData;
         end
 end
 
 setappdata(main_figure,'mosaics',mosaics);
 
-update_map_tab(main_figure,1,0,[]);
+% update map with new mosaic, no zoom adjustement
+update_map_tab(main_figure,0,1,0,[]);
 
 end
 

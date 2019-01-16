@@ -270,7 +270,13 @@ setappdata(main_figure,'fData',fData_tot);
 disp_config = getappdata(main_figure,'disp_config');
 disp_config.Fdata_idx = idx_fData(end);
 
+
+% update the map, no zoom adjustment
+update_map_tab(main_figure,0,0,0,[]);
+
 update_wc_tab(main_figure);
+update_stacked_wc_tab(main_figure);
+
 
 end
 
@@ -357,7 +363,9 @@ wc_tab_comp = getappdata(main_figure,'wc_tab');
 wc_tab_strings = wc_tab_comp.data_disp.String;
 [~,idx] = ismember('Processed',wc_tab_strings);
 wc_tab_comp.data_disp.Value = idx;
+
 update_wc_tab(main_figure);
+update_stacked_wc_tab(main_figure);
 
 end
 
@@ -428,9 +436,12 @@ setappdata(main_figure,'fData',fData_tot);
 disp_config = getappdata(main_figure,'disp_config');
 disp_config.Fdata_idx = idx_fData(end);
 
-% update WC view and main tab
+% update map with new grid, zoom on changed lines
+update_map_tab(main_figure,1,0,1,disp_config.Fdata_idx);
+
+% update WC view and stacked view
 update_wc_tab(main_figure);
-update_map_tab(main_figure,1,0,[]);
+update_stacked_wc_tab(main_figure);
 
 end
 
@@ -440,22 +451,26 @@ end
 %
 function change_cax_cback(~,~,main_figure)
 
-wc_proc_tab_comp = getappdata(main_figure,'wc_proc_tab');
+% get current cax in disp_config
 disp_config = getappdata(main_figure,'disp_config');
-
 cax = disp_config.get_cax();
+
+% check that modified values in the box are OK or change them back
+wc_proc_tab_comp = getappdata(main_figure,'wc_proc_tab');
 check_fmt_box(wc_proc_tab_comp.clim_min,[],-200,100,cax(1),'%.0f');
 check_fmt_box(wc_proc_tab_comp.clim_max,[],-200,100,cax(2),'%.0f');
 
+% grab those values from the boxes
 cax_min = str2double(wc_proc_tab_comp.clim_min.String);
 cax_max = str2double(wc_proc_tab_comp.clim_max.String);
 
-if cax_min<cax_max
-    disp_config.set_cax([cax_min cax_max]);
-else
+% if the min is more than max, don't accept change and reset current values
+if cax_min > cax_max
     wc_proc_tab_comp.clim_min.String = num2str(cax(1));
     wc_proc_tab_comp.clim_max.String = num2str(cax(2));
-    disp_config.set_cax(cax);
+else
+    % if all OK, update cax
+    disp_config.set_cax([cax_min cax_max]);
 end
 
 end
@@ -466,22 +481,26 @@ end
 %
 function change_wc_cax_cback(~,~,main_figure)
 
-wc_proc_tab_comp = getappdata(main_figure,'wc_proc_tab');
+% get current cax_wc in disp_config
 disp_config = getappdata(main_figure,'disp_config');
+cax_wc = disp_config.Cax_wc;
 
-cax = disp_config.Cax_wc;
-check_fmt_box(wc_proc_tab_comp.clim_min_wc,[],-200,100,cax(1),'%.0f');
-check_fmt_box(wc_proc_tab_comp.clim_max_wc,[],-200,100,cax(2),'%.0f');
+% check that modified values in the box are OK or change them back
+wc_proc_tab_comp = getappdata(main_figure,'wc_proc_tab');
+check_fmt_box(wc_proc_tab_comp.clim_min_wc,[],-200,100,cax_wc(1),'%.0f');
+check_fmt_box(wc_proc_tab_comp.clim_max_wc,[],-200,100,cax_wc(2),'%.0f');
 
-cax_min = str2double(wc_proc_tab_comp.clim_min_wc.String);
-cax_max = str2double(wc_proc_tab_comp.clim_max_wc.String);
+% grab those values from the boxes
+cax_wc_min = str2double(wc_proc_tab_comp.clim_min_wc.String);
+cax_wc_max = str2double(wc_proc_tab_comp.clim_max_wc.String);
 
-if cax_min<cax_max
-    disp_config.Cax_wc = [cax_min cax_max];
+% if the min is more than max, don't accept change and reset current values
+if cax_wc_min > cax_wc_max
+    wc_proc_tab_comp.clim_min_wc.String = num2str(cax_wc(1));
+    wc_proc_tab_comp.clim_max_wc.String = num2str(cax_wc(2));
 else
-    wc_proc_tab_comp.clim_min_wc.String = num2str(cax(1));
-    wc_proc_tab_comp.clim_max_wc.String = num2str(cax(2));
-    disp_config.Cax_wc = cax;
+    % if all OK, update cax_wc
+    disp_config.Cax_wc = [cax_wc_min cax_wc_max];
 end
 
 end

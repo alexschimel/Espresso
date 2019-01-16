@@ -119,6 +119,7 @@ if isempty(fData)
 end
 
 update_wc_tab(main_figure);
+update_stacked_wc_tab(main_figure);
 
 end
 

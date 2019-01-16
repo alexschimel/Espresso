@@ -113,8 +113,12 @@ if ~isempty(selected_idx) && ~ismember(disp_config.Fdata_idx,selected_idx)
     disp_config.Iping = 1; % this updates the WC view with listenIping
     disp_config.AcrossDist = 0;
     
-    % and update the wc display
+    % update map with zoom adjusted to selected lines
+    update_map_tab(main_figure,0,0,1,disp_config.Fdata_idx);
+    
+    % and update displays
     update_wc_tab(main_figure);
+    update_stacked_wc_tab(main_figure);
     
 end
 
@@ -127,19 +131,25 @@ end
 %
 function update_map_cback(~,evt,main_figure)
 
-fdata_tab_comp = getappdata(main_figure,'fdata_tab');
-disp_config = getappdata(main_figure,'disp_config');
-
-% checking that it's the disp checkbok that was activated
+% do only when it's the disp checkbox that was activated
 if evt.Indices(2) == 3
+    
+    disp_config = getappdata(main_figure,'disp_config');
+    
     disp_config.Fdata_idx = evt.Indices(1); % line that was switched
     disp_config.Iping = 1;
     disp_config.AcrossDist = 0;
+
+    % update the map to zoom on that line
+    update_map_tab(main_figure,0,0,1,evt.Indices(1));
+    
+    % update displays
     update_wc_tab(main_figure);
+    update_stacked_wc_tab(main_figure);
+    
 end
 
-% update the map to put line on top
-update_map_tab(main_figure,0,1,evt.Indices(1));
+
 
 end
 
@@ -166,7 +176,9 @@ end
 fdata_tab_comp.table.Data = data;
 fdata_tab_comp.selected_idx = find([data{:,end-1}]);
 setappdata(main_figure,'fdata_tab',fdata_tab_comp);
-update_map_tab(main_figure,0,0,[]);
+
+% update map with zoom back on all lines
+update_map_tab(main_figure,0,0,1,[]);
 
 end
 
@@ -186,9 +198,9 @@ idx_rem = find([fdata_tab_comp.table.Data{:,end-1}]);
 for i = idx_rem(:)'
     
     id = fdata{i}.ID;
-    tag_id = num2str(id,'%.0f');
+    tag_id_nav = num2str(id,'%.0f_nav');
     tag_id_wc = num2str(id,'%.0f_wc');
-    obj = findobj(ax,'Tag',tag_id,'-or','Tag',tag_id_wc);
+    obj = findobj(ax,'Tag',tag_id_nav,'-or','Tag',tag_id_wc);
     delete(obj);
     
 end
@@ -211,13 +223,17 @@ if isempty(fdata)
     disp_config.MET_tmproj = '';
 end
 
+
 update_fdata_tab(main_figure);
 update_file_tab(main_figure);
-update_map_tab(main_figure,0,1,[]);
+
+% update map with zoom back on all remaining lines
+update_map_tab(main_figure,0,0,1,[]);
 
 disp_config.Fdata_idx = numel(fdata);
-disp_config.AcrossDist = 0;
 disp_config.Iping = 1;
+disp_config.AcrossDist = 0;
+
 
 
 end

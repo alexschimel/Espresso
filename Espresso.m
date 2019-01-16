@@ -87,10 +87,6 @@ initialize_interactions_v2(main_figure);
 %update_cursor_tool(main_figure)%TODO
 %init_listeners(main_figure);%TODO
 
-%% Normal mode
-disp_config =  getappdata(main_figure,'disp_config');
-disp_config.Mode = 'Normal';
-
 %% Final message
 fprintf('...Done. Espresso is ready for use.\n')
 

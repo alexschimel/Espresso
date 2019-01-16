@@ -110,9 +110,9 @@ switch current_figure.SelectionType
         
         switch src.Type
             case 'line'
-                ID = str2double(src.Tag);
+                ID = str2double(src.Tag(1:end-4));
             case 'image'
-                ID = str2double(src.Tag(3:end));
+                ID = str2double(src.Tag(1:end-3));
         end
         
         idx_fData = (IDs_tot==ID);

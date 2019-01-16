@@ -76,7 +76,7 @@
 % Yoann Ladroit, Alexandre Schimel, NIWA. XXX
 
 %% Function
-function check_fmt_box(src,evt,min_val,max_val,deflt_val,precision)
+function check_fmt_box(src,~,min_val,max_val,deflt_val,precision)
 
 E = str2double(get(src,'string'));
 
