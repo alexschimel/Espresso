@@ -7,8 +7,8 @@
 % *PROPERTIES*
 %
 % * |Unique_ID|: Unique ID defined at creation.
-% * |Type|: Type of object as per types xml file (Default: empty).
-% * |Tag|: Free-text (Default: 'Feature').
+% * |Class|: Class of object as per types xml file (Default: "unidentified").
+% * |Description|: Free-text (Default: empty).
 % * |Polygon|: Polyshape if the feature is a polygon, empty if a point (Default: empty).
 % * |Point|: Two-element vector if the feature is a point, empty if a polygon (Default: empty).
 % * |Zone|: UTM zone in numeric (minus if southern hemisphere) (Default: empty).
@@ -65,8 +65,8 @@ classdef feature_cl
     properties
         % default properties
         Unique_ID = char(java.util.UUID.randomUUID);
-        Type = ' '; % empty type by default
-        Tag = 'Feature';
+        Class = 'unidentified'; % empty class by default
+        Description = ' ';
         Polygon = []; % polyshape if the feature is a polygon, empty if a point
         Point = [] ; % two-element vector if the feature is a point, empty if a polygon
         Zone = ' '; % UTM zone
@@ -84,8 +84,8 @@ classdef feature_cl
             p = inputParser;
             check_type = @(type) ismember(type,init_feature_type());
             addParameter(p,'Unique_ID',char(java.util.UUID.randomUUID),@ischar);
-            addParameter(p,'Type',' ',check_type);
-            addParameter(p,'Tag','Feature',@ischar);
+            addParameter(p,'Class','unidentified',check_type);
+            addParameter(p,'Description',' ',@ischar);
             addParameter(p,'Zone',1,@isnumeric);
             addParameter(p,'Polygon',[]);
             addParameter(p,'Point',[]);
@@ -133,8 +133,8 @@ classdef feature_cl
             geostruct.BoundingBox = [[min(lon) min(lat)];[max(lon) max(lon)]];
             geostruct.Depth_min = obj.Depth_min;
             geostruct.Depth_max = obj.Depth_max;
-            geostruct.Tag = obj.Tag;
-            geostruct.Type = obj.Type;
+            geostruct.Description = obj.Description;
+            geostruct.Class = obj.Class;
             geostruct.ID = obj.ID;
             geostruct.Zone = obj.Zone;
             
@@ -188,7 +188,7 @@ classdef feature_cl
                     'UserData',obj.Unique_ID);
                 
                 % point label
-                h_t = text(obj.Point(1),obj.Point(2),['  ' obj.disp_str()],... % adding a space to label to separate from marker
+                h_t = text(obj.Point(1),obj.Point(2),['   ' obj.disp_str()],... % adding spaces to label to separate from marker
                     'FontWeight','normal',...
                     'Fontsize',10,...
                     'Tag','feature_text',...
@@ -201,7 +201,11 @@ classdef feature_cl
         
         function str = disp_str(obj)
             % get label for feature drawing on map
-            str = sprintf('%s %s (%d)',obj.Type,obj.Tag,obj.ID);
+            if isempty(obj.Description) || strcmp(obj.Description,' ')
+                str = sprintf('%i. %s',obj.ID, obj.Class);
+            else
+                str = sprintf('%i. %s (%s)',obj.ID, obj.Class, obj.Description);
+            end
         end
         
     end

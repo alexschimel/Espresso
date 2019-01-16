@@ -82,7 +82,8 @@ disp_config = getappdata(main_figure,'disp_config');
 
 map_tab_comp = getappdata(main_figure,'Map_tab');
 
-features_h = findobj(map_tab_comp.map_axes,{'tag','feature'});
+features_h     = findobj(map_tab_comp.map_axes,{'tag','feature'});
+features_text_h = findobj(map_tab_comp.map_axes,{'tag','feature_text'});
 
 if isempty(features_h)
     return;
@@ -93,20 +94,21 @@ col = {[0.1 0.1 0.1],'r'};
 
 for ii = 1:numel(features_h)
     
+    % feature
     isAct = ismember(features_h(ii).UserData,disp_config.Act_features);
-    
-    switch features_h(ii).Type
-        
+    switch features_h(ii).Type  
         case 'line'
-            
             features_h(ii).Color = col{isAct+1};
             features_h(ii).MarkerFaceColor = col{isAct+1};
-            
         case 'polygon'
-
             features_h(ii).EdgeColor = col{isAct+1};
             features_h(ii).FaceColor = col{isAct+1};
     end
+    
+    % text
+    isAct = ismember(features_text_h(ii).UserData,disp_config.Act_features);
+    features_text_h(ii).Color = col{isAct+1};
+    
 end
 
 end

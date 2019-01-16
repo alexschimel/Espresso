@@ -76,7 +76,16 @@
 % Yoann Ladroit, Alexandre Schimel, NIWA. XXX
 
 %% Function
-function update_stacked_wc_tab(main_figure)
+function update_stacked_wc_tab(main_figure,varargin)
+
+%% INTRO
+
+% input parser
+p = inputParser;
+addOptional(p,'force_update_flag',0);
+parse(p,varargin{:});
+force_update_flag = p.Results.force_update_flag;
+clear p
 
 
 %% check if there are data to display
@@ -121,6 +130,9 @@ end
 stacked_wc_tab_comp  = getappdata(main_figure,'stacked_wc_tab');
 if ~isfield(stacked_wc_tab_comp.wc_gh.UserData,'idx_pings')
     % fist time setting a stacked view
+    up_stacked_wc_bool = true;
+elseif force_update_flag
+    % forcing the update, typically after reprocessing
     up_stacked_wc_bool = true;
 else
     up_stacked_wc_bool = ~isempty(setdiff(idx_pings,stacked_wc_tab_comp.wc_gh.UserData.idx_pings)) || ...

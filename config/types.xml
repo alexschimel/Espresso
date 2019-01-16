@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <type_file version="0.1">
-	<Type name=" " descr="Default type"/>
+	<Type name="unidentified" descr="Default type"/>
 	<Type name="Cray pot/float" descr=""/>
 	<Type name="Hard pinnacles" descr=""/>
 	<Type name="Biomass/fish" descr=""/>

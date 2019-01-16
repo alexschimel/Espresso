@@ -210,7 +210,10 @@ for i = update_line_index
         end
         
         % draw grid as imagesc. Tag appropriately
-        obj_wc = imagesc(ax,E,N,data,'Visible',wc_vis,'Tag',tag_id_wc,'ButtonDownFcn',{@disp_wc_ping_cback,main_figure});
+        % NOTE: used to allow clicking on a grid to select a line/ping for
+        % display but this conflicts with panning
+        % obj_wc = imagesc(ax,E,N,data,'Visible',wc_vis,'Tag',tag_id_wc,'ButtonDownFcn',{@disp_wc_ping_cback,main_figure});
+        obj_wc = imagesc(ax,E,N,data,'Visible',wc_vis,'Tag',tag_id_wc);
         
     else
         % grid already exists, just make visible if disp is checked
@@ -376,8 +379,8 @@ usrdata.idx_pings  = idx_pings;
 usrdata.idx_angles = idx_angles;
 
 % next, list the pinge we'll actually use to form the rough polygon
-ping_decimate_factor = 3;
-dp_sub = ceil(numel(idx_pings)./ping_decimate_factor);
+poly_vert_num = 20; % approximate max number of vertices composing the polygon on each side
+dp_sub = ceil(numel(idx_pings)./poly_vert_num);
 idx_poly_pings = unique([1:dp_sub:numel(idx_pings),numel(idx_pings)]);
 
 % get easting coordinates of sliding window polygon

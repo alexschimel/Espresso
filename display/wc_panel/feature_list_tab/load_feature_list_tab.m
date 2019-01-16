@@ -92,21 +92,22 @@ end
 
 % pos = getpixelposition(feature_list_tab_comp.wc_tab);
 
-columnname = {'ID','Tag','Type','Shape','Depth Min','Depth Max','Unique_ID'};
-columnformat = {'numeric','char',init_feature_type,{'Point','Polygon'},'numeric','numeric','char'};
+columnname =   {'ID',     'Class',          'Description','Type',             'Min depth','Max depth','Unique_ID'};
+columnformat = {'numeric',init_feature_type,'char',       {'Point','Polygon'},'numeric',  'numeric',  'char'};
 
 feature_list_tab_comp.table = uitable('Parent', feature_list_tab_comp.feature_list_tab,...
     'Data', [],...
     'ColumnName', columnname,...
     'ColumnFormat', columnformat,...
     'ColumnEditable', [false true true false true true false],...
-    'Units','Normalized','Position',[0 0 1 1],...
+    'Units','Normalized',...
+    'Position',[0 0 1 1],...
     'RowName',[]);
 
 pos_t = getpixelposition(feature_list_tab_comp.table);
 
 set(feature_list_tab_comp.table,'ColumnWidth',...
-    num2cell(pos_t(3)*[1/10 2/10 2/10 2/10 1.5/10 1.5/10 0]));
+    num2cell(pos_t(3)*[0.5/10 2.5/10 2.5/10 1.5/10 1.5/10 1.5/10 0]));
 
 set(feature_list_tab_comp.table,'CellEditCallback',{@edit_features_callback,main_figure});
 set(feature_list_tab_comp.table,'CellSelectionCallback',{@activate_features_callback,main_figure});
@@ -160,22 +161,22 @@ nData = evt.NewData;
 idx_feature = contains({features(:).Unique_ID},selected_features);
 
 switch src.ColumnName{idx_data}
-    case 'Type'
-        features(idx_feature).Type=nData;
-    case 'Tag'
-        features(idx_feature).Tag=nData;
-    case 'Depth Min'
+    case 'Class'
+        features(idx_feature).Class = nData;
+    case 'Description'
+        features(idx_feature).Description = nData;
+    case 'Min depth'
         if isnan(nData)
-            nData=evt.PreviousData;
-            src.Data(evt.Indices(:,1),evt.Indices(:,1))=evt.PreviousData;
+            nData = evt.PreviousData;
+            src.Data(evt.Indices(:,1),evt.Indices(:,1)) = evt.PreviousData;
         end
-        features(idx_feature).Depth_min=nData;
-    case 'Depth Max'
+        features(idx_feature).Depth_min = nData;
+    case 'Max depth'
         if isnan(nData)
-            nData=evt.PreviousData;
-            src.Data(evt.Indices(:,1),evt.Indices(:,1))=evt.PreviousData;
+            nData = evt.PreviousData;
+            src.Data(evt.Indices(:,1),evt.Indices(:,1)) = evt.PreviousData;
         end
-        features(idx_feature).Depth_max=nData;
+        features(idx_feature).Depth_max = nData;
 end
 
 features(idx_feature).feature_to_shapefile(fullfile(whereisroot,'feature_files'));
@@ -183,6 +184,9 @@ features(idx_feature).feature_to_shapefile(fullfile(whereisroot,'feature_files')
 setappdata(main_figure,'features',features);
 
 display_features(main_figure,selected_features);
+
+% trigger a callback to display the selected feature as active
+activate_features_callback(src,evt,main_figure)
 
 end
 
@@ -248,7 +252,7 @@ files_to_export = cellfun(@(x) fullfile(whereisroot,'feature_files',x),{shp_file
 if numel(files_to_export) == idx_exp
     
     for ii = 1:numel(idx_exp)
-        output_file = fullfile(folder_name,sprintf('%i_%s_%s',features(idx_exp(ii)).Type,features(idx_exp(ii)).ID,features(idx_exp(ii)).Tag),'.shp');
+        output_file = fullfile(folder_name,sprintf('%s_%i_%s',features(idx_exp(ii)).Class,features(idx_exp(ii)).ID,features(idx_exp(ii)).Description),'.shp');
         copyfile(files_to_export{ii},output_file);
     end
     

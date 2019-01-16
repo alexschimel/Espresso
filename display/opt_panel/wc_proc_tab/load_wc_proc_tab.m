@@ -365,7 +365,7 @@ wc_tab_strings = wc_tab_comp.data_disp.String;
 wc_tab_comp.data_disp.Value = idx;
 
 update_wc_tab(main_figure);
-update_stacked_wc_tab(main_figure);
+update_stacked_wc_tab(main_figure,1); % force the update of stacked view
 
 end
 
