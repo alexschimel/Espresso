@@ -76,20 +76,28 @@
 % Yoann Ladroit, Alexandre Schimel, NIWA. XXX
 
 %% Function
-function [types,descr] = read_feature_xml_type(xml_file)
+function [class_cell,descr_cell] = init_feature_class()
 
-xml_struct = parseXML(xml_file);
-
-type_nodes = get_childs(xml_struct,'Type');
-
-types = cell(1,numel(type_nodes));
-
-descr = cell(1,numel(type_nodes));
-
-for it = 1:numel(type_nodes)
-    tmp = get_node_att(type_nodes(it));
-    types{it} = tmp.name;
-    descr{it} = tmp.descr;
+try
+    
+    % get the path to config
+    app_path_main = whereisroot();
+    config_path = fullfile(app_path_main,'config');
+    
+    % get list of classes from "classes.xml" file
+    [class_cell,descr_cell] = read_feature_xml_class(fullfile(config_path,'classes.xml'));
+    
+catch err
+    
+    % display error message
+    warning('Could not read classes.xml file in config folder. Using default classes instead.');
+    disp(err.message);
+    
+    % use default values instead - define here
+    class_cell = {' ' 'Plume' 'ShipWreck'};
+    descr_cell = cell(1,numel(class_cell));
+    
 end
+
 
 end

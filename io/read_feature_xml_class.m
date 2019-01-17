@@ -76,28 +76,20 @@
 % Yoann Ladroit, Alexandre Schimel, NIWA. XXX
 
 %% Function
-function [type_cell,descr_cell] = init_feature_type()
+function [classes,descr] = read_feature_xml_class(xml_file)
 
-try
-    
-    % get the path to config
-    app_path_main = whereisroot();
-    config_path = fullfile(app_path_main,'config');
-    
-    % get list of types from "types.xml" file
-    [type_cell,descr_cell] = read_feature_xml_type(fullfile(config_path,'types.xml'));
-    
-catch err
-    
-    % display error message
-    warning('Could not read types.xml file in config folder. Using default types instead.');
-    disp(err.message);
-    
-    % use default values instead - define here
-    type_cell = {' ' 'Plume' 'ShipWreck'};
-    descr_cell = cell(1,numel(type_cell));
-    
+xml_struct = parseXML(xml_file);
+
+class_nodes = get_childs(xml_struct,'Class');
+
+classes = cell(1,numel(class_nodes));
+
+descr = cell(1,numel(class_nodes));
+
+for it = 1:numel(class_nodes)
+    tmp = get_node_att(class_nodes(it));
+    classes{it} = tmp.name;
+    descr{it} = tmp.descr;
 end
-
 
 end

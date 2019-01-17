@@ -93,7 +93,7 @@ end
 % pos = getpixelposition(feature_list_tab_comp.wc_tab);
 
 columnname =   {'ID',     'Class',          'Description','Type',             'Min depth','Max depth','Unique_ID'};
-columnformat = {'numeric',init_feature_type,'char',       {'Point','Polygon'},'numeric',  'numeric',  'char'};
+columnformat = {'numeric',init_feature_class,'char',       {'Point','Polygon'},'numeric',  'numeric',  'char'};
 
 feature_list_tab_comp.table = uitable('Parent', feature_list_tab_comp.feature_list_tab,...
     'Data', [],...

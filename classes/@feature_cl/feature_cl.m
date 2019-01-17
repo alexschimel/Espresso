@@ -82,9 +82,9 @@ classdef feature_cl
             
             % input parser
             p = inputParser;
-            check_type = @(type) ismember(type,init_feature_type());
+            check_class = @(class) ismember(class,init_feature_class());
             addParameter(p,'Unique_ID',char(java.util.UUID.randomUUID),@ischar);
-            addParameter(p,'Class','unidentified',check_type);
+            addParameter(p,'Class','unidentified',check_class);
             addParameter(p,'Description',' ',@ischar);
             addParameter(p,'Zone',1,@isnumeric);
             addParameter(p,'Polygon',[]);

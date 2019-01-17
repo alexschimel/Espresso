@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<class_file version="0.1">
+	<Class name="unidentified" descr="Default class"/>
+	<Class name="Man-made - Cray pot/float" descr=""/>
+	<Class name="Man-made - Shipwreck" descr=""/>
+	<Class name="Man-made - Pipeline" descr=""/>
+	<Class name="Hard pinnacles" descr=""/>
+	<Class name="Biomass/fish" descr=""/>
+	<Class name="Turbulence / air bubbles" descr=""/>
+	<Class name="Kelp - short" descr="less than 1m above seafloor"/>
+	<Class name="Kelp - tall" descr="more than 1m above seafloor"/>
+	<Class name="Kelp - mixed sizes" descr=""/>
+	<Class name="Seeps - Solitary (a)" descr=""/>
+	<Class name="Seeps - Field of seeps (b)" descr="6 to 8 seeps well-spaced and distinct"/>
+	<Class name="Seeps - Field of seeps (b, extreme)" descr="as above, extreme example"/>
+	<Class name="Seeps - Seep Field (c)" descr="multiple seeps, individually indistinct"/>
+	<Class name="Seeps - Seep Field (c, extreme)" descr="as above, but with few primary seeps"/>
+	<Class name="Seeps - Dominant seep (Class 1)" descr="strong signature, persistent through MORE than two-thirds of the water-column"/>
+	<Class name="Seeps - Minor seep (Class 2)" descr="strong signature, persistent through LESS than two-thirds of the water-column"/>
+	<Class name="Seeps - Dominant diffuse seep (Class 3)" descr="diffuse signature, persistent through MORE than two-thirds of the water-column"/>
+	<Class name="Seeps - Minor diffuse seep (Class 4)" descr="diffuse signature, persistent through LESS than two-thirds of the water-column"/>
+ </class_file>
