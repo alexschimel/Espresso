@@ -111,7 +111,7 @@ idx_pings = usrdata.idx_pings;
 idx_angles = usrdata.idx_angles;
 
 % the index of the current ping in the stack
-ip_sub = ip - idx_pings(1) + 1; 
+ip_sub = ip - idx_pings(1) + 1;
 
 % get data type to be grabbed
 wc_tab_comp  = getappdata(main_figure,'wc_tab');
@@ -147,34 +147,35 @@ cax_min = str2double(wc_proc_tab_comp.clim_min_wc.String);
 cax_max = str2double(wc_proc_tab_comp.clim_max_wc.String);
 cax = [cax_min cax_max];
 
-
-
+[iangles,~]=find(idx_angles==0);
+idx_angle_keep=nanmin(iangles):nanmax(iangles);
+%idx_angle_keep=1:size(idx_angles,1);
 %% get data for stacked view
 datagramSource = fData.MET_datagramSource;
 switch str_disp
     
     case 'Original'
         
-        wc_data = CFF_get_WC_data(fData,sprintf('%s_SBP_SampleAmplitudes',datagramSource),idx_pings,1,1);
+        wc_data = CFF_get_WC_data(fData,sprintf('%s_SBP_SampleAmplitudes',datagramSource),idx_pings,1,1,'iBeam',idx_angle_keep);
         
-        wc_data(:,idx_angles) = nan;
+        wc_data(:,idx_angles(idx_angle_keep,:)) = nan;
         amp_al = squeeze(nanmean(wc_data,2));
         idx_keep_al = amp_al >= cax(1);
         
     case 'Processed'
         
-        wc_data = CFF_get_WC_data(fData,'X_SBP_WaterColumnProcessed',idx_pings,1,1);
+        wc_data = CFF_get_WC_data(fData,'X_SBP_WaterColumnProcessed',idx_pings,1,1,'iBeam',idx_angle_keep);
         
-        wc_data(:,idx_angles) = nan;
+        wc_data(:,idx_angles(idx_angle_keep,:)) = nan;
         amp_al = squeeze(nanmean(wc_data,2));
         idx_keep_al = amp_al >= cax(1);
         
     case 'Phase'
         
-        wc_data = CFF_get_WC_data(fData,sprintf('%s_SBP_SamplePhase',datagramSource),idx_pings,1,1);
+        wc_data = CFF_get_WC_data(fData,sprintf('%s_SBP_SamplePhase',datagramSource),idx_pings,1,1,'iBeam',idx_angle_keep);
         
         cax = [-180 180];
-        wc_data(:,idx_angles) = nan;
+        wc_data(:,idx_angles(idx_angle_keep,:)) = nan;
         amp_al = squeeze(nanmean(wc_data,2));
         idx_keep_al = amp_al ~= 0;
         
@@ -194,7 +195,7 @@ if up_stacked_wc_bool
     samplingFrequencyHz = fData.(sprintf('%s_1P_SamplingFrequencyHz',datagramSource)); %Hz
     dr_samples = soundSpeed./(samplingFrequencyHz.*2);
     sampleRange = CFF_get_samples_range((1:size(amp_al,1))',fData.(sprintf('%s_BP_StartRangeSampleNumber',datagramSource))(:,ip),dr_samples(ip));
-    sampleRangeAl = nanmean(sampleRange(:,~idx_angles(:,ip_sub)),2);
+    sampleRangeAl = nanmean(sampleRange(:,~idx_angles(idx_angle_keep,ip_sub)),2);
     
     % display stacked view itself
     set(stacked_wc_tab_comp.wc_gh,...
@@ -250,6 +251,5 @@ if ~ismember(line_idx,fdata_tab_comp.selected_idx)
 end
 
 
-
-
 end
+

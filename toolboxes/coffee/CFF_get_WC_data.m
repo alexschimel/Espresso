@@ -98,25 +98,34 @@ addOptional(p,'iPing',[],@(x) isnumeric(x) ||isempty(x));
 addOptional(p,'dr_sub',1,@(x) isnumeric(x) && x>0);
 addOptional(p,'db_sub',1,@(x) isnumeric(x) && x>0);
 addOptional(p,'output_format','true',@(x) ischar(x) && ismember(x,{'raw' 'true'}));
-
+addParameter(p,'iBeam',[],@(x) isnumeric(x) ||isempty(x));
+addParameter(p,'iRange',[],@(x) isnumeric(x) ||isempty(x));
 % parse
 parse(p,fData,fieldN,varargin{:})
 
 % get results
 iPing = p.Results.iPing;
+iBeam = p.Results.iBeam;
+iRange = p.Results.iRange;
 dr_sub = p.Results.dr_sub;
 db_sub = p.Results.db_sub;
 output_format = p.Results.output_format;
 clear p
 
 %% get raw data
-if ~isempty(iPing)
-    data = fData.(fieldN).Data.val(1:dr_sub:end,1:db_sub:end,iPing);
-else
-    data = fData.(fieldN).Data.val(1:dr_sub:end,1:db_sub:end,:);
+if isempty(iPing)   
+    iPing= 1:size(fData.(fieldN).Data.val,3);
 end
 
+if isempty(iBeam)   
+    iBeam= 1:size(fData.(fieldN).Data.val,2);
+end
 
+if isempty(iRange)   
+    iRange= 1:size(fData.(fieldN).Data.val,1);
+end
+
+data = fData.(fieldN).Data.val(iRange(1):dr_sub:iRange(end),iBeam(1):db_sub:iBeam(end),iPing);
 %% transform to true values if required
 switch output_format
     
