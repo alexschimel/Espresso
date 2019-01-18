@@ -116,8 +116,8 @@ idx_point=~idx_polygon;
 
 new_data(idx_polygon,strcmpi(feature_list_tab_comp.table.ColumnName,'Type')) = {'Polygon'};
 new_data(idx_point,strcmpi(feature_list_tab_comp.table.ColumnName,'Type')) = {'Point'};
-new_data(:,strcmpi(feature_list_tab_comp.table.ColumnName,'Depth Min')) = num2cell([features(idx_add).Depth_min]);
-new_data(:,strcmpi(feature_list_tab_comp.table.ColumnName,'Depth Max')) = num2cell([features(idx_add).Depth_max]);
+new_data(:,strcmpi(feature_list_tab_comp.table.ColumnName,'Min depth')) = num2cell([features(idx_add).Depth_min]);
+new_data(:,strcmpi(feature_list_tab_comp.table.ColumnName,'Max depth')) = num2cell([features(idx_add).Depth_max]);
 new_data(:,strcmpi(feature_list_tab_comp.table.ColumnName,'Unique_ID')) = {features(idx_add).Unique_ID};
 
 feature_list_tab_comp.table.Data = [feature_list_tab_comp.table.Data;new_data];

@@ -123,7 +123,7 @@ zone = disp_config.get_zone();
 switch main_figure.SelectionType
     
     case 'normal'
-        % if last click was left-click = polygon vertex
+        % if first click was left-click, start a polygon
         
         % initializing a series of vertex coordinates starting with the current
         % point
@@ -146,12 +146,12 @@ switch main_figure.SelectionType
         txt = text(ah,cp(1,1),cp(1,2),sprintf('%.6f,%.6f',lat,lon),'color',col_line,'Tag','feature_temp');
         
         % now that a polygon has been started, replace figure callbacks for
-        % mouse motion and mouse click
+        % mouse motion and mouse click to continue/finalize it
         replace_interaction(main_figure,'interaction','WindowButtonMotionFcn','id',2,'interaction_fcn',@wbmcb_ext);
         replace_interaction(main_figure,'interaction','WindowButtonDownFcn','id',1,'interaction_fcn',@wbdcb_ext);
         
     case 'alt'
-        % if last click was right-click or control-click = point
+        % if first click was right-click or control-click, do a point
         
         % create a new point
         new_feature = feature_cl('Point',[cp(1,1) cp(1,2)],'Zone',zone,'ID',ID);
@@ -326,10 +326,10 @@ end
         % save/overwrite features into main figure
         setappdata(main_figure,'features',features);
         
-        % add to display
+        % trigger an update of displaying features on map and stacked view
         display_features(main_figure,{});
         
-        % update the feature list tab
+        % trigger an update of the feature list tab
         update_feature_list_tab(main_figure);
         
     end

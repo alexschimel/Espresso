@@ -166,17 +166,17 @@ switch src.ColumnName{idx_data}
     case 'Description'
         features(idx_feature).Description = nData;
     case 'Min depth'
-        if isnan(nData)
-            nData = evt.PreviousData;
-            src.Data(evt.Indices(:,1),evt.Indices(:,1)) = evt.PreviousData;
+        if isnan(nData) || nData > features(idx_feature).Depth_max
+            src.Data(evt.Indices(:,1),evt.Indices(:,2)) = {evt.PreviousData};
+        else
+            features(idx_feature).Depth_min = nData;
         end
-        features(idx_feature).Depth_min = nData;
     case 'Max depth'
-        if isnan(nData)
-            nData = evt.PreviousData;
-            src.Data(evt.Indices(:,1),evt.Indices(:,1)) = evt.PreviousData;
+        if isnan(nData) || nData < features(idx_feature).Depth_min
+            src.Data(evt.Indices(:,1),evt.Indices(:,2)) = {evt.PreviousData};
+        else
+            features(idx_feature).Depth_max = nData;
         end
-        features(idx_feature).Depth_max = nData;
 end
 
 features(idx_feature).feature_to_shapefile(fullfile(whereisroot,'feature_files'));

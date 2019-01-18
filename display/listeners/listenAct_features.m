@@ -78,14 +78,20 @@
 %% Function
 function listenAct_features(~,~,main_figure)
 
+% get disp_config for active features
 disp_config = getappdata(main_figure,'disp_config');
-stacked_wc_tab_comp  = getappdata(main_figure,'stacked_wc_tab');
 
+% get both map and stacked view axes
+stacked_wc_tab_comp  = getappdata(main_figure,'stacked_wc_tab');
 map_tab_comp = getappdata(main_figure,'Map_tab');
 ah_tot = [map_tab_comp.map_axes stacked_wc_tab_comp.wc_axes];
-for iax=1:numel(ah_tot)
-    ax=ah_tot(iax);
-    features_h     = findobj(ax,{'tag','feature'});
+
+for iax = 1:numel(ah_tot)
+    
+    ax = ah_tot(iax);
+    
+    % get features on axes and their labels
+    features_h      = findobj(ax,{'tag','feature'});
     features_text_h = findobj(ax,{'tag','feature_text'});
     
     if isempty(features_h)
@@ -114,4 +120,5 @@ for iax=1:numel(ah_tot)
         
     end
 end
+
 end

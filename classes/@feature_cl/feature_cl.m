@@ -152,10 +152,13 @@ classdef feature_cl
             
             if ~isempty(obj.Polygon)
                 % feature is a polygon
-                poly_regs=obj.Polygon.regions;
-                h_p=gobjects(numel(poly_regs),1);
-                h_t=gobjects(numel(poly_regs),1);
-                for ireg=1:numel(poly_regs)
+                
+                poly_regs = obj.Polygon.regions;
+                h_p = gobjects(numel(poly_regs),1);
+                h_t = gobjects(numel(poly_regs),1);
+                
+                for ireg = 1:numel(poly_regs)
+                    
                     % polygon plot
                     h_p(ireg) = plot(ax,poly_regs(ireg), ...
                         'FaceColor',col,...
@@ -164,7 +167,8 @@ classdef feature_cl
                         'EdgeColor',col,...
                         'LineWidth',1,...
                         'tag','feature',...
-                        'UserData',obj.Unique_ID);                  
+                        'UserData',obj.Unique_ID);     
+                    
                     % polygon label
                     h_t(ireg) = text(nanmean(poly_regs(ireg).Vertices(:,1)),nanmean(poly_regs(ireg).Vertices(:,2)),obj.disp_str(),...
                         'FontWeight','normal',...
@@ -177,6 +181,7 @@ classdef feature_cl
                         'UserData',obj.Unique_ID,...
                         'Clipping','on');
                 end
+                
             else
                 % feature is a point
                 

@@ -114,18 +114,19 @@ clear p
 
 %% get raw data
 if isempty(iPing)   
-    iPing= 1:size(fData.(fieldN).Data.val,3);
+    iPing = 1:size(fData.(fieldN).Data.val,3);
 end
 
 if isempty(iBeam)   
-    iBeam= 1:size(fData.(fieldN).Data.val,2);
+    iBeam = 1:size(fData.(fieldN).Data.val,2);
 end
 
 if isempty(iRange)   
-    iRange= 1:size(fData.(fieldN).Data.val,1);
+    iRange = 1:size(fData.(fieldN).Data.val,1);
 end
 
 data = fData.(fieldN).Data.val(iRange(1):dr_sub:iRange(end),iBeam(1):db_sub:iBeam(end),iPing);
+
 %% transform to true values if required
 switch output_format
     

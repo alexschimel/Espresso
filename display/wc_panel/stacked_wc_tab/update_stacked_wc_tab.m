@@ -147,9 +147,9 @@ cax_min = str2double(wc_proc_tab_comp.clim_min_wc.String);
 cax_max = str2double(wc_proc_tab_comp.clim_max_wc.String);
 cax = [cax_min cax_max];
 
-[iangles,~]=find(idx_angles==0);
-idx_angle_keep=nanmin(iangles):nanmax(iangles);
-%idx_angle_keep=1:size(idx_angles,1);
+[iangles,~] = find(idx_angles==0);
+idx_angle_keep = nanmin(iangles):nanmax(iangles);
+
 %% get data for stacked view
 datagramSource = fData.MET_datagramSource;
 switch str_disp
