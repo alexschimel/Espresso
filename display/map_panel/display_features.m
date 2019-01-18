@@ -188,7 +188,7 @@ for iax = 1:numel(ah_tot)
                 
                 % draw intersection of feature with sliding polygon on
                 % stacked view
-                draw_poly_on_stacked_display(stacked_wc_tab_comp.wc_axes,intersection,features_intersecting,E_stacked,N_stacked,col_stacked);
+                draw_feature_on_stacked_display(stacked_wc_tab_comp.wc_axes,intersection,features_intersecting,E_stacked,N_stacked,col_stacked);
                 
         end
         
@@ -202,41 +202,88 @@ end
 function [intersection,features_intersecting] = feature_intersect_polygon(feature,poly)
 
 if isempty(feature.Polygon)
-    intersection = [];
-    features_intersecting = [];
-    return;
-end
-
-intersection = intersect(feature.Polygon,poly);
-
-if ~isempty(intersection.Vertices)
-    features_intersecting = feature;
-else
-    features_intersecting = [];
-end
-
-end
-
-
-
-function draw_poly_on_stacked_display(ax,inter_poly,feature,easting,northing,col)
-
-if ~isempty(feature.Polygon)
+    % feature is a point
     
-    poly_regions = inter_poly.regions;
+    isin = inpolygon(feature.Point(1),feature.Point(2),poly.Vertices(:,1),poly.Vertices(:,2));
+    if isin
+        intersection  = feature.Point;
+        features_intersecting = feature;
+    else
+        intersection = [];
+        features_intersecting = [];
+    end
+    
+else
+    % feature is a polygon
+    
+    intersection = intersect(feature.Polygon,poly);
+    
+    if ~isempty(intersection.Vertices)
+        features_intersecting = feature;
+    else
+        features_intersecting = [];
+    end
+    
+end
+
+end
+
+
+
+function draw_feature_on_stacked_display(ax,intersection,feature,easting,northing,col)
+
+if isempty(feature.Polygon)
+    % feature is a point
+
+    % get range extent
+    range_lim = get(ax,'YLim');
+    
+    % find closest ping nav to point
+    [~,ip] = min(sqrt((intersection(1)-easting).^2+(intersection(2)-northing).^2),[],2);
+    
+    % default range will be half way between bounds recorded
+    ir = 0.5*(feature.Depth_max+feature.Depth_min);
+    
+    % if this is outside of stack view, use half way through range
+    % displayed
+    if ir < range_lim(1) || ir > range_lim(2)
+        ir = 0.5*sum(range_lim);
+    end
+
+    % copy the feature and jsut change its coordinates
+    new_feature = feature;
+    new_feature.Point = [ip,ir];
+    
+    % trigger display method
+    new_feature.draw_feature(ax,col);
+    
+    
+else
+    % feature is a polygon
+    
+    poly_regions = intersection.regions;
     
     % extents
     range_lim = get(ax,'YLim');
     ping_lim = get(ax,'XLim');
     
     for ireg = 1:numel(poly_regions)
+        
+        % find closest ping nav to each vertex
         [~,ip] = min(sqrt((poly_regions(ireg).Vertices(:,1)-easting).^2+(poly_regions(ireg).Vertices(:,2)-northing).^2),[],2);
+        
+        % get vertices in stack display
         iPings = [nanmin(ip) nanmax(ip)];
         iPings = iPings+ping_lim(1)-1;
         iRange = [nanmax(feature.Depth_min,range_lim(1)) nanmin(feature.Depth_max,range_lim(2))];
+        
+        % copy the feature and jsut change its coordinates
         new_feature = feature;
         new_feature.Polygon = polyshape([iPings(1) iPings(1) iPings(2) iPings(2)],[iRange(1) iRange(2) iRange(2) iRange(1)]);
+        
+        % trigger display method
         new_feature.draw_feature(ax,col);
+        
     end
     
 end
