@@ -14,7 +14,7 @@ title(wc_tab_comp.wc_axes,'');
 % clear stacked view
 stacked_wc_tab_comp  = getappdata(main_figure,'stacked_wc_tab');
 set(stacked_wc_tab_comp.wc_gh,'XData',[], 'YData',[],'ZData',[], 'CData',[],'AlphaData',[]);
-set(stacked_wc_tab_comp.ac_gh,'XData',[],'YData',[]);
+set(stacked_wc_tab_comp.ping_gh,'XData',[],'YData',[]);
 title(stacked_wc_tab_comp.wc_axes,'');
 
 

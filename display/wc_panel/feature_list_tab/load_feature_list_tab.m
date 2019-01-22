@@ -125,15 +125,58 @@ uimenu(rc_menu,'Label',str_export,'Callback',{@export_features_callback,main_fig
 str_delete = '<HTML><center><FONT color="Red"><b>Delete Selected Feature(s)</b></Font> ';
 uimenu(rc_menu,'Label',str_delete,'Callback',{@delete_features_callback,main_figure,{}});
 
-%%
-
+% add all those contents to appdata
 setappdata(main_figure,'feature_list_tab',feature_list_tab_comp);
 
+% Load existing features
 features = getappdata(main_figure,'features');
-if isempty(features)
-    return;
+
+
+folder = fullfile(whereisroot,'feature_files');
+listing = dir(folder);
+
+for ii = 1:numel(listing)
+    if ~listing(ii).isdir
+        
+        filename = fullfile(listing(ii).folder, listing(ii).name);
+        [~,Unique_ID,extension] = fileparts(filename);
+        
+        if strcmp(extension,'.shp')
+            
+            new_feature = feature_cl('shapefile',filename,'Unique_ID',Unique_ID);
+            
+            % add new feature to the list of features
+            if isempty(features)
+                features = new_feature;
+            else
+                features = [features new_feature];
+            end
+            
+        end
+        
+    end
 end
 
+
+if ~isempty(features)
+    
+    % verify that all features have consistent UTM zone
+    utmzone = unique([features.Zone]);
+    if numel(utmzone)>1
+        error('code here to remove features to enforce single zone');
+    end
+
+    % and add to disp_config
+    disp_config = getappdata(main_figure,'disp_config');
+    disp_config.set_zone(utmzone);
+    setappdata(main_figure,'disp_config',disp_config);
+
+    % all good? save/overwrite features into main figure
+    setappdata(main_figure,'features',features);
+
+end
+                
+% trigger an update of the feature list tab
 update_feature_list_tab(main_figure);
 
 end

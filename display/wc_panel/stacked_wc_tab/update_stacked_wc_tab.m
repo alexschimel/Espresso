@@ -216,6 +216,7 @@ if up_stacked_wc_bool
         'Ylim',ylim_stacked,...
         'Layer','top',...
         'UserData',usrdata);
+    
 end
 
 % Current ping vertical line

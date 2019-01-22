@@ -88,7 +88,12 @@ end
 %% get fdata, current ping and pings to be displayed
 disp_config = getappdata(main_figure,'disp_config');
 fData_tot   = getappdata(main_figure,'fData');
-fData       = fData_tot{disp_config.Fdata_idx};
+if ~isempty(fData_tot)
+    fData = fData_tot{disp_config.Fdata_idx};
+else
+    fData = [];
+end
+
 
 %% get list of features from appdata
 features     = getappdata(main_figure,'features');
@@ -146,9 +151,11 @@ for iax = 1:numel(ah_tot)
     col_map(~idx_act) = {[0.1 0.1 0.1]};
     
     % get sliding polygon info (for calculation of intersection)
-    usrdata = get(map_tab_comp.ping_window,'UserData');
-    idx_pings = usrdata.idx_pings;
-    ping_window_poly = map_tab_comp.ping_window.Shape;
+    if ~isempty(fData)
+        usrdata = get(map_tab_comp.ping_window,'UserData');
+        idx_pings = usrdata.idx_pings;
+        ping_window_poly = map_tab_comp.ping_window.Shape;
+    end
     
     % for each feature to add to the display
     for id = 1:numel(features_id_to_add)
@@ -166,29 +173,31 @@ for iax = 1:numel(ah_tot)
             case 'stacked_wc'
                 % on stack view
                 
-                % find intersection of feature with sliding polygon
-                [intersection,features_intersecting] = feature_intersect_polygon(features(idf),ping_window_poly);
-                
-                if isempty(features_intersecting)
-                    % escape if no intersection. No polygon to draw on
+                if ~isempty(fData)
+                    % find intersection of feature with sliding polygon
+                    [intersection,features_intersecting] = feature_intersect_polygon(features(idf),ping_window_poly);
+
+                    if isempty(features_intersecting)
+                        % escape if no intersection. No polygon to draw on
+                        % stacked view
+                        continue;
+                    end
+
+                    % colour of the intersecting polygon
+                    if ismember(features_intersecting.Unique_ID,disp_config.Act_features)
+                        col_stacked = 'r';
+                    else
+                        col_stacked = [0.1 0.1 0.1];
+                    end
+
+                    % get coordinates of sliding polygon vertices
+                    E_stacked = fData.X_1P_pingE(idx_pings);
+                    N_stacked = fData.X_1P_pingN(idx_pings);
+
+                    % draw intersection of feature with sliding polygon on
                     % stacked view
-                    continue;
+                    draw_feature_on_stacked_display(stacked_wc_tab_comp.wc_axes,intersection,features_intersecting,E_stacked,N_stacked,col_stacked);
                 end
-                
-                % colour of the intersecting polygon
-                if ismember(features_intersecting.Unique_ID,disp_config.Act_features)
-                    col_stacked = 'r';
-                else
-                    col_stacked = [0.1 0.1 0.1];
-                end
-                
-                % get coordinates of sliding polygon vertices
-                E_stacked = fData.X_1P_pingE(idx_pings);
-                N_stacked = fData.X_1P_pingN(idx_pings);
-                
-                % draw intersection of feature with sliding polygon on
-                % stacked view
-                draw_feature_on_stacked_display(stacked_wc_tab_comp.wc_axes,intersection,features_intersecting,E_stacked,N_stacked,col_stacked);
                 
         end
         

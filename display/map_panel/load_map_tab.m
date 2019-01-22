@@ -150,6 +150,10 @@ iptSetPointerBehavior(map_tab_comp.ping_swathe,pointerBehavior);
 
 setappdata(main_figure,'Map_tab',map_tab_comp);
 
+% display existing features
+display_features(main_figure,{})
+
+
 end
 
 %% callbacks for toggle buttons

@@ -150,6 +150,22 @@ classdef display_config_cl <handle
             end
         end
         
+        function set_zone(obj,zone)
+            % set UTM zone from numerical input
+            
+            if zone>0
+                hemi = 'N';
+            else
+                hemi = 'S';
+            end
+            zone = abs(zone);
+            
+            tmp = ['utm' num2str(zone) hemi];
+            
+            obj.MET_tmproj = tmp;
+     
+        end
+        
         function cleanup(obj,main_figure)
             
             %% re-initialize if there are no data to display

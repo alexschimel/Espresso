@@ -73,12 +73,13 @@ classdef feature_cl
         Depth_min = 0;
         Depth_max = 1e4;
         ID = 1;
+        shapefile = [];
     end
     
     methods
         
         function obj = feature_cl(varargin)
-            % feature initialization
+            % instantiation method
             
             % input parser
             p = inputParser;
@@ -92,18 +93,56 @@ classdef feature_cl
             addParameter(p,'Depth_min',0,@isnumeric);
             addParameter(p,'Depth_max',1e4,@isnumeric);
             addParameter(p,'ID',1,@isnumeric);
+            addParameter(p,'shapefile',[],@(x) isfile(x)||isempty(x));
             parse(p,varargin{:});
             
             % get properties
             props = properties(obj);
             
-            % add properties to object
+            % add input properties to object
             for i = 1:length(props)
                 if isfield(p.Results,props{i})
                     obj.(props{i}) = p.Results.(props{i});
                 end
             end
+            
+            % if shapefile in input, add/replace properties with its properties
+            if ~isempty(p.Results.shapefile)
 
+                % read shapefile
+                geostruct = shaperead(p.Results.shapefile);
+                
+                % get easting/northing in input zone
+                [X,Y,utmzone] = ll2utm(geostruct.Y,geostruct.X);
+                X(isnan(utmzone)) = [];
+                Y(isnan(utmzone)) = [];
+                utmzone(isnan(utmzone)) = [];
+                utmzone = unique(utmzone);
+                if numel(utmzone)>1
+                    error('problem here')
+                end
+                
+                switch geostruct.Geometry
+                    case 'Polygon'
+                        obj.Polygon = polyshape(X,Y);
+                    case 'Point'
+                        obj.Point = [X Y];
+                end
+                
+                obj.Zone = utmzone;
+                geostruct = rmfield(geostruct,'Zone');
+                
+                % add shapefile fields to obj
+                fields = fieldnames(geostruct);
+                for ii = 1:numel(fields)
+                    if isprop(obj,fields{ii})
+                        obj.(fields{ii}) = geostruct.(fields{ii});
+                    end
+                end
+                
+            end
+                
+                
         end
         
         function feature_to_shapefile(obj,folder)
