@@ -84,11 +84,16 @@ if isempty(fData_tot)
     return;
 end
 
+if ~isdeployed()
+   disp('ListenIPing'); 
+end
+
 % update all lines on main map without changing zoom
 update_map_tab(main_figure,0,0,0,[]);
 
 % update wc and stacked views
 update_wc_tab(main_figure);
 update_stacked_wc_tab(main_figure);
+display_features(main_figure,{},{'wc_tab' 'stacked_wc_tab'});
 
 end

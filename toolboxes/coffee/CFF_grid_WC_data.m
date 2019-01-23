@@ -109,8 +109,13 @@ db_sub    = p.Results.db_sub;
 
 
 %% Extract info about WCD
-[nSamples, nBeams, nPings] = size(fData.X_SBP_WaterColumnProcessed.Data.val);
+if isfield(fData,'X_SBP_WaterColumnProcessed')
+    field_to_grid='X_SBP_WaterColumnProcessed';
+else
+    field_to_grid='WC_SBP_SampleAmplitudes';
+end
 
+[nSamples, nBeams, nPings] = size(fData.(field_to_grid).Data.val);
 
 %% Prepare needed 1xP data
 
@@ -237,7 +242,7 @@ for iB = 1:nBlocks
         sonarEasting(blockPings), sonarNorthing(blockPings), sonarHeight(blockPings), sonarHeading(blockPings));
 
     % get data to grid
-    blockL = CFF_get_WC_data(fData,'X_SBP_WaterColumnProcessed',blockPings,dr_sub,db_sub,'true');
+    blockL = CFF_get_WC_data(fData,field_to_grid,blockPings,dr_sub,db_sub,'true');
     
     % remove nans:
     indNan = isnan(blockL);

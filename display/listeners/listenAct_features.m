@@ -83,8 +83,9 @@ disp_config = getappdata(main_figure,'disp_config');
 
 % get both map and stacked view axes
 stacked_wc_tab_comp  = getappdata(main_figure,'stacked_wc_tab');
+wc_tab_comp  = getappdata(main_figure,'wc_tab');
 map_tab_comp = getappdata(main_figure,'Map_tab');
-ah_tot = [map_tab_comp.map_axes stacked_wc_tab_comp.wc_axes];
+ah_tot = [map_tab_comp.map_axes stacked_wc_tab_comp.wc_axes wc_tab_comp.wc_axes];
 
 for iax = 1:numel(ah_tot)
     

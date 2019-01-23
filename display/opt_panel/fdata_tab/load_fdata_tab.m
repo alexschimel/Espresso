@@ -110,15 +110,12 @@ if ~isempty(selected_idx) && ~ismember(disp_config.Fdata_idx,selected_idx)
     
     % udpate in disp_config
     disp_config.Fdata_idx = selected_idx(1);
-    disp_config.Iping = 1; % this updates the WC view with listenIping
     disp_config.AcrossDist = 0;
+    disp_config.Iping = 1; % this updates the WC view with listenIping
+    
     
     % update map with zoom adjusted to selected lines
     update_map_tab(main_figure,0,0,1,disp_config.Fdata_idx);
-    
-    % and update displays
-    update_wc_tab(main_figure);
-    update_stacked_wc_tab(main_figure);
     
 end
 
@@ -137,16 +134,9 @@ if evt.Indices(2) == 3
     disp_config = getappdata(main_figure,'disp_config');
     
     disp_config.Fdata_idx = evt.Indices(1); % line that was switched
-    disp_config.Iping = 1;
     disp_config.AcrossDist = 0;
+    disp_config.Iping = 1;
 
-    % update the map to zoom on that line
-    update_map_tab(main_figure,0,0,1,evt.Indices(1));
-    
-    % update displays
-    update_wc_tab(main_figure);
-    update_stacked_wc_tab(main_figure);
-    
 end
 
 
@@ -228,12 +218,12 @@ update_fdata_tab(main_figure);
 update_file_tab(main_figure);
 
 % update map with zoom back on all remaining lines
-update_map_tab(main_figure,0,0,1,[]);
 
 disp_config.Fdata_idx = numel(fdata);
 disp_config.Iping = 1;
 disp_config.AcrossDist = 0;
 
+update_map_tab(main_figure,0,0,1,[]);
 
 
 end

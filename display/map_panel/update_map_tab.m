@@ -92,6 +92,10 @@ new_grid_flag = p.Results.new_grid_flag;
 new_mosaic_flag = p.Results.new_mosaic_flag;
 auto_zoom_extent_flag = p.Results.auto_zoom_extent_flag;
 update_line_index = p.Results.update_line_index;
+if ~isdeployed()
+    disp('Update Map Tab');
+end
+    
 
 % exit if no data loaded
 fData_tot = getappdata(main_figure,'fData');
@@ -341,10 +345,13 @@ caxis(ax,cax);
 
 %% IF NO LINE IS ACTIVE, STOP HERE
 if ~any(idx_active_lines)
-    map_tab_comp.ping_window.Shape.Vertices = [NaN NaN];
+    map_tab_comp.ping_window.Visible = 'off';
     set(map_tab_comp.ping_swathe,'XData',nan,'YData',nan);
     return;
+else
+    map_tab_comp.ping_window.Visible = 'on';
 end
+    
 
 
 
@@ -364,6 +371,7 @@ usrdata.str_disp = str_disp;
 
 % calculate pings making up the stack
 idx_pings = ip-disp_config.StackPingWidth:ip+disp_config.StackPingWidth-1;
+
 id_min = nansum(idx_pings<1);
 idx_pings = idx_pings + id_min;
 nb_pings = size(fData.X_BP_bottomEasting,2);

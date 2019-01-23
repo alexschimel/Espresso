@@ -107,10 +107,7 @@ parse(p,fData,fieldN,varargin{:})
 iPing = p.Results.iPing;
 iBeam = p.Results.iBeam;
 iRange = p.Results.iRange;
-dr_sub = p.Results.dr_sub;
-db_sub = p.Results.db_sub;
-output_format = p.Results.output_format;
-clear p
+
 
 %% get raw data
 if isempty(iPing)   
@@ -125,10 +122,10 @@ if isempty(iRange)
     iRange = 1:size(fData.(fieldN).Data.val,1);
 end
 
-data = fData.(fieldN).Data.val(iRange(1):dr_sub:iRange(end),iBeam(1):db_sub:iBeam(end),iPing);
+data = fData.(fieldN).Data.val(iRange(1):p.Results.dr_sub:iRange(end),iBeam(1):p.Results.db_sub:iBeam(end),iPing);
 
 %% transform to true values if required
-switch output_format
+switch p.Results.output_format
     
     case 'true'
         

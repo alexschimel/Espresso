@@ -135,9 +135,10 @@ end
 switch tab
     case 'wc'
         load_wc_tab(main_figure,dest_fig);
+        display_features(main_figure,{},{'wc_tab'})
     case 'stacked_wc'
         load_stacked_wc_tab(main_figure,dest_fig);
-        display_features(main_figure,{})
+        display_features(main_figure,{},{'stacked_wc_tab'})
     case 'feature_list'
         load_feature_list_tab(main_figure,dest_fig);
 end
@@ -153,9 +154,10 @@ dest_fig = getappdata(main_figure,'swath_panel');
 switch tag
     case 'wc'
         load_wc_tab(main_figure,dest_fig);
+        display_features(main_figure,{},{'wc_tab'})
     case 'stacked_wc'
         load_stacked_wc_tab(main_figure,dest_fig);
-        display_features(main_figure,{})
+        display_features(main_figure,{},{'stacked_wc_tab'})
     case 'feature_list'
         load_feature_list_tab(main_figure,dest_fig);
 end

@@ -347,6 +347,13 @@ for i = idx_fData(:)'
     % disp
     fprintf('...Done. Elapsed time: %f seconds.\n',toc);
     
+     % get folder for converted data
+    folder_for_converted_data = CFF_converted_data_folder(fData_tot{i}.ALLfilename{1});
+    fData=fData_tot{i};
+    % converted filename fData
+    mat_fdata_file = fullfile(folder_for_converted_data,'fdata.mat');
+    save(mat_fdata_file,'-struct','fData','-v7.3');
+    clear fData;
 end
 
 % general timer
@@ -437,7 +444,7 @@ disp_config = getappdata(main_figure,'disp_config');
 disp_config.Fdata_idx = idx_fData(end);
 
 % update map with new grid, zoom on changed lines
-update_map_tab(main_figure,1,0,1,disp_config.Fdata_idx);
+update_map_tab(main_figure,1,0,1,idx_fData);
 
 % update WC view and stacked view
 update_wc_tab(main_figure);

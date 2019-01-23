@@ -85,6 +85,9 @@ parse(p,varargin{:});
 change_line_flag = p.Results.change_line_flag;
 change_ping_flag = p.Results.change_ping_flag;
 
+if ~isdeployed()
+    disp('Update WC Tab');
+end
 
 %% check if there are data to display
 fData_tot = getappdata(main_figure,'fData');

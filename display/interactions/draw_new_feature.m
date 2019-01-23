@@ -214,6 +214,7 @@ end
                 xinit(isnan(xinit)) = [];
                 yinit(isnan(yinit)) = [];
                 id_rem = xinit>x_lim(end) | xinit<x_lim(1) | yinit>y_lim(end) | yinit<y_lim(1);
+                
                 xinit(id_rem) = [];
                 yinit(id_rem) = [];
 
@@ -275,14 +276,14 @@ end
         yinit(u+1) = yinit(1);
         
         % remove all remaining nans
-        xinit(isnan(xinit)) = [];
-        yinit(isnan(yinit)) = [];
+        xinit(isnan(xinit)|xinit==0) = [];
+        yinit(isnan(yinit)|yinit==0) = [];
         
         % remove all points outside of the map
-        xinit(xinit>x_lim(end)) = x_lim(end);
-        xinit(xinit<x_lim(1)) = x_lim(1);
-        yinit(yinit>y_lim(end)) = y_lim(end);
-        yinit(yinit<y_lim(1)) = y_lim(1);
+%         xinit(xinit>x_lim(end)) = x_lim(end);
+%         xinit(xinit<x_lim(1)) = x_lim(1);
+%         yinit(yinit>y_lim(end)) = y_lim(end);
+%         yinit(yinit<y_lim(1)) = y_lim(1);
         
         % if only 1 or 2 vertices after that, delete the polygon as
         % incomplete
@@ -327,7 +328,7 @@ end
         setappdata(main_figure,'features',features);
         
         % trigger an update of displaying features on map and stacked view
-        display_features(main_figure,{});
+        display_features(main_figure,{},[]);
         
         % trigger an update of the feature list tab
         update_feature_list_tab(main_figure);

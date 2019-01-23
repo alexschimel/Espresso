@@ -76,7 +76,7 @@
 % Yoann Ladroit, Alexandre Schimel, NIWA. XXX
 
 %% Function
-function display_features(main_figure,IDs)
+function display_features(main_figure,IDs,axes_to_up)
 
 % this function calls for an update of displaying desired features on map
 % and stacked view 
@@ -103,10 +103,29 @@ else
     features_id = {};
 end
 
+
+
 % get both map and stacked view axes
 map_tab_comp = getappdata(main_figure,'Map_tab');
 stacked_wc_tab_comp  = getappdata(main_figure,'stacked_wc_tab');
-ah_tot = [map_tab_comp.map_axes stacked_wc_tab_comp.wc_axes];
+wc_tab_comp  = getappdata(main_figure,'wc_tab');
+
+if isempty(axes_to_up)
+    ah_tot = [map_tab_comp.map_axes stacked_wc_tab_comp.wc_axes wc_tab_comp.wc_axes];
+else
+    ah_tot=gobjects(1,numel(axes_to_up));
+    for iax=1:numel(axes_to_up)
+       switch axes_to_up{iax}
+           case 'map'
+               ah_tot(iax)=map_tab_comp.map_axes;
+           case 'wc_tab'
+               ah_tot(iax)=wc_tab_comp.wc_axes;
+           case 'stacked_wc_tab'
+               ah_tot(iax)=stacked_wc_tab_comp.wc_axes;
+       end
+           
+    end
+end
 
 % repeat on both map then stacked view
 for iax = 1:numel(ah_tot)
@@ -121,6 +140,11 @@ for iax = 1:numel(ah_tot)
     % get current drawn features and their labels
     features_h = findobj(ah,{'tag','feature','-or','tag','feature_text'});
     
+    switch ah.Tag
+        case {'stacked_wc','wc'}
+            delete(features_h);
+            features_h=[];
+    end
     % if a drawn feature is not in the list recorded in appdata, OR if a
     % drawn feature is in the list of features we want to update, delete
     % them.
@@ -198,7 +222,31 @@ for iax = 1:numel(ah_tot)
                     % stacked view
                     draw_feature_on_stacked_display(stacked_wc_tab_comp.wc_axes,intersection,features_intersecting,E_stacked,N_stacked,col_stacked);
                 end
+            case 'wc'
                 
+                E=get(map_tab_comp.ping_swathe,'XData');
+                N=get(map_tab_comp.ping_swathe,'YData');
+                xdata=get(wc_tab_comp.bot_gh,'XData');
+                if ismember(features(idf).Unique_ID,disp_config.Act_features)
+                    col_wc = 'r';
+                else
+                    col_wc = [0.1 0.1 0.1];
+                end
+                
+                if isempty(features(idf).Polygon)
+                    
+                else
+                    poly_feat=features(idf).Polygon;
+                    isin = inpolygon(E,N,poly_feat.Vertices(:,1),poly_feat.Vertices(:,2));
+                    if any(isin)
+
+                        ibeam=xdata(isin);
+                    else 
+                        continue;                       
+                    end
+                end
+                draw_feature_on_fan_display(wc_tab_comp.wc_axes,features(idf),ibeam,col_wc);
+
         end
         
     end
@@ -207,6 +255,21 @@ end
 end
 
 %% Subfunctions
+
+function draw_feature_on_fan_display(ax,feature,ibeam,col)
+range_lim = get(ax,'YLim');
+if ~isempty(feature.Polygon)
+    
+    new_feature = feature;
+    iRange = [nanmax(-feature.Depth_max,range_lim(1)) nanmin(-feature.Depth_min,range_lim(2))];
+    new_feature.Polygon = polyshape([ibeam(1) ibeam(1) ibeam(end) ibeam(end)],[iRange(1) iRange(2) iRange(2) iRange(1)]);
+    new_feature.draw_feature(ax,col);
+else
+    
+    
+end
+
+end
 
 function [intersection,features_intersecting] = feature_intersect_polygon(feature,poly)
 

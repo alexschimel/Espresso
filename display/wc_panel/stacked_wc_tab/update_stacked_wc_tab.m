@@ -86,6 +86,9 @@ addOptional(p,'force_update_flag',0);
 parse(p,varargin{:});
 force_update_flag = p.Results.force_update_flag;
 clear p
+if ~isdeployed()
+    disp('Update Stacked WC Tab');
+end
 
 
 %% check if there are data to display
@@ -150,13 +153,16 @@ cax = [cax_min cax_max];
 [iangles,~] = find(idx_angles==0);
 idx_angle_keep = nanmin(iangles):nanmax(iangles);
 
+bot=fData.X_BP_bottomSample(idx_angle_keep,idx_pings);
+idx_r=1:nanmax(bot(:));
+
 %% get data for stacked view
 datagramSource = fData.MET_datagramSource;
 switch str_disp
     
     case 'Original'
         
-        wc_data = CFF_get_WC_data(fData,sprintf('%s_SBP_SampleAmplitudes',datagramSource),idx_pings,1,1,'iBeam',idx_angle_keep);
+        wc_data = CFF_get_WC_data(fData,sprintf('%s_SBP_SampleAmplitudes',datagramSource),idx_pings,1,1,'iBeam',idx_angle_keep,'iRange',idx_r);
         
         wc_data(:,idx_angles(idx_angle_keep,:)) = nan;
         amp_al = squeeze(nanmean(wc_data,2));
@@ -164,7 +170,7 @@ switch str_disp
         
     case 'Processed'
         
-        wc_data = CFF_get_WC_data(fData,'X_SBP_WaterColumnProcessed',idx_pings,1,1,'iBeam',idx_angle_keep);
+        wc_data = CFF_get_WC_data(fData,'X_SBP_WaterColumnProcessed',idx_pings,1,1,'iBeam',idx_angle_keep,'iRange',idx_r);
         
         wc_data(:,idx_angles(idx_angle_keep,:)) = nan;
         amp_al = squeeze(nanmean(wc_data,2));
@@ -172,7 +178,7 @@ switch str_disp
         
     case 'Phase'
         
-        wc_data = CFF_get_WC_data(fData,sprintf('%s_SBP_SamplePhase',datagramSource),idx_pings,1,1,'iBeam',idx_angle_keep);
+        wc_data = CFF_get_WC_data(fData,sprintf('%s_SBP_SamplePhase',datagramSource),idx_pings,1,1,'iBeam',idx_angle_keep,'iRange',idx_r);
         
         cax = [-180 180];
         wc_data(:,idx_angles(idx_angle_keep,:)) = nan;
