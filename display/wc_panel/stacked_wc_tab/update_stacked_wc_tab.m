@@ -165,9 +165,11 @@ if up_stacked_wc_bool
     % range of all beams within stack view for the main ping.
     soundSpeed          = fData.(sprintf('%s_1P_SoundSpeed',datagramSource)).*0.1; %m/s
     samplingFrequencyHz = fData.(sprintf('%s_1P_SamplingFrequencyHz',datagramSource)); %Hz
-    
+    profile on;
     dr_samples = soundSpeed./(samplingFrequencyHz.*2);
-    disp_type='range';
+    dr_res=4*dr_samples;
+    disp_type='depth';
+    %disp_type='range';
     
     switch disp_type
         case 'depth'
@@ -181,19 +183,7 @@ if up_stacked_wc_bool
     sampleRange = CFF_get_samples_range(idx_r',fData.(sprintf('%s_BP_StartRangeSampleNumber',datagramSource))(idx_angle_keep,ip),dr_samples(ip));
     angleData=fData.(sprintf('%s_BP_BeamPointingAngle',datagramSource))(idx_angle_keep,idx_pings)/100/180*pi;
     
-    switch disp_type
-        case 'depth'
-            [~,sampleUpDist] = CFF_get_samples_dist(sampleRange,angleData);
-            sampleUpDistAl = -squeeze(nanmean(sampleUpDist,2));
-            idx_accum=ceil(-sampleUpDist/(dr_samples(ip)));
-            idx_accum(idx_accum>size(sampleUpDistAl,1))=size(sampleUpDistAl,1);
-            idx_pings_mat=shiftdim(idx_pings,-1);
-            idx_pings_mat=repmat(idx_pings_mat-idx_pings(1)+1,size(idx_accum,1),size(idx_accum,2));
-        case'range'
-            sampleUpDist = sampleRange;
-            sampleUpDistAl = nanmean(sampleUpDist(:,~idx_angles(idx_angle_keep,ip_sub)),2);
-    end
-    
+  
     
     switch str_disp        
         case 'Original'            
@@ -207,15 +197,33 @@ if up_stacked_wc_bool
     
     wc_data = CFF_get_WC_data(fData,dtg_to_load,idx_pings,1,1,'iBeam',idx_angle_keep,'iRange',idx_r);
     wc_data(:,idx_angles(idx_angle_keep,:)) = nan;
-               
+     tic          
     switch disp_type
         case 'depth'
-            amp_al=accumarray([idx_accum(:) idx_pings_mat(:)],wc_data(:),[size(idx_accum,1) size(idx_accum,3)],@nanmean,single(-999));
+            [~,sampleUpDist] = CFF_get_samples_dist(sampleRange,angleData);
+            idx_accum=ceil(-sampleUpDist/(dr_res(ip)));
+            idx_accum(idx_accum>size(sampleUpDist,1))=size(sampleUpDist,1);
+            idx_pings_mat=shiftdim(idx_pings,-1);
+            idx_pings_mat=repmat(idx_pings_mat-idx_pings(1)+1,size(idx_accum,1),size(idx_accum,2));
+            idx_nan=isnan(wc_data);
+            wc_data(idx_nan)=[];
+            idx_accum(idx_nan)=[];
+            idx_pings_mat(idx_nan)=[];
+            
+            amp_al=accumarray([idx_accum(:) idx_pings_mat(:)],gpuArray(wc_data(:)),[],@sum,single(-999))./...
+                accumarray([idx_accum(:) idx_pings_mat(:)],gpuArray(ones(numel(wc_data(:),1))),[],@sum);
+            amp_al=gather(amp_al);
+            %amp_al=accumarray([idx_accum(:) idx_pings_mat(:)],wc_data(:),[],@mean,single(-999));
+
+            sampleUpDistAl=(0:(size(amp_al,1)-1))*dr_res(ip);
         case 'range'
             amp_al = squeeze(nanmean(wc_data,2));
-            %amp_al = squeeze(nanmax(wc_data,[],2));
+            sampleUpDist = sampleRange;
+            sampleUpDistAl = nanmean(sampleUpDist(:,~idx_angles(idx_angle_keep,ip_sub)),2);
     end
-    
+    toc
+    profile off;
+    profile viewer;
     switch str_disp
         
         case {'Original';'Processed'}
