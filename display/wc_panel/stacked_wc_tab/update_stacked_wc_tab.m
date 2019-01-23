@@ -165,7 +165,7 @@ if up_stacked_wc_bool
     % range of all beams within stack view for the main ping.
     soundSpeed          = fData.(sprintf('%s_1P_SoundSpeed',datagramSource)).*0.1; %m/s
     samplingFrequencyHz = fData.(sprintf('%s_1P_SamplingFrequencyHz',datagramSource)); %Hz
-    profile on;
+    %profile on;
     dr_samples = soundSpeed./(samplingFrequencyHz.*2);
     dr_res=4*dr_samples;
     disp_type=disp_config.StackAngularMode;
@@ -224,8 +224,8 @@ if up_stacked_wc_bool
             sampleUpDistAl = nanmean(sampleUpDist(:,~idx_angles(idx_angle_keep,ip_sub)),2);
     end
     
-    profile off;
-    profile viewer;
+%     profile off;
+%     profile viewer;
     switch str_disp
         
         case {'Original';'Processed'}

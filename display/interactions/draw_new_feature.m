@@ -105,12 +105,10 @@ switch current_figure.Tag
         end
     case 'wc'
         ah=wc_ax;
-        return;
     case 'stacked_wc'
         ah=stacked_wc_ax;
-        return;
 end
-
+fig_anc=ancestor(ah,'figure');
 % exit if no data loaded yet
 if isempty(fData_tot)
     return;
@@ -144,7 +142,7 @@ zone = disp_config.get_zone();
 
 
 %% core of function
-switch main_figure.SelectionType
+switch fig_anc.SelectionType
     
     case 'normal'
         % if first click was left-click, start a polygon
@@ -158,40 +156,58 @@ switch main_figure.SelectionType
         yinit(1) = cp(1,2);
         
         % initializing index of next vertex
-        u = 2;
+        
         
         % colour of lines when making a polygon
         col_line = 'r';
-        
-        % plot the polygon so far
-        hp = plot(ah,xinit,yinit,'color',col_line,'linewidth',1,'Tag','feature_temp');
-        
-        % add coordinates as text
-        txt = text(ah,cp(1,1),cp(1,2),sprintf('%.6f,%.6f',lat,lon),'color',col_line,'Tag','feature_temp');
-        
+        x_box=xinit(1);
+        y_box=xinit(1);
+
         % now that a polygon has been started, replace figure callbacks for
         % mouse motion and mouse click to continue/finalize it
         switch ah.Tag
             case 'main'
+                % plot the polygon so far
+                u = 2;
+                hp = plot(ah,xinit(1),yinit(1),'color',col_line,'linewidth',1,'Tag','feature_temp');
+                
+                % add coordinates as text
+                txt = text(ah,xinit(1),yinit(1),sprintf('%.6f,%.6f',lat,lon),'color',col_line,'Tag','feature_temp');
+
                 replace_interaction(main_figure,'interaction','WindowButtonMotionFcn','id',2,'interaction_fcn',@wbmcb_ext);
                 replace_interaction(main_figure,'interaction','WindowButtonDownFcn','id',1,'interaction_fcn',@wbdcb_ext);
             case 'wc'
-                
-            case 'stacked wc'
-                
+                u = 1;
+                hp=line(ah,xinit(1),yinit(1),'color',col_line,'linewidth',1,'Tag','feature_temp');
+                txt=text(ah,xinit(1),yinit(1),sprintf('%.2f m',yinit(1)),'color',col_line,'Tag','feature_temp');
+                replace_interaction(main_figure,'interaction','WindowButtonMotionFcn','id',2,'interaction_fcn',@wbmcb);
+                replace_interaction(main_figure,'interaction','WindowButtonUpFcn','id',2,'interaction_fcn',@wbucb_wc);
+
+            case 'stacked_wc'
+                u = 1;
+                hp=line(ah,xinit(1),yinit(1),'color',col_line,'linewidth',1,'Tag','feature_temp');
+                txt=text(ah,xinit(1),yinit(1),sprintf('%.2f m',yinit(1)),'color',col_line,'Tag','feature_temp');
+                replace_interaction(main_figure,'interaction','WindowButtonMotionFcn','id',2,'interaction_fcn',@wbmcb);
+                replace_interaction(main_figure,'interaction','WindowButtonUpFcn','id',2,'interaction_fcn',@wbucb_wc);
+
         end
         
     case 'alt'
         % if first click was right-click or control-click, do a point
-        
-        % create a new point
-        new_feature = feature_cl('Point',[cp(1,1) cp(1,2)],'Zone',zone,'ID',ID);
-        
-        % save as shapefile
-        new_feature.feature_to_shapefile(fullfile(whereisroot,'feature_files'));
-        
-        % finalize new feature
-        save_new_feature();
+        switch ah.Tag
+            case 'main'
+                % create a new point
+                new_feature = feature_cl('Point',[cp(1,1) cp(1,2)],'Zone',zone,'ID',ID);
+                
+                % save as shapefile
+                new_feature.feature_to_shapefile(fullfile(whereisroot,'feature_files'));
+                
+                % finalize new feature
+                save_new_feature();
+            case 'stacked wc'
+                
+            case 'wc'
+        end
         
     otherwise
         
@@ -203,11 +219,50 @@ end
 
 
 %% nested subfunctions %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ function wbmcb(~,~)
+        cp = ah.CurrentPoint;
+        
+        if cp(1,1)<x_lim(1) || cp(1,1)>x_lim(end) || cp(1,2)<y_lim(1) || cp(1,2)>y_lim(end)
+            return;
+        end
+        
+        X = [xinit(1),cp(1,1)];
+        Y = [yinit(1),cp(1,2)];
 
+        
+        x_min=nanmin(X);
+        x_min=nanmax(x_lim(1),x_min);
+        
+        x_max=nanmax(X);
+        x_max=nanmin(x_lim(end),x_max);
+        
+        y_min=nanmin(Y);
+        y_min=nanmax(y_min,y_lim(1));
+        
+        y_max=nanmax(Y);
+        y_max=nanmin(y_max,y_lim(end));
+        
+        x_box=([x_min x_max  x_max x_min x_min]);
+        y_box=([y_max y_max y_min y_min y_max]);
+        
+        str_txt=sprintf('%.2f m',cp(1,2));
+        
+        if isvalid(hp)
+            set(hp,'XData',x_box,'YData',y_box,'Tag','reg_temp');
+        else
+            hp=plot(ah,x_box,x_box,'color',col_line,'linewidth',1,'Tag','reg_temp');
+        end
+        
+        if isvalid(txt)
+            set(txt,'position',[cp(1,1) cp(1,2) 0],'string',str_txt);
+        else
+            txt=text(cp(1,1),cp(1,2),sprintf('%.2f m',cp(1,2)),'color',col_line);
+        end
+        
+    end
 
     function wbmcb_ext(~,~)
         % callback for when mouse is moving after a polygon is started
-        
         % get current pointer location and temporarily add to polygon
         cp = ah.CurrentPoint;
         xinit(u) = cp(1,1);
@@ -236,7 +291,7 @@ end
         % callback for when clicking on a mouse button after polygon is
         % started
         
-        switch main_figure.SelectionType
+        switch fig_anc.SelectionType
             
             case 'normal'
                 % if left-click, add a vertex
@@ -269,9 +324,7 @@ end
                 % finish the polygon
                 finish_polygon(main_figure);
                 
-                % ?
                 replace_interaction(main_figure,'interaction','WindowButtonDownFcn','id',1,'interaction_fcn',{@draw_new_feature,main_figure});
-                
                 return;
                 
             case 'alt'
@@ -280,15 +333,47 @@ end
                 % finish the polygon
                 finish_polygon(main_figure);
                 
-                % ?
                 replace_interaction(main_figure,'interaction','WindowButtonDownFcn','id',1,'interaction_fcn',{@draw_new_feature,main_figure});
-                
                 return;
                 
         end
         
     end
 
+
+     function wbucb_wc(~,~)
+        
+        replace_interaction(main_figure,'interaction','WindowButtonMotionFcn','id',2);
+        replace_interaction(main_figure,'interaction','WindowButtonDownFcn','id',1,'interaction_fcn',{@draw_new_feature,main_figure});
+        
+        if isempty(y_box)||isempty(x_box)
+            delete(txt);
+            delete(hp);
+            return;
+        end
+        
+        x_box=round(x_box);
+        y_box=round(y_box);
+        
+        y_min=nanmin(y_box);
+        y_max=nanmax(y_box);
+        
+        y_min=nanmax(y_min,y_lim(1));
+        y_max=nanmin(y_max,y_lim(end));
+        
+        x_min=nanmin(x_box);
+        x_min=round(nanmax(x_lim(1),x_min));
+        
+        x_max=nanmax(x_box);
+        x_max=round(nanmin(x_lim(end),x_max));
+           
+
+        
+        delete(txt);
+        delete(hp);
+        
+        
+    end
 
     function finish_polygon(main_figure)
         % complete a polygon
