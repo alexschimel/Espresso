@@ -234,17 +234,25 @@ for iax = 1:numel(ah_tot)
                 end
                 
                 if isempty(features(idf).Polygon)
+                    dr=nanmax(diff(xdata));
+                    dist=sqrt((E-features(idf).Point(1)).^2+(N-features(idf).Point(2)).^2);
+                    [dist_min,idx_pt]=min(dist);
                     
+                    if dist_min<dr*5
+                        ibeam=xdata(idx_pt);
+                    else
+                        continue;
+                    end
                 else
                     poly_feat=features(idf).Polygon;
                     isin = inpolygon(E,N,poly_feat.Vertices(:,1),poly_feat.Vertices(:,2));
                     if any(isin)
-
                         ibeam=xdata(isin);
                     else 
                         continue;                       
                     end
                 end
+                
                 draw_feature_on_fan_display(wc_tab_comp.wc_axes,features(idf),ibeam,col_wc);
 
         end
@@ -258,17 +266,21 @@ end
 
 function draw_feature_on_fan_display(ax,feature,ibeam,col)
 range_lim = get(ax,'YLim');
-if ~isempty(feature.Polygon)
-    
-    new_feature = feature;
+new_feature = feature;
+if ~isempty(feature.Polygon)    
     iRange = [nanmax(-feature.Depth_max,range_lim(1)) nanmin(-feature.Depth_min,range_lim(2))];
     new_feature.Polygon = polyshape([ibeam(1) ibeam(1) ibeam(end) ibeam(end)],[iRange(1) iRange(2) iRange(2) iRange(1)]);
-    new_feature.draw_feature(ax,col);
+    
 else
+    ir = 0.5*(feature.Depth_max+feature.Depth_min);
     
-    
+    if ir < range_lim(1) || ir > range_lim(2)
+        ir = 0.5*sum(range_lim);
+    end
+    new_feature.Point = [ibeam,ir];
+        
 end
-
+new_feature.draw_feature(ax,col);
 end
 
 function [intersection,features_intersecting] = feature_intersect_polygon(feature,poly)
@@ -303,13 +315,13 @@ end
 
 
 function draw_feature_on_stacked_display(ax,intersection,feature,easting,northing,col)
-
+    % extents
+    range_lim = get(ax,'YLim');
+    ping_lim = get(ax,'XLim');
 if isempty(feature.Polygon)
     % feature is a point
 
-    % get range extent
-    range_lim = get(ax,'YLim');
-    
+
     % find closest ping nav to point
     [~,ip] = min(sqrt((intersection(1)-easting).^2+(intersection(2)-northing).^2),[],2);
     
@@ -324,7 +336,7 @@ if isempty(feature.Polygon)
 
     % copy the feature and jsut change its coordinates
     new_feature = feature;
-    new_feature.Point = [ip,ir];
+    new_feature.Point = [ip+ping_lim(1)-1,ir];
     
     % trigger display method
     new_feature.draw_feature(ax,col);
@@ -335,9 +347,7 @@ else
     
     poly_regions = intersection.regions;
     
-    % extents
-    range_lim = get(ax,'YLim');
-    ping_lim = get(ax,'XLim');
+
     
     for ireg = 1:numel(poly_regions)
         

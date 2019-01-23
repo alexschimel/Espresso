@@ -140,7 +140,7 @@ elseif force_update_flag
 else
     up_stacked_wc_bool = ~isempty(setdiff(idx_pings,stacked_wc_tab_comp.wc_gh.UserData.idx_pings)) || ...
         ~(fData.ID==stacked_wc_tab_comp.wc_gh.UserData.ID) || ...
-        ~isempty(setdiff(idx_angles,stacked_wc_tab_comp.wc_gh.UserData.idx_angles)) || ...
+        ~isempty(setxor(find(idx_angles),find(stacked_wc_tab_comp.wc_gh.UserData.idx_angles))) || ...
         ~strcmpi(str_disp,stacked_wc_tab_comp.wc_gh.UserData.str_disp);
 end
 
@@ -153,45 +153,11 @@ cax = [cax_min cax_max];
 [iangles,~] = find(idx_angles==0);
 idx_angle_keep = nanmin(iangles):nanmax(iangles);
 
-bot=fData.X_BP_bottomSample(idx_angle_keep,idx_pings);
-idx_r=1:nanmax(bot(:));
 
 %% get data for stacked view
 datagramSource = fData.MET_datagramSource;
-switch str_disp
-    
-    case 'Original'
-        
-        wc_data = CFF_get_WC_data(fData,sprintf('%s_SBP_SampleAmplitudes',datagramSource),idx_pings,1,1,'iBeam',idx_angle_keep,'iRange',idx_r);
-        
-        wc_data(:,idx_angles(idx_angle_keep,:)) = nan;
-        amp_al = squeeze(nanmean(wc_data,2));
-        idx_keep_al = amp_al >= cax(1);
-        
-    case 'Processed'
-        
-        wc_data = CFF_get_WC_data(fData,'X_SBP_WaterColumnProcessed',idx_pings,1,1,'iBeam',idx_angle_keep,'iRange',idx_r);
-        
-        wc_data(:,idx_angles(idx_angle_keep,:)) = nan;
-        amp_al = squeeze(nanmean(wc_data,2));
-        idx_keep_al = amp_al >= cax(1);
-        
-    case 'Phase'
-        
-        wc_data = CFF_get_WC_data(fData,sprintf('%s_SBP_SamplePhase',datagramSource),idx_pings,1,1,'iBeam',idx_angle_keep,'iRange',idx_r);
-        
-        cax = [-180 180];
-        wc_data(:,idx_angles(idx_angle_keep,:)) = nan;
-        amp_al = squeeze(nanmean(wc_data,2));
-        idx_keep_al = amp_al ~= 0;
-        
-end
-
-
-
 %% Stacked view display
 if up_stacked_wc_bool
-    
     % stacked data is "amp_al". Its columns are idx_pings and its rows
     % are all samples in the usual WC data. But we need to turn these
     % samples # into range (m) for the display. Problem is it is not
@@ -199,14 +165,75 @@ if up_stacked_wc_bool
     % range of all beams within stack view for the main ping.
     soundSpeed          = fData.(sprintf('%s_1P_SoundSpeed',datagramSource)).*0.1; %m/s
     samplingFrequencyHz = fData.(sprintf('%s_1P_SamplingFrequencyHz',datagramSource)); %Hz
+    
     dr_samples = soundSpeed./(samplingFrequencyHz.*2);
-    sampleRange = CFF_get_samples_range((1:size(amp_al,1))',fData.(sprintf('%s_BP_StartRangeSampleNumber',datagramSource))(:,ip),dr_samples(ip));
-    sampleRangeAl = nanmean(sampleRange(:,~idx_angles(idx_angle_keep,ip_sub)),2);
+    disp_type='range';
+    
+    switch disp_type
+        case 'depth'
+            bot=fData.X_BP_bottomUpDist(idx_angle_keep,idx_pings);
+            idx_r=1:nanmax(ceil(-bot(:)./dr_samples(ip)));
+        case'range'
+            bot=fData.X_BP_bottomSample(idx_angle_keep,idx_pings);
+            idx_r=1:nanmax(bot(:));
+    end
+
+    sampleRange = CFF_get_samples_range(idx_r',fData.(sprintf('%s_BP_StartRangeSampleNumber',datagramSource))(idx_angle_keep,ip),dr_samples(ip));
+    angleData=fData.(sprintf('%s_BP_BeamPointingAngle',datagramSource))(idx_angle_keep,idx_pings)/100/180*pi;
+    
+    switch disp_type
+        case 'depth'
+            [~,sampleUpDist] = CFF_get_samples_dist(sampleRange,angleData);
+            sampleUpDistAl = -squeeze(nanmean(sampleUpDist,2));
+            idx_accum=ceil(-sampleUpDist/(dr_samples(ip)));
+            idx_accum(idx_accum>size(sampleUpDistAl,1))=size(sampleUpDistAl,1);
+            idx_pings_mat=shiftdim(idx_pings,-1);
+            idx_pings_mat=repmat(idx_pings_mat-idx_pings(1)+1,size(idx_accum,1),size(idx_accum,2));
+        case'range'
+            sampleUpDist = sampleRange;
+            sampleUpDistAl = nanmean(sampleUpDist(:,~idx_angles(idx_angle_keep,ip_sub)),2);
+    end
+    
+    
+    switch str_disp        
+        case 'Original'            
+            dtg_to_load=sprintf('%s_SBP_SampleAmplitudes',datagramSource);        
+        case 'Processed'            
+            dtg_to_load='X_SBP_WaterColumnProcessed';            
+        case 'Phase'    
+            dtg_to_load=sprintf('%s_SBP_SamplePhase',datagramSource);  
+            
+    end
+    
+    wc_data = CFF_get_WC_data(fData,dtg_to_load,idx_pings,1,1,'iBeam',idx_angle_keep,'iRange',idx_r);
+    wc_data(:,idx_angles(idx_angle_keep,:)) = nan;
+               
+    switch disp_type
+        case 'depth'
+            amp_al=accumarray([idx_accum(:) idx_pings_mat(:)],wc_data(:),[size(idx_accum,1) size(idx_accum,3)],@nanmean,single(-999));
+        case 'range'
+            amp_al = squeeze(nanmean(wc_data,2));
+            %amp_al = squeeze(nanmax(wc_data,[],2));
+    end
+    
+    switch str_disp
+        
+        case {'Original';'Processed'}
+            
+            idx_keep_al = amp_al >= cax(1);
+            
+        case 'Phase'
+            
+            idx_keep_al = amp_al ~= 0;
+            
+    end
+    
+
     
     % display stacked view itself
     set(stacked_wc_tab_comp.wc_gh,...
         'XData',idx_pings,...
-        'YData',sampleRangeAl,...
+        'YData',sampleUpDistAl,...
         'ZData',zeros(size(amp_al)),...
         'CData',amp_al,...
         'AlphaData',idx_keep_al,...
@@ -216,7 +243,7 @@ if up_stacked_wc_bool
     xlim_stacked = [idx_pings(1) idx_pings(end)];
     idx_al_s = find(~isnan(nanmean(amp_al,2)),1,'first');
     idx_al_e = find(~isnan(nanmean(amp_al,2)),1,'last');
-    ylim_stacked = [sampleRangeAl(idx_al_s) sampleRangeAl(idx_al_e)];
+    ylim_stacked = [sampleUpDistAl(idx_al_s)*0.9 sampleUpDistAl(idx_al_e)*1.1];
     set(stacked_wc_tab_comp.wc_axes,...
         'XLim',xlim_stacked,...
         'Ylim',ylim_stacked,...
