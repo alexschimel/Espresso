@@ -79,6 +79,9 @@
 function move_map_cback(~,~,main_figure)
 
 current_figure = gcf;
+if ~strcmpi(current_figure.Tag,'Espresso')
+    return;
+end
 
 switch current_figure.SelectionType
     

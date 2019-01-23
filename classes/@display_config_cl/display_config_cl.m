@@ -81,6 +81,7 @@ classdef display_config_cl <handle
         Mode
         StackPingWidth
         StackAngularWidth
+        StackAngularMode
         Act_features
     end
     
@@ -101,6 +102,7 @@ classdef display_config_cl <handle
             addParameter(p,'AcrossDist',0,@isnumeric); % Across distance for pointer
             addParameter(p,'StackPingWidth',200,@isnumeric); % half-length of ping window for stacked view computation
             addParameter(p,'StackAngularWidth',[-10 10],@isnumeric); % angular aperture for stacked view computation (in degrees)
+            addParameter(p,'StackAngularMode','range',@isnumeric);
             addParameter(p,'Act_features',{},@iscell); % active features
             
             parse(p,varargin{:});

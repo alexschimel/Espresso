@@ -83,7 +83,33 @@ function draw_new_feature(~,~,main_figure)
 disp_config = getappdata(main_figure,'disp_config');
 fData_tot = getappdata(main_figure,'fData');
 features = getappdata(main_figure,'features');
+current_figure=gcf;
+
 map_tab_comp = getappdata(main_figure,'Map_tab');
+wc_tab_comp  = getappdata(main_figure,'wc_tab');
+stacked_wc_tab  = getappdata(main_figure,'stacked_wc_tab');
+
+map_ax=map_tab_comp.map_axes;
+wc_ax=wc_tab_comp.wc_axes;
+stacked_wc_ax=stacked_wc_tab.wc_axes;
+
+switch current_figure.Tag
+    case 'Espresso'
+        ah=gca;
+        fig_anc=ancestor(ah,'figure');
+        if fig_anc~=main_figure
+            if ~isdeployed()
+                disp('Axis in the wrong figure')
+            end
+            return;
+        end
+    case 'wc'
+        ah=wc_ax;
+        return;
+    case 'stacked_wc'
+        ah=stacked_wc_ax;
+        return;
+end
 
 % exit if no data loaded yet
 if isempty(fData_tot)
@@ -97,8 +123,6 @@ else
     ID = nanmax([features(:).ID])+1;
 end
 
-% map axes
-ah = map_tab_comp.map_axes;
 
 % delete temporary features
 features_h = findobj(ah,{'tag','feature_temp'});
@@ -147,8 +171,15 @@ switch main_figure.SelectionType
         
         % now that a polygon has been started, replace figure callbacks for
         % mouse motion and mouse click to continue/finalize it
-        replace_interaction(main_figure,'interaction','WindowButtonMotionFcn','id',2,'interaction_fcn',@wbmcb_ext);
-        replace_interaction(main_figure,'interaction','WindowButtonDownFcn','id',1,'interaction_fcn',@wbdcb_ext);
+        switch ah.Tag
+            case 'main'
+                replace_interaction(main_figure,'interaction','WindowButtonMotionFcn','id',2,'interaction_fcn',@wbmcb_ext);
+                replace_interaction(main_figure,'interaction','WindowButtonDownFcn','id',1,'interaction_fcn',@wbdcb_ext);
+            case 'wc'
+                
+            case 'stacked wc'
+                
+        end
         
     case 'alt'
         % if first click was right-click or control-click, do a point

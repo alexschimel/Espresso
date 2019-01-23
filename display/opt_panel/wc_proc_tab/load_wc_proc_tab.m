@@ -431,6 +431,13 @@ for i = idx_fData(:)'
     
     % disp
     fprintf('...Done. Elapsed time: %f seconds.\n',toc);
+     % get folder for converted data
+    folder_for_converted_data = CFF_converted_data_folder(fData_tot{i}.ALLfilename{1});
+    fData=fData_tot{i};
+    % converted filename fData
+    mat_fdata_file = fullfile(folder_for_converted_data,'fdata.mat');
+    save(mat_fdata_file,'-struct','fData','-v7.3');
+    clear fData;
     
 end
 

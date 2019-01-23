@@ -68,7 +68,7 @@
 % Yoann Ladroit, Alexandre Schimel, NIWA. XXX
 
 %% Function
-function load_wc_tab(main_figure,parent_tab_group)
+function load_wc_tab(main_figure,parent_tab_group,str_disp)
 
 disp_config = getappdata(main_figure,'disp_config');
 
@@ -82,13 +82,19 @@ switch parent_tab_group.Type
         wc_tab_comp.wc_tab = parent_tab_group;
 end
 
+
+if isempty(str_disp)
+    str_disp='Processed';
+end
+str_disp_list={'Original' 'Phase' 'Processed'};
+
 % pos = getpixelposition(wc_tab_comp.wc_tab);
 wc_tab_comp.data_disp = uicontrol(wc_tab_comp.wc_tab,...
     'style','popup',...
     'Units','pixels',...
     'position',[20 20 120 20],...
-    'String',{'Original' 'Phase' 'Processed'},...
-    'Value',1,...
+    'String',str_disp_list,...
+    'Value',find(strcmpi(str_disp,str_disp_list)),...
     'Callback',{@change_wc_disp_cback,main_figure});
 
 wc_tab_comp.wc_axes = axes(wc_tab_comp.wc_tab,...
@@ -97,6 +103,8 @@ wc_tab_comp.wc_axes = axes(wc_tab_comp.wc_tab,...
     'nextplot','add',...
     'YDir','normal',...
     'Tag','wc');
+axis(wc_tab_comp.wc_axes,'equal');
+
 
 [cmap,col_ax,col_lab,col_grid,col_bot,col_txt] = init_cmap(disp_config.Cmap);
 title(wc_tab_comp.wc_axes,'N/A','Interpreter','none','FontSize',10,'FontWeight','normal');

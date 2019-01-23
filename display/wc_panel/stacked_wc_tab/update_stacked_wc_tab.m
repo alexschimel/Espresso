@@ -168,8 +168,8 @@ if up_stacked_wc_bool
     profile on;
     dr_samples = soundSpeed./(samplingFrequencyHz.*2);
     dr_res=4*dr_samples;
-    disp_type='depth';
-    %disp_type='range';
+    disp_type=disp_config.StackAngularMode;
+
     
     switch disp_type
         case 'depth'
@@ -197,7 +197,7 @@ if up_stacked_wc_bool
     
     wc_data = CFF_get_WC_data(fData,dtg_to_load,idx_pings,1,1,'iBeam',idx_angle_keep,'iRange',idx_r);
     wc_data(:,idx_angles(idx_angle_keep,:)) = nan;
-     tic          
+               
     switch disp_type
         case 'depth'
             [~,sampleUpDist] = CFF_get_samples_dist(sampleRange,angleData);
@@ -217,11 +217,13 @@ if up_stacked_wc_bool
 
             sampleUpDistAl=(0:(size(amp_al,1)-1))*dr_res(ip);
         case 'range'
+            
+            
             amp_al = squeeze(nanmean(wc_data,2));
             sampleUpDist = sampleRange;
             sampleUpDistAl = nanmean(sampleUpDist(:,~idx_angles(idx_angle_keep,ip_sub)),2);
     end
-    toc
+    
     profile off;
     profile viewer;
     switch str_disp

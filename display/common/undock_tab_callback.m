@@ -114,6 +114,7 @@ switch dest
         
         size_max  =  get(0, 'MonitorPositions');
         pos_fig = [size_max(1,1)+size_max(1,3)*0.2 size_max(1,2)+size_max(1,4)*0.2 size_max(1,3)*0.6 size_max(1,4)*0.6];
+        userdata.main_figure=main_figure;
         dest_fig = figure(...
             'Units','pixels',...
             'Position',pos_fig,...
@@ -123,18 +124,21 @@ switch dest
             'MenuBar','none',...
             'Toolbar','none',...
             'CloseRequestFcn',{@close_tab,main_figure},...
+            'UserData',userdata,...
             'Tag',tab);
         set_icon_espresso(dest_fig)
         ext_figs = getappdata(main_figure,'ext_figs');
         ext_figs = [ext_figs dest_fig];
         setappdata(main_figure,'ext_figs',ext_figs);
         centerfig(dest_fig);
+        userdata.LinkedProps=linkprop([main_figure;dest_fig],{'WindowButtonDownFcn','KeyPressFcn' 'Pointer'});
+        dest_fig.UserData=userdata;
         
 end
 
 switch tab
     case 'wc'
-        load_wc_tab(main_figure,dest_fig);
+        load_wc_tab(main_figure,dest_fig,'');
         display_features(main_figure,{},{'wc_tab'})
     case 'stacked_wc'
         load_stacked_wc_tab(main_figure,dest_fig);
@@ -153,7 +157,7 @@ dest_fig = getappdata(main_figure,'swath_panel');
 
 switch tag
     case 'wc'
-        load_wc_tab(main_figure,dest_fig);
+        load_wc_tab(main_figure,dest_fig,'');
         display_features(main_figure,{},{'wc_tab'})
     case 'stacked_wc'
         load_stacked_wc_tab(main_figure,dest_fig);
