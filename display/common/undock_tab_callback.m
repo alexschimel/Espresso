@@ -152,6 +152,7 @@ end
 function close_tab(src,~,main_figure)
 
 tag = src.Tag;
+src.UserData.LinkedProps=[];
 delete(src);
 dest_fig = getappdata(main_figure,'swath_panel');
 

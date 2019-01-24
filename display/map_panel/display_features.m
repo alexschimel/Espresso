@@ -253,7 +253,7 @@ for iax = 1:numel(ah_tot)
                     end
                 end
                 
-                draw_feature_on_fan_display(wc_tab_comp.wc_axes,features(idf),ibeam,col_wc);
+                draw_feature_on_fan_display(wc_tab_comp.wc_axes,features(idf),ibeam,find(isin),col_wc);
 
         end
         
@@ -264,15 +264,27 @@ end
 
 %% Subfunctions
 
-function draw_feature_on_fan_display(ax,feature,ibeam,col)
+function draw_feature_on_fan_display(ax,feature,ibeam,isin,col)
 range_lim = get(ax,'YLim');
 new_feature = feature;
 if ~isempty(feature.Polygon)    
     iRange = [nanmax(-feature.Depth_max,range_lim(1)) nanmin(-feature.Depth_min,range_lim(2))];
-    new_feature.Polygon = polyshape([ibeam(1) ibeam(1) ibeam(end) ibeam(end)],[iRange(1) iRange(2) iRange(2) iRange(1)]);
-    
+    dibeam=diff(isin);
+    id=find(dibeam>1);
+    id=ibeam([1 id id+1 numel(dibeam)]);
+    new_poly=[];
+    for idi=1:2:numel(id)
+        p_tmp= polyshape([id(idi) id(idi) id(idi+1) id(idi+1)],[iRange(1) iRange(2) iRange(2) iRange(1)]);
+        if ~isempty(new_poly)
+            new_poly=union(p_tmp,new_poly);
+        else
+            new_poly=p_tmp;
+        end
+    end
+ %new_feature.Polygon = polyshape([ibeam(1) ibeam(1) ibeam(end) ibeam(end)],[iRange(1) iRange(2) iRange(2) iRange(1)]);
+    new_feature.Polygon=new_poly;
 else
-    ir = 0.5*(feature.Depth_max+feature.Depth_min);
+    ir = -0.5*(feature.Depth_max+feature.Depth_min);
     
     if ir < range_lim(1) || ir > range_lim(2)
         ir = 0.5*sum(range_lim);

@@ -181,14 +181,14 @@ switch fig_anc.SelectionType
                 hp=line(ah,xinit(1),yinit(1),'color',col_line,'linewidth',1,'Tag','feature_temp');
                 txt=text(ah,xinit(1),yinit(1),sprintf('%.2f m',yinit(1)),'color',col_line,'Tag','feature_temp');
                 replace_interaction(main_figure,'interaction','WindowButtonMotionFcn','id',2,'interaction_fcn',@wbmcb);
-                replace_interaction(main_figure,'interaction','WindowButtonUpFcn','id',2,'interaction_fcn',@wbucb_wc);
+                replace_interaction(main_figure,'interaction','WindowButtonUpFcn','id',1,'interaction_fcn',@wbucb_wc);
 
             case 'stacked_wc'
                 u = 1;
                 hp=line(ah,xinit(1),yinit(1),'color',col_line,'linewidth',1,'Tag','feature_temp');
                 txt=text(ah,xinit(1),yinit(1),sprintf('%.2f m',yinit(1)),'color',col_line,'Tag','feature_temp');
                 replace_interaction(main_figure,'interaction','WindowButtonMotionFcn','id',2,'interaction_fcn',@wbmcb);
-                replace_interaction(main_figure,'interaction','WindowButtonUpFcn','id',2,'interaction_fcn',@wbucb_wc);
+                replace_interaction(main_figure,'interaction','WindowButtonUpFcn','id',1,'interaction_fcn',@wbucb_wc);
 
         end
         
@@ -202,13 +202,38 @@ switch fig_anc.SelectionType
                 % save as shapefile
                 new_feature.feature_to_shapefile(fullfile(whereisroot,'feature_files'));
                 
-                % finalize new feature
-                save_new_feature();
-            case 'stacked wc'
+               
+            case 'stacked_wc'
+                fData_tot = getappdata(main_figure,'fData');
+                fData = fData_tot{disp_config.Fdata_idx};
+                
+                iping=round(cp(1,1));
+                depth=abs(cp(1,2));
+                
+                angle_mean=nanmean(disp_config.StackAngularWidth);
+                across_dist=depth*sind(angle_mean);
+                
+                [~,i_beam]=nanmin(abs(fData.X_BP_bottomAcrossDist(:,iping)-across_dist));
+                
+                new_feature = feature_cl('Point',[fData.X_BP_bottomEasting(i_beam,iping) fData.X_BP_bottomNorthing(i_beam,iping)],...
+                    'Depth_min',depth,'Depth_max',depth,'Zone',zone,'ID',ID);
                 
             case 'wc'
+                fData_tot = getappdata(main_figure,'fData');
+                fData = fData_tot{disp_config.Fdata_idx};
+                
+                depth=abs(cp(1,2));
+                across_dist=cp(1,1);
+                
+                iping=disp_config.Iping;
+                
+                [~,i_beam]=nanmin(abs(fData.X_BP_bottomAcrossDist(:,iping)-across_dist));
+                
+                new_feature = feature_cl('Point',[fData.X_BP_bottomEasting(i_beam,iping) fData.X_BP_bottomNorthing(i_beam,iping)],...
+                    'Depth_min',depth,'Depth_max',depth,'Zone',zone,'ID',ID);
         end
-        
+        % finalize new feature
+        save_new_feature();
     otherwise
         
         return;
@@ -344,7 +369,7 @@ end
      function wbucb_wc(~,~)
         
         replace_interaction(main_figure,'interaction','WindowButtonMotionFcn','id',2);
-        replace_interaction(main_figure,'interaction','WindowButtonDownFcn','id',1,'interaction_fcn',{@draw_new_feature,main_figure});
+        replace_interaction(main_figure,'interaction','WindowButtonUpFcn','id',1);
         
         if isempty(y_box)||isempty(x_box)
             delete(txt);
@@ -367,12 +392,37 @@ end
         x_max=nanmax(x_box);
         x_max=round(nanmin(x_lim(end),x_max));
            
-
-        
+ 
         delete(txt);
         delete(hp);
+        fData_tot = getappdata(main_figure,'fData');
+        fData = fData_tot{disp_config.Fdata_idx};
         
-        
+         switch ah.Tag
+  
+            case 'wc'
+                % add it as a new feature
+                [~,i_beam_max]=nanmin(abs(fData.X_BP_bottomAcrossDist(:,disp_config.Iping)-x_max));
+                [~,i_beam_min]=nanmin(abs(fData.X_BP_bottomAcrossDist(:,disp_config.Iping)-x_min));
+                dp=2;
+                ipings=(disp_config.Iping-dp):(disp_config.Iping+dp);
+                ipings=ipings+sum(ipings<1);
+                ipings=ipings-sum(ipings>numel(fData.WC_1P_PingCounter));
+                poly=polyshape(...
+                [fData.X_BP_bottomEasting(i_beam_min,ipings(1)) fData.X_BP_bottomEasting(i_beam_max,ipings(1)) fData.X_BP_bottomEasting(i_beam_max,ipings(end)) fData.X_BP_bottomEasting(i_beam_min,ipings(end))],...
+                [fData.X_BP_bottomNorthing(i_beam_min,ipings(1)) fData.X_BP_bottomNorthing(i_beam_max,ipings(1)) fData.X_BP_bottomNorthing(i_beam_max,ipings(end)) fData.X_BP_bottomNorthing(i_beam_min,ipings(end))]);
+                new_feature = feature_cl('Polygon',poly,'Zone',disp_config.get_zone(),'ID',ID,'Depth_min',abs(y_min),'Depth_max',abs(y_max));
+
+             case 'stacked_wc'
+                 % add it as a new feature
+                 [vert_poly,~,~]=poly_vertices_from_fData(fData,disp_config,round(x_min):round(x_max));
+                
+                 new_feature = feature_cl('Polygon',polyshape(vert_poly),'Zone',disp_config.get_zone(),'ID',ID,'Depth_min',abs(y_min),'Depth_max',abs(y_max));
+                 
+        end
+         % finalize new feature
+         
+        save_new_feature();
     end
 
     function finish_polygon(main_figure)

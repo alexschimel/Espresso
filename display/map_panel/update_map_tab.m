@@ -369,46 +369,12 @@ wc_str = wc_tab_comp.data_disp.String;
 str_disp = wc_str{wc_tab_comp.data_disp.Value};
 usrdata.str_disp = str_disp;
 
-% calculate pings making up the stack
-idx_pings = ip-disp_config.StackPingWidth:ip+disp_config.StackPingWidth-1;
-
-id_min = nansum(idx_pings<1);
-idx_pings = idx_pings + id_min;
-nb_pings = size(fData.X_BP_bottomEasting,2);
-id_max = nansum(idx_pings>nb_pings);
-idx_pings = idx_pings-id_max;
-idx_pings(idx_pings<1|idx_pings>nb_pings) = [];
-
-% indices of beams to keep for computation of stack view
-idx_angles = ~( disp_config.StackAngularWidth(1)/180*pi<=fData.X_PB_beamPointingAngleRad(:,idx_pings) & disp_config.StackAngularWidth(2)/180*pi>=fData.X_PB_beamPointingAngleRad(:,idx_pings) );
+[new_vert,idx_pings,idx_angles]=poly_vertices_from_fData(fData,disp_config,[]);
 
 % save all of these in usrdata for later retrieval in stacked view
 usrdata.idx_pings  = idx_pings;
 usrdata.idx_angles = idx_angles;
 
-% next, list the pinge we'll actually use to form the rough polygon
-poly_vert_num = 20; % approximate max number of vertices composing the polygon on each side
-dp_sub = ceil(numel(idx_pings)./poly_vert_num);
-idx_poly_pings = unique([1:dp_sub:numel(idx_pings),numel(idx_pings)]);
-
-% get easting coordinates of sliding window polygon
-e_p = fData.X_BP_bottomEasting(:,idx_pings);
-e_p(idx_angles) = NaN;
-e_p = e_p(:,idx_poly_pings);
-e_p = e_p(:,~all(isnan(e_p),1));
-e_p_s = arrayfun(@(col) e_p(find(~isnan(e_p(:, col)),1,'first'),col), 1:size(e_p,2), 'UniformOutput', 1);
-e_p_e = arrayfun(@(col) e_p(find(~isnan(e_p(:, col)),1,'last'),col), 1:size(e_p,2), 'UniformOutput', 1);
-
-% get northing coordinates of sliding window polygon
-n_p = fData.X_BP_bottomNorthing(:,idx_pings);
-n_p(idx_angles) = NaN;
-n_p = n_p(:,idx_poly_pings);
-n_p = n_p(:,~all(isnan(n_p),1));
-n_p_s = arrayfun(@(col) n_p(find(~isnan(n_p(:, col)),1,'first'),col), 1:size(n_p,2), 'UniformOutput', 1);
-n_p_e = arrayfun(@(col) n_p(find(~isnan(n_p(:, col)),1,'last'),col), 1:size(n_p,2), 'UniformOutput', 1);
-
-% compiling vertices for polygon
-new_vert = [[e_p_s fliplr(e_p_e)];[n_p_s fliplr(n_p_e)]]';
 
 % update vertices and tag in sliding window polygon
 map_tab_comp.ping_window.Shape.Vertices = new_vert;
