@@ -179,6 +179,9 @@ classdef feature_cl
             
             % save that shapefile. Using Unique_ID for filename
             try
+                if ~isfolder(folder)
+                    mkdir(folder);
+                end
                 shapewrite(geostruct,fullfile(folder,obj.Unique_ID));
             catch
                 warning('Could not use Map toolbox function shapewrite. Feature created but not saved.')

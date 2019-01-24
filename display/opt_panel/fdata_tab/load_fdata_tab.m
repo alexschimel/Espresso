@@ -92,8 +92,10 @@ function cell_select_cback(~,evt,main_figure)
 % indices of selected line
 if ~isempty(evt.Indices)
     selected_idx = (evt.Indices(:,1));
+    selected_row =(evt.Indices(:,2));
 else
     selected_idx = [];
+    selected_row= [];
 end
 
 % update the selected lines in fdata_tab
@@ -105,15 +107,18 @@ setappdata(main_figure,'fdata_tab',fdata_tab_comp);
 % currently displayed
 disp_config = getappdata(main_figure,'disp_config');
 if ~isempty(selected_idx) && ~ismember(disp_config.Fdata_idx,selected_idx)
+    if all(unique(selected_row)==3)
+        return;
+    end
     % update only if selected lines do not include the one currently
     % displayed
     
     % udpate in disp_config
-    disp_config.Fdata_idx = selected_idx(1);
-    disp_config.AcrossDist = 0;
-    disp_config.Iping = 1; % this updates the WC view with listenIping
-    
-    
+     disp_config.Fdata_idx = selected_idx(1);
+%     disp_config.AcrossDist = 0;
+%     disp_config.Iping = 1; % this updates the WC view with listenIping
+%     
+%     
     % update map with zoom adjusted to selected lines
     update_map_tab(main_figure,0,0,1,disp_config.Fdata_idx);
     
@@ -134,9 +139,9 @@ if evt.Indices(2) == 3
     disp_config = getappdata(main_figure,'disp_config');
     
     disp_config.Fdata_idx = evt.Indices(1); % line that was switched
-    disp_config.AcrossDist = 0;
-    disp_config.Iping = 1;
-
+%     disp_config.AcrossDist = 0;
+%     disp_config.Iping = 1;
+    update_map_tab(main_figure,0,0,0,disp_config.Fdata_idx);
 end
 
 
@@ -220,10 +225,9 @@ update_file_tab(main_figure);
 % update map with zoom back on all remaining lines
 
 disp_config.Fdata_idx = numel(fdata);
-disp_config.Iping = 1;
 disp_config.AcrossDist = 0;
+disp_config.Iping = 1;
 
-update_map_tab(main_figure,0,0,1,[]);
 
 
 end

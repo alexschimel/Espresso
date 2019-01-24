@@ -246,7 +246,6 @@ for i = idx_fData(:)'
     
     % disp
     fprintf('Filtering bottom in file "%s" (%i/%i). Started at %s...\n',fData_tot{i}.ALLfilename{1},u,numel(idx_fData),datestr(now));
-    tic
     
     % filtering bottom
     fData_tot{i} = CFF_filter_WC_bottom_detect(fData_tot{i},...

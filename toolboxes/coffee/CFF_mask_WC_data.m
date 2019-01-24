@@ -126,7 +126,10 @@ dr_samples = soundSpeed./(samplingFrequencyHz.*2);
 
 % main computation section will be done in blocks, and saved as numerical
 % arrays or processedDataFile depending on fData.(sprintf('%s_SBP_SampleAmplitudes',datagramSource)).
-blockLength = 50;
+mem_struct=memory;
+
+blockLength=ceil(mem_struct.MemAvailableAllArrays/(nSamples*nBeams*8)/20);
+%blockLength = 50;
 nBlocks = ceil(nPings./blockLength);
 blocks = [ 1+(0:nBlocks-1)'.*blockLength , (1:nBlocks)'.*blockLength ];
 blocks(end) = nPings;

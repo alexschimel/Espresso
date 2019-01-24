@@ -63,7 +63,12 @@ startSampleNumber    = permute(startSampleNumber,[3,1,2]);
 interSamplesDistance = permute(interSamplesDistance,[3,1,2]); 
 
 % compute outputs
-sampleRange = bsxfun(@times,bsxfun(@plus,idxSamples,startSampleNumber),interSamplesDistance);
+sampleRange = (idxSamples+startSampleNumber).*interSamplesDistance;
+
+
+%sampleRange = bsxfun(@times,bsxfun(@plus,gpuArray(idxSamples),gpuArray(startSampleNumber)),gpuArray(interSamplesDistance));
+
+
 
 end
 

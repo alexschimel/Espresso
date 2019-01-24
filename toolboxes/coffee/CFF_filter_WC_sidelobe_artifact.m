@@ -207,9 +207,11 @@ switch method_spec
         nadirBeams = (floor((nBeams./2)-5):ceil((nBeams./2)+5)); % middle beams
         
         %% Block processing
-        
+        mem_struct=memory;
+
+        blockLength=ceil(mem_struct.MemAvailableAllArrays/(nSamples*nBeams*8)/20);
         % block processing setup
-        blockLength = 10;
+        %blockLength = 200;
         nBlocks = ceil(nPings./blockLength);
         blocks = [ 1+(0:nBlocks-1)'.*blockLength , (1:nBlocks)'.*blockLength ];
         blocks(end,2) = nPings;
@@ -246,10 +248,10 @@ switch method_spec
             % convert result back into proper format
             data = data./wcdata_factor;
             data(isnan(data)) = wcdata_nanval;
-            data = cast(data,wcdata_class);
+            %data = cast(data,wcdata_class);
             
             % save in array
-            fData.X_SBP_WaterColumnProcessed.Data.val(:,:,blockPings) = data;
+            fData.X_SBP_WaterColumnProcessed.Data.val(:,:,blockPings) = cast(data,wcdata_class);
             
             % note that other compensations of that style are possible (to
             % be tested for performance
