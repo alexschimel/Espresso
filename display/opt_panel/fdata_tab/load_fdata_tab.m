@@ -106,10 +106,8 @@ setappdata(main_figure,'fdata_tab',fdata_tab_comp);
 % update the displays if the new selection does not include the line
 % currently displayed
 disp_config = getappdata(main_figure,'disp_config');
-if ~isempty(selected_idx) && ~ismember(disp_config.Fdata_idx,selected_idx)
-    if all(unique(selected_row)==3)
-        return;
-    end
+if ~isempty(selected_idx)
+
     % update only if selected lines do not include the one currently
     % displayed
     

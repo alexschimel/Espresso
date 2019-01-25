@@ -1,12 +1,19 @@
 function [new_vert,idx_pings,idx_angles]=poly_vertices_from_fData(fData,disp_config,idx_pings_red)
-ip=disp_config.Iping;
+nb_pings = size(fData.X_BP_bottomEasting,2);
 
-% calculate pings making up the stack
-idx_pings = ip-disp_config.StackPingWidth:ip+disp_config.StackPingWidth-1;
+if ~isempty(disp_config)
+    ip=disp_config.Iping;
+    % calculate pings making up the stack
+    idx_pings = ip-disp_config.StackPingWidth:ip+disp_config.StackPingWidth-1;
+    angle_lim=[disp_config.StackAngularWidth(1)/180*pi disp_config.StackAngularWidth(2)/180*pi];
+else
+    idx_pings = 1:nb_pings;
+    angle_lim=[-inf inf];
+end
 
 id_min = nansum(idx_pings<1);
 idx_pings = idx_pings + id_min;
-nb_pings = size(fData.X_BP_bottomEasting,2);
+
 id_max = nansum(idx_pings>nb_pings);
 idx_pings = idx_pings-id_max;
 idx_pings(idx_pings<1|idx_pings>nb_pings) = [];
@@ -16,7 +23,7 @@ if ~isempty(idx_pings_red)
 end
 
 % indices of beams to keep for computation of stack view
-idx_angles = ~( disp_config.StackAngularWidth(1)/180*pi<=fData.X_PB_beamPointingAngleRad(:,idx_pings) & disp_config.StackAngularWidth(2)/180*pi>=fData.X_PB_beamPointingAngleRad(:,idx_pings) );
+idx_angles = ~( angle_lim(1)<=fData.X_PB_beamPointingAngleRad(:,idx_pings) & angle_lim(2)>=fData.X_PB_beamPointingAngleRad(:,idx_pings) );
 
 
 % next, list the pinge we'll actually use to form the rough polygon

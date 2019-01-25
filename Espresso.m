@@ -13,6 +13,13 @@ if ispc
 end
 warning('off','MATLAB:HandleGraphics:ObsoletedProperty:JavaFrame');
 
+[gpu_comp,g]=get_gpu_comp_stat();
+if gpu_comp>0
+    disp('GPU computation available');
+else
+     disp('No compatible GPU detected');
+end
+
 %% Checking and parsing input variables
 p = inputParser;
 addOptional(p,'Filenames',{},@(x) ischar(x)|iscell(x));

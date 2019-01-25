@@ -126,7 +126,7 @@ switch method_spec
             % open
             fileID_X_SBP_L1 = fopen(file_X_SBP_L1,'w+');
             % write
-            fwrite(fileID_X_SBP_L1, CFF_get_WC_data(fData,sprintf('%s_SBP_SampleAmplitudes',datagramSource),[],1,1),'int8');
+            fwrite(fileID_X_SBP_L1, CFF_get_WC_data(fData,sprintf('%s_SBP_SampleAmplitudes',datagramSource)),'int8');
             % close
             fclose(fileID_X_SBP_L1);
             % Dimensions
@@ -134,7 +134,7 @@ switch method_spec
             % re-open as memmapfile
             fData.X_SBP_L1 = memmapfile(file_X_SBP_L1, 'Format',{'int8' [nSamples nBeams nPings] 'val'},'repeat',1,'writable',true);
         else
-            fData.X_SBP_L1.Data.val =  CFF_get_WC_data(fData,sprintf('%s_SBP_SampleAmplitudes',datagramSource),[],1,1);
+            fData.X_SBP_L1.Data.val =  CFF_get_WC_data(fData,sprintf('%s_SBP_SampleAmplitudes',datagramSource));
         end
         
     case 1
@@ -156,10 +156,10 @@ switch method_spec
         end
         
         % Compute mean level across beams:
-        meanAcrossBeams   = nanmean(CFF_get_WC_data(fData,sprintf('%s_SBP_SampleAmplitudes',datagramSource),[],1,1),2);
+        meanAcrossBeams   = nanmean(CFF_get_WC_data(fData,sprintf('%s_SBP_SampleAmplitudes',datagramSource)),2);
         
         % remove this mean:
-        X_SBP_L1 = bsxfun(@minus,CFF_get_WC_data(fData,sprintf('%s_SBP_SampleAmplitudes',datagramSource),[],1,1),meanAcrossBeams); % removing mean across beams
+        X_SBP_L1 = bsxfun(@minus,CFF_get_WC_data(fData,sprintf('%s_SBP_SampleAmplitudes',datagramSource)),meanAcrossBeams); % removing mean across beams
         
         % note the same technique could maybe be applied in other
         % dimensions? across samples?
@@ -223,7 +223,7 @@ switch method_spec
             nBlockPings = length(blockPings);
             
             % grab data
-            data = CFF_get_WC_data(fData,'X_SBP_WaterColumnProcessed',blockPings,1,1,'true');
+            data = CFF_get_WC_data(fData,'X_SBP_WaterColumnProcessed','iPing',blockPings,'output_format','true');
             
             % grab bottom detect
             bottom = fData.X_BP_bottomSample(:,blockPings);
@@ -243,7 +243,9 @@ switch method_spec
             % statistical compensation. removing mean, then adding
             % reference level, like everyone does (correction "a" in
             % Parnum's thesis)
-            data = bsxfun(@plus,bsxfun(@minus,data,meanAcrossBeams),refLevel);
+            % data =
+            % bsxfun(@plus,bsxfun(@minus,data,meanAcrossBeams),refLevel);%
+            data = data-meanAcrossBeams+refLevel;%works from 2017b
             
             % convert result back into proper format
             data = data./wcdata_factor;

@@ -62,7 +62,10 @@ function [sampleAcrossDistance,sampleUpwardsDistance] = CFF_get_samples_dist(sam
 beamPointingAngle = permute(beamPointingAngle,[3,1,2]);
 
 % compute outputs
-sampleAcrossDistance  = bsxfun(@times,-sampleRange,sin(beamPointingAngle));
-sampleUpwardsDistance = bsxfun(@times,-sampleRange,cos(beamPointingAngle));
+% sampleAcrossDistance  = bsxfun(@times,-sampleRange,sin(beamPointingAngle));
+% sampleUpwardsDistance = bsxfun(@times,-sampleRange,cos(beamPointingAngle));
+
+sampleAcrossDistance  = -sampleRange.*sin(beamPointingAngle);
+sampleUpwardsDistance = -sampleRange.*cos(beamPointingAngle);
 
 end

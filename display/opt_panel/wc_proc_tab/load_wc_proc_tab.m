@@ -308,10 +308,9 @@ mask_params.remove_bottomrange = -str2double(get(wc_proc_tab_comp.r_bot,'String'
 
 % init counter
 u = 0;
-
+%profile on
 % general timer
 timer_start = now;
-
 for i = idx_fData(:)'
     
     u = u+1;
@@ -354,7 +353,8 @@ for i = idx_fData(:)'
     save(mat_fdata_file,'-struct','fData','-v7.3');
     clear fData;
 end
-
+%profile off;
+%profile viewer;
 % general timer
 timer_end = now;
 fprintf('Total time for processing: %f seconds (~%.2f minutes).\n',(timer_end-timer_start)*24*60*60,(timer_end-timer_start)*24*60);

@@ -78,9 +78,6 @@ function [fData] = CFF_initialize_WC_processing(fData,varargin)
 % init
 p = inputParser;
 
-% required
-addRequired(p,'fData',@isstruct);
-
 % optional
 % if method = fast, processed data will be recorded at input resolution,
 % that is with the same degree of quantification (0.5dB precision). If
@@ -89,7 +86,7 @@ addRequired(p,'fData',@isstruct);
 addOptional(p,'method','fast',@(x) ischar(x) && ismember(x,{'fast' 'precise'}));
 
 % parse
-parse(p,fData,varargin{:})
+parse(p,varargin{:})
 
 % get results
 method = p.Results.method;
@@ -183,7 +180,7 @@ switch method
                 blockPings  = (blocks(iB,1):blocks(iB,2));
                 
                 % get original data in true values
-                data = CFF_get_WC_data(fData,sprintf('%s_SBP_SampleAmplitudes',datagramSource),blockPings,1,1,'true');
+                data = CFF_get_WC_data(fData,sprintf('%s_SBP_SampleAmplitudes',datagramSource),'iPing',blockPings,'output_format','true');
                 
                 % Add to processed
                 fData.X_SBP_WaterColumnProcessed.Data.val(:,:,blockPings) = data;
@@ -218,7 +215,7 @@ switch method
                 blockPings  = (blocks(iB,1):blocks(iB,2));
                 
                 % get original data in true values
-                data = CFF_get_WC_data(fData,sprintf('%s_SBP_SampleAmplitudes',datagramSource),blockPings,1,1,'true');
+                data = CFF_get_WC_data(fData,sprintf('%s_SBP_SampleAmplitudes',datagramSource),'iPing',blockPings,'output_format','true');
                 
                 % write
                 fwrite(fid,data,wcdataproc_class);

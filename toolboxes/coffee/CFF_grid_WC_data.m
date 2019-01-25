@@ -85,8 +85,6 @@ function fData = CFF_grid_WC_data(fData,varargin)
 % init
 p = inputParser;
 
-% required
-addRequired(p,'fData',@isstruct);
 
 % optional
 addParameter(p,'res',1,@(x) isnumeric(x)&&x>0);
@@ -98,7 +96,7 @@ addParameter(p,'e_lim',[],@isnumeric);
 addParameter(p,'n_lim',[],@isnumeric);
 
 % parse
-parse(p,fData,varargin{:})
+parse(p,varargin{:})
 
 % get results
 res       = p.Results.res;
@@ -141,7 +139,7 @@ sonarHeading       = deg2rad(-mod(gridConvergence + vesselHeading + sonarHeading
 
 
 %% block processing setup
-
+mem_struct=memory;
 blockLength=ceil(mem_struct.MemAvailableAllArrays/(nSamples*nBeams*8)/20);
 nBlocks = ceil(nPings./blockLength);
 blocks = [ 1+(0:nBlocks-1)'.*blockLength , (1:nBlocks)'.*blockLength ];
@@ -149,7 +147,7 @@ blocks(end,2) = nPings;
 
 
 %% find grid limits
-
+%profile on;
 % initialize vectors
 minBlockE = nan(1,nBlocks);
 minBlockN = nan(1,nBlocks);
@@ -160,6 +158,7 @@ switch dim
         minBlockH = nan(1,nBlocks);
         maxBlockH = nan(1,nBlocks);
 end
+[gpu_comp,g]=get_gpu_comp_stat();
 
 for iB = 1:nBlocks
     
@@ -214,6 +213,7 @@ end
 
 
 %% initalize the grids (sum and points density per cell)
+
 switch dim
     case '2D'
         gridSum   = zeros(numElemGridN,numElemGridE,'single');
@@ -223,6 +223,11 @@ switch dim
         gridCount = zeros(numElemGridN,numElemGridE,numElemGridH,'single');
 end
 
+
+if gpu_comp>0
+    gridSum=gpuArray(gridSum);
+    gridCount=gpuArray(gridCount);
+end
 
 %% fill the grids with block processing
 
@@ -243,7 +248,8 @@ for iB = 1:nBlocks
         sonarEasting(blockPings), sonarNorthing(blockPings), sonarHeight(blockPings), sonarHeading(blockPings));
 
     % get data to grid
-    blockL = CFF_get_WC_data(fData,field_to_grid,blockPings,dr_sub,db_sub,'true');
+    blockL = CFF_get_WC_data(fData,field_to_grid,'iPing',blockPings,'dr_sub',dr_sub,'db_sub',db_sub,'output_format','true');
+    %blockL = CFF_get_WC_data(fData,field_to_grid,[],[],blockPings,dr_sub,db_sub,'true');
     
     % remove nans:
     indNan = isnan(blockL);
@@ -265,8 +271,12 @@ for iB = 1:nBlocks
     end
     
     % pass grid Level in natural before gridding
-    blockL = 10.^(blockL./10);
-    
+    if gpu_comp>0
+        blockL = 10.^(gpuArray(blockL)./10);
+    else
+         blockL = 10.^(blockL./10);
+    end
+        
     % data indices in full grid
     E_idx = round((blockE-minGridE)/res+1);
     N_idx = round((blockN-minGridN)/res+1);
@@ -289,9 +299,14 @@ for iB = 1:nBlocks
             subs = single([N_idx' E_idx']);
             clear N_idx E_idx
             
-            % Number of data points in grid cell (density/weight)
-            gridCountTemp = accumarray(subs,ones(size(blockL'),'single'),single([N_N N_E]),@sum,single(0));
-            
+            if gpu_comp>0
+                gridCountTemp = accumarray(subs,gpuArray(ones(size(blockL'),'single')),single([N_N N_E]),@sum,single(0));
+                
+            else
+                % Number of data points in grid cell (density/weight)
+                gridCountTemp = accumarray(subs,ones(size(blockL'),'single'),single([N_N N_E]),@sum,single(0));
+                
+            end
             % Sum of data points in grid cell
             gridSumTemp = accumarray(subs,blockL',single([N_N N_E]),@sum,single(0));
             
@@ -410,4 +425,6 @@ switch dim
         fData.X_1_gridVerticalResolution = vert_res;
 end
 
+% profile off;
+% profile viewer;
 

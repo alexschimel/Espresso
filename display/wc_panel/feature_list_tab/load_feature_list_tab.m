@@ -286,31 +286,86 @@ features_id = {features(:).Unique_ID};
 idx_feature_to_export = ismember(features_id,IDs);
 idx_exp = find(idx_feature_to_export);
 
-% find shapefiles to export
-shp_files = dir(fullfile(whereisroot,'feature_files'));
-idx_file_to_export = contains({shp_files(:).name},features_id(idx_feature_to_export));
-files_to_export = cellfun(@(x) fullfile(whereisroot,'feature_files',x),{shp_files(idx_file_to_export).name},'un',0);
+fData_tot = getappdata(main_figure,'fData');
 
-% output files
-if numel(files_to_export) == idx_exp
+for ii = 1:numel(idx_exp)
+    output_file = fullfile(folder_name,[sprintf('%s_%i_%s',features(idx_exp(ii)).Class,features(idx_exp(ii)).ID,features(idx_exp(ii)).Description) '.shp']);
+
+    geostruct=features(idx_exp(ii)).feature_to_geostruct();  
+    geostruct.Files={};
+    geostruct.PingStart=[];
+    geostruct.PingEnd=[];
+    geostruct.BottomDepth=[];
+    geostruct.DateTimeStart={};
+    geostruct.DateTimeEnd={};
     
-    for ii = 1:numel(idx_exp)
-        output_file = fullfile(folder_name,sprintf('%s_%i_%s',features(idx_exp(ii)).Class,features(idx_exp(ii)).ID,features(idx_exp(ii)).Description),'.shp');
-        copyfile(files_to_export{ii},output_file);
+    [idx_pings,bot_depth]=cellfun(@(x) interesect_feature_with_lines(features(idx_exp(ii)),x),fData_tot,'un',0);
+    
+    idx_lines=find(~cellfun(@isempty,idx_pings));
+    if ~isempty(idx_lines)
+        for i=idx_lines
+            geostruct.Files=[geostruct.Files fData_tot{i}.ALLfilename{1}];
+            geostruct.PingStart=[geostruct.PingStart idx_pings{i}(1)];
+            geostruct.PingEnd=[geostruct.PingEnd idx_pings{i}(2)];
+            geostruct.BottomDepth=[geostruct.BottomDepth bot_depth{i}];
+            geostruct.DateTimeStart=[geostruct.DateTimeStart,datestr(fData_tot{i}.X_1P_pingSDN(idx_pings{i}(1)),'yyyy/mm/dd HH:MM:SS')];
+            geostruct.DateTimeEnd=[geostruct.DateTimeEnd,datestr(fData_tot{i}.X_1P_pingSDN(idx_pings{i}(2)),'yyyy/mm/dd HH:MM:SS')];
+        end
     end
+    geostruct.Files=strjoin(geostruct.Files,';');
+    geostruct.PingStart=sprintf('%.0f,',geostruct.PingStart);
+    geostruct.PingStart(end)='';
+
+    geostruct.PingEnd=sprintf('%.0f,',geostruct.PingEnd);
+    geostruct.PingEnd(end)='';
+
+    geostruct.BottomDepth=sprintf('%.0f,',geostruct.BottomDepth);
+    geostruct.BottomDepth(end)='';
     
+    geostruct.DateTimeStart=strjoin(geostruct.DateTimeStart,',');
+    geostruct.DateTimeEnd=strjoin(geostruct.DateTimeEnd,',');
+    
+    
+    shapewrite(geostruct,output_file);
+    
+end
+
+
+
+end
+
+function [idx_pings,bot_depth]=interesect_feature_with_lines(feature,fData)
+idx_pings=[];
+bot_depth=0;
+[vert_poly,~,~]=poly_vertices_from_fData(fData,[],[]);
+[intersection,features_intersecting] = feature_intersect_polygon(feature,polyshape(vert_poly));
+
+if isempty(features_intersecting)
+    % escape if no intersection. No polygon to draw on
+    % stacked view
+    return;
+end
+
+% get coordinates of sliding polygon vertices
+easting = fData.X_1P_pingE;
+northing = fData.X_1P_pingN;
+
+if isempty(feature.Polygon)
+    % feature is a point
+    % find closest ping nav to point
+    [~,idx_pings] = min(sqrt((intersection(1)-easting).^2+(intersection(2)-northing).^2),[],2);
+    idx_pings=[idx_pings idx_pings];
+    bot_depth=nanmean(nanmean(fData.X_BP_bottomUpDist(:,idx_pings)));
 else
-    
-    disp('error: all or some shapefiles are missing. Features were not exported.');
+    % get vertices in stack display
+    [~,ip] = min(sqrt((intersection.Vertices(:,1)-easting).^2+(intersection.Vertices(:,2)-northing).^2),[],2);
+
+    idx_pings = [nanmin(ip) nanmax(ip)]; 
+    bot_depth =  nanmean(nanmean(fData.X_BP_bottomUpDist(:,idx_pings(1):idx_pings(end))));
     
 end
-
 end
 
-
-%%
-% Callback when calling for deleting selected features
-%
 function delete_features_callback(~,~,main_figure,IDs)
 
 disp_config = getappdata(main_figure,'disp_config');

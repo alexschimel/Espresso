@@ -127,7 +127,7 @@ end
 fdata_tab_comp = getappdata(main_figure,'fdata_tab');
 idx_active_lines = cell2mat(fdata_tab_comp.table.Data(:,3));
 
-for i = update_line_index
+for i = update_line_index(:)'
     
     % settings for navigation lines
     if idx_active_lines(i)

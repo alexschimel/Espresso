@@ -195,9 +195,9 @@ if up_stacked_wc_bool
             
     end
     
-    wc_data = CFF_get_WC_data(fData,dtg_to_load,idx_pings,1,1,'iBeam',idx_angle_keep,'iRange',idx_r);
+    wc_data = CFF_get_WC_data(fData,dtg_to_load,'iPing',idx_pings,'iBeam',idx_angle_keep,'iRange',idx_r);
     wc_data(:,idx_angles(idx_angle_keep,:)) = nan;
-               
+    [gpu_comp,g]=get_gpu_comp_stat();
     switch disp_type
         case 'depth'
             [~,sampleUpDist] = CFF_get_samples_dist(sampleRange,angleData);
@@ -210,11 +210,13 @@ if up_stacked_wc_bool
             idx_accum(idx_nan)=[];
             idx_pings_mat(idx_nan)=[];
             
-            amp_al=accumarray([idx_accum(:) idx_pings_mat(:)],gpuArray(wc_data(:)),[],@sum,single(-999))./...
-                accumarray([idx_accum(:) idx_pings_mat(:)],gpuArray(ones(numel(wc_data(:),1))),[],@sum);
-            amp_al=gather(amp_al);
-            %amp_al=accumarray([idx_accum(:) idx_pings_mat(:)],wc_data(:),[],@mean,single(-999));
-
+            if gpu_comp>0
+                amp_al=accumarray([idx_accum(:) idx_pings_mat(:)],gpuArray(wc_data(:)),[],@sum,single(-999))./...
+                    accumarray([idx_accum(:) idx_pings_mat(:)],gpuArray(ones(numel(wc_data(:),1))),[],@sum);
+                amp_al=gather(amp_al);
+            else
+                amp_al=accumarray([idx_accum(:) idx_pings_mat(:)],wc_data(:),[],@mean,single(-999));
+            end
             sampleUpDistAl=(0:(size(amp_al,1)-1))*dr_res(ip);
         case 'range'
             

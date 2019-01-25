@@ -89,8 +89,7 @@ function data = CFF_get_WC_data(fData,fieldN,varargin)
 % init
 p = inputParser;
 
-% required
-addRequired(p,'fData',@isstruct);
+
 addRequired(p,'fieldN',@ischar);
 
 % optional
@@ -101,7 +100,7 @@ addOptional(p,'output_format','true',@(x) ischar(x) && ismember(x,{'raw' 'true'}
 addParameter(p,'iBeam',[],@(x) isnumeric(x) ||isempty(x));
 addParameter(p,'iRange',[],@(x) isnumeric(x) ||isempty(x));
 % parse
-parse(p,fData,fieldN,varargin{:})
+parse(p,fieldN,varargin{:})
 
 % get results
 iPing = p.Results.iPing;
@@ -133,12 +132,12 @@ switch p.Results.output_format
         idx_undsc = regexp(fieldN,'_');
         fact    = fData.(sprintf('%s_1_%s_Factor',fieldN(1:idx_undsc(1)-1),fieldN(idx_undsc(2)+1:end)));
         nan_val = fData.(sprintf('%s_1_%s_Nanval',fieldN(1:idx_undsc(1)-1),fieldN(idx_undsc(2)+1:end)));
-        
+ 
         % convert to single class
-        data = single(data);
-        
+
+        data = single(data);        
         % add nans
-        data(data==nan_val) = NaN;
+        data(data==single(nan_val)) = single(NaN);
         
         % factor top get true values
         data = data*fact;

@@ -133,17 +133,17 @@ switch str_disp
     
     case 'Original'
         
-        amp = CFF_get_WC_data(fData,sprintf('%s_SBP_SampleAmplitudes',datagramSource),ip,1,1);
+        amp = CFF_get_WC_data(fData,sprintf('%s_SBP_SampleAmplitudes',datagramSource),'iPing',ip);
         idx_keep = amp >= cax(1);
         
     case 'Processed'
         
-        amp = CFF_get_WC_data(fData,'X_SBP_WaterColumnProcessed',ip,1,1);
+        amp = CFF_get_WC_data(fData,'X_SBP_WaterColumnProcessed','iPing',ip);
         idx_keep = amp >= cax(1);
         
     case 'Phase'
         
-        amp = CFF_get_WC_data(fData,sprintf('%s_SBP_SamplePhase',datagramSource),ip,1,1);
+        amp = CFF_get_WC_data(fData,sprintf('%s_SBP_SamplePhase',datagramSource),'iPing',ip);
         idx_keep = amp ~= 0;
         
 end
@@ -199,11 +199,11 @@ if change_line_flag
     fdata_tab_comp = getappdata(main_figure,'fdata_tab');
     if ~ismember(line_idx,fdata_tab_comp.selected_idx)
 
-        % select the cell in the table. Unfortunately, findjobj takes a while
-        % but seems the only solution to select a cell programmatically
-        jUIScrollPane = findjobj(fdata_tab_comp.table);
-        jUITable = jUIScrollPane.getViewport.getView;
-        jUITable.changeSelection(line_idx-1,0, false, false);
+%         % select the cell in the table. Unfortunately, findjobj takes a while
+%         % but seems the only solution to select a cell programmatically
+%         jUIScrollPane = findjobj(fdata_tab_comp.table);
+%         jUITable = jUIScrollPane.getViewport.getView;
+%         jUITable.changeSelection(line_idx-1,0, false, false);
 
         % and update selected_idx
         fdata_tab_comp.selected_idx = unique([fdata_tab_comp.selected_idx;line_idx]);

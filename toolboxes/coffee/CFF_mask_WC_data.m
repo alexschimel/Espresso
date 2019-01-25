@@ -237,7 +237,7 @@ for iB = 1:nBlocks
     mask = bsxfun(@and,X_1BP_OuterBeamsMask,(X_SBP_CloseRangeMask & X_SBP_BottomRangeMask & X_SBP_PolygonMask));
     
     % get raw data and apply mask
-    data = CFF_get_WC_data(fData,'X_SBP_WaterColumnProcessed',blockPings,1,1,'raw');
+    data = CFF_get_WC_data(fData,'X_SBP_WaterColumnProcessed','iPing',blockPings,'output_format','raw');
     data(~mask) = fData.X_1_WaterColumnProcessed_Nanval;
     
     % saving

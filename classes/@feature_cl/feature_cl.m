@@ -1,4 +1,4 @@
-%% feature_cl.m
+    %% feature_cl.m
 %
 % Class for Espresso features (polygon and points)
 %
@@ -108,7 +108,7 @@ classdef feature_cl
             
             % if shapefile in input, add/replace properties with its properties
             if ~isempty(p.Results.shapefile)
-
+                
                 % read shapefile
                 geostruct = shaperead(p.Results.shapefile);
                 
@@ -141,11 +141,11 @@ classdef feature_cl
                 end
                 
             end
-                
-                
+            
+            
         end
         
-        function feature_to_shapefile(obj,folder)
+        function geostruct=feature_to_geostruct(obj)
             % save feature as shapefile
             
             if ~isempty(obj.Polygon)
@@ -177,6 +177,12 @@ classdef feature_cl
             geostruct.ID = obj.ID;
             geostruct.Zone = obj.Zone;
             
+        end
+        
+        function feature_to_shapefile(obj,folder)
+            % save feature as shapefile
+            
+            geostruct=feature_to_geostruct(obj);
             % save that shapefile. Using Unique_ID for filename
             try
                 if ~isfolder(folder)
@@ -209,7 +215,7 @@ classdef feature_cl
                         'EdgeColor',col,...
                         'LineWidth',1,...
                         'tag','feature',...
-                        'UserData',obj.Unique_ID);     
+                        'UserData',obj.Unique_ID);
                     
                     % polygon label
                     h_t(ireg) = text(nanmean(poly_regs(ireg).Vertices(:,1)),nanmean(poly_regs(ireg).Vertices(:,2)),obj.disp_str(),...
@@ -259,7 +265,7 @@ classdef feature_cl
         end
         
     end
-        
+    
 end
 
 
