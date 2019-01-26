@@ -104,7 +104,15 @@ disp_config.cleanup(main_figure);
 
 
 %% get fdata, current ping and pings to be displayed
-fData       = fData_tot{disp_config.Fdata_idx};
+IDs=[fData_tot(:).ID];
+
+if ~ismember(disp_config.fData_ID , IDs)
+    disp_config.Fdata_ID = IDs(1);
+    disp_config.Iping = 1;
+    return;
+end
+
+fData = fData_tot{strcmpi(disp_config.Fdata_ID ,IDs)};
 ip          = disp_config.Iping;
 
 % get indices of pings and angles from main mab
@@ -279,7 +287,18 @@ stacked_wc_tab_comp.wc_axes.Title.String = tt;
 
 % ensure that the line now displayed in WC is selected in the list of
 % files loaded
-line_idx = disp_config.Fdata_idx;
+
+IDs=[fData_tot(:).ID];
+
+if ~ismember(disp_config.fData_ID , IDs)
+    disp_config.Fdata_ID = IDs(1);
+    disp_config.Iping = 1;
+    return;
+end
+
+line_idx = findstrcmpi(disp_config.Fdata_ID ,IDs);
+
+
 fdata_tab_comp = getappdata(main_figure,'fdata_tab');
 if ~ismember(line_idx,fdata_tab_comp.selected_idx)
     

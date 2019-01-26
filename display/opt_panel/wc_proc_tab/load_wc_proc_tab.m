@@ -267,8 +267,7 @@ fprintf('Total time for processing: %f seconds (~%.2f minutes).\n',(timer_end-ti
 setappdata(main_figure,'fData',fData_tot);
 
 disp_config = getappdata(main_figure,'disp_config');
-disp_config.Fdata_idx = idx_fData(end);
-
+disp_config.Fdata_ID =fData_tot{idx_fData(end)}.ID;
 
 % update the map, no zoom adjustment
 update_map_tab(main_figure,0,0,0,[]);
@@ -362,7 +361,8 @@ fprintf('Total time for processing: %f seconds (~%.2f minutes).\n',(timer_end-ti
 setappdata(main_figure,'fData',fData_tot);
 
 disp_config = getappdata(main_figure,'disp_config');
-disp_config.Fdata_idx = idx_fData(end);
+ 
+disp_config.Fdata_ID =fData_tot{idx_fData(end)}.ID;
 
 % update the WC view to "Processed"
 wc_tab_comp = getappdata(main_figure,'wc_tab');
@@ -447,7 +447,8 @@ fprintf('Total time for gridding: %f seconds (~%.2f minutes).\n',(timer_end-time
 setappdata(main_figure,'fData',fData_tot);
 
 disp_config = getappdata(main_figure,'disp_config');
-disp_config.Fdata_idx = idx_fData(end);
+disp_config.Fdata_ID =fData_tot{idx_fData(end)}.ID;
+
 
 % update map with new grid, zoom on changed lines
 update_map_tab(main_figure,1,0,1,idx_fData);

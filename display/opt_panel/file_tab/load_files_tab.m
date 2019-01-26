@@ -472,7 +472,7 @@ update_file_tab(main_figure);
 update_fdata_tab(main_figure);
 
 % update dispconfig to focus on the last line loaded
-disp_config.Fdata_idx = numel(fData);
+disp_config.Fdata_ID =fData{end}.ID;
 
 % update map adjusting the zoom on all lines loaded
 update_map_tab(main_figure,0,0,1,[]);

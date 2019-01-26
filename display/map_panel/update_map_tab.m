@@ -105,13 +105,19 @@ end
 
 % get disp config
 disp_config = getappdata(main_figure,'disp_config');
-if disp_config.Fdata_idx>numel(fData_tot)
-    obj.Fdata_idx = numel(fData_tot);
-    obj.Iping = 1;
+
+IDs=[fData_tot(:).ID];
+
+if ~ismember(disp_config.fData_ID , IDs)
+    disp_config.Fdata_ID = IDs(1);
+    disp_config.Iping = 1;
+    return;
 end
 
-% get fdata of current line and current ping
-fData       = fData_tot{disp_config.Fdata_idx};
+fData = fData_tot{strcmpi(disp_config.Fdata_ID ,IDS)};
+
+
+
 ip          = disp_config.Iping;
 
 if ip >numel(fData.X_1P_pingE)

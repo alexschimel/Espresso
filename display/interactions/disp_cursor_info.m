@@ -94,11 +94,15 @@ y = cp(1,2);
 
 disp_config = getappdata(main_figure,'disp_config');
 
-if disp_config.Fdata_idx > numel(fData_tot)
-    disp_config.Fdata_idx = numel(fData_tot);
+IDs=[fData_tot(:).ID];
+
+if ~ismember(disp_config.fData_ID , IDs)
+    disp_config.Fdata_ID = IDs(1);
+    disp_config.Iping = 1;
+    return;
 end
 
-fData = fData_tot{disp_config.Fdata_idx};
+fData = fData_tot{strcmpi(disp_config.Fdata_ID ,IDs)};
 
 E = fData.X_1P_pingE;
 N = fData.X_1P_pingN;

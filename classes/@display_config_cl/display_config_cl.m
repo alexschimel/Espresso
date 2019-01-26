@@ -12,7 +12,7 @@
 % * |Cax_bs|: Description (Default: ).
 % * |Cax_bathy|: Description (Default: ).
 % * |Cmap|: Description (Default: ).
-% * |Fdata_idx|: Description (Default: ).
+% * |Fdata_ID|: Description (Default: ).
 % * |Iping|: Description (Default: ).
 % * |AcrossDist|: Description (Default: ).
 % * |MET_tmproj|: Description (Default: ).
@@ -74,7 +74,7 @@ classdef display_config_cl <handle
         Cax_bs
         Cax_bathy
         Cmap
-        Fdata_idx
+        Fdata_ID
         Iping
         AcrossDist
         MET_tmproj
@@ -97,7 +97,7 @@ classdef display_config_cl <handle
             addParameter(p,'Cax_bathy',[-50 -10],@isnumeric); % colour axis limits for the map when variable displayed is bathymetry
             addParameter(p,'Mode','Normal',@ischar); % Mode of mouse interaction with the map
             addParameter(p,'MET_tmproj','',@ischar); % UTM projection of the map
-            addParameter(p,'Fdata_idx',1,@isinteger); % Index of active line
+            addParameter(p,'Fdata_ID',[],@isnumeric); % ID of active line
             addParameter(p,'Iping',1,@isinteger); % Index of current ping number
             addParameter(p,'AcrossDist',0,@isnumeric); % Across distance for pointer
             addParameter(p,'StackPingWidth',200,@isnumeric); % half-length of ping window for stacked view computation
@@ -189,15 +189,17 @@ classdef display_config_cl <handle
             
             %% ensure disp_config info is correct
 
-            % disp_config "Fdata_idx" should not exceed total number of fData loaded
-            if obj.Fdata_idx > numel(fData_tot)
-                obj.Fdata_idx = numel(fData_tot);
+            % disp_config "Fdata_ID" should not exceed total number of fData loaded
+            IDs=[fData_tot(:).ID];
+            
+            if ~ismember(obj.fData_ID , IDs)
+                obj.Fdata_ID = IDs(1);
                 obj.Iping = 1;
                 return;
             end
             
             % Iping should not be superior to total number of pings in currenf fData
-            fData = fData_tot{obj.Fdata_idx};
+            fData = fData_tot{strcmpi(obj.Fdata_ID ,IDs)};
             datagramSource = fData.MET_datagramSource;
             if obj.Iping > numel(fData.(sprintf('%s_1P_PingCounter',datagramSource)))
                 obj.Iping = 1;

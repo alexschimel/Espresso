@@ -102,7 +102,16 @@ disp_config.cleanup(main_figure);
 
 
 %% get fdata, current ping and across-dist to be displayed
-fData       = fData_tot{disp_config.Fdata_idx};
+
+IDs=[fData_tot(:).ID];
+
+if ~ismember(disp_config.fData_ID , IDs)
+    disp_config.Fdata_ID = IDs(1);
+    disp_config.Iping = 1;
+    return;
+end
+
+fData = fData_tot{strcmpi(disp_config.Fdata_ID ,IDS)};
 ip          = disp_config.Iping;
 across_dist = disp_config.AcrossDist;
 
@@ -195,7 +204,17 @@ wc_tab_comp.wc_axes.Title.String = tt;
 if change_line_flag
     % ensure that the line now displayed in WC is selected in the list of
     % files loaded
-    line_idx = disp_config.Fdata_idx;
+    
+    IDs=[fData_tot(:).ID];
+    
+    if ~ismember(disp_config.fData_ID , IDs)
+        disp_config.Fdata_ID = IDs(1);
+        disp_config.Iping = 1;
+        return;
+    end
+    
+    line_idx = findstrcmpi(disp_config.Fdata_ID ,IDs);
+
     fdata_tab_comp = getappdata(main_figure,'fdata_tab');
     if ~ismember(line_idx,fdata_tab_comp.selected_idx)
 

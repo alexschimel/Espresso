@@ -88,8 +88,19 @@ end
 %% get fdata, current ping and pings to be displayed
 disp_config = getappdata(main_figure,'disp_config');
 fData_tot   = getappdata(main_figure,'fData');
+
+
 if ~isempty(fData_tot)
-    fData = fData_tot{disp_config.Fdata_idx};
+    IDs=[fData_tot(:).ID];
+    
+    if ~ismember(disp_config.fData_ID , IDs)
+        disp_config.Fdata_ID = IDs(1);
+        disp_config.Iping = 1;
+        return;
+    end
+    
+    fData = fData_tot{strcmpi(disp_config.Fdata_ID ,IDs)};
+                
 else
     fData = [];
 end
