@@ -105,8 +105,9 @@ setappdata(main_figure,'fdata_tab',fdata_tab_comp);
 
 % update the displays if the new selection does not include the line
 % currently displayed
+fData_tot = getappdata(main_figure,'fData');
 disp_config = getappdata(main_figure,'disp_config');
-IDs=[fData_tot(:).ID];
+IDs=cellfun(@(c) c.ID,fData_tot);
 
 if ~isempty(selected_idx)
 
@@ -139,7 +140,8 @@ if evt.Indices(2) == 3
     
     disp_config = getappdata(main_figure,'disp_config');
     fData_tot = getappdata(main_figure,'fData');
-    IDs=[fData_tot(:).ID];
+    IDs=cellfun(@(c) c.ID,fData_tot);
+
     disp_config.Fdata_ID = IDs(evt.Indices(1)); % line that was switched
     %     disp_config.AcrossDist = 0;
     %     disp_config.Iping = 1;

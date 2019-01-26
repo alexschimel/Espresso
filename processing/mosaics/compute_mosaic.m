@@ -90,7 +90,7 @@ mosaicCount = zeros(numElemGridN,numElemGridE,'single');
 for iF = 1:numel(fData_tot)
     
     fData = fData_tot{iF};
-    mosaic.fData_ID(iF) = fData.ID;
+    mosaic.Fdata_ID(iF) = fData.ID;
     
     if ~isfield(fData,'X_1E_gridEasting')
         continue;
@@ -150,7 +150,7 @@ for iF = 1:numel(fData_tot)
     
     mosaicSum(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1) = mosaicSum(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1)+mosaicSumTemp;
     
-    mosaic.fData_ID = [mosaic.fData_ID fData.ID];
+    mosaic.Fdata_ID = [mosaic.Fdata_ID fData.ID];
     
 end
 

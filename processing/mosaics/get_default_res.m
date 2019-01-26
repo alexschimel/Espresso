@@ -85,7 +85,7 @@ for iF = 1:numel(fData_tot)
     
     fData = fData_tot{iF};
     
-    mosaic.fData_ID(iF) = fData.ID;
+    mosaic.Fdata_ID(iF) = fData.ID;
     
     if ~isfield(fData,'X_1E_gridEasting')
         continue;

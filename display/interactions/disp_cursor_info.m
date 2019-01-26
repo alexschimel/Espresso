@@ -94,15 +94,16 @@ y = cp(1,2);
 
 disp_config = getappdata(main_figure,'disp_config');
 
-IDs=[fData_tot(:).ID];
+IDs=cellfun(@(c) c.ID,fData_tot);
 
-if ~ismember(disp_config.fData_ID , IDs)
+
+if ~ismember(disp_config.Fdata_ID , IDs)
     disp_config.Fdata_ID = IDs(1);
     disp_config.Iping = 1;
     return;
 end
 
-fData = fData_tot{strcmpi(disp_config.Fdata_ID ,IDs)};
+fData = fData_tot{disp_config.Fdata_ID ==IDs};
 
 E = fData.X_1P_pingE;
 N = fData.X_1P_pingN;

@@ -79,7 +79,7 @@ mosaic.E_lim    = E_lim;
 mosaic.N_lim    = N_lim;
 mosaic.res      = res;
 mosaic.ID       = str2double(datestr(now,'yyyymmddHHMMSSFFF'));
-mosaic.fData_ID = [];
+mosaic.Fdata_ID = [];
 
 if res > 0
     numElemMosaicE = ceil((E_lim(2)-E_lim(1))./res)+1;

@@ -102,12 +102,7 @@ switch current_figure.SelectionType
             return;
         end
         
-        IDs_tot = nan(1,numel(fData_tot));
-        
-        for i = 1:numel(fData_tot)
-            IDs_tot(i) = fData_tot{i}.ID;
-        end
-        
+        IDs_tot=cellfun(@(c) c.ID,fData_tot);
         switch src.Type
             case 'line'
                 ID = str2double(src.Tag(1:end-4));

@@ -205,15 +205,16 @@ switch fig_anc.SelectionType
                
             case 'stacked_wc'
                 fData_tot = getappdata(main_figure,'fData');
-                IDs=[fData_tot(:).ID];
+                IDs=cellfun(@(c) c.ID,fData_tot);
+
                 
-                if ~ismember(disp_config.fData_ID , IDs)
+                if ~ismember(disp_config.Fdata_ID , IDs)
                     disp_config.Fdata_ID = IDs(1);
                     disp_config.Iping = 1;
                     return;
                 end
 
-                fData = fData_tot{strcmpi(disp_config.Fdata_ID ,IDs)};
+                fData = fData_tot{disp_config.Fdata_ID ==IDs};
                 
                 iping=round(cp(1,1));
                 depth=abs(cp(1,2));
@@ -228,15 +229,16 @@ switch fig_anc.SelectionType
                 
             case 'wc'
                 fData_tot = getappdata(main_figure,'fData');
-                IDs=[fData_tot(:).ID];
+                IDs=cellfun(@(c) c.ID,fData_tot);
+
                 
-                if ~ismember(disp_config.fData_ID , IDs)
+                if ~ismember(disp_config.Fdata_ID , IDs)
                     disp_config.Fdata_ID = IDs(1);
                     disp_config.Iping = 1;
                     return;
                 end
 
-                fData = fData_tot{strcmpi(disp_config.Fdata_ID ,IDs)};
+                fData = fData_tot{disp_config.Fdata_ID ==IDs};
                 
                 
                 depth=abs(cp(1,2));
@@ -413,15 +415,15 @@ end
         delete(txt);
         delete(hp);
         fData_tot = getappdata(main_figure,'fData');
-        IDs=[fData_tot(:).ID];
         
-        if ~ismember(disp_config.fData_ID , IDs)
+        
+        if ~ismember(disp_config.Fdata_ID , IDs)
             disp_config.Fdata_ID = IDs(1);
             disp_config.Iping = 1;
             return;
         end
         
-        fData = fData_tot{strcmpi(disp_config.Fdata_ID ,IDs)};
+        fData = fData_tot{disp_config.Fdata_ID ==IDs};
         
         
          switch ah.Tag

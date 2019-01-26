@@ -121,7 +121,7 @@ function [handles,levels,parentIdx,listing] = findjobj(container,varargin) %#ok<
 %    2009-04-23: Fixed location of popupmenus (always 20px high despite what's reported by Matlab...); fixed uiinspect processing issues; added blog link; narrower action buttons
 %    2009-04-09: Automatic 'nomenu' for uicontrol inputs; significant performance improvement
 %    2009-03-31: Fixed position of some Java components; fixed properties tooltip; fixed node visibility indication
-%    2009-02-26: Indicated components visibility (& auto-collapse non-visible containers); auto-highlight selected component; fixes in node icons, figure title & tree refresh; improved error handling; display FindJObj version update description if available
+%    2009-02-26: Indicated components visibility (& auto-collapse non-visible containers); auto-highlight selected component; fixes in node icons, figure Fdata_ID & tree refresh; improved error handling; display FindJObj version update description if available
 %    2009-02-24: Fixed update check; added dedicated labels icon
 %    2009-02-18: Fixed compatibility with old Matlab versions
 %    2009-02-08: Callbacks table fixes; use uiinspect if available; fix update check according to new FEX website
@@ -2571,7 +2571,7 @@ function [handles,levels,parentIdx,listing] = findjobj(container,varargin) %#ok<
             end
 
             % Get any unique identifying string (if available in one of several fields)
-            labelsToCheck = {'label','title','text','string','displayname','toolTipText','TooltipString','actionCommand','name','Tag','style'}; %,'UIClassID'};
+            labelsToCheck = {'label','Fdata_ID','text','string','displayname','toolTipText','TooltipString','actionCommand','name','Tag','style'}; %,'UIClassID'};
             nodeTitle = '';
             strField = '';  %#ok - used for debugging
             while ((~isa(nodeTitle,'java.lang.String') && ~ischar(nodeTitle)) || isempty(nodeTitle)) && ~isempty(labelsToCheck)
@@ -2589,7 +2589,7 @@ function [handles,levels,parentIdx,listing] = findjobj(container,varargin) %#ok<
                 nodeTitle = nodeTitle(:)';
             end
             if isempty(char(nodeTitle))
-                % No title - check whether this is an HG label whose text is gettable
+                % No Fdata_ID - check whether this is an HG label whose text is gettable
                 try
                     location = hndl.getLocationOnScreen;
                     pos = [location.getX, location.getY, hndl.getWidth, hndl.getHeight];
@@ -3184,9 +3184,9 @@ function [handles,levels,parentIdx,listing] = findjobj(container,varargin) %#ok<
     function jmenu = setTreeContextMenu(obj,node,tree_h)
           % Prepare the context menu (note the use of HTML labels)
           import javax.swing.*
-          titleStr = getNodeTitleStr(obj,node);
-          titleStr = regexprep(titleStr,'<hr>.*','');
-          menuItem0 = JMenuItem(titleStr);
+          Fdata_IDStr = getNodeTitleStr(obj,node);
+          Fdata_IDStr = regexprep(Fdata_IDStr,'<hr>.*','');
+          menuItem0 = JMenuItem(Fdata_IDStr);
           menuItem0.setEnabled(false);
           menuItem0.setArmed(false);
           %menuItem1 = JMenuItem('Export handle to findjobj_hdls');
@@ -3268,7 +3268,7 @@ function [handles,levels,parentIdx,listing] = findjobj(container,varargin) %#ok<
         jmenu.remove(item);
     end  % menuRemoveItem
 
-    %% Get the title for the tooltip and context (right-click) menu
+    %% Get the Fdata_ID for the tooltip and context (right-click) menu
     function nodeTitleStr = getNodeTitleStr(obj,node)
         try
             % Display the full classname and object name in the tooltip
@@ -3281,7 +3281,7 @@ function [handles,levels,parentIdx,listing] = findjobj(container,varargin) %#ok<
             if isempty(objName),  objName = '(none found)';  end
             nodeName = char(node.getName);
             objClass = char(obj.getClass.getName);
-            nodeTitleStr = sprintf('<html>Class name: <font color="blue">%s</font><br>Text/title: %s',objClass,objName);
+            nodeTitleStr = sprintf('<html>Class name: <font color="blue">%s</font><br>Text/Fdata_ID: %s',objClass,objName);
 
             % If the component is invisible, state this in the tooltip
             if contains(nodeName,'color="gray"')

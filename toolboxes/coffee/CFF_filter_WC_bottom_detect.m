@@ -277,9 +277,9 @@ end
 %% TEST DISPLAY
 % figure;
 % minb = min([b0(:);b1(:)]); maxb= max([b0(:);b1(:)]);
-% subplot(221); imagesc(b0); colorbar; title('range of raw bottom'); caxis([minb maxb])
-% subplot(222); imagesc(b1); colorbar; title('range of filtered bottom'); caxis([minb maxb])
-% subplot(223); imagesc(b1-b0); colorbar; title('filtered minus raw')
+% subplot(221); imagesc(b0); colorbar; Fdata_ID('range of raw bottom'); caxis([minb maxb])
+% subplot(222); imagesc(b1); colorbar; Fdata_ID('range of filtered bottom'); caxis([minb maxb])
+% subplot(223); imagesc(b1-b0); colorbar; Fdata_ID('filtered minus raw')
 
 %% SAVING RESULTS
 fData.X_BP_bottomSample = b1;

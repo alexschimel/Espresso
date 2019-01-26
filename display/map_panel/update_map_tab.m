@@ -106,17 +106,17 @@ end
 % get disp config
 disp_config = getappdata(main_figure,'disp_config');
 
-IDs=[fData_tot(:).ID];
 
-if ~ismember(disp_config.fData_ID , IDs)
+IDs=cellfun(@(c) c.ID,fData_tot);
+
+
+if ~ismember(disp_config.Fdata_ID , IDs)
     disp_config.Fdata_ID = IDs(1);
     disp_config.Iping = 1;
     return;
 end
 
-fData = fData_tot{strcmpi(disp_config.Fdata_ID ,IDS)};
-
-
+fData = fData_tot{disp_config.Fdata_ID==IDs};
 
 ip          = disp_config.Iping;
 
@@ -385,7 +385,13 @@ end
 %% SLIDING WINDOW POLYGON
 
 
+IDs=cellfun(@(c) c.ID,fData_tot);
 
+if ~ismember(disp_config.Fdata_ID , IDs)
+    return;
+end
+
+fData = fData_tot{disp_config.Fdata_ID ==IDs};
 
 % save info in usrdata as an ID
 usrdata.ID = fData.ID;

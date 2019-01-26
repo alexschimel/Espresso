@@ -190,16 +190,17 @@ classdef display_config_cl <handle
             %% ensure disp_config info is correct
 
             % disp_config "Fdata_ID" should not exceed total number of fData loaded
-            IDs=[fData_tot(:).ID];
+            IDs=cellfun(@(c) c.ID,fData_tot);
+
             
-            if ~ismember(obj.fData_ID , IDs)
+            if ~ismember(obj.Fdata_ID , IDs)
                 obj.Fdata_ID = IDs(1);
                 obj.Iping = 1;
                 return;
             end
             
             % Iping should not be superior to total number of pings in currenf fData
-            fData = fData_tot{strcmpi(obj.Fdata_ID ,IDs)};
+            fData = fData_tot{obj.Fdata_ID ==IDs};
             datagramSource = fData.MET_datagramSource;
             if obj.Iping > numel(fData.(sprintf('%s_1P_PingCounter',datagramSource)))
                 obj.Iping = 1;
