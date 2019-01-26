@@ -118,7 +118,7 @@ if ~isempty(selected_idx)
 %     
 %     
     % update map with zoom adjusted to selected lines
-    update_map_tab(main_figure,0,0,1,disp_config.Fdata_idx);
+    update_map_tab(main_figure,0,0,1,fdata_tab_comp.selected_idx);
     
 end
 
@@ -225,7 +225,7 @@ update_file_tab(main_figure);
 disp_config.Fdata_idx = numel(fdata);
 disp_config.AcrossDist = 0;
 disp_config.Iping = 1;
-
+update_map_tab(main_figure,0,0,1,[]);
 
 
 end

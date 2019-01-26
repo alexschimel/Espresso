@@ -193,6 +193,7 @@ classdef display_config_cl <handle
             if obj.Fdata_idx > numel(fData_tot)
                 obj.Fdata_idx = numel(fData_tot);
                 obj.Iping = 1;
+                return;
             end
             
             % Iping should not be superior to total number of pings in currenf fData
@@ -200,6 +201,7 @@ classdef display_config_cl <handle
             datagramSource = fData.MET_datagramSource;
             if obj.Iping > numel(fData.(sprintf('%s_1P_PingCounter',datagramSource)))
                 obj.Iping = 1;
+                return;
             end
             
         end

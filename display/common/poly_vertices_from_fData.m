@@ -1,5 +1,7 @@
 function [new_vert,idx_pings,idx_angles]=poly_vertices_from_fData(fData,disp_config,idx_pings_red)
 nb_pings = size(fData.X_BP_bottomEasting,2);
+new_vert=[];
+idx_angles=[];
 
 if ~isempty(disp_config)
     ip=disp_config.Iping;
@@ -17,6 +19,10 @@ idx_pings = idx_pings + id_min;
 id_max = nansum(idx_pings>nb_pings);
 idx_pings = idx_pings-id_max;
 idx_pings(idx_pings<1|idx_pings>nb_pings) = [];
+
+if isempty(idx_pings)
+    return;
+end
 
 if ~isempty(idx_pings_red)
     idx_pings=intersect(idx_pings,idx_pings_red);

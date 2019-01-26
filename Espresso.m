@@ -13,12 +13,7 @@ if ispc
 end
 warning('off','MATLAB:HandleGraphics:ObsoletedProperty:JavaFrame');
 
-[gpu_comp,g]=get_gpu_comp_stat();
-if gpu_comp>0
-    disp('GPU computation available');
-else
-     disp('No compatible GPU detected');
-end
+
 
 %% Checking and parsing input variables
 p = inputParser;
@@ -44,6 +39,12 @@ if ~isdeployed
     update_path(main_path);
 end
 
+[gpu_comp,g]=get_gpu_comp_stat();
+if gpu_comp>0
+    disp('GPU computation available');
+else
+     disp('No compatible GPU detected');
+end
 %% Get monitor's dimensions
 size_max = get(0, 'MonitorPositions');
 

@@ -105,6 +105,20 @@ end
 
 % get disp config
 disp_config = getappdata(main_figure,'disp_config');
+if disp_config.Fdata_idx>numel(fData_tot)
+    obj.Fdata_idx = numel(fData_tot);
+    obj.Iping = 1;
+end
+
+% get fdata of current line and current ping
+fData       = fData_tot{disp_config.Fdata_idx};
+ip          = disp_config.Iping;
+
+if ip >numel(fData.X_1P_pingE)
+    disp_config.Iping=1;
+    return;
+end
+
 
 % get map axes
 map_tab_comp = getappdata(main_figure,'Map_tab');
@@ -122,6 +136,9 @@ ylim = [nan nan];
 if isempty(update_line_index)
     update_line_index = 1:length(fData_tot);
 end
+
+update_line_index(update_line_index>length(fData_tot))=1;
+update_line_index=unique(update_line_index);
 
 % set of active lines
 fdata_tab_comp = getappdata(main_figure,'fdata_tab');
@@ -151,8 +168,14 @@ for i = update_line_index(:)'
         % line to be drawn for the first time
         
         % draw line navigation and ID it
-        handle_plot = plot(ax,fData.X_1P_pingE,fData.X_1P_pingN,'Tag',tag_id_nav,'Visible','on','Color',nav_col,'ButtonDownFcn',{@disp_wc_ping_cback,main_figure});
+         handle_plot_1 = plot(ax,fData.X_1P_pingE,fData.X_1P_pingN,'Tag',tag_id_nav,...
+            'Visible','on','Color',nav_col,'ButtonDownFcn',{@disp_wc_ping_cback,main_figure});
+             % draw dots as subsampled navigation
+        df = 10;
+        handle_plot_2=plot(ax,[fData.X_1P_pingE(1:df:end),fData.X_1P_pingE(end)],[fData.X_1P_pingN(1:df:end),fData.X_1P_pingN(end)],'.','Tag',tag_id_nav,...
+            'Visible','on','Color',nav_col,'ButtonDownFcn',{@disp_wc_ping_cback,main_figure});
         
+        handle_plot=[handle_plot_1 handle_plot_2];
         % set hand pointer when on that line
         pointerBehavior.enterFcn    = @(figHandle, currentPoint) set(figHandle, 'Pointer', 'hand');
         pointerBehavior.exitFcn     = @(figHandle, currentPoint) set(figHandle, 'Pointer', 'hand');
@@ -162,10 +185,7 @@ for i = update_line_index(:)'
         % draw circle as start of line
         plot(ax,fData.X_1P_pingE(1),fData.X_1P_pingN(1),'o','Tag',tag_id_nav,'Visible','on','Color',nav_col);
        
-        % draw dots as subsampled navigation
-        df = 10;
-        plot(ax,[fData.X_1P_pingE(1:df:end),fData.X_1P_pingE(end)],[fData.X_1P_pingN(1:df:end),fData.X_1P_pingN(end)],'.','Tag',tag_id_nav,'Visible','on','Color',nav_col);
-        
+   
         % draw end of line
         % plot(ax,fData.X_1P_pingE(end),fData.X_1P_pingN(end),'s','Tag',tag_id_nav,'Visible','on','Color',nav_col);
         
@@ -358,9 +378,8 @@ end
 
 %% SLIDING WINDOW POLYGON
 
-% get fdata of current line and current ping
-fData       = fData_tot{disp_config.Fdata_idx};
-ip          = disp_config.Iping;
+
+
 
 % save info in usrdata as an ID
 usrdata.ID = fData.ID;
@@ -370,7 +389,9 @@ str_disp = wc_str{wc_tab_comp.data_disp.Value};
 usrdata.str_disp = str_disp;
 
 [new_vert,idx_pings,idx_angles]=poly_vertices_from_fData(fData,disp_config,[]);
-
+if isempty(new_vert)
+    return;
+end
 % save all of these in usrdata for later retrieval in stacked view
 usrdata.idx_pings  = idx_pings;
 usrdata.idx_angles = idx_angles;

@@ -243,7 +243,7 @@ timer_start = now;
 for i = idx_fData(:)'
     
     u = u+1;
-    
+    tic
     % disp
     fprintf('Filtering bottom in file "%s" (%i/%i). Started at %s...\n',fData_tot{i}.ALLfilename{1},u,numel(idx_fData),datestr(now));
     
