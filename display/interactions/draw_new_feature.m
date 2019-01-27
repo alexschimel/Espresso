@@ -140,6 +140,9 @@ end
 zone = disp_config.get_zone();
 [lat,lon] = utm2ll(cp(1,1),cp(1,2),zone);
 
+fData_tot = getappdata(main_figure,'fData');
+IDs=cellfun(@(c) c.ID,fData_tot);
+
 
 %% core of function
 switch fig_anc.SelectionType
@@ -204,8 +207,6 @@ switch fig_anc.SelectionType
                 
                
             case 'stacked_wc'
-                fData_tot = getappdata(main_figure,'fData');
-                IDs=cellfun(@(c) c.ID,fData_tot);
 
                 
                 if ~ismember(disp_config.Fdata_ID , IDs)
