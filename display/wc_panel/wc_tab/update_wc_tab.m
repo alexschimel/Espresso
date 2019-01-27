@@ -215,23 +215,24 @@ IDs=cellfun(@(c) c.ID,fData_tot);
         return;
     end
     
-    line_idx = find(disp_config.Fdata_ID ==IDs);
-
-    fdata_tab_comp = getappdata(main_figure,'fdata_tab');
-    if ~ismember(line_idx,fdata_tab_comp.selected_idx)
-
+    %removed cause it re-updates everything..
+%     line_idx = find(disp_config.Fdata_ID ==IDs);
+% 
+%     fdata_tab_comp = getappdata(main_figure,'fdata_tab');
+%     if ~ismember(line_idx,fdata_tab_comp.selected_idx)
+% 
 %         % select the cell in the table. Unfortunately, findjobj takes a while
 %         % but seems the only solution to select a cell programmatically
 %         jUIScrollPane = findjobj(fdata_tab_comp.table);
 %         jUITable = jUIScrollPane.getViewport.getView;
 %         jUITable.changeSelection(line_idx-1,0, false, false);
-
-        % and update selected_idx
-        fdata_tab_comp.selected_idx = unique([fdata_tab_comp.selected_idx;line_idx]);
-
-        % and save back
-        setappdata(main_figure,'fdata_tab',fdata_tab_comp);
-    end
+% 
+%         % and update selected_idx
+%         fdata_tab_comp.selected_idx = unique([fdata_tab_comp.selected_idx;line_idx]);
+% 
+%         % and save back
+%         setappdata(main_figure,'fdata_tab',fdata_tab_comp);
+%     end
 end
 
 end

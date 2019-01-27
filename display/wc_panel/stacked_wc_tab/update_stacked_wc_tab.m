@@ -120,6 +120,7 @@ map_tab_comp = getappdata(main_figure,'Map_tab');
 usrdata = get(map_tab_comp.ping_window,'UserData');
 idx_pings = usrdata.idx_pings;
 idx_angles = usrdata.idx_angles;
+usrdata.StackAngularMode=disp_config.StackAngularMode;
 
 % the index of the current ping in the stack
 ip_sub = ip - idx_pings(1) + 1;
@@ -136,9 +137,16 @@ if strcmp(str_disp,'Processed') && ~isfield(fData,'X_SBP_WaterColumnProcessed') 
     set(wc_tab_comp.data_disp,'Value',find(contains(wc_str,'Original')));
     str_disp = 'Original';
 end
-
 %% check if stacked view needs to be changed (true) or not (false)
 stacked_wc_tab_comp  = getappdata(main_figure,'stacked_wc_tab');
+
+switch disp_config.StackAngularMode
+    case 'range'
+        ylabel(stacked_wc_tab_comp.wc_axes,'Range (m)');
+    case 'depth'
+        ylabel(stacked_wc_tab_comp.wc_axes,'Depth (m)');
+end
+
 if ~isfield(stacked_wc_tab_comp.wc_gh.UserData,'idx_pings')
     % fist time setting a stacked view
     up_stacked_wc_bool = true;
@@ -149,7 +157,8 @@ else
     up_stacked_wc_bool = ~isempty(setdiff(idx_pings,stacked_wc_tab_comp.wc_gh.UserData.idx_pings)) || ...
         ~(fData.ID==stacked_wc_tab_comp.wc_gh.UserData.ID) || ...
         ~isempty(setxor(find(idx_angles),find(stacked_wc_tab_comp.wc_gh.UserData.idx_angles))) || ...
-        ~strcmpi(str_disp,stacked_wc_tab_comp.wc_gh.UserData.str_disp);
+        ~strcmpi(str_disp,stacked_wc_tab_comp.wc_gh.UserData.str_disp)||...
+        ~strcmpi(disp_config.StackAngularMode,stacked_wc_tab_comp.wc_gh.UserData.StackAngularMode);
 end
 
 % get colour extents
@@ -175,7 +184,7 @@ if up_stacked_wc_bool
     samplingFrequencyHz = fData.(sprintf('%s_1P_SamplingFrequencyHz',datagramSource)); %Hz
     %profile on;
     dr_samples = soundSpeed./(samplingFrequencyHz.*2);
-    dr_res=4*dr_samples;
+    dr_res=2*dr_samples;
     disp_type=disp_config.StackAngularMode;
 
     
