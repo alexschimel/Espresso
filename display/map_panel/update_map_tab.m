@@ -172,20 +172,21 @@ for i = update_line_index(:)'
     
     if isempty(obj)
         % line to be drawn for the first time
-        
+        [~,fname,ext]=fileparts(fData.ALLfilename{1});
+        user_data.Filename=[fname ext];
         % draw line navigation and ID it
          handle_plot_1 = plot(ax,fData.X_1P_pingE,fData.X_1P_pingN,'Tag',tag_id_nav,...
-            'Visible','on','Color',nav_col,'ButtonDownFcn',{@disp_wc_ping_cback,main_figure});
+            'Visible','on','Color',nav_col,'ButtonDownFcn',{@disp_wc_ping_cback,main_figure},'UserData',user_data);
              % draw dots as subsampled navigation
         df = 10;
         handle_plot_2=plot(ax,[fData.X_1P_pingE(1:df:end),fData.X_1P_pingE(end)],[fData.X_1P_pingN(1:df:end),fData.X_1P_pingN(end)],'.','Tag',tag_id_nav,...
-            'Visible','on','Color',nav_col,'ButtonDownFcn',{@disp_wc_ping_cback,main_figure});
+            'Visible','on','Color',nav_col,'ButtonDownFcn',{@disp_wc_ping_cback,main_figure},'UserData',user_data);
         
         handle_plot=[handle_plot_1 handle_plot_2];
         % set hand pointer when on that line
-        pointerBehavior.enterFcn    = @(figHandle, currentPoint) set(figHandle, 'Pointer', 'hand');
-        pointerBehavior.exitFcn     = @(figHandle, currentPoint) set(figHandle, 'Pointer', 'hand');
-        pointerBehavior.traverseFcn = @(figHandle, currentPoint) set(figHandle, 'Pointer', 'hand');
+        pointerBehavior.enterFcn    = [];
+        pointerBehavior.exitFcn     = @(src, evt) exit_plot_fcn(src, evt,handle_plot);
+        pointerBehavior.traverseFcn = @(src, evt) traverse_plot_fcn(src, evt,handle_plot);
         iptSetPointerBehavior(handle_plot,pointerBehavior);
         
         % draw circle as start of line
@@ -480,7 +481,34 @@ set(ax,'xticklabel',x_labels);
 
 
 end
-
+function traverse_plot_fcn(src,~,hplot)
+set(src, 'Pointer', 'hand');
+ax=ancestor(hplot(1),'axes');
+cp=ax.CurrentPoint;
+objt=findobj(ax,'Tag','tooltipt');
+xlim=get(ax,'XLim');
+dx=diff(xlim)/1e2;
+if isempty(objt)
+    text(ax,cp(1,1)+dx,cp(1,2),hplot(1).UserData.Filename,'Tag','tooltipt','EdgeColor','k','BackgroundColor','y','VerticalAlignment','Bottom','Interpreter','none');
+else
+    set(objt,'Position',[cp(1,1)+dx,cp(1,2)],'String',hplot(1).UserData.Filename);
+end
+% obj=findobj(ax,'Tag','tooltip');
+% if isempty(obj)
+% 
+%     plot(ax,cp(1,1),cp(1,2),'Marker','o','MarkerEdgeColor','r','MarkerFaceColor','k','MarkerSize',6,'Tag','tooltip');
+% else
+%      set(obj,'XData',cp(1,1),'YData',cp(1,2));
+% end
+end
+function exit_plot_fcn(src,~,hplot)
+set(src, 'Pointer', 'hand');
+ax=ancestor(hplot(1),'axes');
+% obj=findobj(ax,'Tag','tooltip');
+% delete(obj);
+objt=findobj(ax,'Tag','tooltipt');
+delete(objt);
+end
 
 function db = pow2db_perso(pow)
 

@@ -76,13 +76,13 @@
 % Yoann Ladroit, Alexandre Schimel, NIWA. XXX
 
 %% Function
-function display_features(main_figure,IDs,axes_to_up)
+function display_features(main_figure,IDs_to_up,axes_to_up)
 
 % this function calls for an update of displaying desired features on map
 % and stacked view 
 
-if ~iscell(IDs)
-    IDs = {};
+if ~iscell(IDs_to_up)
+    IDs_to_up = {};
 end
 
 %% get fdata, current ping and pings to be displayed
@@ -162,7 +162,7 @@ for iax = 1:numel(ah_tot)
     % them.
     if ~isempty(features_h)
         id_disp = get(features_h,'UserData');
-        id_rem = ~ismember(id_disp,features_id) | ismember(id_disp,IDs);
+        id_rem = ~ismember(id_disp,features_id) | ismember(id_disp,IDs_to_up);
         delete(features_h(id_rem));
         features_h(id_rem) = [];
     end

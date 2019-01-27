@@ -73,6 +73,7 @@ uimenu(rc_menu,'Label','Select All','Callback',{@selection_callback,main_figure}
 uimenu(rc_menu,'Label','De-Select All','Callback',{@selection_callback,main_figure},'Tag','de');
 uimenu(rc_menu,'Label','Inverse Selection','Callback',{@selection_callback,main_figure},'Tag','inv');
 uimenu(rc_menu,'Label','Remove Selected Lines','Callback',{@remove_lines_cback,main_figure});
+uimenu(rc_menu,'Label','Zoom to Highlighted Lines','Callback',{@go_to_lines_cback,main_figure});
 
 % save and update the figure
 setappdata(main_figure,'fdata_tab',fdata_tab_comp);
@@ -92,10 +93,10 @@ function cell_select_cback(~,evt,main_figure)
 % indices of selected line
 if ~isempty(evt.Indices)
     selected_idx = (evt.Indices(:,1));
-    selected_row =(evt.Indices(:,2));
+    %selected_row =(evt.Indices(:,2));
 else
     selected_idx = [];
-    selected_row= [];
+    %selected_row= [];
 end
 
 % update the selected lines in fdata_tab
@@ -110,19 +111,24 @@ disp_config = getappdata(main_figure,'disp_config');
 IDs=cellfun(@(c) c.ID,fData_tot);
 
 if ~isempty(selected_idx)
-
+    
     % update only if selected lines do not include the one currently
     % displayed
     
     % udpate in disp_config
-     disp_config.Fdata_ID = IDs(selected_idx(1));
-%     disp_config.AcrossDist = 0;
-%     disp_config.Iping = 1; % this updates the WC view with listenIping
-%     
-%     
-    % update map with zoom adjusted to selected lines
-    update_map_tab(main_figure,0,0,1,fdata_tab_comp.selected_idx);
+    disp_config.Fdata_ID = IDs(selected_idx(1));
+    disp_config.AcrossDist = 0;
+    disp_config.Iping = 1; % this updates the WC view with listenIping
     
+end
+
+end
+
+function go_to_lines_cback(~,~,main_figure)
+
+fdata_tab_comp = getappdata(main_figure,'fdata_tab');
+if ~isempty(fdata_tab_comp.selected_idx)
+    update_map_tab(main_figure,0,0,1,fdata_tab_comp.selected_idx);
 end
 
 end
@@ -141,7 +147,7 @@ if evt.Indices(2) == 3
     disp_config = getappdata(main_figure,'disp_config');
     fData_tot = getappdata(main_figure,'fData');
     IDs=cellfun(@(c) c.ID,fData_tot);
-
+    
     disp_config.Fdata_ID = IDs(evt.Indices(1)); % line that was switched
     %     disp_config.AcrossDist = 0;
     %     disp_config.Iping = 1;
@@ -227,8 +233,12 @@ update_fdata_tab(main_figure);
 update_file_tab(main_figure);
 
 % update map with zoom back on all remaining lines
-
-disp_config.Fdata_ID =fdata{end}.ID;
+if ~isempty(fdata)
+    disp_config.Fdata_ID =fdata{end}.ID;
+    
+else
+    disp_config.Fdata_ID =[];
+end
 disp_config.AcrossDist = 0;
 disp_config.Iping = 1;
 update_map_tab(main_figure,0,0,1,[]);

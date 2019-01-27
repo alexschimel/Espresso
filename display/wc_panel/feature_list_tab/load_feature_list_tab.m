@@ -287,11 +287,13 @@ idx_feature_to_export = ismember(features_id,IDs);
 idx_exp = find(idx_feature_to_export);
 
 fData_tot = getappdata(main_figure,'fData');
-
+table_out=[];
 for ii = 1:numel(idx_exp)
+    
     output_file = fullfile(folder_name,[sprintf('%s_%i_%s',features(idx_exp(ii)).Class,features(idx_exp(ii)).ID,features(idx_exp(ii)).Description) '.shp']);
 
     geostruct=features(idx_exp(ii)).feature_to_geostruct();  
+    
     geostruct.Files={};
     geostruct.PingStart=[];
     geostruct.PingEnd=[];
@@ -307,31 +309,60 @@ for ii = 1:numel(idx_exp)
             geostruct.Files=[geostruct.Files fData_tot{i}.ALLfilename{1}];
             geostruct.PingStart=[geostruct.PingStart idx_pings{i}(1)];
             geostruct.PingEnd=[geostruct.PingEnd idx_pings{i}(2)];
-            geostruct.BottomDepth=[geostruct.BottomDepth bot_depth{i}];
+            geostruct.BottomDepth=[geostruct.BottomDepth abs(bot_depth{i})];
             geostruct.DateTimeStart=[geostruct.DateTimeStart,datestr(fData_tot{i}.X_1P_pingSDN(idx_pings{i}(1)),'yyyy/mm/dd HH:MM:SS')];
             geostruct.DateTimeEnd=[geostruct.DateTimeEnd,datestr(fData_tot{i}.X_1P_pingSDN(idx_pings{i}(2)),'yyyy/mm/dd HH:MM:SS')];
         end
     end
     geostruct.Files=strjoin(geostruct.Files,';');
-    geostruct.PingStart=sprintf('%.0f,',geostruct.PingStart);
-    geostruct.PingStart(end)='';
-
-    geostruct.PingEnd=sprintf('%.0f,',geostruct.PingEnd);
+   
+    if ~isempty( geostruct.PingStart)
+        geostruct.PingStart=sprintf('%.0f;',geostruct.PingStart);
+        geostruct.PingStart(end)='';
+    else
+        geostruct.PingStart=''; 
+    end
+    
+    if ~isempty( geostruct.PingEnd)
+    geostruct.PingEnd=sprintf('%.0f;',geostruct.PingEnd);
     geostruct.PingEnd(end)='';
+    else
+        geostruct.PingEnd=''; 
+    end
 
-    geostruct.BottomDepth=sprintf('%.0f,',geostruct.BottomDepth);
+    if ~isempty( geostruct.BottomDepth)
+    geostruct.BottomDepth=sprintf('%.0f;',geostruct.BottomDepth);
     geostruct.BottomDepth(end)='';
+    else
+        geostruct.BottomDepth='';
+    end
     
-    geostruct.DateTimeStart=strjoin(geostruct.DateTimeStart,',');
-    geostruct.DateTimeEnd=strjoin(geostruct.DateTimeEnd,',');
+    geostruct.DateTimeStart=strjoin(geostruct.DateTimeStart,';');
+    geostruct.DateTimeEnd=strjoin(geostruct.DateTimeEnd,';');
     
-    
+
     shapewrite(geostruct,output_file);
     
+    geostruct=rmfield(geostruct,'BoundingBox');
+    switch geostruct.Geometry
+        case 'Polygon'
+            geostruct.Lat=nanmean(geostruct.Lat(:));
+            geostruct.Lon=nanmean(geostruct.Lon(:));
+    end
+    if isempty(table_out)
+        table_out=struct2table(geostruct,'AsArray',1);
+    else
+         table_tmp=struct2table(geostruct,'AsArray',1);
+         table_out=[table_out;table_tmp];
+    end
+
 end
 
-
-
+if ~isempty(table_out)
+     output_file_csv = fullfile(folder_name,[sprintf('%s_saved_features_%s',datestr(now,'yyyymmddHHMMSS')) '.csv']);
+     writetable(table_out,output_file_csv);
+end
+fprintf('Export to %s finished\n',folder_name);
 end
 
 function [idx_pings,bot_depth]=interesect_feature_with_lines(feature,fData)
