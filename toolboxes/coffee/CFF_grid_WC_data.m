@@ -300,16 +300,16 @@ for iB = 1:nBlocks
             clear N_idx E_idx
             
             if gpu_comp>0
-                gridCountTemp = accumarray(subs,gpuArray(ones(size(blockL'),'single')),single([N_N N_E]),@sum,single(0));
-                
+                gridCountTemp = gather(accumarray(subs,gpuArray(ones(size(blockL'),'single')),single([N_N N_E]),@sum,single(0)));  
+                % Sum of data points in grid cell
+                gridSumTemp = gather(accumarray(subs,gpuArray(blockL'),single([N_N N_E]),@sum,single(0)));
             else
                 % Number of data points in grid cell (density/weight)
                 gridCountTemp = accumarray(subs,ones(size(blockL'),'single'),single([N_N N_E]),@sum,single(0));
-                
+                % Sum of data points in grid cell
+                gridSumTemp = accumarray(subs,blockL',single([N_N N_E]),@sum,single(0));
             end
-            % Sum of data points in grid cell
-            gridSumTemp = accumarray(subs,blockL',single([N_N N_E]),@sum,single(0));
-            
+
             clear blockE blockN blockH blockL subs
             
             % Summing sums in full grid
@@ -328,13 +328,19 @@ for iB = 1:nBlocks
             
             subs = single([N_idx' E_idx' H_idx']);
             clear N_idx E_idx H_idx
-            
-            % Number of data points in grid cell (density/weight)
-            gridCountTemp = accumarray(subs,ones(size(blockH'),'single'),single([N_N N_E N_H]),@sum,single(0));
-            
-            % Sum of data points in grid cell
-            gridSumTemp = accumarray(subs,blockL',single([N_N N_E N_H]),@sum,single(0));
-            
+            if gpu_comp>0
+                % Number of data points in grid cell (density/weight)
+                gridCountTemp = gather(accumarray(subs,gpuArray(ones(size(blockH'),'single')),single([N_N N_E N_H]),@sum,single(0)));
+                
+                % Sum of data points in grid cell
+                gridSumTemp = gather(accumarray(subs,gpuArray(blockL'),single([N_N N_E N_H]),@sum,single(0)));
+            else
+                % Number of data points in grid cell (density/weight)
+                gridCountTemp = accumarray(subs,gpuArray(ones(size(blockH'),'single'),single([N_N N_E N_H]),@sum,single(0)));
+                
+                % Sum of data points in grid cell
+                gridSumTemp = accumarray(subs,blockL',single([N_N N_E N_H]),@sum,single(0));
+            end
             clear blockE blockN blockH blockL subs
             
             % Summing sums in full grid

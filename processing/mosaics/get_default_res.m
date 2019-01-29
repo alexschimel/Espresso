@@ -94,7 +94,9 @@ for iF = 1:numel(fData_tot)
     E = fData.X_1E_gridEasting;
     N = fData.X_N1_gridNorthing;
     L = fData.X_NEH_gridLevel;
-    
+    if isa(L,'gpuArray')
+        L=gather(L);
+    end
     if size(L,3)>1
         data = pow2db_perso(nanmean(10.^(L/10),3));
     else

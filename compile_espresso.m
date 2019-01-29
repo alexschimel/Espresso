@@ -36,8 +36,7 @@ folders{1} = fullfile(path,'toolboxes');
 folders{2} = fullfile(path, 'processing');
 folders{3} = fullfile(path, 'classes');
 folders{4} = fullfile(path, 'display');
-folders{5} = fullfile(path, 'fileIO');
-folders{6} = fullfile(path, 'general');
+folders{5} = fullfile(path, 'io');
 
 folders(cellfun(@isempty, folders)) = [];
 

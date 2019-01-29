@@ -100,8 +100,8 @@ classdef display_config_cl <handle
             addParameter(p,'Fdata_ID',[],@isnumeric); % ID of active line
             addParameter(p,'Iping',1,@isinteger); % Index of current ping number
             addParameter(p,'AcrossDist',0,@isnumeric); % Across distance for pointer
-            addParameter(p,'StackPingWidth',200,@isnumeric); % half-length of ping window for stacked view computation
-            addParameter(p,'StackAngularWidth',[-10 10],@isnumeric); % angular aperture for stacked view computation (in degrees)
+            addParameter(p,'StackPingWidth',300,@isnumeric); % half-length of ping window for stacked view computation
+            addParameter(p,'StackAngularWidth',[-30 30],@isnumeric); % angular aperture for stacked view computation (in degrees)
             addParameter(p,'StackAngularMode','range',@isnumeric);
             addParameter(p,'Act_features',{},@iscell); % active features
             

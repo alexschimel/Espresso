@@ -131,6 +131,7 @@ switch dest
         ext_figs = [ext_figs dest_fig];
         setappdata(main_figure,'ext_figs',ext_figs);
         centerfig(dest_fig);
+        iptPointerManager(dest_fig);
         userdata.LinkedProps=linkprop([main_figure;dest_fig],{'WindowButtonDownFcn','WindowButtonMotionFcn','WindowButtonUpFcn','KeyPressFcn' 'Pointer'});
         dest_fig.UserData=userdata;
         

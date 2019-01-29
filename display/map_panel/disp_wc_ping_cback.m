@@ -129,6 +129,7 @@ switch current_figure.SelectionType
         
         disp_config.AcrossDist = sign(z)*across_dist;
         disp_config.Fdata_ID = IDs_tot(idx_fData);
+        
         disp_config.Iping = ip;
         
         

@@ -223,7 +223,9 @@ for i = update_line_index(:)'
         E = fData.X_1E_gridEasting;
         N = fData.X_N1_gridNorthing;
         L = fData.X_NEH_gridLevel;
-        
+        if isa(L,'gpuArray')
+            L=gather(L);
+        end
         % get vertical mean whether data is in 2D already or in 3D
         switch disp_config.Var_disp
             case 'wc_int'

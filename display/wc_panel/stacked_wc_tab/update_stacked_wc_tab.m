@@ -124,6 +124,7 @@ usrdata.StackAngularMode=disp_config.StackAngularMode;
 
 % the index of the current ping in the stack
 ip_sub = ip - idx_pings(1) + 1;
+ip_sub=nanmax(ip_sub,1);
 
 % get data type to be grabbed
 wc_tab_comp  = getappdata(main_figure,'wc_tab');
@@ -146,6 +147,9 @@ switch disp_config.StackAngularMode
     case 'depth'
         ylabel(stacked_wc_tab_comp.wc_axes,'Depth (m)');
 end
+[iangles,~] = find(idx_angles==0);
+idx_angle_keep = nanmin(iangles):nanmax(iangles);
+
 
 if ~isfield(stacked_wc_tab_comp.wc_gh.UserData,'idx_pings')
     % fist time setting a stacked view
@@ -167,9 +171,6 @@ cax_min = str2double(wc_proc_tab_comp.clim_min_wc.String);
 cax_max = str2double(wc_proc_tab_comp.clim_max_wc.String);
 cax = [cax_min cax_max];
 
-[iangles,~] = find(idx_angles==0);
-idx_angle_keep = nanmin(iangles):nanmax(iangles);
-
 
 %% get data for stacked view
 datagramSource = fData.MET_datagramSource;
@@ -184,67 +185,102 @@ if up_stacked_wc_bool
     samplingFrequencyHz = fData.(sprintf('%s_1P_SamplingFrequencyHz',datagramSource)); %Hz
     %profile on;
     dr_samples = soundSpeed./(samplingFrequencyHz.*2);
-    dr_res=2*dr_samples;
+    
     disp_type=disp_config.StackAngularMode;
-
+    
     
     switch disp_type
         case 'depth'
             bot=fData.X_BP_bottomUpDist(idx_angle_keep,idx_pings);
             idx_r=1:nanmax(ceil(-bot(:)./dr_samples(ip)));
+            n_res=2;
         case'range'
             bot=fData.X_BP_bottomSample(idx_angle_keep,idx_pings);
             idx_r=1:nanmax(bot(:));
+            n_res=1;
     end
-
+    dr_res=n_res*dr_samples;
+    
     sampleRange = CFF_get_samples_range(idx_r',fData.(sprintf('%s_BP_StartRangeSampleNumber',datagramSource))(idx_angle_keep,ip),dr_samples(ip));
-    angleData=fData.(sprintf('%s_BP_BeamPointingAngle',datagramSource))(idx_angle_keep,idx_pings)/100/180*pi;
     
-  
+    [gpu_comp,g]=get_gpu_comp_stat();
+
+    nSamples=numel(idx_r);
+    nBeams=numel(idx_angle_keep);
+    if gpu_comp==0
+        mem_struct=memory;
+        blockLength=ceil(mem_struct.MemAvailableAllArrays/(nSamples/n_res*nBeams*8)/10);
+    else
+        blockLength=ceil(g.AvailableMemory/(nSamples*nBeams*8)/4);
+    end
+    % block processing setup
+    %blockLength = 200;
+    nPings = numel(idx_pings);
+    nBlocks = ceil(nPings/(blockLength));
     
-    switch str_disp        
-        case 'Original'            
-            dtg_to_load=sprintf('%s_SBP_SampleAmplitudes',datagramSource);        
-        case 'Processed'            
-            dtg_to_load='X_SBP_WaterColumnProcessed';            
-        case 'Phase'    
-            dtg_to_load=sprintf('%s_SBP_SamplePhase',datagramSource);  
+    switch str_disp
+        case 'Original'
+            dtg_to_load=sprintf('%s_SBP_SampleAmplitudes',datagramSource);
+        case 'Processed'
+            dtg_to_load='X_SBP_WaterColumnProcessed';
+        case 'Phase'
+            dtg_to_load=sprintf('%s_SBP_SamplePhase',datagramSource);
             
     end
     
-    wc_data = CFF_get_WC_data(fData,dtg_to_load,'iPing',idx_pings,'iBeam',idx_angle_keep,'iRange',idx_r);
-    wc_data(:,idx_angles(idx_angle_keep,:)) = nan;
-    [gpu_comp,g]=get_gpu_comp_stat();
+    blocks = [ 1+(0:nBlocks-1)'.*blockLength , (1:nBlocks)'.*blockLength ];
+    blocks(end,2) = nPings;
+    amp_al=nan(ceil(nSamples/n_res),nPings);
+    
+    for iB = 1:nBlocks
+        
+        % list of pings in this block
+        blockPings  = (blocks(iB,1):blocks(iB,2));
+        angleData=fData.(sprintf('%s_BP_BeamPointingAngle',datagramSource))(idx_angle_keep,idx_pings(blockPings))/100/180*pi;
+        wc_data = CFF_get_WC_data(fData,dtg_to_load,'iPing',idx_pings(blockPings),'iBeam',idx_angle_keep,'iRange',idx_r);
+        wc_data(:,idx_angles(idx_angle_keep,blockPings)) = nan;
+        
+        switch disp_type
+            case 'depth'
+                [~,sampleUpDist] = CFF_get_samples_dist(sampleRange,angleData);
+                idx_accum=ceil(-sampleUpDist/(dr_res(ip)));
+                idx_accum(idx_accum>size(sampleUpDist,1))=size(sampleUpDist,1);
+                idx_pings_mat=shiftdim(blockPings,-1);
+                idx_pings_mat=repmat(idx_pings_mat-blockPings(1)+1,size(idx_accum,1),size(idx_accum,2));
+
+                
+                if gpu_comp>0
+                    idx_nan=isnan(wc_data);
+                    wc_data(idx_nan)=[];
+                    idx_accum(idx_nan)=[];
+                    idx_pings_mat(idx_nan)=[];
+                    if g.AvailableMemory/8/4<=numel(wc_data)
+                        gpuDevice(1);
+                    end
+                    tmp=accumarray(gpuArray([idx_accum(:) idx_pings_mat(:)]),gpuArray(wc_data(:)),[],@sum,single(-999))./...
+                        accumarray(gpuArray([idx_accum(:) idx_pings_mat(:)]),gpuArray(1),[],@sum);
+                    amp_al(1:size(tmp,1),blockPings)=gather(tmp);
+                else
+                    tmp=accumarray([idx_accum(:) idx_pings_mat(:)],wc_data(:),[],@nanmean,single(-999));
+                    amp_al(1:size(tmp,1),blockPings)=tmp;
+                end
+                
+            case 'range'
+                
+                amp_al(:,blockPings) = squeeze(nanmean(wc_data,2));
+        end
+    end
+    
+    
     switch disp_type
         case 'depth'
-            [~,sampleUpDist] = CFF_get_samples_dist(sampleRange,angleData);
-            idx_accum=ceil(-sampleUpDist/(dr_res(ip)));
-            idx_accum(idx_accum>size(sampleUpDist,1))=size(sampleUpDist,1);
-            idx_pings_mat=shiftdim(idx_pings,-1);
-            idx_pings_mat=repmat(idx_pings_mat-idx_pings(1)+1,size(idx_accum,1),size(idx_accum,2));
-            idx_nan=isnan(wc_data);
-            wc_data(idx_nan)=[];
-            idx_accum(idx_nan)=[];
-            idx_pings_mat(idx_nan)=[];
-            
-            if gpu_comp>0
-                amp_al=accumarray([idx_accum(:) idx_pings_mat(:)],gpuArray(wc_data(:)),[],@sum,single(-999))./...
-                    accumarray([idx_accum(:) idx_pings_mat(:)],gpuArray(ones(numel(wc_data(:),1))),[],@sum);
-                amp_al=gather(amp_al);
-            else
-                amp_al=accumarray([idx_accum(:) idx_pings_mat(:)],wc_data(:),[],@mean,single(-999));
-            end
             sampleUpDistAl=(0:(size(amp_al,1)-1))*dr_res(ip);
         case 'range'
-            
-            
-            amp_al = squeeze(nanmean(wc_data,2));
             sampleUpDist = sampleRange;
-            sampleUpDistAl = nanmean(sampleUpDist(:,~idx_angles(idx_angle_keep,ip_sub)),2);
+            sampleUpDistAl = nanmean(sampleUpDist(:,~idx_angles(idx_angle_keep,ceil(nanmean(blockPings)))),2);
     end
-    
-%     profile off;
-%     profile viewer;
+    %     profile off;
+    %     profile viewer;
     switch str_disp
         
         case {'Original';'Processed'}
@@ -257,7 +293,7 @@ if up_stacked_wc_bool
             
     end
     
-
+    
     
     % display stacked view itself
     set(stacked_wc_tab_comp.wc_gh,...
@@ -305,25 +341,25 @@ if ~ismember(disp_config.Fdata_ID , IDs)
     disp_config.Iping = 1;
     return;
 end
-
-line_idx = find(disp_config.Fdata_ID ==IDs);
-
-
-fdata_tab_comp = getappdata(main_figure,'fdata_tab');
-if ~ismember(line_idx,fdata_tab_comp.selected_idx)
-    
-    % select the cell in the table. Unfortunately, findjobj takes a while
-    % but seems the only solution to select a cell programmatically
-    jUIScrollPane = findjobj(fdata_tab_comp.table);
-    jUITable = jUIScrollPane.getViewport.getView;
-    jUITable.changeSelection(line_idx-1,0, false, false);
-    
-    % and update selected_idx
-    fdata_tab_comp.selected_idx = unique([fdata_tab_comp.selected_idx;line_idx]);
-    
-    % and save back
-    setappdata(main_figure,'fdata_tab',fdata_tab_comp);
-end
+% Commen to avoid issued with double update.
+% line_idx = find(disp_config.Fdata_ID ==IDs);
+% 
+% 
+% fdata_tab_comp = getappdata(main_figure,'fdata_tab');
+% if ~ismember(line_idx,fdata_tab_comp.selected_idx)
+%     
+%     % select the cell in the table. Unfortunately, findjobj takes a while
+%     % but seems the only solution to select a cell programmatically
+%     jUIScrollPane = findjobj(fdata_tab_comp.table);
+%     jUITable = jUIScrollPane.getViewport.getView;
+%     jUITable.changeSelection(line_idx-1,0, false, false);
+%     
+%     % and update selected_idx
+%     fdata_tab_comp.selected_idx = unique([fdata_tab_comp.selected_idx;line_idx]);
+%     
+%     % and save back
+%     setappdata(main_figure,'fdata_tab',fdata_tab_comp);
+% end
 
 
 end
