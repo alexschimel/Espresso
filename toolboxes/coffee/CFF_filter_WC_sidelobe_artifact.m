@@ -232,11 +232,11 @@ switch method_spec
             meanAcrossBeams = mean(data,2,'omitnan');
             
             % find the reference level as the median level of all samples above the median bottom sample in nadir beams:
-            nadirBottom = round(nanmedian(bottom(nadirBeams,:))); % median value -> bottom
+            nadirBottom = round(inpaint_nans(nanmedian(bottom(nadirBeams,:)))); % median value -> bottom
             refLevel = nan(1,1,nBlockPings);
             
             for iP = 1:nBlockPings
-                nadir_data=data(1:nadirBottom(iP),nadirBeams,iP);
+                nadir_data = data(1:nadirBottom(iP),nadirBeams,iP);
                 refLevel(1,1,iP) = nanmedian(nadir_data(:));
             end
             
