@@ -203,15 +203,16 @@ if up_stacked_wc_bool
     
     sampleRange = CFF_get_samples_range(idx_r',fData.(sprintf('%s_BP_StartRangeSampleNumber',datagramSource))(idx_angle_keep,ip),dr_samples(ip));
     
-    [gpu_comp,g]=get_gpu_comp_stat();
+    [gpu_comp,g] = get_gpu_comp_stat();
 
-    nSamples=numel(idx_r);
-    nBeams=numel(idx_angle_keep);
-    if gpu_comp==0
-        mem_struct=memory;
-        blockLength=ceil(mem_struct.MemAvailableAllArrays/(nSamples/n_res*nBeams*8)/10);
+    nSamples = numel(idx_r);
+    nBeams = numel(idx_angle_keep);
+    
+    if gpu_comp == 0
+        mem_struct = memory;
+        blockLength = ceil(mem_struct.MemAvailableAllArrays/(nSamples/n_res*nBeams*8)/10);
     else
-        blockLength=ceil(g.AvailableMemory/(nSamples*nBeams*8)/4);
+        blockLength = ceil(g.AvailableMemory/(nSamples*nBeams*8)/4);
     end
     % block processing setup
     %blockLength = 200;
@@ -230,7 +231,8 @@ if up_stacked_wc_bool
     
     blocks = [ 1+(0:nBlocks-1)'.*blockLength , (1:nBlocks)'.*blockLength ];
     blocks(end,2) = nPings;
-    amp_al=nan(ceil(nSamples/n_res),nPings);
+    
+    amp_al = nan(ceil(nSamples/n_res),nPings);
     
     for iB = 1:nBlocks
         
