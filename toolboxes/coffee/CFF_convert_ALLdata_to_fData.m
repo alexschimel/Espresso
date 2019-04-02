@@ -751,6 +751,7 @@ for iF = 1:nStruct
             fData.WC_1P_Date                            = ALLdata.EM_WaterColumn.Date(iFirstDatagram(:,1));
             fData.WC_1P_TimeSinceMidnightInMilliseconds = ALLdata.EM_WaterColumn.TimeSinceMidnightInMilliseconds(iFirstDatagram(:,1));
             fData.WC_1P_SoundSpeed                      = ALLdata.EM_WaterColumn.SoundSpeed(iFirstDatagram(:,1));
+            fData.WC_1P_OriginalSamplingFrequencyHz     = ALLdata.EM_WaterColumn.SamplingFrequency(iFirstDatagram(:,1)).*0.01; % in Hz
             fData.WC_1P_SamplingFrequencyHz             = (ALLdata.EM_WaterColumn.SamplingFrequency(iFirstDatagram(:,1)).*0.01)./dr_sub; % in Hz
             fData.WC_1P_TXTimeHeave                     = ALLdata.EM_WaterColumn.TXTimeHeave(iFirstDatagram(:,1));
             fData.WC_1P_TVGFunctionApplied              = ALLdata.EM_WaterColumn.TVGFunctionApplied(iFirstDatagram(:,1));
@@ -769,18 +770,25 @@ for iF = 1:nStruct
             end
 
             % for the other fields, sum the numbers from heads
-            fData.WC_1P_NumberOfDatagrams          = sum(ALLdata.EM_WaterColumn.NumberOfDatagrams(iFirstDatagram),2)';
-            fData.WC_1P_NumberOfTransmitSectors    = sum(ALLdata.EM_WaterColumn.NumberOfTransmitSectors(iFirstDatagram),2)';
-            fData.WC_1P_TotalNumberOfReceiveBeams  = sum(ALLdata.EM_WaterColumn.TotalNumberOfReceiveBeams(iFirstDatagram),2)';
-            fData.WC_1P_TotalNumberOfRecordedBeams = sum(ceil(ALLdata.EM_WaterColumn.TotalNumberOfReceiveBeams(iFirstDatagram)/db_sub),2)'; % each head is decimated in beam individually
+            if length(headNumber) > 1
+                fData.WC_1P_NumberOfDatagrams                  = sum(ALLdata.EM_WaterColumn.NumberOfDatagrams(iFirstDatagram),2)';
+                fData.WC_1P_NumberOfTransmitSectors            = sum(ALLdata.EM_WaterColumn.NumberOfTransmitSectors(iFirstDatagram),2)';
+                fData.WC_1P_OriginalTotalNumberOfReceiveBeams  = sum(ALLdata.EM_WaterColumn.TotalNumberOfReceiveBeams(iFirstDatagram),2)';
+                fData.WC_1P_TotalNumberOfReceiveBeams          = sum(ceil(ALLdata.EM_WaterColumn.TotalNumberOfReceiveBeams(iFirstDatagram)/db_sub),2)'; % each head is decimated in beam individually
+            else
+                fData.WC_1P_NumberOfDatagrams                  = ALLdata.EM_WaterColumn.NumberOfDatagrams(iFirstDatagram);
+                fData.WC_1P_NumberOfTransmitSectors            = ALLdata.EM_WaterColumn.NumberOfTransmitSectors(iFirstDatagram);
+                fData.WC_1P_OriginalTotalNumberOfReceiveBeams  = ALLdata.EM_WaterColumn.TotalNumberOfReceiveBeams(iFirstDatagram);
+                fData.WC_1P_TotalNumberOfReceiveBeams          = ceil(ALLdata.EM_WaterColumn.TotalNumberOfReceiveBeams(iFirstDatagram)/db_sub); % each head is decimated in beam individually
+            end
 
             % get number of pings, maximum number of transmit sectors,
             % maximum number of receive beams and maximum number of samples
             % in any given ping to use as the output data dimensions
             nPings              = length(pingCounters);
             maxNTransmitSectors = max(fData.WC_1P_NumberOfTransmitSectors);
-            maxNBeams           = max(fData.WC_1P_TotalNumberOfReceiveBeams);
-            maxNBeams_sub       = max(fData.WC_1P_TotalNumberOfRecordedBeams); % number of beams to extract (decimated)
+            maxNBeams           = max(fData.WC_1P_OriginalTotalNumberOfReceiveBeams);
+            maxNBeams_sub       = max(fData.WC_1P_TotalNumberOfReceiveBeams); % number of beams to extract (decimated)
             maxNSamples         = max(cellfun(@(x) max(x), ALLdata.EM_WaterColumn.NumberOfSamples(ismember(ALLdata.EM_WaterColumn.PingCounter,pingCounters))));
             maxNSamples_sub     = ceil(maxNSamples/dr_sub); % number of samples to extract (decimated)
             
