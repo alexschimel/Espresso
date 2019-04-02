@@ -1,20 +1,44 @@
-function [gpu_comp,g]=get_gpu_comp_stat()
-    g=[];
-    gpu_comp=0;
+function [gpu_comp,g] = get_gpu_comp_stat()
+
+% initialize negative results
+g = [];
+gpu_comp = 0;
+
 try
-    [gpu_comp,~]=license('checkout','Distrib_Computing_Toolbox');
+    
+    % first check that the license is available
+    gpu_comp = license('checkout','Distrib_Computing_Toolbox');
+    
     if gpu_comp
+        
+        % get the default GPU device
         g = gpuDevice;
-        if str2double(g.ComputeCapability)>=3&&g.SupportsDouble&&g.DriverVersion>7&&g.DeviceSupported>0&&g.ToolkitVersion>=9.1
-            gpu_comp=g.DeviceSupported;
+        
+        % and test its compatibility for the work ahead
+        if str2double(g.ComputeCapability) >= 3 && ... % Computational capability of the CUDA device. Must meet required specification.
+                g.SupportsDouble && ...                % Indicates if this device can support double precision operations.
+                g.DriverVersion > 7 && ...             % The CUDA device driver version currently in use. Must meet required specification.
+                g.DeviceSupported > 0 && ...           % Indicates if toolbox can use this device. Not all devices are supported; for example, if their ComputeCapability is insufficient, the toolbox cannot use them.
+                g.ToolkitVersion >= 8.0                % Version of the CUDA toolkit used by the current release of MATLAB: R2017b is 8.0, R2018b is 9.1, R2019a is 10.0 etc.
+            
+            % all good
+            gpu_comp = g.DeviceSupported;
         else
-            gpu_comp=0;
+            % not good... shouldn't we do g = []; ?
+            gpu_comp = 0;
         end
-    end   
+    end
 catch err
+    
+    % a message of hope...
     if contains((err.message),'CUDA')||contains((err.message),'graphics driver')
         fprintf('Your graphic card might support CUDA, but it looks like your graphic driver needs to be updated to the latest version from the NVidia Website.\nIf you do not have a CUDA enabled NVidia graphic card, please ignore this long message and let us know about it...\n')
     end
+    
+    % reset negative results
+    g = [];
+    gpu_comp = 0;
+    
 end
 
 end
