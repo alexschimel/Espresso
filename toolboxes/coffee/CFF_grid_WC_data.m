@@ -158,7 +158,8 @@ switch dim
         minBlockH = nan(1,nBlocks);
         maxBlockH = nan(1,nBlocks);
 end
-[gpu_comp,g]=get_gpu_comp_stat();
+
+gpu_comp = get_gpu_comp_stat();
 
 for iB = 1:nBlocks
     
@@ -225,8 +226,8 @@ end
 
 
 if gpu_comp>0
-    gridSum=gpuArray(gridSum);
-    gridCount=gpuArray(gridCount);
+    gridSum   = gpuArray(gridSum);
+    gridCount = gpuArray(gridCount);
 end
 
 %% fill the grids with block processing
