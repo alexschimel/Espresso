@@ -42,12 +42,12 @@
 % *INPUT VARIABLES*
 %
 % * |ALLdataGroup|: Required. ALLdata structure or cells of ALLdata
-% structures. 
+% structures.
 % * |dr_sub|: Optional. Scalar for decimation in range. Default: 1 (no
-% decimation). 
+% decimation).
 % * |db_sub|: Optional. Scalar for decimation in beams. Default: 1 (no
-% decimation). 
-% * |fData|: Optional. Existing fData structure to add to. 
+% decimation).
+% * |fData|: Optional. Existing fData structure to add to.
 %
 % *OUTPUT VARIABLES*
 %
@@ -70,7 +70,7 @@
 %         * AP: "Amplitude and phase" water-column data
 %     More codes for the 'a' part will be created if more datagrams are
 %     parsed. Data derived from computations can be recorded back into
-%     fData using 'X' for the "a" code. 
+%     fData using 'X' for the "a" code.
 %     * b: code indicating data dimensions (rows/columns)
 %         * 1P: ping-like single-row-vector
 %         * B1: beam-like single-column-vector
@@ -311,7 +311,7 @@ for iF = 1:nStruct
         end
         
     end
-
+    
     
     %% EM_SoundSpeedProfile (v2 VERIFIED)
     
@@ -712,37 +712,83 @@ for iF = 1:nStruct
                 update_flag = 1;
             end
             
-            % get indices of first datagram for each ping
-            [pingCounters,iFirstDatagram] = unique(ALLdata.EM_WaterColumn.PingCounter,'stable');
+            % get the number of heads
+            headNumber = unique(ALLdata.EM_WaterColumn.SystemSerialNumber,'stable');
             
-            % get data dimensions
-            nPings              = length(pingCounters); % total number of pings in file
-            maxNBeams           = max(ALLdata.EM_WaterColumn.TotalNumberOfReceiveBeams); % maximum number of beams for a ping in file
-            maxNTransmitSectors = max(ALLdata.EM_WaterColumn.NumberOfTransmitSectors); % maximum number of transmit sectors for a ping in file
-            maxNSamples         = max(cellfun(@(x) max(x),ALLdata.EM_WaterColumn.NumberOfSamples)); % max number of samples for a beam in file
+            % get the list of pings and the index of first datagram for
+            % each ping
+            if length(headNumber) == 1
+                % if only one head...
+                [pingCounters, iFirstDatagram] = unique(ALLdata.EM_WaterColumn.PingCounter,'stable');
+            else
+                % in case there's more than one head, we're going to only
+                % keep pings for which we have data for all heads
+                
+                % pings for first head
+                pingCounters = unique(ALLdata.EM_WaterColumn.PingCounter(ALLdata.EM_WaterColumn.SystemSerialNumber==headNumber(1)),'stable');
+                
+                % for each other head, get ping numbers and only keep
+                % intersection
+                for iH = 2:length(headNumber)
+                    pingCountersOtherHead = unique(ALLdata.EM_WaterColumn.PingCounter(ALLdata.EM_WaterColumn.SystemSerialNumber==headNumber(iH)),'stable');
+                    pingCounters = intersect(pingCounters, pingCountersOtherHead);
+                end
+                
+                % get the index of first datagram for each ping and each
+                % head 
+                for iH = 1:length(headNumber)
+                    iFirstDatagram(:,iH) = find( ALLdata.EM_WaterColumn.SystemSerialNumber == headNumber(iH) & ...
+                        ismember(ALLdata.EM_WaterColumn.PingCounter,pingCounters) & ...
+                        ALLdata.EM_WaterColumn.DatagramNumbers == 1);
+                end
+            end
             
-            % decimating beams and samples
-            maxNBeams_sub       = ceil(maxNBeams/db_sub); % number of beams to extract
-            maxNSamples_sub     = ceil(maxNSamples/dr_sub); % number of samples to extract
+            % save ping numbers
+            fData.WC_1P_PingCounter = pingCounters;
             
-            % read data per ping from first datagram of each ping
-            fData.WC_1P_Date                            = ALLdata.EM_WaterColumn.Date(iFirstDatagram);
-            fData.WC_1P_TimeSinceMidnightInMilliseconds = ALLdata.EM_WaterColumn.TimeSinceMidnightInMilliseconds(iFirstDatagram);
-            fData.WC_1P_PingCounter                     = ALLdata.EM_WaterColumn.PingCounter(iFirstDatagram);
-            fData.WC_1P_NumberOfDatagrams               = ALLdata.EM_WaterColumn.NumberOfDatagrams(iFirstDatagram);
-            fData.WC_1P_NumberOfTransmitSectors         = ALLdata.EM_WaterColumn.NumberOfTransmitSectors(iFirstDatagram);
-            fData.WC_1P_TotalNumberOfReceiveBeams       = ALLdata.EM_WaterColumn.TotalNumberOfReceiveBeams(iFirstDatagram);
-            fData.WC_1P_SoundSpeed                      = ALLdata.EM_WaterColumn.SoundSpeed(iFirstDatagram);
-            fData.WC_1P_SamplingFrequencyHz             = (ALLdata.EM_WaterColumn.SamplingFrequency(iFirstDatagram).*0.01)./dr_sub; % in Hz
-            fData.WC_1P_TXTimeHeave                     = ALLdata.EM_WaterColumn.TXTimeHeave(iFirstDatagram);
-            fData.WC_1P_TVGFunctionApplied              = ALLdata.EM_WaterColumn.TVGFunctionApplied(iFirstDatagram);
-            fData.WC_1P_TVGOffset                       = ALLdata.EM_WaterColumn.TVGOffset(iFirstDatagram);
-            fData.WC_1P_ScanningInfo                    = ALLdata.EM_WaterColumn.ScanningInfo(iFirstDatagram);
+            % for the following fields, take value from first datagram in
+            % first head
+            fData.WC_1P_Date                            = ALLdata.EM_WaterColumn.Date(iFirstDatagram(:,1));
+            fData.WC_1P_TimeSinceMidnightInMilliseconds = ALLdata.EM_WaterColumn.TimeSinceMidnightInMilliseconds(iFirstDatagram(:,1));
+            fData.WC_1P_SoundSpeed                      = ALLdata.EM_WaterColumn.SoundSpeed(iFirstDatagram(:,1));
+            fData.WC_1P_SamplingFrequencyHz             = (ALLdata.EM_WaterColumn.SamplingFrequency(iFirstDatagram(:,1)).*0.01)./dr_sub; % in Hz
+            fData.WC_1P_TXTimeHeave                     = ALLdata.EM_WaterColumn.TXTimeHeave(iFirstDatagram(:,1));
+            fData.WC_1P_TVGFunctionApplied              = ALLdata.EM_WaterColumn.TVGFunctionApplied(iFirstDatagram(:,1));
+            fData.WC_1P_TVGOffset                       = ALLdata.EM_WaterColumn.TVGOffset(iFirstDatagram(:,1));
+            fData.WC_1P_ScanningInfo                    = ALLdata.EM_WaterColumn.ScanningInfo(iFirstDatagram(:,1));
+            
+            % test for inconsistencies between heads and raise a warning if
+            % one is detected
+            if length(headNumber) > 1
+                fields = {'Date','TimeSinceMidnightInMilliseconds','SoundSpeed','SamplingFrequency','TXTimeHeave','TVGFunctionApplied','TVGOffset','ScanningInfo'};
+                for iF = 1:length(fields)                    
+                    if any(any(ALLdata.EM_WaterColumn.(fields{iF})(iFirstDatagram(:,1))'.*ones(1,length(headNumber))~=ALLdata.EM_WaterColumn.(fields{iF})(iFirstDatagram)))
+                        warning(sprintf('System has more than one head and "%s" data are inconsistent between heads for at least one ping. Using information from first head anyway.',fields{iF}));
+                    end
+                end
+            end
+
+            % for the other fields, sum the numbers from heads
+            fData.WC_1P_NumberOfDatagrams          = sum(ALLdata.EM_WaterColumn.NumberOfDatagrams(iFirstDatagram),2)';
+            fData.WC_1P_NumberOfTransmitSectors    = sum(ALLdata.EM_WaterColumn.NumberOfTransmitSectors(iFirstDatagram),2)';
+            fData.WC_1P_TotalNumberOfReceiveBeams  = sum(ALLdata.EM_WaterColumn.TotalNumberOfReceiveBeams(iFirstDatagram),2)';
+            fData.WC_1P_TotalNumberOfRecordedBeams = sum(ceil(ALLdata.EM_WaterColumn.TotalNumberOfReceiveBeams(iFirstDatagram)/db_sub),2)'; % each head is decimated in beam individually
+
+            % get number of pings, maximum number of transmit sectors,
+            % maximum number of receive beams and maximum number of samples
+            % in any given ping to use as the output data dimensions
+            nPings              = length(pingCounters);
+            maxNTransmitSectors = max(fData.WC_1P_NumberOfTransmitSectors);
+            maxNBeams           = max(fData.WC_1P_TotalNumberOfReceiveBeams);
+            maxNBeams_sub       = max(fData.WC_1P_TotalNumberOfRecordedBeams); % number of beams to extract (decimated)
+            maxNSamples         = max(cellfun(@(x) max(x), ALLdata.EM_WaterColumn.NumberOfSamples(ismember(ALLdata.EM_WaterColumn.PingCounter,pingCounters))));
+            maxNSamples_sub     = ceil(maxNSamples/dr_sub); % number of samples to extract (decimated)
             
             % initialize data per transmit sector and ping
             fData.WC_TP_TiltAngle            = nan(maxNTransmitSectors,nPings);
             fData.WC_TP_CenterFrequency      = nan(maxNTransmitSectors,nPings);
             fData.WC_TP_TransmitSectorNumber = nan(maxNTransmitSectors,nPings);
+            fData.WC_TP_SystemSerialNumber   = nan(maxNTransmitSectors,nPings);
             
             % initialize data per decimated beam and ping
             fData.WC_BP_BeamPointingAngle      = nan(maxNBeams_sub,nPings);
@@ -751,6 +797,7 @@ for iF = 1:nStruct
             fData.WC_BP_DetectedRangeInSamples = zeros(maxNBeams_sub,nPings);
             fData.WC_BP_TransmitSectorNumber   = nan(maxNBeams_sub,nPings);
             fData.WC_BP_BeamNumber             = nan(maxNBeams_sub,nPings);
+            fData.WC_BP_SystemSerialNumber     = nan(maxNBeams_sub,nPings);
             
             % path to binary file for WC data
             file_binary = fullfile(wc_dir,'WC_SBP_SampleAmplitudes.dat');
@@ -770,71 +817,109 @@ for iF = 1:nStruct
             % now get data for each ping
             for iP = 1:nPings
                 
-                % find datagrams composing this ping
-                pingCounter = fData.WC_1P_PingCounter(1,iP); % ping number (ex: 50455)
-                % nDatagrams  = fData.WC_1P_NumberOfDatagrams(1,iP); % theoretical number of datagrams for this ping (ex: 7)
-                iDatagrams  = find(ALLdata.EM_WaterColumn.PingCounter==pingCounter); % index of the datagrams making up this ping in ALLdata.EM_Watercolumn (ex: 58-59-61-64)
-                nDatagrams  = length(iDatagrams); % actual number of datagrams available (ex: 4)
-                
-                % some datagrams may be missing, like in the example. Detect and adjust...
-                datagramOrder     = ALLdata.EM_WaterColumn.DatagramNumbers(iDatagrams); % order of the datagrams (ex: 4-3-6-2, the missing one is 1st, 5th and 7th)
-                [~,IX]            = sort(datagramOrder);
-                iDatagrams        = iDatagrams(IX); % index of the datagrams making up this ping in ALLdata.EM_Watercolumn, but in the right order (ex: 64-59-58-61, missing datagrams are still missing)
-                nBeamsPerDatagram = ALLdata.EM_WaterColumn.NumberOfBeamsInThisDatagram(iDatagrams); % number of beams in each datagram making up this ping (ex: 56-61-53-28)
-                
-                % assuming transmit sectors data are not split between several datagrams, get that data from the first datagram.
-                nTransmitSectors = fData.WC_1P_NumberOfTransmitSectors(1,iP); % number of transmit sectors in this ping
-                fData.WC_TP_TiltAngle(1:nTransmitSectors,iP)            = ALLdata.EM_WaterColumn.TiltAngle{iDatagrams(1)};
-                fData.WC_TP_CenterFrequency(1:nTransmitSectors,iP)      = ALLdata.EM_WaterColumn.CenterFrequency{iDatagrams(1)};
-                fData.WC_TP_TransmitSectorNumber(1:nTransmitSectors,iP) = ALLdata.EM_WaterColumn.TransmitSectorNumber{iDatagrams(1)};
+                % ping number (ex: 50455)
+                pingCounter = fData.WC_1P_PingCounter(1,iP);
                 
                 % initialize the water column data matrix for that ping.
-                % original data are in "int8" format, the NaN equivalent
+                % Original data are in "int8" format, the NaN equivalent
                 % will be -128
                 if fileID >= 0
                     SB_temp = zeros(maxNSamples_sub,maxNBeams_sub,'int8') - 128;
                 end
                 
-                % and then read the data in each datagram
-                for iD = 1:nDatagrams
+                % intialize number of sectors and beams recorded so far for
+                % that ping (needed for multiple heads)
+                nTxSectTot = 0;
+                nBeamTot = 0;
+                
+                for iH = 1:length(headNumber)
                     
-                    % index of beams in output structure for this datagram
-                    [iBeams,idx_beams] = unique(ceil((sum(nBeamsPerDatagram(1:iD-1)) + (1:nBeamsPerDatagram(iD)))/db_sub));
-                    % old approach:
-                    % iBeams = sum(nBeamsPerDatagram(1:iD-1)) + (1:nBeamsPerDatagram(iD));
-                    % idx_beams = (1:numel(iBeams));
+                    headSSN = headNumber(iH);
                     
-                    % ping x beam data
-                    fData.WC_BP_BeamPointingAngle(iBeams,iP)      = ALLdata.EM_WaterColumn.BeamPointingAngle{iDatagrams(iD)}(idx_beams);
-                    fData.WC_BP_StartRangeSampleNumber(iBeams,iP) = round(ALLdata.EM_WaterColumn.StartRangeSampleNumber{iDatagrams(iD)}(idx_beams)./dr_sub);
-                    fData.WC_BP_NumberOfSamples(iBeams,iP)        = round(ALLdata.EM_WaterColumn.NumberOfSamples{iDatagrams(iD)}(idx_beams)./dr_sub);
-                    fData.WC_BP_DetectedRangeInSamples(iBeams,iP) = round(ALLdata.EM_WaterColumn.DetectedRangeInSamples{iDatagrams(iD)}(idx_beams)./dr_sub);
-                    fData.WC_BP_TransmitSectorNumber(iBeams,iP)   = ALLdata.EM_WaterColumn.TransmitSectorNumber2{iDatagrams(iD)}(idx_beams);
-                    fData.WC_BP_BeamNumber(iBeams,iP)             = ALLdata.EM_WaterColumn.BeamNumber{iDatagrams(iD)}(idx_beams);
+                    % index of the datagrams making up this ping/head in ALLdata.EM_Watercolumn (ex: 58-59-61-64)
+                    iDatagrams  = find( ALLdata.EM_WaterColumn.PingCounter == pingCounter & ...
+                                        ALLdata.EM_WaterColumn.SystemSerialNumber == headSSN);
                     
-                    % now getting watercolumn data (beams x samples)
-                    if fileID >= 0
+                    % actual number of datagrams available (ex: 4)
+                    nDatagrams  = length(iDatagrams);
+                    
+                    % some datagrams may be missing. Need to detect and adjust.
+                    % order of the datagrams (ex: 4-3-6-2, the missing one is 1st, 5th and 7th)
+                    datagramOrder     = ALLdata.EM_WaterColumn.DatagramNumbers(iDatagrams); 
+                    [~,IX]            = sort(datagramOrder);
+                    iDatagrams        = iDatagrams(IX); % index of the datagrams making up this ping in ALLdata.EM_Watercolumn, but in the right order (ex: 64-59-58-61, missing datagrams are still missing)
+                    nBeamsPerDatagram = ALLdata.EM_WaterColumn.NumberOfBeamsInThisDatagram(iDatagrams); % number of beams in each datagram making up this ping (ex: 56-61-53-28)
+                    
+                    % number of transmit sectors to record
+                    nTxSect = ALLdata.EM_WaterColumn.NumberOfTransmitSectors(iDatagrams(1));
+
+                    % indices of those sectors in output structure
+                    iTxSectDest = nTxSectTot + (1:nTxSect);
+                    
+                    % recording data per transmit sector
+                    fData.WC_TP_TiltAngle(iTxSectDest,iP)            = ALLdata.EM_WaterColumn.TiltAngle{iDatagrams(1)};
+                    fData.WC_TP_CenterFrequency(iTxSectDest,iP)      = ALLdata.EM_WaterColumn.CenterFrequency{iDatagrams(1)};
+                    fData.WC_TP_TransmitSectorNumber(iTxSectDest,iP) = ALLdata.EM_WaterColumn.TransmitSectorNumber{iDatagrams(1)};
+                    fData.WC_TP_SystemSerialNumber(iTxSectDest,iP)   = headSSN;
+                    
+                    % updating total number of sectors recorded so far
+                    nTxSectTot = nTxSectTot + nTxSect;
+                    
+                    % and then read the data in each datagram
+                    for iD = 1:nDatagrams
                         
-                        for iB = 1:numel(iBeams)
+                        % indices of desired beams in this head/datagram
+                        if iD == 1
+                            % if first datagram, start with first beam
+                            iBeamStart = 1;
+                        else
+                            % if not first datagram, continue the
+                            % decimation where we left it
+                            nBeamsLastDatag = nBeamsPerDatagram(iD-1);
+                            lastRecBeam  = iBeamSource(end);
+                            iBeamStart = db_sub - (nBeamsLastDatag-lastRecBeam);
+                        end
+                        iBeamSource = iBeamStart:db_sub:nBeamsPerDatagram(iD);
+                        
+                        % number of beams to record
+                        nBeam = length(iBeamSource);
+                        
+                        % indices of those beams in output structure
+                        iBeamDest = nBeamTot + (1:nBeam);
+                        
+                        fData.WC_BP_BeamPointingAngle(iBeamDest,iP)      = ALLdata.EM_WaterColumn.BeamPointingAngle{iDatagrams(iD)}(iBeamSource);
+                        fData.WC_BP_StartRangeSampleNumber(iBeamDest,iP) = round(ALLdata.EM_WaterColumn.StartRangeSampleNumber{iDatagrams(iD)}(iBeamSource)./dr_sub);
+                        fData.WC_BP_NumberOfSamples(iBeamDest,iP)        = round(ALLdata.EM_WaterColumn.NumberOfSamples{iDatagrams(iD)}(iBeamSource)./dr_sub);
+                        fData.WC_BP_DetectedRangeInSamples(iBeamDest,iP) = round(ALLdata.EM_WaterColumn.DetectedRangeInSamples{iDatagrams(iD)}(iBeamSource)./dr_sub);
+                        fData.WC_BP_TransmitSectorNumber(iBeamDest,iP)   = ALLdata.EM_WaterColumn.TransmitSectorNumber2{iDatagrams(iD)}(iBeamSource);
+                        fData.WC_BP_BeamNumber(iBeamDest,iP)             = ALLdata.EM_WaterColumn.BeamNumber{iDatagrams(iD)}(iBeamSource);
+                        fData.WC_BP_SystemSerialNumber(iBeamDest,iP)     = headSSN;
+                        
+                        % now getting watercolumn data (beams x samples)
+                        if fileID >= 0
                             
-                            % actual number of samples in that beam
-                            Ns = ALLdata.EM_WaterColumn.NumberOfSamples{iDatagrams(iD)}(idx_beams(iB));
-                            
-                            % number of samples we're going to record:
-                            Ns_sub = ceil(Ns/dr_sub);
-                            
-                            % get the data:
-                            fseek(fid_all,ALLdata.EM_WaterColumn.SampleAmplitudePosition{iDatagrams(iD)}(idx_beams(iB)),'bof');
-                            SB_temp(1:Ns_sub,iBeams(iB)) = fread(fid_all,Ns_sub,'int8',dr_sub-1);
-                            
-                            % Note: the original method was to grab the
-                            % data that had been recorded in the ALLdata
-                            % structure, aka:
-                            % SB_temp(1:Ns_sub,iBeams(iB)) = ALLdata.EM_WaterColumn.SampleAmplitude{iDatagrams(iD)}{idx_beams(iB)}(1:dr_sub:Ns_sub*dr_sub)';
+                            for iB = 1:nBeam
+                                
+                                % actual number of samples in that beam
+                                nSamp = ALLdata.EM_WaterColumn.NumberOfSamples{iDatagrams(iD)}(iBeamSource(iB));
+                                
+                                % number of samples we're going to record
+                                nSamp_sub = ceil(nSamp/dr_sub);
+                                
+                                % read the data in original file and record
+                                pos = ALLdata.EM_WaterColumn.SampleAmplitudePosition{iDatagrams(iD)}(iBeamSource(iB));
+                                fseek(fid_all,pos,'bof');
+                                SB_temp(1:nSamp_sub,nBeamTot+iB) = fread(fid_all,nSamp_sub,'int8',dr_sub-1);
+                                
+                            end
                             
                         end
                         
+                        % updating total number of beams recorded so far
+                        nBeamTot = nBeamTot + nBeam;
+                        
                     end
+                    
                 end
                 
                 % store data on binary file
