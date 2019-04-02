@@ -39,12 +39,15 @@ if ~isdeployed
     update_path(main_path);
 end
 
-[gpu_comp,g]=get_gpu_comp_stat();
-if gpu_comp>0
-    disp('GPU computation available');
+%% check for possibility of GPU computation
+fprintf('...Checking for GPU computation availability and compatibility...');
+[gpu_comp,g] = get_gpu_comp_stat();
+if gpu_comp > 0
+    fprintf(' Available.\n');
 else
-     disp('No compatible GPU detected');
+    fprintf(' Unavailable.\n');
 end
+
 %% Get monitor's dimensions
 size_max = get(0, 'MonitorPositions');
 
