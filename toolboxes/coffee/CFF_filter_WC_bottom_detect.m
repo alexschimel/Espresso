@@ -134,7 +134,7 @@ bE = fData.X_BP_bottomEasting;
 bN = fData.X_BP_bottomNorthing;
 bH = fData.X_BP_bottomHeight;
 
-b0(b0==0) = NaN; % repace no detects by NaNs
+b0(b0==0) = NaN; % replace no detects by NaNs
 
 % dimensions
 nBeams = size(b0,1);

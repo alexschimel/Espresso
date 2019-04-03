@@ -415,19 +415,36 @@ for nF = 1:numel(files_to_load)
     % loading temp
     fData_temp = load(mat_fdata_file);
     
-    % Interpolating navigation data from ancillary sensors to ping time
-    fprintf('...Interpolating navigation data from ancillary sensors to ping time...\n');
-    fData_temp = CFF_compute_ping_navigation(fData_temp);
-    
     % checking UTM zone for projection
     if strcmp(disp_config.MET_tmproj,'')
-        % first file, use its projection
-        disp_config.MET_tmproj = fData_temp.MET_tmproj;
-    elseif ~strcmp(disp_config.MET_tmproj,fData_temp.MET_tmproj)
-        % different projection. Abandon loading
-        fprintf('... File is using different UTM zone for projection than project. Loading aborted.\n');
-        clean_fdata(fData_temp);
-        continue;
+        
+        % first file to be loaded, use the default ellipsoid and
+        % projection that are relevant to the data
+        
+        % Interpolating navigation data from ancillary sensors to ping time
+        fprintf('...Interpolating navigation data from ancillary sensors to ping time...\n');
+        fData_temp = CFF_compute_ping_navigation(fData_temp);
+        
+        % save the info in disp_config
+        disp_config.MET_datagramSource = fData_temp.MET_datagramSource;
+        disp_config.MET_ellips         = fData_temp.MET_ellips;
+        disp_config.MET_tmproj         = fData_temp.MET_tmproj;
+        
+        fprintf('...Projection for this session defined from navigation data in this first loaded file (ellipsoid: %s, UTM zone: %s).\n', disp_config.MET_ellips, disp_config.MET_tmproj);
+        
+    else
+        
+        % Not the first file being loaded, use info from disp_config. Note
+        % that this means we may force the use of a UTM projection for
+        % navigation data that is outside that zone. It should still work.
+        
+        % Interpolating navigation data from ancillary sensors to ping time
+        fprintf('...Interpolating navigation data from ancillary sensors to ping time...\n');
+        fData_temp = CFF_compute_ping_navigation(fData_temp, ...
+            disp_config.MET_datagramSource, ...
+            disp_config.MET_ellips, ...
+            disp_config.MET_tmproj);
+        
     end
     
     % Processing bottom detect

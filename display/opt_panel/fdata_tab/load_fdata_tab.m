@@ -228,16 +228,14 @@ if isempty(fdata)
     disp_config.MET_tmproj = '';
 end
 
-
 update_fdata_tab(main_figure);
 update_file_tab(main_figure);
 
 % update map with zoom back on all remaining lines
 if ~isempty(fdata)
-    disp_config.Fdata_ID =fdata{end}.ID;
-    
+    disp_config.Fdata_ID = fdata{end}.ID;
 else
-    disp_config.Fdata_ID =[];
+    disp_config.Fdata_ID = [];
 end
 disp_config.AcrossDist = 0;
 disp_config.Iping = 1;
