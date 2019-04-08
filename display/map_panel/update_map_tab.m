@@ -224,7 +224,7 @@ for i = update_line_index(:)'
         N = fData.X_N1_gridNorthing;
         L = fData.X_NEH_gridLevel;
         if isa(L,'gpuArray')
-            L=gather(L);
+            L = gather(L);
         end
         % get vertical mean whether data is in 2D already or in 3D
         switch disp_config.Var_disp
@@ -370,8 +370,6 @@ end
 cax = disp_config.get_cax();
 caxis(ax,cax);
 
-
-
 %% IF NO LINE IS ACTIVE, STOP HERE
 if ~any(idx_active_lines)
     map_tab_comp.ping_window.Visible = 'off';
@@ -381,14 +379,9 @@ else
     map_tab_comp.ping_window.Visible = 'on';
 end
     
-
-
-
-
 %% SLIDING WINDOW POLYGON
 
-
-IDs=cellfun(@(c) c.ID,fData_tot);
+IDs = cellfun(@(c) c.ID,fData_tot);
 
 if ~ismember(disp_config.Fdata_ID , IDs)
     return;
@@ -403,14 +396,15 @@ wc_str = wc_tab_comp.data_disp.String;
 str_disp = wc_str{wc_tab_comp.data_disp.Value};
 usrdata.str_disp = str_disp;
 
-[new_vert,idx_pings,idx_angles]=poly_vertices_from_fData(fData,disp_config,[]);
+[new_vert,idx_pings,idx_angles] = poly_vertices_from_fData(fData,disp_config,[]);
+
 if isempty(new_vert)
     return;
 end
+
 % save all of these in usrdata for later retrieval in stacked view
 usrdata.idx_pings  = idx_pings;
 usrdata.idx_angles = idx_angles;
-
 
 % update vertices and tag in sliding window polygon
 map_tab_comp.ping_window.Shape.Vertices = new_vert;
@@ -483,6 +477,10 @@ set(ax,'xticklabel',x_labels);
 
 
 end
+
+
+%% SUBFUNCTIONS
+
 function traverse_plot_fcn(src,~,hplot)
 set(src, 'Pointer', 'hand');
 ax=ancestor(hplot(1),'axes');
@@ -503,6 +501,7 @@ end
 %      set(obj,'XData',cp(1,1),'YData',cp(1,2));
 % end
 end
+
 function exit_plot_fcn(src,~,hplot)
 set(src, 'Pointer', 'hand');
 ax=ancestor(hplot(1),'axes');

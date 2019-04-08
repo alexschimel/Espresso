@@ -308,6 +308,10 @@ if up_stacked_wc_bool
     
     % Xlim and Ylim. Cropping the nans at top and bottom
     xlim_stacked = [idx_pings(1) idx_pings(end)];
+    if xlim_stacked(1) == xlim_stacked(2)
+        % in case only one ping in this view (file with 1 ping)
+        xlim_stacked(2) = xlim_stacked(1)+1;
+    end
     idx_al_s = find(~isnan(nanmean(amp_al,2)),1,'first');
     idx_al_e = find(~isnan(nanmean(amp_al,2)),1,'last');
     ylim_stacked = [sampleUpDistAl(idx_al_s)*0.9 sampleUpDistAl(idx_al_e)*1.1];

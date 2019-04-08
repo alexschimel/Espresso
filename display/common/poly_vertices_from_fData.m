@@ -1,16 +1,17 @@
-function [new_vert,idx_pings,idx_angles]=poly_vertices_from_fData(fData,disp_config,idx_pings_red)
+function [new_vert,idx_pings,idx_angles] = poly_vertices_from_fData(fData,disp_config,idx_pings_red)
+
 nb_pings = size(fData.X_BP_bottomEasting,2);
-new_vert=[];
-idx_angles=[];
+new_vert = [];
+idx_angles = [];
 
 if ~isempty(disp_config)
-    ip=disp_config.Iping;
+    ip = disp_config.Iping;
     % calculate pings making up the stack
     idx_pings = ip-disp_config.StackPingWidth:ip+disp_config.StackPingWidth-1;
-    angle_lim=[disp_config.StackAngularWidth(1)/180*pi disp_config.StackAngularWidth(2)/180*pi];
+    angle_lim = [disp_config.StackAngularWidth(1)/180*pi disp_config.StackAngularWidth(2)/180*pi];
 else
     idx_pings = 1:nb_pings;
-    angle_lim=[-inf inf];
+    angle_lim = [-inf inf];
 end
 
 id_min = nansum(idx_pings<1);
@@ -25,7 +26,7 @@ if isempty(idx_pings)
 end
 
 if ~isempty(idx_pings_red)
-    idx_pings=intersect(idx_pings,idx_pings_red);
+    idx_pings = intersect(idx_pings,idx_pings_red);
 end
 
 % indices of beams to keep for computation of stack view
@@ -55,3 +56,11 @@ n_p_e = arrayfun(@(col) n_p(find(~isnan(n_p(:, col)),1,'last'),col), 1:size(n_p,
 
 % compiling vertices for polygon
 new_vert = [[e_p_s fliplr(e_p_e)];[n_p_s fliplr(n_p_e)]]';
+
+% if new_vert has only two vertices (will happen if fData has only one
+% ping), add another vertex between the two 
+if size(new_vert,1)==2
+    new_vert(3,:) = new_vert(2,:);
+    new_vert(2,:) = (new_vert(1,:)+new_vert(3,:))./2;
+end
+    

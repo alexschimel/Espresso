@@ -415,35 +415,87 @@ for nF = 1:numel(files_to_load)
     % loading temp
     fData_temp = load(mat_fdata_file);
     
-    % checking UTM zone for projection
+    % checking project's UTM zone
     if strcmp(disp_config.MET_tmproj,'')
+        % Project has no projection yet, let's use the one for that file.
         
-        % first file to be loaded, use the default ellipsoid and
-        % projection that are relevant to the data
-        
-        % Interpolating navigation data from ancillary sensors to ping time
-        fprintf('...Interpolating navigation data from ancillary sensors to ping time...\n');
-        fData_temp = CFF_compute_ping_navigation(fData_temp);
-        
-        % save the info in disp_config
-        disp_config.MET_datagramSource = fData_temp.MET_datagramSource;
-        disp_config.MET_ellips         = fData_temp.MET_ellips;
-        disp_config.MET_tmproj         = fData_temp.MET_tmproj;
+        % First, test if file has already been projected...
+        if isfield(fData_temp,'MET_tmproj')
+            % File has already been projected, no need to do it again. Use
+            % that info for project
+            
+            fprintf('...This file''s navigation data has already been processed.\n');
+            
+            % save the info in disp_config
+            disp_config.MET_datagramSource = fData_temp.MET_datagramSource;
+            disp_config.MET_ellips         = fData_temp.MET_ellips;
+            disp_config.MET_tmproj         = fData_temp.MET_tmproj;
+            
+        else
+            % first time processing this file, use the default ellipsoid
+            % and projection that are relevant to the data
+            
+            % Interpolating navigation data from ancillary sensors to ping
+            % time 
+            fprintf('...Interpolating navigation data from ancillary sensors to ping time...\n');
+            fData_temp = CFF_compute_ping_navigation(fData_temp);
+            
+            % save the info in disp_config
+            disp_config.MET_datagramSource = fData_temp.MET_datagramSource;
+            disp_config.MET_ellips         = fData_temp.MET_ellips;
+            disp_config.MET_tmproj         = fData_temp.MET_tmproj;
+            
+        end
         
         fprintf('...Projection for this session defined from navigation data in this first loaded file (ellipsoid: %s, UTM zone: %s).\n', disp_config.MET_ellips, disp_config.MET_tmproj);
         
     else
+        % Project already has a projection so use this one. Note that this
+        % means we may force the use of a UTM projection for navigation
+        % data that is outside that zone. It should still work.
         
-        % Not the first file being loaded, use info from disp_config. Note
-        % that this means we may force the use of a UTM projection for
-        % navigation data that is outside that zone. It should still work.
-        
-        % Interpolating navigation data from ancillary sensors to ping time
-        fprintf('...Interpolating navigation data from ancillary sensors to ping time...\n');
-        fData_temp = CFF_compute_ping_navigation(fData_temp, ...
-            disp_config.MET_datagramSource, ...
-            disp_config.MET_ellips, ...
-            disp_config.MET_tmproj);
+        if isfield(fData_temp,'MET_tmproj')
+            % if this file already has a projection
+            
+            if strcmp(fData_temp.MET_tmproj,disp_config.MET_tmproj)
+                % file has already been projected at the same projection as
+                % project, no need to do it again.
+                
+                fprintf('...This file''s navigation data has already been processed.\n');
+                
+            else
+                % file has already been projected but at a different
+                % projection than project. We're going to reprocess the
+                % navigation, but any gridding needs to be removed first.
+                % Throw a warning if we do that.
+                if isfield(fData_temp,'X_NEH_gridLevel')
+                    fData_temp = rmfield(fData_temp,{'X_1_gridHorizontalResolution','X_1E_gridEasting','X_N1_gridNorthing','X_NEH_gridDensity','X_NEH_gridLevel'});
+                    warning('This file contains gridded data in a projection that is different than that of the project. These gridded data were removed.')
+                end
+                
+                % Interpolating navigation data from ancillary sensors to
+                % ping time 
+                fprintf('...Interpolating navigation data from ancillary sensors to ping time...\n');
+                fData_temp = CFF_compute_ping_navigation(fData_temp, ...
+                    disp_config.MET_datagramSource, ...
+                    disp_config.MET_ellips, ...
+                    disp_config.MET_tmproj);
+          
+            end
+                
+        else
+            % File has not been projected yet, just do it now using
+            % project's info
+            
+            % Interpolating navigation data from ancillary sensors to ping
+            % time 
+            fprintf('...Interpolating navigation data from ancillary sensors to ping time...\n');
+            fData_temp = CFF_compute_ping_navigation(fData_temp, ...
+                disp_config.MET_datagramSource, ...
+                disp_config.MET_ellips, ...
+                disp_config.MET_tmproj);
+            
+        end
         
     end
     

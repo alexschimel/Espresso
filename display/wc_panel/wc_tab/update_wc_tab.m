@@ -181,7 +181,11 @@ set(wc_tab_comp.bot_gh,...
     'XData',fData.X_BP_bottomAcrossDist(:,ip),...
     'YData',fData.X_BP_bottomUpDist(:,ip));
 
-% Xlim and Ylim
+% set display Xlim and Ylim
+if all(idx_keep(:)==0)
+    % if no data is good, display all of it
+    idx_keep = true(size(idx_keep));
+end
 xlim = [-max(abs(sampleAcrossDist(idx_keep))) max(abs(sampleAcrossDist(idx_keep)))];
 ylim = [min(nanmin(fData.X_BP_bottomUpDist(:,ip)),nanmin(sampleUpDist(idx_keep))) 0];
 set(wc_tab_comp.wc_axes,...

@@ -417,6 +417,14 @@ end
 % final calculation average and back in dB
 gridLevel = 10.*log10(gridSum./gridCount);
 
+% revert gpuArrays back to regular arrays before storing so that data can
+% be used even without the parallel computing toolbox and so that loading
+% data don't overload the limited GPU memory
+if gpu_comp>0
+    gridLevel = gather(gridLevel);
+    gridCount = gather(gridCount);
+end
+
 
 %% saving results:
 
