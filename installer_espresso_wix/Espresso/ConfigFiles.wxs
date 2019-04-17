@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+    <Fragment>
+        <DirectoryRef Id="APPLICATIONCONFIGDIRECTORY">
+            <Component Id="cmp2EB32C006A8C747CA866E1DCB0CC54EF" Guid="*">
+                <File Id="fil12FA9C4AA1A3E4C884D83247F110999A" KeyPath="yes" Source="$(var.ConfigDir)\classes.xml" />
+            </Component>
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <ComponentGroup Id="ConfigFiles">
+            <ComponentRef Id="cmp2EB32C006A8C747CA866E1DCB0CC54EF" />
+        </ComponentGroup>
+    </Fragment>
+</Wix>

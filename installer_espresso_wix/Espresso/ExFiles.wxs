@@ -1,0 +1,149 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+    <Fragment>
+        <DirectoryRef Id="APPLICATIONEXDIRECTORY">
+            <Directory Id="dir3F65B827E6F28BD3D7D8D7E5E194053F" Name="ek60">
+                <Component Id="cmp136CA44AEDD4AAB5F6F10D26452CDB3E" Guid="*">
+                    <File Id="fil40138A8E2EC96E2F4698DDC26E4E35C1" KeyPath="yes" Source="$(var.ExDir)\ek60\echo_logbook.db" />
+                </Component>
+                <Component Id="cmp7BACF021E508B7584D231E5AE7C239FF" Guid="*">
+                    <File Id="filFBBDD9EB42F00E91F8F5DF8A2E17DFBB" KeyPath="yes" Source="$(var.ExDir)\ek60\tan1505-D20150428-T010855.raw" />
+                </Component>
+                <Component Id="cmp5C75796E7F1C3027FB3C837FDC20196B" Guid="*">
+                    <File Id="filEB094EAF1B1288222EC0EEC671032051" KeyPath="yes" Source="$(var.ExDir)\ek60\tan1505-D20150428-T013331.bot" />
+                </Component>
+                <Component Id="cmpA61FE2BE72955C069EF36117176FBFB8" Guid="*">
+                    <File Id="filA8B14E068D6C6B5F96E5F8FB87EE76F3" KeyPath="yes" Source="$(var.ExDir)\ek60\tan1505-D20150428-T013331.idx" />
+                </Component>
+                <Component Id="cmp2872278D7408AFB93A385C180839B9DB" Guid="*">
+                    <File Id="fil4ECDF70EB0282CF18B3764F5D7DD77D3" KeyPath="yes" Source="$(var.ExDir)\ek60\tan1505-D20150428-T013331.raw" />
+                </Component>
+                <Component Id="cmp00CA120E5CC6D14EE99893EFFDBBCBBD" Guid="*">
+                    <File Id="fil971276EFD2837D1734E1045C82330E66" KeyPath="yes" Source="$(var.ExDir)\ek60\tan1505-D20150428-T020308.bot" />
+                </Component>
+                <Component Id="cmpBDBC2982B8438BE4721FD9DA79F1C1FE" Guid="*">
+                    <File Id="filE36E941979E4DB9FA2746769855994C7" KeyPath="yes" Source="$(var.ExDir)\ek60\tan1505-D20150428-T020308.idx" />
+                </Component>
+                <Component Id="cmpE84D15A02E1854E7189F33058A91532C" Guid="*">
+                    <File Id="fil1C7F9F8874DCB26B34CB53149D6CEEC5" KeyPath="yes" Source="$(var.ExDir)\ek60\tan1505-D20150428-T020308.raw" />
+                </Component>
+                <Component Id="cmp8C8150A04E6B7C694F9B6CE7DFA3A24D" Guid="*">
+                    <File Id="filF9AA2F0CC343F84F622D2E6149FDB0C5" KeyPath="yes" Source="$(var.ExDir)\ek60\tan1505-D20150428-T021300.bot" />
+                </Component>
+                <Component Id="cmpEF9CA64CA65F53882CB505CEB15171A7" Guid="*">
+                    <File Id="filF7E4D8243F6D277108231B0AF4DEDC58" KeyPath="yes" Source="$(var.ExDir)\ek60\tan1505-D20150428-T021300.idx" />
+                </Component>
+                <Component Id="cmp8F1C53CF3A3C2F35B7D86E4F617800C7" Guid="*">
+                    <File Id="fil6EDD0BF6FFD9446567F608726900F72F" KeyPath="yes" Source="$(var.ExDir)\ek60\tan1505-D20150428-T021300.raw" />
+                </Component>
+                <Component Id="cmpB8D3D1037715C1A6DC68DAE507F2E0A2" Guid="*">
+                    <File Id="fil5CF56DFC28D2DDFA95F295AF9C85E5B4" KeyPath="yes" Source="$(var.ExDir)\ek60\tan1505-D20150428-T023604.bot" />
+                </Component>
+                <Component Id="cmp4F5AAE077F90131F0E1DB6A374BFCB6E" Guid="*">
+                    <File Id="fil299641145EE8FB40B93C00BFC779ED12" KeyPath="yes" Source="$(var.ExDir)\ek60\tan1505-D20150428-T023604.idx" />
+                </Component>
+                <Component Id="cmp54C08636F765151AEA869B1C0D23C7C7" Guid="*">
+                    <File Id="filFF116D7DAA2FA59C06E207CB659D6166" KeyPath="yes" Source="$(var.ExDir)\ek60\tan1505-D20150428-T023604.raw" />
+                </Component>
+                <Component Id="cmp1589CEE69797C007802FAD5369B13589" Guid="*">
+                    <File Id="fil08E211F00D4B8D30727C213F9AE4D05F" KeyPath="yes" Source="$(var.ExDir)\ek60\tan1505-D20150428-T024305.bot" />
+                </Component>
+                <Component Id="cmp41A47DB5DD3CD310D2D64EB737048F8F" Guid="*">
+                    <File Id="filC9BE28423144CAE6FE800B92B1D4C1D8" KeyPath="yes" Source="$(var.ExDir)\ek60\tan1505-D20150428-T024305.idx" />
+                </Component>
+                <Component Id="cmp47D26D31E361B0375B18E558052AF1BA" Guid="*">
+                    <File Id="fil708340EE3C9A699855B1ED1D574DDC0A" KeyPath="yes" Source="$(var.ExDir)\ek60\tan1505-D20150428-T024305.raw" />
+                </Component>
+                <Component Id="cmp6FA6EF9E1CCBB8107675DE0FEA9B173F" Guid="*">
+                    <File Id="fil6A2B9D997C9A5A45390D34F03216E83E" KeyPath="yes" Source="$(var.ExDir)\ek60\tan1505-D20150428-T030505.bot" />
+                </Component>
+                <Component Id="cmpD4837DBF52020383DC7BEBABDDCB7C90" Guid="*">
+                    <File Id="filB7A4ADFA3997778BDB07F2B0C8104478" KeyPath="yes" Source="$(var.ExDir)\ek60\tan1505-D20150428-T030505.idx" />
+                </Component>
+                <Component Id="cmp3C188CBFB2179A791DE2A0C7EF4A933B" Guid="*">
+                    <File Id="fil27944D31405AD9EDC1F3EF3A2D6208E4" KeyPath="yes" Source="$(var.ExDir)\ek60\tan1505-D20150428-T030505.raw" />
+                </Component>
+                <Directory Id="dirA5782933E3981B3851FC2586A1DE2D8D" Name="bot_reg">
+                    <Component Id="cmp487860CA0FFE3C49EBB9AF8DD16ACD95" Guid="*">
+                        <File Id="fil459A7F06188098C5F1790559DC445C3F" KeyPath="yes" Source="$(var.ExDir)\ek60\bot_reg\bot_reg.db" />
+                    </Component>
+                    <Component Id="cmp47AA5A308D6BBA6B7EF4D5331F2D8428" Guid="*">
+                        <File Id="filD2089F763BBC31AB69F3627B0A39DE0F" KeyPath="yes" Source="$(var.ExDir)\ek60\bot_reg\b_tan1505-D20150428-T020308.xml" />
+                    </Component>
+                    <Component Id="cmp97F10AA845E39813BFEB5DC1109B1635" Guid="*">
+                        <File Id="filF51B7FB22B65BE826106C73197E0DEA7" KeyPath="yes" Source="$(var.ExDir)\ek60\bot_reg\b_tan1505-D20150428-T023604.xml" />
+                    </Component>
+                    <Component Id="cmpF23E1E31AA894D5784B567D91F3D26D4" Guid="*">
+                        <File Id="fil114EA5011F330476CF86749D812BF3DA" KeyPath="yes" Source="$(var.ExDir)\ek60\bot_reg\r_tan1505-D20150428-T020308.xml" />
+                    </Component>
+                    <Component Id="cmp4534BB6BC8F44B348EA86B4DAFC11803" Guid="*">
+                        <File Id="filD914BC15F251CD0791B9E47116B20DFC" KeyPath="yes" Source="$(var.ExDir)\ek60\bot_reg\r_tan1505-D20150428-T021300.xml" />
+                    </Component>
+                    <Component Id="cmp1E6500F93729D66092187462E080CD79" Guid="*">
+                        <File Id="fil06C62AABA7D18588D497BDD88B4AFE63" KeyPath="yes" Source="$(var.ExDir)\ek60\bot_reg\r_tan1505-D20150428-T023604.xml" />
+                    </Component>
+                </Directory>
+                <Directory Id="dirCDBB19506525EC49FE01596BE159650E" Name="echoanalysisfiles">
+                    <Component Id="cmpB14121E775E795FA5D5121C83375A961" Guid="*">
+                        <File Id="fil72D907EA4DFE77F643172357BC4F91BA" KeyPath="yes" Source="$(var.ExDir)\ek60\echoanalysisfiles\tan1505-D20150428-T010855_echoidx.mat" />
+                    </Component>
+                    <Component Id="cmp4CF355BBEB7AB36133E74B792768C407" Guid="*">
+                        <File Id="fil9345610F6D7A73F7549B01B0F68A5C14" KeyPath="yes" Source="$(var.ExDir)\ek60\echoanalysisfiles\tan1505-D20150428-T013331_echoidx.mat" />
+                    </Component>
+                    <Component Id="cmp83EF3EBBD6B4B70EB1DE85A3BE8DA58B" Guid="*">
+                        <File Id="fil89E1E3B587974B3D266184E217ECBA1F" KeyPath="yes" Source="$(var.ExDir)\ek60\echoanalysisfiles\tan1505-D20150428-T020308_echoidx.mat" />
+                    </Component>
+                    <Component Id="cmp1ACF706E0B8605E832DC80DD67BDF6BE" Guid="*">
+                        <File Id="fil88134B902C23CA959D3A7BBCA23586BA" KeyPath="yes" Source="$(var.ExDir)\ek60\echoanalysisfiles\tan1505-D20150428-T021300_echoidx.mat" />
+                    </Component>
+                    <Component Id="cmpAB3C70ECB36F02A0E27B0607A7147268" Guid="*">
+                        <File Id="filE5F185933BC50387ACBD6BE35CE6728D" KeyPath="yes" Source="$(var.ExDir)\ek60\echoanalysisfiles\tan1505-D20150428-T023604_echoidx.mat" />
+                    </Component>
+                    <Component Id="cmpEA92F72F0328A4C8DFFA15A7B350C683" Guid="*">
+                        <File Id="fil622F253FA66E56CAE3C0EFCF9B2013AF" KeyPath="yes" Source="$(var.ExDir)\ek60\echoanalysisfiles\tan1505-D20150428-T024305_echoidx.mat" />
+                    </Component>
+                    <Component Id="cmp5FE45ED53E916445771E1C196D722E01" Guid="*">
+                        <File Id="filD90850D5BFDE076628D65960E98E4882" KeyPath="yes" Source="$(var.ExDir)\ek60\echoanalysisfiles\tan1505-D20150428-T030505_echoidx.mat" />
+                    </Component>
+                </Directory>
+            </Directory>
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <ComponentGroup Id="ExFiles">
+            <ComponentRef Id="cmp136CA44AEDD4AAB5F6F10D26452CDB3E" />
+            <ComponentRef Id="cmp7BACF021E508B7584D231E5AE7C239FF" />
+            <ComponentRef Id="cmp5C75796E7F1C3027FB3C837FDC20196B" />
+            <ComponentRef Id="cmpA61FE2BE72955C069EF36117176FBFB8" />
+            <ComponentRef Id="cmp2872278D7408AFB93A385C180839B9DB" />
+            <ComponentRef Id="cmp00CA120E5CC6D14EE99893EFFDBBCBBD" />
+            <ComponentRef Id="cmpBDBC2982B8438BE4721FD9DA79F1C1FE" />
+            <ComponentRef Id="cmpE84D15A02E1854E7189F33058A91532C" />
+            <ComponentRef Id="cmp8C8150A04E6B7C694F9B6CE7DFA3A24D" />
+            <ComponentRef Id="cmpEF9CA64CA65F53882CB505CEB15171A7" />
+            <ComponentRef Id="cmp8F1C53CF3A3C2F35B7D86E4F617800C7" />
+            <ComponentRef Id="cmpB8D3D1037715C1A6DC68DAE507F2E0A2" />
+            <ComponentRef Id="cmp4F5AAE077F90131F0E1DB6A374BFCB6E" />
+            <ComponentRef Id="cmp54C08636F765151AEA869B1C0D23C7C7" />
+            <ComponentRef Id="cmp1589CEE69797C007802FAD5369B13589" />
+            <ComponentRef Id="cmp41A47DB5DD3CD310D2D64EB737048F8F" />
+            <ComponentRef Id="cmp47D26D31E361B0375B18E558052AF1BA" />
+            <ComponentRef Id="cmp6FA6EF9E1CCBB8107675DE0FEA9B173F" />
+            <ComponentRef Id="cmpD4837DBF52020383DC7BEBABDDCB7C90" />
+            <ComponentRef Id="cmp3C188CBFB2179A791DE2A0C7EF4A933B" />
+            <ComponentRef Id="cmp487860CA0FFE3C49EBB9AF8DD16ACD95" />
+            <ComponentRef Id="cmp47AA5A308D6BBA6B7EF4D5331F2D8428" />
+            <ComponentRef Id="cmp97F10AA845E39813BFEB5DC1109B1635" />
+            <ComponentRef Id="cmpF23E1E31AA894D5784B567D91F3D26D4" />
+            <ComponentRef Id="cmp4534BB6BC8F44B348EA86B4DAFC11803" />
+            <ComponentRef Id="cmp1E6500F93729D66092187462E080CD79" />
+            <ComponentRef Id="cmpB14121E775E795FA5D5121C83375A961" />
+            <ComponentRef Id="cmp4CF355BBEB7AB36133E74B792768C407" />
+            <ComponentRef Id="cmp83EF3EBBD6B4B70EB1DE85A3BE8DA58B" />
+            <ComponentRef Id="cmp1ACF706E0B8605E832DC80DD67BDF6BE" />
+            <ComponentRef Id="cmpAB3C70ECB36F02A0E27B0607A7147268" />
+            <ComponentRef Id="cmpEA92F72F0328A4C8DFFA15A7B350C683" />
+            <ComponentRef Id="cmp5FE45ED53E916445771E1C196D722E01" />
+        </ComponentGroup>
+    </Fragment>
+</Wix>

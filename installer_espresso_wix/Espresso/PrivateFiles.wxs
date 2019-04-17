@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+    <Fragment>
+        <DirectoryRef Id="APPLICATIONPRIVATEDIRECTORY">
+            <Component Id="cmpED6A096E3C55D84629CCF6A3D2C20547" Guid="*">
+                <File Id="fil6F95EC10A4C54FC7CAC603D0DD6FA121" KeyPath="yes" Source="$(var.PrivateDir)\AZFPColormap.mat" />
+            </Component>
+            <Component Id="cmp4527E15B30A014E965A55185907D27F2" Guid="*">
+                <File Id="fil1CECE7F13FC095E5D1D223270EA088F6" KeyPath="yes" Source="$(var.PrivateDir)\ek60_cmap.mat" />
+            </Component>
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <ComponentGroup Id="PrivateFiles">
+            <ComponentRef Id="cmpED6A096E3C55D84629CCF6A3D2C20547" />
+            <ComponentRef Id="cmp4527E15B30A014E965A55185907D27F2" />
+        </ComponentGroup>
+    </Fragment>
+</Wix>

@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2013
+VisualStudioVersion = 12.0.40629.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{930C7802-8A8C-48F9-8165-68863BCCD9DD}") = "Espresso", "Espresso\Espresso.wixproj", "{0EF59FDA-0A1A-4261-AC0D-8D6968992EE9}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|ia64 = Debug|ia64
+		Release|ia64 = Release|ia64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{0EF59FDA-0A1A-4261-AC0D-8D6968992EE9}.Debug|ia64.ActiveCfg = Debug|ia64
+		{0EF59FDA-0A1A-4261-AC0D-8D6968992EE9}.Debug|ia64.Build.0 = Debug|ia64
+		{0EF59FDA-0A1A-4261-AC0D-8D6968992EE9}.Release|ia64.ActiveCfg = Release|ia64
+		{0EF59FDA-0A1A-4261-AC0D-8D6968992EE9}.Release|ia64.Build.0 = Release|ia64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

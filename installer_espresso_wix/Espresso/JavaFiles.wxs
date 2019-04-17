@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+    <Fragment>
+        <DirectoryRef Id="APPLICATIONJAVADIRECTORY">
+            <Component Id="cmp46AB8C3D151403646E74E2AAE1493210" Guid="*">
+                <File Id="filF525BC9022DBCB174799109DCD79C9EF" KeyPath="yes" Source="$(var.JavaDir)\postgresql-9.4.1212.jre6.jar" />
+            </Component>
+            <Component Id="cmp85C16FBCA9E39EB4A02D57CAD5E52DA5" Guid="*">
+                <File Id="filCF44DE1EE7EB0B437AFB2AD71F481EDD" KeyPath="yes" Source="$(var.JavaDir)\sqlite-jdbc-3.15.1.jar" />
+            </Component>
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <ComponentGroup Id="JavaFiles">
+            <ComponentRef Id="cmp46AB8C3D151403646E74E2AAE1493210" />
+            <ComponentRef Id="cmp85C16FBCA9E39EB4A02D57CAD5E52DA5" />
+        </ComponentGroup>
+    </Fragment>
+</Wix>

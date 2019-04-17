@@ -1,0 +1,87 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Realease</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">ia64</Platform>
+    <ProductVersion>3.10</ProductVersion>
+    <ProjectGuid>0ef59fda-0a1a-4261-ac0d-8d6968992ee9</ProjectGuid>
+    <SchemaVersion>2.0</SchemaVersion>
+    <OutputName>espresso_install</OutputName>
+    <OutputType>Package</OutputType>
+    <WixTargetsPath Condition=" '$(WixTargetsPath)' == '' AND '$(MSBuildExtensionsPath32)' != '' ">$(MSBuildExtensionsPath32)\Microsoft\WiX\v3.x\Wix.targets</WixTargetsPath>
+    <WixTargetsPath Condition=" '$(WixTargetsPath)' == '' ">$(MSBuildExtensionsPath)\Microsoft\WiX\v3.x\Wix.targets</WixTargetsPath>
+    <Name>Espresso</Name>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
+    <OutputPath>bin\$(Platform)\$(Configuration)\</OutputPath>
+    <IntermediateOutputPath>obj\$(Configuration)\</IntermediateOutputPath>
+    <DefineConstants>Debug;PrivateDir=D:\Docs\MATLAB\Espresso\private;IconDir=D:\Docs\MATLAB\Espresso\icons;</DefineConstants>
+    <SuppressAllWarnings>False</SuppressAllWarnings>
+    <Pedantic>False</Pedantic>
+    <WixVariables>
+    </WixVariables>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
+    <OutputPath>bin\$(Platform)\$(Configuration)\</OutputPath>
+    <IntermediateOutputPath>obj\$(Configuration)\</IntermediateOutputPath>
+    <DefineConstants>Debug;PrivateDir=D:\Docs\MATLAB\Espresso\private;IconDir=D:\Docs\MATLAB\Espresso\icons;</DefineConstants>
+    <SuppressAllWarnings>False</SuppressAllWarnings>
+    <Pedantic>False</Pedantic>
+    <WixVariables>
+    </WixVariables>
+    <Cultures>en-US</Cultures>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|ia64' ">
+    <DefineConstants>Debug;ConfigDir=D:\Docs\MATLAB\Espresso\config;PrivateDir=D:\Docs\MATLAB\Espresso\private;IconDir=D:\Docs\MATLAB\Espresso\icons;</DefineConstants>
+    <OutputPath>bin\$(Platform)\$(Configuration)\</OutputPath>
+    <IntermediateOutputPath>obj\$(Platform)\$(Configuration)\</IntermediateOutputPath>
+    <SuppressAllWarnings>False</SuppressAllWarnings>
+    <Pedantic>False</Pedantic>
+    <WixVariables>
+    </WixVariables>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|ia64' ">
+    <OutputPath>bin\$(Platform)\$(Configuration)\</OutputPath>
+    <IntermediateOutputPath>obj\$(Platform)\$(Configuration)\</IntermediateOutputPath>
+    <DefineConstants>Debug;ConfigDir=D:\Docs\MATLAB\Espresso\config;PrivateDir=D:\Docs\MATLAB\Espresso\private;IconDir=D:\Docs\MATLAB\Espresso\icons;</DefineConstants>
+    <SuppressAllWarnings>False</SuppressAllWarnings>
+    <Pedantic>False</Pedantic>
+    <WixVariables>
+    </WixVariables>
+    <Cultures>en-US</Cultures>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="ConfigFiles.wxs" />
+    <Compile Include="IconFiles.wxs" />
+    <Compile Include="PrivateFiles.wxs" />
+    <Compile Include="Product.wxs" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Localisation.wxl" />
+  </ItemGroup>
+  <ItemGroup>
+    <WixExtension Include="WixUIExtension">
+      <HintPath>$(WixExtDir)\WixUIExtension.dll</HintPath>
+      <Name>WixUIExtension</Name>
+    </WixExtension>
+    <WixExtension Include="WixUtilExtension">
+      <HintPath>$(WixExtDir)\WixUtilExtension.dll</HintPath>
+      <Name>WixUtilExtension</Name>
+    </WixExtension>
+  </ItemGroup>
+  <Import Project="$(WixTargetsPath)" />
+  <PropertyGroup>
+    <PreBuildEvent />
+  </PropertyGroup>
+  <Target Name="BeforeBuild">
+    <HeatDirectory ToolPath="$(WixToolPath)" AutogenerateGuids="$(HarvestDirectoryAutogenerateGuids)" OutputFile="IconFiles.wxs" SuppressFragments="true" Transforms="%(HarvestDirectory.Transforms)" Directory="D:\Docs\MATLAB\Espresso\icons" ComponentGroupName="IconFiles" DirectoryRefId="APPLICATIONICONDIRECTORY" KeepEmptyDirectories="false" PreprocessorVariable="var.IconDir" SuppressCom="%(HarvestDirectory.SuppressCom)" SuppressRootDirectory="true" SuppressRegistry="%(HarvestDirectory.SuppressRegistry)">
+    </HeatDirectory>
+    <HeatDirectory ToolPath="$(WixToolPath)" AutogenerateGuids="$(HarvestDirectoryAutogenerateGuids)" OutputFile="PrivateFiles.wxs" SuppressFragments="true" Transforms="%(HarvestDirectory.Transforms)" Directory="D:\Docs\MATLAB\Espresso\private" ComponentGroupName="PrivateFiles" DirectoryRefId="APPLICATIONPRIVATEDIRECTORY" KeepEmptyDirectories="false" PreprocessorVariable="var.PrivateDir" SuppressCom="%(HarvestDirectory.SuppressCom)" SuppressRootDirectory="true" SuppressRegistry="%(HarvestDirectory.SuppressRegistry)">
+    </HeatDirectory>
+    <HeatDirectory ToolPath="$(WixToolPath)" AutogenerateGuids="$(HarvestDirectoryAutogenerateGuids)" OutputFile="ConfigFiles.wxs" SuppressFragments="true" Transforms="%(HarvestDirectory.Transforms)" Directory="D:\Docs\MATLAB\Espresso\config" ComponentGroupName="ConfigFiles" DirectoryRefId="APPLICATIONCONFIGDIRECTORY" KeepEmptyDirectories="false" PreprocessorVariable="var.ConfigDir" SuppressCom="%(HarvestDirectory.SuppressCom)" SuppressRootDirectory="true" SuppressRegistry="%(HarvestDirectory.SuppressRegistry)">
+    </HeatDirectory>
+  </Target>
+  <!-- <Target Name="AfterBuild">
+    <Move SourceFiles="$(TargetPath)" DestinationFiles="$(TargetDir)\$(OutputName)-$(ProductVersion).$(Platform).msi" />
+  </Target> -->
+</Project>

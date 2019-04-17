@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi" xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
+  <?define MajorVersion="0" ?>
+  <?define MinorVersion="10" ?>
+  <?define BuildVersion="0" ?>
+  <!-- Revision is NOT used by WiX in the upgrade procedure -->
+  <?define Revision="0" ?>
+  <!-- Full version number to display -->
+  <?define Version="$(var.MajorVersion).$(var.MinorVersion).$(var.BuildVersion).$(var.Revision)" ?>
+  <?define ApplicationNameVersion="!(loc.ApplicationName)_ver_$(var.Version)" ?>
+  <?define ExeProcessName="Espresso.exe" ?>
+  <?define DeployFolder="D:\Docs\MATLAB\Espresso\" ?>
+  <?define UpgradeCode = "6A1FE3A0-B840-4FC4-B5C9-0254050D0C4B"?>
+
+  <Product Id="*" UpgradeCode="$(var.UpgradeCode)"
+           Version="$(var.Version)"
+           Language="1033"
+           Name="$(var.ApplicationNameVersion)"
+           Manufacturer="!(loc.ManufacturerName)">
+
+    <Package InstallerVersion="300" Compressed="yes" InstallScope="perMachine"  Keywords='Installer' Platform="x64"/>
+
+    <Media Id="1" Cabinet="espresso.cab" EmbedCab="yes" />
+
+    <Icon Id="main_icon" SourceFile="$(var.IconDir)\espresso.ico"/>
+
+    <Property Id="ARPPRODUCTICON" Value="main_icon"/>
+
+
+    <Property Id="MCRCURRENTVERSION">
+      <RegistrySearch Id="DetermineServers" Type="raw" Root="HKLM" Key="HKEY_LOCAL_MACHINE\SOFTWARE\MathWorks\MATLAB Runtime\9.5" Name="Matlabroot" />
+    </Property>
+    <!-- Set default value if registry search comes up empty 
+    <SetProperty Before='InstallInitialize' Sequence='execute' Id='MCRCURRENTVERSION' Value=' '>NOT MCRCURRENTVERSION</SetProperty>-->
+
+
+
+    <MajorUpgrade
+      DowngradeErrorMessage="A newer version of !(loc.ApplicationName) is already installed. If you want to roll back to the previous version, uninstall first... Setup will now exit."
+      AllowSameVersionUpgrades="yes"/>
+
+
+    <util:CloseApplication Id="CloseApp" CloseMessage="no" Description="Application open, you should close it!"
+          ElevatedCloseMessage="no" RebootPrompt="no" Target="$(var.ExeProcessName)" />
+
+    <?if $(var.Platform) = x64 ?>
+    <Condition Message="!(loc.x86VersionRequired)">
+      <![CDATA[VersionNT64]]>
+    </Condition>
+    <?endif?>
+
+    <?if $(var.Platform) = x86 ?>
+    <Condition Message="!(loc.x64VersionRequired)">
+      <![CDATA[NOT VersionNT64]]>
+    </Condition>
+    <?endif?>
+
+
+
+    <!-- Use the built in WixUI_InstallDir GUI -->
+
+    <!-- <WixVariable Id="WixUILicenseRtf" Value="$(var.DeployFolder)/licence.rtf" /> -->
+    <WixVariable Id="WixUIBannerBmp" Value="banner.bmp" />
+    <WixVariable Id="WixUIDialogBmp" Value="background.bmp" />
+
+
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Launch $(var.ApplicationNameVersion)" />
+    <!-- Step 3: Include the custom action -->
+    <Property Id="WixShellExecTarget" Value="[#MainApplication]" />
+    <CustomAction Id="LaunchApplication" BinaryKey="WixCA" DllEntry="WixShellExec" Impersonate="yes" />
+
+
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="DesktopFolder"  SourceName="Desktop"/>
+      <Directory Id="ProgramFiles64Folder">
+        <Directory Id="APPLICATIONROOTDIRECTORY" Name="$(var.ApplicationNameVersion)">
+          <Directory Id="APPLICATIONICONDIRECTORY" Name="icons" />
+          <Directory Id="APPLICATIONPRIVATEDIRECTORY" Name="private" />
+
+        </Directory>
+      </Directory>
+
+      <Directory Id="ProgramMenuFolder">
+        <Directory Id="ApplicationProgramsFolder" Name="$(var.ApplicationNameVersion)"/>
+      </Directory>
+    </Directory>
+
+    <DirectoryRef Id="APPLICATIONROOTDIRECTORY">
+      <Component Id="MainApplication" Guid="18743282-3AC3-467D-953C-4106D356A598">
+        <File Id="MainApplication" Source="$(var.DeployFolder)/$(var.ExeProcessName)" KeyPath="yes" Checksum="yes"/>
+      </Component>
+
+      <Component Id="Espresso" Guid="3076F87C-4A80-426E-8790-124E48F67744">
+        <File Id="Espresso" Source="$(var.DeployFolder)/Espresso.png" KeyPath="yes"/>
+      </Component>
+      
+      <Directory Id="APPLICATIONCONFIGDIRECTORY" Name="config" >
+        <Component Id="CONFIGFOLDER_Permission" Guid="039BE879-2743-4104-A7F6-DAD7CFCF99B7">
+          <CreateFolder Directory="APPLICATIONCONFIGDIRECTORY">
+            <Permission User="Users" GenericAll="yes" ChangePermission="yes"/>
+          </CreateFolder>
+        </Component>
+      </Directory>
+      <!-- <Component Id="Licence" Guid="4BFD6F5F-69FB-48B6-8DC1-DBCC5B8C1E79">
+        <File Id="Licence" Source="$(var.DeployFolder)/licence.rtf" KeyPath="yes"/>
+      </Component>-->
+
+      <Component Id="InitFile" Guid="3DE15976-7B0C-4FAD-A61E-8EDEBDB7BF46" KeyPath="yes">
+        <IniFile Id="ini" Action="createLine" Directory="APPLICATIONROOTDIRECTORY" Name="ver.dat" Section="Header" Key="Version" Value="$(var.Version)" />
+      </Component>
+      
+    </DirectoryRef>
+
+
+    <DirectoryRef Id="ApplicationProgramsFolder">
+      <Component Id="ApplicationShortcut" Guid="8325747B-4DEB-4619-884A-53763F051C4D">
+        <Shortcut Id="ApplicationStartMenuShortcut"
+                  Name="$(var.ApplicationNameVersion)"
+                  Description="WC data Analyisis tool"
+                  Target="[APPLICATIONROOTDIRECTORY]$(var.ExeProcessName)"
+                  WorkingDirectory="APPLICATIONROOTDIRECTORY"
+                  Icon ="main_icon"/>
+        <Shortcut Id="UninstallProduct"
+                            Name="Uninstall $(var.ApplicationNameVersion)"
+                            Description="Uninstall $(var.ApplicationNameVersion)"
+                            Target="[System64Folder]msiexec.exe"
+                            Arguments="/x [ProductCode]"/>
+        <RemoveFolder Id="ApplicationProgramsFolder" On="uninstall"/>
+        <RegistryValue Root="HKCU" Key="Software\$(var.ApplicationNameVersion)" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+      </Component>
+    </DirectoryRef>
+
+    <DirectoryRef Id="DesktopFolder">
+      <Component Id="ApplicationShortcutDesktop" Guid="E58C8DBA-EC2D-4EE8-8682-33CE3BAEB0B9">
+        <Shortcut Id="ApplicationDesktopShortcut"
+           Name="$(var.ApplicationNameVersion)"
+           Description="$(var.ApplicationNameVersion)"
+           Target="[APPLICATIONROOTDIRECTORY]$(var.ExeProcessName)"
+           WorkingDirectory="APPLICATIONROOTDIRECTORY"
+           Icon ="main_icon"/>
+
+        <RemoveFolder Id="DesktopFolder" On="uninstall"/>
+        <RegistryValue
+          Root="HKCU"
+          Key="Software/$(var.ApplicationNameVersion)"
+          Name="installed"
+          Type="integer"
+          Value="1"
+          KeyPath="yes"/>
+      </Component>
+    </DirectoryRef>
+
+
+    <Property Id="WIXUI_INSTALLDIR" Value="APPLICATIONROOTDIRECTORY" />
+
+    
+
+    <Feature Id="MainApplication" Title="$(var.ApplicationNameVersion)" Level="1">
+      <ComponentRef Id="MainApplication" />
+      <ComponentGroupRef  Id="IconFiles" />
+      <ComponentGroupRef  Id="PrivateFiles" />
+      <ComponentGroupRef  Id="ConfigFiles" />
+      <ComponentRef  Id="Espresso" />
+      <ComponentRef Id="ApplicationShortcut" />
+      <ComponentRef Id="ApplicationShortcutDesktop" />
+      <ComponentRef Id="CONFIGFOLDER_Permission" />
+      <ComponentRef Id="InitFile" />
+    </Feature>
+
+    <UI>
+      <Dialog Id="MCRWarningDlg" Width="300" Height="100" Title="MCR" NoMinimize="yes">
+        <Control Id="Text" Type="Text" X="10" Y="10" Width="260" Height="40" TabSkip="no">
+          <Text>MCR version 9.5 (2018b) is required. You may proceed with installation, but be sure to install MCR later! You can find it here:  </Text>
+        </Control>
+        <Control Id="MyHyperlinkControl1" Height="20" Width="60" Type="Hyperlink" X="70" Y="40">
+          <Text><![CDATA[<a href="https://au.mathworks.com/products/compiler/matlab-runtime.html">Matlab MCR</a>]]></Text>
+        </Control>
+        <Control Id="OK" Type="PushButton" X="130" Y="70" Width="40" Height="20" Default="yes"  Cancel="yes" Text="OK">
+          <Publish Event="EndDialog" Value="Return">1</Publish>
+        </Control>
+      </Dialog>
+      
+      
+
+      <InstallUISequence>
+        <Show Dialog="MCRWarningDlg" Before="PrepareDlg"/>
+      </InstallUISequence>
+      <UIRef Id="WixUI_InstallDir" />
+      <DialogRef Id="MaintenanceTypeDlg"/>
+      <DialogRef Id="FilesInUse" />
+      <DialogRef Id="MsiRMFilesInUse"/>  
+        
+      <Publish Dialog="ExitDialog"
+           Control="Finish"
+           Event="DoAction"
+           Value="LaunchApplication">WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 and NOT Installed</Publish>
+    </UI>
+
+  </Product>
+</Wix>

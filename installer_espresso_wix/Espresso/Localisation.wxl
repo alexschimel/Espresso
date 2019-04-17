@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<WixLocalization Culture="en-us" xmlns="http://schemas.microsoft.com/wix/2006/localization">
+  <String Id="ApplicationName">Espresso</String>
+  <String Id="ManufacturerName">NIWA</String>
+
+  <String Id="mcrRequired">You need to install the MCR.</String>
+  <String Id="x64VersionRequired">You need to install the 64-bit version of this product on 64-bit Windows.</String>
+  <String Id="x86VersionRequired">You need to install the 32-bit version of this product on 32-bit Windows.</String>
+
+</WixLocalization>
