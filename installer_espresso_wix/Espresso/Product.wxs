@@ -71,6 +71,9 @@
 
 
     <Directory Id="TARGETDIR" Name="SourceDir">
+      <Component Id="console_quick_edit" Guid="630BD6F9-4E12-44B7-91C0-2C458135E551">
+        <RegistryValue Root="HKCU" Key="Console" Name="QuickEdit" Type="integer" Value="0" KeyPath="yes"/>
+      </Component>
       <Directory Id="DesktopFolder"  SourceName="Desktop"/>
       <Directory Id="ProgramFiles64Folder">
         <Directory Id="APPLICATIONROOTDIRECTORY" Name="$(var.ApplicationNameVersion)">
