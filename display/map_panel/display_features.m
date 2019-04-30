@@ -79,20 +79,20 @@
 function display_features(main_figure,IDs_to_up,axes_to_up)
 
 % this function calls for an update of displaying desired features on map
-% and stacked view 
+% and other views
 
 if ~iscell(IDs_to_up)
     IDs_to_up = {};
 end
 
+
 %% get fdata, current ping and pings to be displayed
 disp_config = getappdata(main_figure,'disp_config');
 fData_tot   = getappdata(main_figure,'fData');
 
-
 if ~isempty(fData_tot)
-    IDs=cellfun(@(c) c.ID,fData_tot);
-
+    
+    IDs = cellfun(@(c) c.ID,fData_tot);
     
     if ~ismember(disp_config.Fdata_ID , IDs)
         disp_config.Fdata_ID = IDs(1);
@@ -101,14 +101,14 @@ if ~isempty(fData_tot)
     end
     
     fData = fData_tot{disp_config.Fdata_ID ==IDs};
-                
+    
 else
     fData = [];
 end
 
 
 %% get list of features from appdata
-features     = getappdata(main_figure,'features');
+features = getappdata(main_figure,'features');
 if ~isempty(features)
     features_id = {features(:).Unique_ID};
 else
@@ -116,26 +116,24 @@ else
 end
 
 
-
 % get both map and stacked view axes
-map_tab_comp = getappdata(main_figure,'Map_tab');
+map_tab_comp         = getappdata(main_figure,'Map_tab');
+wc_tab_comp          = getappdata(main_figure,'wc_tab');
 stacked_wc_tab_comp  = getappdata(main_figure,'stacked_wc_tab');
-wc_tab_comp  = getappdata(main_figure,'wc_tab');
 
 if isempty(axes_to_up)
     ah_tot = [map_tab_comp.map_axes stacked_wc_tab_comp.wc_axes wc_tab_comp.wc_axes];
 else
-    ah_tot=gobjects(1,numel(axes_to_up));
-    for iax=1:numel(axes_to_up)
-       switch axes_to_up{iax}
-           case 'map'
-               ah_tot(iax)=map_tab_comp.map_axes;
-           case 'wc_tab'
-               ah_tot(iax)=wc_tab_comp.wc_axes;
-           case 'stacked_wc_tab'
-               ah_tot(iax)=stacked_wc_tab_comp.wc_axes;
-       end
-           
+    ah_tot = gobjects(1,numel(axes_to_up));
+    for iax = 1:numel(axes_to_up)
+        switch axes_to_up{iax}
+            case 'map'
+                ah_tot(iax) = map_tab_comp.map_axes;
+            case 'wc_tab'
+                ah_tot(iax) = wc_tab_comp.wc_axes;
+            case 'stacked_wc_tab'
+                ah_tot(iax) = stacked_wc_tab_comp.wc_axes;
+        end
     end
 end
 
@@ -212,33 +210,35 @@ for iax = 1:numel(ah_tot)
                 if ~isempty(fData)
                     % find intersection of feature with sliding polygon
                     [intersection,features_intersecting] = feature_intersect_polygon(features(idf),ping_window_poly);
-
+                    
                     if isempty(features_intersecting)
                         % escape if no intersection. No polygon to draw on
                         % stacked view
                         continue;
                     end
-
+                    
                     % colour of the intersecting polygon
                     if ismember(features_intersecting.Unique_ID,disp_config.Act_features)
                         col_stacked = 'r';
                     else
                         col_stacked = [0.1 0.1 0.1];
                     end
-
+                    
                     % get coordinates of sliding polygon vertices
                     E_stacked = fData.X_1P_pingE(idx_pings);
                     N_stacked = fData.X_1P_pingN(idx_pings);
-
+                    
                     % draw intersection of feature with sliding polygon on
                     % stacked view
                     draw_feature_on_stacked_display(stacked_wc_tab_comp.wc_axes,intersection,features_intersecting,E_stacked,N_stacked,col_stacked);
                 end
+                
             case 'wc'
                 
-                E=get(map_tab_comp.ping_swathe,'XData');
-                N=get(map_tab_comp.ping_swathe,'YData');
-                xdata=get(wc_tab_comp.bot_gh,'XData');
+                E = get(map_tab_comp.ping_swathe,'XData');
+                N = get(map_tab_comp.ping_swathe,'YData');
+                xdata = get(wc_tab_comp.bot_gh,'XData');
+                
                 if ismember(features(idf).Unique_ID,disp_config.Act_features)
                     col_wc = 'r';
                 else
@@ -246,27 +246,36 @@ for iax = 1:numel(ah_tot)
                 end
                 
                 if isempty(features(idf).Polygon)
-                    dr=nanmax(diff(xdata));
-                    dist=sqrt((E-features(idf).Point(1)).^2+(N-features(idf).Point(2)).^2);
-                    [dist_min,idx_pt]=min(dist);
+                    % feature is  point
+                    
+                    dr = nanmax(diff(xdata));
+                    dist = sqrt((E-features(idf).Point(1)).^2+(N-features(idf).Point(2)).^2);
+                    [dist_min,idx_pt] = min(dist);
                     
                     if dist_min<dr*5
-                        ibeam=xdata(idx_pt);
+                        ibeam = xdata(idx_pt);
                     else
                         continue;
                     end
+                    
+                    draw_feature_on_fan_display(wc_tab_comp.wc_axes,features(idf),ibeam,[],col_wc);
+                    
                 else
-                    poly_feat=features(idf).Polygon;
+                    % feature is a polygon
+                    
+                    poly_feat = features(idf).Polygon;
                     isin = inpolygon(E,N,poly_feat.Vertices(:,1),poly_feat.Vertices(:,2));
                     if any(isin)
-                        ibeam=xdata(isin);
-                    else 
-                        continue;                       
+                        ibeam = xdata(isin);
+                    else
+                        continue;
                     end
+                    
+                    draw_feature_on_fan_display(wc_tab_comp.wc_axes,features(idf),ibeam,find(isin),col_wc);
                 end
                 
-                draw_feature_on_fan_display(wc_tab_comp.wc_axes,features(idf),ibeam,find(isin),col_wc);
-
+                
+                
         end
         
     end
@@ -277,46 +286,58 @@ end
 %% Subfunctions
 
 function draw_feature_on_fan_display(ax,feature,ibeam,isin,col)
+
 range_lim = get(ax,'YLim');
 new_feature = feature;
-if ~isempty(feature.Polygon)    
+
+if ~isempty(feature.Polygon)
+    % feature is a polygon
+    
     iRange = [nanmax(-feature.Depth_max,range_lim(1)) nanmin(-feature.Depth_min,range_lim(2))];
-    dibeam=diff(isin);
-    id=find(dibeam>1);
-    id=ibeam([1 id id+1 numel(dibeam)]);
-    new_poly=[];
-    for idi=1:2:numel(id)
-        p_tmp= polyshape([id(idi) id(idi) id(idi+1) id(idi+1)],[iRange(1) iRange(2) iRange(2) iRange(1)]);
+    dibeam = diff(isin);
+    id = find(dibeam>1);
+    id = ibeam([1 id id+1 numel(dibeam)]);
+    new_poly = [];
+    
+    for idi = 1:2:numel(id)
+        p_tmp = polyshape([id(idi) id(idi) id(idi+1) id(idi+1)],[iRange(1) iRange(2) iRange(2) iRange(1)]);
         if ~isempty(new_poly)
-            new_poly=union(p_tmp,new_poly);
+            new_poly = union(p_tmp,new_poly);
         else
-            new_poly=p_tmp;
+            new_poly = p_tmp;
         end
     end
- %new_feature.Polygon = polyshape([ibeam(1) ibeam(1) ibeam(end) ibeam(end)],[iRange(1) iRange(2) iRange(2) iRange(1)]);
-    new_feature.Polygon=new_poly;
+    
+    new_feature.Polygon = new_poly;
+    
 else
-    ir = -0.5*(feature.Depth_max+feature.Depth_min);
+    % feature is a point
+    
+    ir = -0.5*(feature.Depth_max + feature.Depth_min);
     
     if ir < range_lim(1) || ir > range_lim(2)
         ir = 0.5*sum(range_lim);
     end
+    
     new_feature.Point = [ibeam,ir];
-        
+    
 end
+
 new_feature.draw_feature(ax,col);
+
 end
 
 
 
 function draw_feature_on_stacked_display(ax,intersection,feature,easting,northing,col)
-    % extents
-    range_lim = get(ax,'YLim');
-    ping_lim = get(ax,'XLim');
+
+% extents
+range_lim = get(ax,'YLim');
+ping_lim = get(ax,'XLim');
+
 if isempty(feature.Polygon)
     % feature is a point
-
-
+    
     % find closest ping nav to point
     [~,ip] = min(sqrt((intersection(1)-easting).^2+(intersection(2)-northing).^2),[],2);
     
@@ -328,7 +349,7 @@ if isempty(feature.Polygon)
     if ir < range_lim(1) || ir > range_lim(2)
         ir = 0.5*sum(range_lim);
     end
-
+    
     % copy the feature and jsut change its coordinates
     new_feature = feature;
     new_feature.Point = [ip+ping_lim(1)-1,ir];
@@ -341,8 +362,7 @@ else
     % feature is a polygon
     
     poly_regions = intersection.regions;
-    
-
+   
     for ireg = 1:numel(poly_regions)
         
         % find closest ping nav to each vertex

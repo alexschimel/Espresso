@@ -1,9 +1,8 @@
-%compile_espresso('D:\Docs\MATLAB\WcProject','Espresso.m');
+% compile_espresso(pwd,'Espresso.m');
 
 function compile_espresso(root_folder,nomFunc)
 
 folders = folders_list(root_folder);
-
 
 switch computer
     case 'PCWIN'
@@ -18,7 +17,7 @@ switch computer
         str{1} = sprintf('mcc -v -m %s ', fullfile(root_folder,nomFunc));
 end
 
-for i= 1:(length(folders))
+for i = 1:(length(folders))
     str{end+1} = sprintf('-a %s ',folders{i});
 end
 
@@ -32,7 +31,7 @@ end
 
 function folders = folders_list(path)
 
-folders{1} = fullfile(path,'toolboxes');
+folders{1} = fullfile(path, 'toolboxes');
 folders{2} = fullfile(path, 'processing');
 folders{3} = fullfile(path, 'classes');
 folders{4} = fullfile(path, 'display');

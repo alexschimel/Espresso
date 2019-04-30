@@ -78,37 +78,39 @@
 %% Function
 function draw_new_feature(~,~,main_figure)
 
-
 % get data
 disp_config = getappdata(main_figure,'disp_config');
-fData_tot = getappdata(main_figure,'fData');
-features = getappdata(main_figure,'features');
-current_figure=gcf;
+fData_tot   = getappdata(main_figure,'fData');
+features    = getappdata(main_figure,'features');
 
-map_tab_comp = getappdata(main_figure,'Map_tab');
-wc_tab_comp  = getappdata(main_figure,'wc_tab');
-stacked_wc_tab  = getappdata(main_figure,'stacked_wc_tab');
+map_tab_comp   = getappdata(main_figure,'Map_tab');
+wc_tab_comp    = getappdata(main_figure,'wc_tab');
+stacked_wc_tab = getappdata(main_figure,'stacked_wc_tab');
 
-map_ax=map_tab_comp.map_axes;
-wc_ax=wc_tab_comp.wc_axes;
-stacked_wc_ax=stacked_wc_tab.wc_axes;
+map_ax        = map_tab_comp.map_axes;
+wc_ax         = wc_tab_comp.wc_axes;
+stacked_wc_ax = stacked_wc_tab.wc_axes;
+
+current_figure = gcf;
 
 switch current_figure.Tag
     case 'Espresso'
-        ah=gca;
-        fig_anc=ancestor(ah,'figure');
-        if fig_anc~=main_figure
+        ah = gca;
+        fig_anc = ancestor(ah,'figure');
+        if fig_anc ~= main_figure
             if ~isdeployed()
                 disp('Axis in the wrong figure')
             end
             return;
         end
     case 'wc'
-        ah=wc_ax;
+        ah = wc_ax;
     case 'stacked_wc'
-        ah=stacked_wc_ax;
+        ah = stacked_wc_ax;
 end
-fig_anc=ancestor(ah,'figure');
+
+fig_anc = ancestor(ah,'figure');
+
 % exit if no data loaded yet
 if isempty(fData_tot)
     return;
@@ -141,8 +143,7 @@ zone = disp_config.get_zone();
 [lat,lon] = utm2ll(cp(1,1),cp(1,2),zone);
 
 fData_tot = getappdata(main_figure,'fData');
-IDs=cellfun(@(c) c.ID,fData_tot);
-
+IDs = cellfun(@(c) c.ID,fData_tot);
 
 %% core of function
 switch fig_anc.SelectionType
@@ -160,11 +161,10 @@ switch fig_anc.SelectionType
         
         % initializing index of next vertex
         
-        
         % colour of lines when making a polygon
         col_line = 'r';
-        x_box=xinit(1);
-        y_box=xinit(1);
+        x_box = xinit(1);
+        y_box = xinit(1);
 
         % now that a polygon has been started, replace figure callbacks for
         % mouse motion and mouse click to continue/finalize it
@@ -181,15 +181,15 @@ switch fig_anc.SelectionType
                 replace_interaction(main_figure,'interaction','WindowButtonDownFcn','id',1,'interaction_fcn',@wbdcb_ext);
             case 'wc'
                 u = 1;
-                hp=line(ah,xinit(1),yinit(1),'color',col_line,'linewidth',1,'Tag','feature_temp');
-                txt=text(ah,xinit(1),yinit(1),sprintf('%.2f m',yinit(1)),'color',col_line,'Tag','feature_temp');
+                hp = line(ah,xinit(1),yinit(1),'color',col_line,'linewidth',1,'Tag','feature_temp');
+                txt = text(ah,xinit(1),yinit(1),sprintf('%.2f m',yinit(1)),'color',col_line,'Tag','feature_temp');
                 replace_interaction(main_figure,'interaction','WindowButtonMotionFcn','id',2,'interaction_fcn',@wbmcb);
                 replace_interaction(main_figure,'interaction','WindowButtonUpFcn','id',1,'interaction_fcn',@wbucb_wc);
 
             case 'stacked_wc'
                 u = 1;
-                hp=line(ah,xinit(1),yinit(1),'color',col_line,'linewidth',1,'Tag','feature_temp');
-                txt=text(ah,xinit(1),yinit(1),sprintf('%.2f m',yinit(1)),'color',col_line,'Tag','feature_temp');
+                hp = line(ah,xinit(1),yinit(1),'color',col_line,'linewidth',1,'Tag','feature_temp');
+                txt = text(ah,xinit(1),yinit(1),sprintf('%.2f m',yinit(1)),'color',col_line,'Tag','feature_temp');
                 replace_interaction(main_figure,'interaction','WindowButtonMotionFcn','id',2,'interaction_fcn',@wbmcb);
                 replace_interaction(main_figure,'interaction','WindowButtonUpFcn','id',1,'interaction_fcn',@wbucb_wc);
 
@@ -197,7 +197,9 @@ switch fig_anc.SelectionType
         
     case 'alt'
         % if first click was right-click or control-click, do a point
+        
         switch ah.Tag
+            
             case 'main'
                 % create a new point
                 new_feature = feature_cl('Point',[cp(1,1) cp(1,2)],'Zone',zone,'ID',ID);
@@ -205,10 +207,8 @@ switch fig_anc.SelectionType
                 % save as shapefile
                 new_feature.feature_to_shapefile(fullfile(whereisroot,'feature_files'));
                 
-               
             case 'stacked_wc'
 
-                
                 if ~ismember(disp_config.Fdata_ID , IDs)
                     disp_config.Fdata_ID = IDs(1);
                     disp_config.Iping = 1;
@@ -217,23 +217,24 @@ switch fig_anc.SelectionType
 
                 fData = fData_tot{disp_config.Fdata_ID ==IDs};
                 
-                iping=round(cp(1,1));
-                depth=abs(cp(1,2));
+                iping = round(cp(1,1));
+                depth = abs(cp(1,2));
                 
-                angle_mean=nanmean(disp_config.StackAngularWidth);
-                across_dist=depth*sind(angle_mean);
+                angle_mean = nanmean(disp_config.StackAngularWidth);
+                across_dist = depth*sind(angle_mean);
                 
-                [~,i_beam]=nanmin(abs(fData.X_BP_bottomAcrossDist(:,iping)-across_dist));
+                [~,i_beam] = nanmin(abs(fData.X_BP_bottomAcrossDist(:,iping)-across_dist));
                 
+                % create a new point
                 new_feature = feature_cl('Point',[fData.X_BP_bottomEasting(i_beam,iping) fData.X_BP_bottomNorthing(i_beam,iping)],...
                     'Depth_min',depth,'Depth_max',depth,'Zone',zone,'ID',ID);
                 
             case 'wc'
-                fData_tot = getappdata(main_figure,'fData');
-                IDs=cellfun(@(c) c.ID,fData_tot);
-
                 
-                if ~ismember(disp_config.Fdata_ID , IDs)
+                fData_tot = getappdata(main_figure,'fData');
+                IDs = cellfun(@(c) c.ID,fData_tot);
+
+                if ~ismember(disp_config.Fdata_ID, IDs)
                     disp_config.Fdata_ID = IDs(1);
                     disp_config.Iping = 1;
                     return;
@@ -241,19 +242,21 @@ switch fig_anc.SelectionType
 
                 fData = fData_tot{disp_config.Fdata_ID ==IDs};
                 
+                depth = abs(cp(1,2));
+                across_dist = cp(1,1);
                 
-                depth=abs(cp(1,2));
-                across_dist=cp(1,1);
+                iping = disp_config.Iping;
                 
-                iping=disp_config.Iping;
+                [~,i_beam] = nanmin(abs(fData.X_BP_bottomAcrossDist(:,iping)-across_dist));
                 
-                [~,i_beam]=nanmin(abs(fData.X_BP_bottomAcrossDist(:,iping)-across_dist));
-                
+                % create a new point
                 new_feature = feature_cl('Point',[fData.X_BP_bottomEasting(i_beam,iping) fData.X_BP_bottomNorthing(i_beam,iping)],...
                     'Depth_min',depth,'Depth_max',depth,'Zone',zone,'ID',ID);
         end
+        
         % finalize new feature
         save_new_feature();
+        
     otherwise
         
         return;
@@ -274,34 +277,33 @@ end
         X = [xinit(1),cp(1,1)];
         Y = [yinit(1),cp(1,2)];
 
+        x_min = nanmin(X);
+        x_min = nanmax(x_lim(1),x_min);
         
-        x_min=nanmin(X);
-        x_min=nanmax(x_lim(1),x_min);
+        x_max = nanmax(X);
+        x_max = nanmin(x_lim(end),x_max);
         
-        x_max=nanmax(X);
-        x_max=nanmin(x_lim(end),x_max);
+        y_min = nanmin(Y);
+        y_min = nanmax(y_min,y_lim(1));
         
-        y_min=nanmin(Y);
-        y_min=nanmax(y_min,y_lim(1));
+        y_max = nanmax(Y);
+        y_max = nanmin(y_max,y_lim(end));
         
-        y_max=nanmax(Y);
-        y_max=nanmin(y_max,y_lim(end));
+        x_box = ([x_min x_max  x_max x_min x_min]);
+        y_box = ([y_max y_max y_min y_min y_max]);
         
-        x_box=([x_min x_max  x_max x_min x_min]);
-        y_box=([y_max y_max y_min y_min y_max]);
-        
-        str_txt=sprintf('%.2f m',cp(1,2));
+        str_txt = sprintf('%.2f m',cp(1,2));
         
         if isvalid(hp)
             set(hp,'XData',x_box,'YData',y_box,'Tag','reg_temp');
         else
-            hp=plot(ah,x_box,x_box,'color',col_line,'linewidth',1,'Tag','reg_temp');
-        end
+            hp = plot(ah,x_box,x_box,'color',col_line,'linewidth',1,'Tag','reg_temp');
+        end 
         
         if isvalid(txt)
             set(txt,'position',[cp(1,1) cp(1,2) 0],'string',str_txt);
         else
-            txt=text(cp(1,1),cp(1,2),sprintf('%.2f m',cp(1,2)),'color',col_line);
+            txt = text(cp(1,1),cp(1,2),sprintf('%.2f m',cp(1,2)),'color',col_line);
         end
         
     end

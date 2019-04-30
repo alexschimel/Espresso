@@ -145,7 +145,7 @@ classdef feature_cl
             
         end
         
-        function geostruct=feature_to_geostruct(obj)
+        function geostruct = feature_to_geostruct(obj)
             % save feature as shapefile
             
             if ~isempty(obj.Polygon)
@@ -182,7 +182,7 @@ classdef feature_cl
         function feature_to_shapefile(obj,folder)
             % save feature as shapefile
             
-            geostruct=feature_to_geostruct(obj);
+            geostruct = feature_to_geostruct(obj);
             % save that shapefile. Using Unique_ID for filename
             try
                 if ~isfolder(folder)

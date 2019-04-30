@@ -70,15 +70,17 @@
 %% Function
 function [fData] = CFF_compute_ping_navigation(fData,varargin)
 
+%% 0. INITIALIZE
+datagramSource = [];
 
 %% 1. VARARGIN CHECKS
 
 % varargin{1}, source datagram for ping info:
-if nargin>1
-    
+if nargin>1    
     datagramSource = varargin{1};
-    
-else
+end
+   
+if isempty(datagramSource)
     
     % datagramSource was not specified, check fData for it
     if isfield(fData,'MET_datagramSource')
@@ -102,6 +104,7 @@ else
             error('can''t find a suitable datagramSource')
         end
     end
+    
 end
 
 % get ping time

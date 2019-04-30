@@ -87,8 +87,10 @@ res   = mosaic.res;
 mosaicSum   = zeros(numElemGridN,numElemGridE,'single');
 mosaicCount = zeros(numElemGridN,numElemGridE,'single');
 
+% loop over all files loaded
 for iF = 1:numel(fData_tot)
     
+    % get data and add tag mosaic
     fData = fData_tot{iF};
     mosaic.Fdata_ID(iF) = fData.ID;
     
@@ -96,42 +98,43 @@ for iF = 1:numel(fData_tot)
         continue;
     end
     
+    % get data
     E = fData.X_1E_gridEasting;
     N = fData.X_N1_gridNorthing;
     L = fData.X_NEH_gridLevel;
     if isa(L,'gpuArray')
-        L=gather(L);
+        L = gather(L);
     end
+    
     if size(L,3) > 1
         data = pow2db_perso(nanmean(10.^(L/10),3));
     else
         data = L;
     end
     
-    if isa(data,'gpuArray')
-        data=gather(data);
-    end
-    
+    % remove all data outside of mosaic boundaries
     idx_keep_E = E>E_lim(1) & E<E_lim(2);
     idx_keep_N = N>N_lim(1) & N<N_lim(2);
-    
     E(~idx_keep_E) = [];
     N(~idx_keep_N) = [];
     data(~idx_keep_N,:) = [];
     data(:,~idx_keep_E) = [];
     
+    % remove nans
     idx_nan = isnan(data);
     data(idx_nan) = [];
     
+    % if no data within mosaic bounds, continue to next file
     if isempty(data)
         continue;
     end
     
     E_mat = repmat(E,numel(N),1);
     N_mat = repmat(N,1,numel(E));
-    
     N_mat(idx_nan) = [];
     E_mat(idx_nan) = [];
+    
+    % turn data from db to natural? After we did the contrary before?
     data = (10.^(data./10));
     
     E_idx = round((E_mat-E_lim(1))/res+1);
@@ -152,9 +155,9 @@ for iF = 1:numel(fData_tot)
     
     mosaicSumTemp = accumarray(subs,data(:)',single([N_N N_E]),@sum,single(0));
     
-    mosaicCount(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1) = mosaicCount(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1)+mosaicCountTemp;
+    mosaicCount(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1) = mosaicCount(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1) + mosaicCountTemp;
     
-    mosaicSum(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1) = mosaicSum(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1)+mosaicSumTemp;
+    mosaicSum(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1) = mosaicSum(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1) + mosaicSumTemp;
     
     mosaic.Fdata_ID = [mosaic.Fdata_ID fData.ID];
     

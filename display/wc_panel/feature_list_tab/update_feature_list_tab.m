@@ -79,6 +79,7 @@
 function update_feature_list_tab(main_figure)
 
 features = getappdata(main_figure,'features');
+
 feature_list_tab_comp = getappdata(main_figure,'feature_list_tab');
 
 if isempty(features)
@@ -86,6 +87,7 @@ if isempty(features)
 else
     ID_features = {features(:).Unique_ID};
 end
+
 idx_uid = strcmpi(feature_list_tab_comp.table.ColumnName,'Unique_ID');
 
 if ~isempty(feature_list_tab_comp.table.Data)
@@ -97,9 +99,11 @@ else
 end
 
 idx_add = find(~ismember(ID_features,ID_features_table));
+
 if isempty(idx_add)
     return;
 end
+
 new_data = cell(numel(idx_add),numel(feature_list_tab_comp.table.ColumnName));
 
 new_data(:,strcmpi(feature_list_tab_comp.table.ColumnName,'ID')) = num2cell([features(idx_add).ID]);
@@ -121,9 +125,5 @@ new_data(:,strcmpi(feature_list_tab_comp.table.ColumnName,'Max depth')) = num2ce
 new_data(:,strcmpi(feature_list_tab_comp.table.ColumnName,'Unique_ID')) = {features(idx_add).Unique_ID};
 
 feature_list_tab_comp.table.Data = [feature_list_tab_comp.table.Data;new_data];
-
-
-
-
 
 end

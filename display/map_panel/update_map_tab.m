@@ -92,11 +92,12 @@ new_grid_flag = p.Results.new_grid_flag;
 new_mosaic_flag = p.Results.new_mosaic_flag;
 auto_zoom_extent_flag = p.Results.auto_zoom_extent_flag;
 update_line_index = p.Results.update_line_index;
+
+% display on devpt version
 if ~isdeployed()
     disp('Update Map Tab');
 end
     
-
 % exit if no data loaded
 fData_tot = getappdata(main_figure,'fData');
 if isempty(fData_tot)
@@ -106,9 +107,7 @@ end
 % get disp config
 disp_config = getappdata(main_figure,'disp_config');
 
-
-IDs=cellfun(@(c) c.ID,fData_tot);
-
+IDs = cellfun(@(c) c.ID,fData_tot);
 
 if ~ismember(disp_config.Fdata_ID , IDs)
     disp_config.Fdata_ID = IDs(1);
@@ -118,9 +117,9 @@ end
 
 fData = fData_tot{disp_config.Fdata_ID==IDs};
 
-ip          = disp_config.Iping;
+ip = disp_config.Iping;
 
-if ip >numel(fData.X_1P_pingE)
+if ip > numel(fData.X_1P_pingE)
     disp_config.Iping=1;
     return;
 end
@@ -143,8 +142,8 @@ if isempty(update_line_index)
     update_line_index = 1:length(fData_tot);
 end
 
-update_line_index(update_line_index>length(fData_tot))=1;
-update_line_index=unique(update_line_index);
+update_line_index(update_line_index>length(fData_tot)) = 1;
+update_line_index = unique(update_line_index);
 
 % set of active lines
 fdata_tab_comp = getappdata(main_figure,'fdata_tab');
@@ -172,17 +171,20 @@ for i = update_line_index(:)'
     
     if isempty(obj)
         % line to be drawn for the first time
-        [~,fname,ext]=fileparts(fData.ALLfilename{1});
-        user_data.Filename=[fname ext];
+        [~,fname,ext] = fileparts(fData.ALLfilename{1});
+        user_data.Filename = [fname ext];
+        
         % draw line navigation and ID it
-         handle_plot_1 = plot(ax,fData.X_1P_pingE,fData.X_1P_pingN,'Tag',tag_id_nav,...
-            'Visible','on','Color',nav_col,'ButtonDownFcn',{@disp_wc_ping_cback,main_figure},'UserData',user_data);
-             % draw dots as subsampled navigation
-        df = 10;
-        handle_plot_2=plot(ax,[fData.X_1P_pingE(1:df:end),fData.X_1P_pingE(end)],[fData.X_1P_pingN(1:df:end),fData.X_1P_pingN(end)],'.','Tag',tag_id_nav,...
+        handle_plot_1 = plot(ax,fData.X_1P_pingE,fData.X_1P_pingN,'Tag',tag_id_nav,...
             'Visible','on','Color',nav_col,'ButtonDownFcn',{@disp_wc_ping_cback,main_figure},'UserData',user_data);
         
-        handle_plot=[handle_plot_1 handle_plot_2];
+        % draw dots as subsampled navigation
+        df = 10;
+        handle_plot_2 = plot(ax,[fData.X_1P_pingE(1:df:end),fData.X_1P_pingE(end)],[fData.X_1P_pingN(1:df:end),fData.X_1P_pingN(end)],'.','Tag',tag_id_nav,...
+            'Visible','on','Color',nav_col,'ButtonDownFcn',{@disp_wc_ping_cback,main_figure},'UserData',user_data);
+        
+        handle_plot = [handle_plot_1 handle_plot_2];
+        
         % set hand pointer when on that line
         pointerBehavior.enterFcn    = [];
         pointerBehavior.exitFcn     = @(src, evt) exit_plot_fcn(src, evt,handle_plot);
@@ -192,7 +194,6 @@ for i = update_line_index(:)'
         % draw circle as start of line
         plot(ax,fData.X_1P_pingE(1),fData.X_1P_pingN(1),'o','Tag',tag_id_nav,'Visible','on','Color',nav_col);
        
-   
         % draw end of line
         % plot(ax,fData.X_1P_pingE(end),fData.X_1P_pingN(end),'s','Tag',tag_id_nav,'Visible','on','Color',nav_col);
         
@@ -274,8 +275,8 @@ for i = update_line_index(:)'
     %% Calculate zoom extents
     if idx_active_lines(i)
         
-        if isfield(fData,'X_NEH_gridLevel')
-            
+        if isfield(fData,'X_NEH_gridLevel') && ~isempty(fData.X_NEH_gridLevel)
+
             xlim(1) = nanmin(xlim(1),nanmin(fData.X_1E_gridEasting(:)));
             xlim(2) = nanmax(xlim(2),nanmax(fData.X_1E_gridEasting(:)));
             ylim(1) = nanmin(ylim(1),nanmin(fData.X_N1_gridNorthing(:)));

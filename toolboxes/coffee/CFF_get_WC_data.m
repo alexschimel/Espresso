@@ -103,11 +103,9 @@ addParameter(p,'iRange',[],@(x) isnumeric(x) ||isempty(x));
 parse(p,fieldN,varargin{:})
 
 % get results
-iPing = p.Results.iPing;
+iPing = round(p.Results.iPing);
 iBeam = p.Results.iBeam;
 iRange = p.Results.iRange;
-
-iPing=round(iPing);
 
 
 %% get raw data

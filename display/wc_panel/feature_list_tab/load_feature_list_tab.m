@@ -131,7 +131,6 @@ setappdata(main_figure,'feature_list_tab',feature_list_tab_comp);
 % Load existing features
 features = getappdata(main_figure,'features');
 
-
 folder = fullfile(whereisroot,'feature_files');
 listing = dir(folder);
 
@@ -168,8 +167,14 @@ if ~isempty(features)
 
     % and add to disp_config
     disp_config = getappdata(main_figure,'disp_config');
+    disp_config.MET_ellips = 'wgs84';
     disp_config.set_zone(utmzone);
     setappdata(main_figure,'disp_config',disp_config);
+    
+    % throw a warning that existing features define the session's
+    % projection
+    txt = sprintf('Existing features define the projection for this session (ellipsoid: %s, UTM zone: %s), which will be used for files to be loaded. If you want to use the files'' natural projection, delete the features first.', disp_config.MET_ellips, disp_config.MET_tmproj);
+    warning(txt);
 
     % all good? save/overwrite features into main figure
     setappdata(main_figure,'features',features);

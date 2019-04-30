@@ -386,6 +386,8 @@ for nF = 1:numel(files_to_load)
     
     file_to_load = files_to_load{nF};
     
+    %% first checks then loading data
+    
     % check if file was converted
     if files_not_converted(nF)
         fprintf('File "%s" (%i/%i) has not been converted yet. Loading aborted.\n',file_to_load,nF,numel(files_to_load));
@@ -408,14 +410,58 @@ for nF = 1:numel(files_to_load)
         continue
     end
     
-    % all tests passed. Loading can begin
+    % Loading can begin
     fprintf('Loading converted file "%s" (%i/%i). Started at %s... \n',file_to_load,nF,numel(files_to_load),datestr(now));
     tic
     
     % loading temp
     fData_temp = load(mat_fdata_file);
     
-    % checking project's UTM zone
+    
+    %% Check if paths in fData are accurate and change them if necessary
+
+    % flag to trigger re-save data
+    dirchange_flag = 0;
+    
+    % checking paths to .all/.wcd
+    for nR = 1:length(fData_temp.ALLfilename)
+        [filepath_in_fData,name,ext] = fileparts(fData_temp.ALLfilename{nR});
+        filepath_actual = fileparts(file_to_load);
+        if ~strcmp(filepath_in_fData,filepath_actual)
+            fData_temp.ALLfilename{nR} = fullfile(filepath_actual,[name ext]);
+            dirchange_flag = 1;
+        end
+    end
+    
+    % checking path to water-column data binary file
+    [filepath_in_fData,name,ext] = fileparts(fData_temp.WC_SBP_SampleAmplitudes.Filename);
+    if ~strcmp(filepath_in_fData,folder_for_converted_data)
+        fData_temp.WC_SBP_SampleAmplitudes.Filename = fullfile(folder_for_converted_data,[name ext]);
+        dirchange_flag = 1;
+    end
+    
+    % checking path to processed water-column data binary file
+    if isfield(fData_temp,'X_SBP_WaterColumnProcessed')
+        [filepath_in_fData,name,ext] = fileparts(fData_temp.X_SBP_WaterColumnProcessed.Filename);
+        if ~strcmp(filepath_in_fData,folder_for_converted_data)
+            fData_temp.X_SBP_WaterColumnProcessed.Filename = fullfile(folder_for_converted_data,[name ext]);
+            dirchange_flag = 1;
+        end
+    end
+    
+    % saving on disk if changes have been made
+    if dirchange_flag
+        fprintf('...This file has been moved from the directory where it was originally converted/processed. Paths were fixed. Now saving the data back onto disk...\n');
+        try
+            save(mat_fdata_file,'-struct','fData_temp','-v7.3');
+        catch
+            warning('Saving file not possible, but fixed data are loaded in Espresso and session can continue.');
+        end
+    end
+    
+    
+    %% Interpolating navigation data from ancillary sensors to ping time
+    
     if strcmp(disp_config.MET_tmproj,'')
         % Project has no projection yet, let's use the one for that file.
         
@@ -499,11 +545,13 @@ for nF = 1:numel(files_to_load)
         
     end
     
-    % Processing bottom detect
+    %% Processing bottom detect
     if ismember(fData_temp.MET_datagramSource,{'WC' 'AP'})
         fprintf('...Processing bottom detect...\n');
         fData_temp = CFF_georeference_WC_bottom_detect(fData_temp);
     end
+    
+    %% Finish-up
     
     % Time-tag that fData
     fData_temp.ID = str2double(datestr(now,'yyyymmddHHMMSSFFF'));
@@ -541,7 +589,7 @@ update_file_tab(main_figure);
 update_fdata_tab(main_figure);
 
 % update dispconfig to focus on the last line loaded
-disp_config.Fdata_ID =fData{end}.ID;
+disp_config.Fdata_ID = fData{end}.ID;
 
 % update map adjusting the zoom on all lines loaded
 update_map_tab(main_figure,0,0,1,[]);

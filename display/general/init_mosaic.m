@@ -78,6 +78,7 @@ mosaic.name     = 'New Mosaic';
 mosaic.E_lim    = E_lim;
 mosaic.N_lim    = N_lim;
 mosaic.res      = res;
+mosaic.mode     = 'normal';
 mosaic.ID       = str2double(datestr(now,'yyyymmddHHMMSSFFF'));
 mosaic.Fdata_ID = [];
 

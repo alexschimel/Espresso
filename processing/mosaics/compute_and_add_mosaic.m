@@ -79,8 +79,8 @@
 function compute_and_add_mosaic(main_figure,E_lim,N_lim)
 
 fData_tot = getappdata(main_figure,'fData');
-fdata_tab_comp = getappdata(main_figure,'fdata_tab');
 
+fdata_tab_comp = getappdata(main_figure,'fdata_tab');
 
 idx_fData = find(cell2mat(fdata_tab_comp.table.Data(:,3)));
 fData_tot = fData_tot(idx_fData);
@@ -105,6 +105,7 @@ if mosaic.res == 0
     
 end
 
+% if still here, then go on to computing mosaic
 mosaic = compute_mosaic(mosaic,fData_tot);
 
 mosaics = getappdata(main_figure,'mosaics');
