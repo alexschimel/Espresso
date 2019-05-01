@@ -2,7 +2,7 @@
 %
 % _This section contains a very short description of the function, for the
 % user to know this function is part of the software and what it does for
-% it. Example below to replace. Delete these lines XXX._ 
+% it. Example below to replace. Delete these lines XXX._
 %
 % Template of ESP3 function header. XXX
 %
@@ -13,10 +13,10 @@
 % _This section contains a more detailed description of what the function
 % does and how to use it, for the interested user to have an overall
 % understanding of its function. Example below to replace. Delete these
-% lines XXX._  
+% lines XXX._
 %
 % This is a text file containing the basic comment template to add at the
-% start of any new ESP3 function to serve as function help. XXX 
+% start of any new ESP3 function to serve as function help. XXX
 %
 % *INPUT VARIABLES*
 %
@@ -27,13 +27,13 @@
 % type (e.g. Num, Positive num, char, 1xN cell array, etc.) and default
 % value if there is one (e.g. Default: '10'). Example below to replace.
 % Delete these lines XXX._
-% 
+%
 % * |fData|: Required. Structure for the storage of kongsberg EM series
 % multibeam data in a format more convenient for processing. The data is
 % recorded as fields coded "a_b_c" where "a" is a code indicating data
 % origing, "b" is a code indicating data dimensions, and "c" is the data
 % name. See the help of function CFF_convert_ALLdata_to_fData.m for
-% description of codes. 
+% description of codes.
 % * |res|: Description (Information). Default: 1 XXX
 % * |vert_res|: Description (Information). Default: 1 XXX
 % * |dim|: Description (Information). '2D' or '3D' (default) XXX
@@ -63,63 +63,73 @@
 % _This section contains examples of valid function calls. Note that
 % example lines start with 3 white spaces so that the publish function
 % shows them correctly as matlab code. Example below to replace. Delete
-% these lines XXX._ 
+% these lines XXX._
 %
 %   example_use_1; % comment on what this does. XXX
 %   example_use_2: % comment on what this line does. XXX
 %
 % *AUTHOR, AFFILIATION & COPYRIGHT*
 %
-% Alexandre Schimel, Deakin University, NIWA. 
+% Alexandre Schimel, Deakin University, NIWA.
 % Yoann Ladroit, NIWA.
 
 
 %% Function
 function fData = CFF_grid_WC_data(fData,varargin)
 
-% XXX: check that gridding uses processed data if it exists, original data
-% if not (instead of using the checkboxes)
-
 %% input parsing
 
 % init
 p = inputParser;
 
-
-% optional
+% grid mode (2D map or 3D) and resolution (horizontal and vertical)
+addParameter(p,'dim','3D',@(x) ismember(x,{'2D' '3D'}));
 addParameter(p,'res',1,@(x) isnumeric(x)&&x>0);
 addParameter(p,'vert_res',1,@(x) isnumeric(x)&&x>0);
-addParameter(p,'dim','3D',@(x) ismember(x,{'2D' '3D'}));
+
+% decimation factors
 addParameter(p,'dr_sub',4,@(x) isnumeric(x)&&x>0);
 addParameter(p,'db_sub',2,@(x) isnumeric(x)&&x>0);
-addParameter(p,'e_lim',[],@isnumeric);
-addParameter(p,'n_lim',[],@isnumeric);
+
+% grid limitation parameters
+addParameter(p,'grdlim_mode','between',@(x) ismember(x,{'between', 'outside_of'}));
+addParameter(p,'grdlim_var','depth_below_sonar',@(x) ismember(x,{'depth_below_sonar', 'height_above_seafloor'}));
+addParameter(p,'grdlim_mindist',0,@isnumeric);
+addParameter(p,'grdlim_maxdist',inf,@isnumeric);
+addParameter(p,'grdlim_east',[],@isnumeric);
+addParameter(p,'grdlim_north',[],@isnumeric);
 
 % parse
 parse(p,varargin{:})
 
 % get results
+dim       = p.Results.dim;
 res       = p.Results.res;
 vert_res  = p.Results.vert_res;
-dim       = p.Results.dim;
-dr_sub    = p.Results.dr_sub;
-db_sub    = p.Results.db_sub;
+dr_sub = p.Results.dr_sub;
+db_sub = p.Results.db_sub;
+grdlim_mode    = p.Results.grdlim_mode;
+grdlim_var     = p.Results.grdlim_var;
+grdlim_mindist = p.Results.grdlim_mindist;
+grdlim_maxdist = p.Results.grdlim_maxdist;
+grdlim_east    = p.Results.grdlim_east;
+grdlim_north   = p.Results.grdlim_north;
 
 
 %% Extract info about WCD
 if isfield(fData,'X_SBP_WaterColumnProcessed')
-    field_to_grid='X_SBP_WaterColumnProcessed';
+    field_to_grid = 'X_SBP_WaterColumnProcessed';
 else
-    field_to_grid='WC_SBP_SampleAmplitudes';
+    field_to_grid = 'WC_SBP_SampleAmplitudes';
 end
 
+% size
 [nSamples, nBeams, nPings] = size(fData.(field_to_grid).Data.val);
 
-%% Prepare needed 1xP data
+%% Prepare needed 1xP data for computations
 
 % Source datagram
 datagramSource = fData.MET_datagramSource;
-
 
 % inter-sample distance
 soundSpeed           = fData.(sprintf('%s_1P_SoundSpeed',datagramSource)).*0.1; %m/s
@@ -138,16 +148,16 @@ sonarHeadingOffset = fData.IP_ASCIIparameters.S1H; %deg
 sonarHeading       = deg2rad(-mod(gridConvergence + vesselHeading + sonarHeadingOffset,360));
 
 
-%% block processing setup
-mem_struct=memory;
-blockLength=ceil(mem_struct.MemAvailableAllArrays/(nSamples*nBeams*8)/20);
+%% block processing setup depending on memory available
+mem_struct = memory;
+blockLength = ceil(mem_struct.MemAvailableAllArrays/(nSamples*nBeams*8)/20);
 nBlocks = ceil(nPings./blockLength);
 blocks = [ 1+(0:nBlocks-1)'.*blockLength , (1:nBlocks)'.*blockLength ];
 blocks(end,2) = nPings;
 
 
 %% find grid limits
-%profile on;
+
 % initialize vectors
 minBlockE = nan(1,nBlocks);
 minBlockN = nan(1,nBlocks);
@@ -159,16 +169,15 @@ switch dim
         maxBlockH = nan(1,nBlocks);
 end
 
-gpu_comp = get_gpu_comp_stat();
-
+% find grid limits for each block
 for iB = 1:nBlocks
     
     % list of pings in this block
     blockPings = blocks(iB,1):blocks(iB,2);
     
-    % Sx1 vector of samples number (first and last samples only) and BxP
-    % arrays of start sample number and beam pointing angle (outer beams
-    % and central beam, for ping block, only)
+    % to define the limits of the grid for each block, we'll only consider
+    % the easting and northing of the first and last sample for the central
+    % beam and two outer beams, for all pings.
     idxSamples = [1 nSamples]';
     startSampleNumber = fData.(sprintf('%s_BP_StartRangeSampleNumber',datagramSource))([1 round(nBeams./2) nBeams],blockPings);
     beamPointingAngle = deg2rad(fData.(sprintf('%s_BP_BeamPointingAngle',datagramSource))([1 round(nBeams./2) nBeams],blockPings)/100);
@@ -176,7 +185,7 @@ for iB = 1:nBlocks
     % Get easting, northing and height
     [blockE, blockN, blockH] = CFF_georeference_sample(idxSamples, startSampleNumber, interSamplesDistance(blockPings), beamPointingAngle, ...
         sonarEasting(blockPings), sonarNorthing(blockPings), sonarHeight(blockPings), sonarHeading(blockPings));
-
+    
     % these subset of all samples should be enough to find the bounds for the entire block
     minBlockE(iB) = min(blockE(:));
     maxBlockE(iB) = max(blockE(:));
@@ -191,22 +200,15 @@ for iB = 1:nBlocks
     
 end
 
-
-%% Get grid boundaries from the min and max of those blocks
-
-% in easting
+% Get grid boundaries from the min and max of those blocks
 minGridE = floor(min(minBlockE));
 maxGridE = ceil(max(maxBlockE));
 numElemGridE = ceil((maxGridE-minGridE)./res)+1;
-
-% in northing
 minGridN = floor(min(minBlockN));
 maxGridN = ceil(max(maxBlockN));
 numElemGridN = ceil((maxGridN-minGridN)./res)+1;
-
 switch dim
     case '3D'
-        % in height
         minGridH = floor(min(minBlockH));
         maxGridH = ceil(max(maxBlockH));
         numElemGridH = ceil((maxGridH-minGridH)./vert_res)+1;
@@ -224,11 +226,13 @@ switch dim
         gridCount = zeros(numElemGridN,numElemGridE,numElemGridH,'single');
 end
 
-
-if gpu_comp>0
+% if GPU is avaialble for computation, setup for it
+gpu_comp = get_gpu_comp_stat();
+if gpu_comp > 0
     gridSum   = gpuArray(gridSum);
     gridCount = gpuArray(gridCount);
 end
+
 
 %% fill the grids with block processing
 
@@ -237,9 +241,8 @@ for iB = 1:nBlocks
     % list of pings in this block
     blockPings  = blocks(iB,1):blocks(iB,2);
     
-    % Sx1 vector of (decimated) samples number and (beam-decimated) BxP
-    % arrays of start sample number and beam pointing angle (for ping
-    % block, only)
+    % to speed up processing, we will only grid data decimated in samples
+    % number and in beams
     idxSamples = (1:dr_sub:nSamples)';
     startSampleNumber = fData.(sprintf('%s_BP_StartRangeSampleNumber',datagramSource))(1:db_sub:end,blockPings);
     beamPointingAngle = deg2rad(fData.(sprintf('%s_BP_BeamPointingAngle',datagramSource))(1:db_sub:end,blockPings)/100);
@@ -247,12 +250,11 @@ for iB = 1:nBlocks
     % Get easting, northing and height
     [blockE, blockN, blockH] = CFF_georeference_sample(idxSamples, startSampleNumber, interSamplesDistance(blockPings), beamPointingAngle, ...
         sonarEasting(blockPings), sonarNorthing(blockPings), sonarHeight(blockPings), sonarHeading(blockPings));
-
+    
     % get data to grid
     blockL = CFF_get_WC_data(fData,field_to_grid,'iPing',blockPings,'dr_sub',dr_sub,'db_sub',db_sub,'output_format','true');
-    %blockL = CFF_get_WC_data(fData,field_to_grid,[],[],blockPings,dr_sub,db_sub,'true');
     
-    % remove nans:
+    % start with removing all data where level is NaN
     indNan = isnan(blockL);
     blockL(indNan) = [];
     if isempty(blockL)
@@ -260,27 +262,64 @@ for iB = 1:nBlocks
     end
     blockE(indNan) = [];
     blockN(indNan) = [];
-    
-    switch dim
-        case '3D'
-            blockH(indNan) = [];
-    end
+    blockH(indNan) = [];
     clear indNan
     
+    % get indices of samples we want to keep in the calculation
+    switch grdlim_var
+        
+        case 'depth_below_sonar'
+            
+            % H is already as depth below sonar so it's pretty easy
+            switch grdlim_mode
+                case 'between'
+                    idx_keep = blockH<=-grdlim_mindist & blockH>=-grdlim_maxdist;
+                case 'outside_of'
+                    idx_keep = blockH>=-grdlim_mindist | blockH<=-grdlim_maxdist;
+            end
+            
+        case 'height_above_seafloor'
+            
+            % first need to calculate height above seafloor for each sample
+            % and the interpolation takes a while
+            F = scatteredInterpolant(fData.X_BP_bottomEasting(:),fData.X_BP_bottomNorthing(:),fData.X_BP_bottomHeight(:));
+            block_bottomHeight = F(blockE,blockN);
+            block_sampleHeightAboveSeafloor = blockH - block_bottomHeight;
+            
+            switch grdlim_mode
+                case 'between'
+                    idx_keep = block_sampleHeightAboveSeafloor>=grdlim_mindist & block_sampleHeightAboveSeafloor<=grdlim_maxdist;
+                case 'outside_of'
+                    idx_keep = block_sampleHeightAboveSeafloor<=grdlim_mindist | block_sampleHeightAboveSeafloor>=grdlim_maxdist;
+            end
+            
+            clear block_bottomHeight block_sampleHeightAboveSeafloor
+            
+    end
+    
+    % and remove data that we don't want to grid
+    blockL(~idx_keep) = [];
     if isempty(blockL)
         continue;
     end
+    blockE(~idx_keep) = [];
+    blockN(~idx_keep) = [];
+    blockH(~idx_keep) = [];
+    block_size = size(blockN');
+    clear idx_keep
     
-    % pass grid Level in natural before gridding
-    if gpu_comp>0
+    % pass grid level in natural before gridding
+    if gpu_comp > 0
         blockL = 10.^(gpuArray(blockL)./10);
     else
-         blockL = 10.^(blockL./10);
+        blockL = 10.^(blockL./10);
     end
-        
+    
     % data indices in full grid
     E_idx = round((blockE-minGridE)/res+1);
     N_idx = round((blockN-minGridN)/res+1);
+    
+    clear blockE blockN
     
     % first index
     idx_E_start = min(E_idx);
@@ -294,24 +333,26 @@ for iB = 1:nBlocks
     N_E = max(E_idx);
     N_N = max(N_idx);
     
+    % now gridding...
     switch dim
         
         case '2D'
+            
+            clear blockH
+            
+            % prepare indices
             subs = single([N_idx' E_idx']);
             clear N_idx E_idx
             
-            if gpu_comp>0
-                gridCountTemp = gather(accumarray(subs,gpuArray(ones(size(blockL'),'single')),single([N_N N_E]),@sum,single(0)));  
-                % Sum of data points in grid cell
-                gridSumTemp = gather(accumarray(subs,gpuArray(blockL'),single([N_N N_E]),@sum,single(0)));
+            if gpu_comp > 0
+                gridCountTemp = gather(accumarray(subs,gpuArray(ones(block_size,'single')),single([N_N N_E]),@sum,single(0)));
+                gridSumTemp   = gather(accumarray(subs,gpuArray(blockL'),single([N_N N_E]),@sum,single(0)));
             else
-                % Number of data points in grid cell (density/weight)
-                gridCountTemp = accumarray(subs,ones(size(blockL'),'single'),single([N_N N_E]),@sum,single(0));
-                % Sum of data points in grid cell
-                gridSumTemp = accumarray(subs,blockL',single([N_N N_E]),@sum,single(0));
+                gridCountTemp = accumarray(subs,ones(block_size,'single'),single([N_N N_E]),@sum,single(0));
+                gridSumTemp   = accumarray(subs,blockL',single([N_N N_E]),@sum,single(0));
             end
-
-            clear blockE blockN blockH blockL subs
+            
+            clear blockL subs
             
             % Summing sums in full grid
             gridCount(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1) = ...
@@ -322,27 +363,24 @@ for iB = 1:nBlocks
                 gridSum(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1)+gridSumTemp;
             
         case '3D'
+            
+            % prepare indices
             H_idx = round((blockH-minGridH)/vert_res+1);
+            clear blockH
             idx_H_start = min(H_idx);
             H_idx = H_idx - min(H_idx) + 1;
             N_H = max(H_idx);
-            
             subs = single([N_idx' E_idx' H_idx']);
             clear N_idx E_idx H_idx
-            if gpu_comp>0
-                % Number of data points in grid cell (density/weight)
-                gridCountTemp = gather(accumarray(subs,gpuArray(ones(size(blockH'),'single')),single([N_N N_E N_H]),@sum,single(0)));
-                
-                % Sum of data points in grid cell
-                gridSumTemp = gather(accumarray(subs,gpuArray(blockL'),single([N_N N_E N_H]),@sum,single(0)));
+            
+            if gpu_comp > 0
+                gridCountTemp = gather(accumarray(subs,gpuArray(ones(block_size,'single')),single([N_N N_E N_H]),@sum,single(0)));
+                gridSumTemp   = gather(accumarray(subs,gpuArray(blockL'),single([N_N N_E N_H]),@sum,single(0)));
             else
-                % Number of data points in grid cell (density/weight)
-                gridCountTemp = accumarray(subs,gpuArray(ones(size(blockH'),'single'),single([N_N N_E N_H]),@sum,single(0)));
-                
-                % Sum of data points in grid cell
-                gridSumTemp = accumarray(subs,blockL',single([N_N N_E N_H]),@sum,single(0));
+                gridCountTemp = accumarray(subs,gpuArray(ones(block_size,'single'),single([N_N N_E N_H]),@sum,single(0)));
+                gridSumTemp   = accumarray(subs,blockL',single([N_N N_E N_H]),@sum,single(0));
             end
-            clear blockE blockN blockH blockL subs
+            clear blockL subs
             
             % Summing sums in full grid
             gridCount(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1,idx_H_start:idx_H_start+N_H-1) = ...
@@ -351,6 +389,7 @@ for iB = 1:nBlocks
             % Summing density in full grid
             gridSum(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1,idx_H_start:idx_H_start+N_H-1) = ...
                 gridSum(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1,idx_H_start:idx_H_start+N_H-1)+gridSumTemp;
+            
     end
     
     clear gridCountTemp gridSumTemp
@@ -358,7 +397,7 @@ for iB = 1:nBlocks
 end
 
 
-%% crop the results (remove nans on the edges)
+%% crop the edges of the grids (they were built based on original data size)
 switch dim
     
     case '2D'
@@ -411,16 +450,16 @@ switch dim
         gridNorthing = gridNorthing(minNidx:maxNidx);
         gridEasting  = gridEasting(:,minEidx:maxEidx);
         gridHeight   = gridHeight(:,:,minHidx:maxHidx);
-       
+        
 end
 
-% final calculation average and back in dB
+% final calculations: average and back in dB
 gridLevel = 10.*log10(gridSum./gridCount);
 
 % revert gpuArrays back to regular arrays before storing so that data can
 % be used even without the parallel computing toolbox and so that loading
 % data don't overload the limited GPU memory
-if gpu_comp>0
+if gpu_comp > 0
     gridLevel = gather(gridLevel);
     gridCount = gather(gridCount);
 end
@@ -440,6 +479,4 @@ switch dim
         fData.X_1_gridVerticalResolution = vert_res;
 end
 
-% profile off;
-% profile viewer;
 

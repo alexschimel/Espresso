@@ -424,15 +424,16 @@ for i = idx_fData(:)'
         'vert_res',vert_res,...
         'dim',grid_dim,...
         'dr_sub',dr_sub,...
-        'db_sub',db_sub,...
-        'e_lim',[],...
-        'n_lim',[]);
+        'db_sub',db_sub);
     
     % disp
     fprintf('...Done. Elapsed time: %f seconds.\n',toc);
-     % get folder for converted data
+    
+    % get folder for converted data
     folder_for_converted_data = CFF_converted_data_folder(fData_tot{i}.ALLfilename{1});
-    fData=fData_tot{i};
+    
+    fData = fData_tot{i};
+    
     % converted filename fData
     mat_fdata_file = fullfile(folder_for_converted_data,'fdata.mat');
     save(mat_fdata_file,'-struct','fData','-v7.3');
