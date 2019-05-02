@@ -20,7 +20,7 @@ p = inputParser;
 addOptional(p,'Filenames',{},@(x) ischar(x)|iscell(x));
 parse(p,varargin{:});
 
-%% Do not relaunch window if already open (in Matlab)...
+%% In Matlab, do not relaunch window if already open
 if ~isdeployed()
     wc_win = findobj(groot,'tag','Espresso');
     if ~isempty(wc_win)
@@ -28,10 +28,21 @@ if ~isdeployed()
         figure(wc_win);
         fprintf('...Done. Espresso is ready for use.\n')
         return;
-    else
-        fprintf('Starting Espresso...\n');
     end
 end
+
+%% Starting diary
+if ~exist(Espresso_user_folder,'dir')
+    mkdir(Espresso_user_folder);
+end
+if exist(Espresso_diary_file,'file')
+    delete(Espresso_diary_file);
+end
+diary(Espresso_diary_file);
+
+%% Starting messages
+fprintf('Starting Espresso at %s... \n',datestr(now));
+fprintf('...INFO: Find a log of this output at %s. \n',Espresso_diary_file);
 
 %% Software main path
 main_path = whereisroot();

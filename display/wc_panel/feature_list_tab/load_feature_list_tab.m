@@ -131,7 +131,7 @@ setappdata(main_figure,'feature_list_tab',feature_list_tab_comp);
 % Load existing features
 features = getappdata(main_figure,'features');
 
-folder = fullfile(whereisroot,'feature_files');
+folder = fullfile(Espresso_user_folder,'feature_files');
 listing = dir(folder);
 
 for ii = 1:numel(listing)
@@ -173,7 +173,7 @@ if ~isempty(features)
     
     % throw a warning that existing features define the session's
     % projection
-    txt = sprintf('Existing features define the projection for this session (ellipsoid: %s, UTM zone: %s), which will be used for files to be loaded. If you want to use the files'' natural projection, delete the features first.', disp_config.MET_ellips, disp_config.MET_tmproj);
+    txt = sprintf('Existing features (in the "Features List" tab) define the projection for this session (ellipsoid: %s, UTM zone: %s), so that any data file to be loaded will be using this projection. If you want to reset this session''s projection so that data files will be loaded in their natural projection, you will first need to delete the existing features.', disp_config.MET_ellips, disp_config.MET_tmproj);
     warning(txt);
 
     % all good? save/overwrite features into main figure
@@ -227,7 +227,7 @@ switch src.ColumnName{idx_data}
         end
 end
 
-features(idx_feature).feature_to_shapefile(fullfile(whereisroot,'feature_files'));
+features(idx_feature).feature_to_shapefile(fullfile(Espresso_user_folder,'feature_files'));
 
 setappdata(main_figure,'features',features);
 
@@ -428,11 +428,11 @@ features_id = {features(:).Unique_ID};
 
 idx_rem = ismember(features_id,IDs);
 
-shp_files = dir(fullfile(whereisroot,'feature_files'));
+shp_files = dir(fullfile(Espresso_user_folder,'feature_files'));
 
 idx_f_to_rem = contains({shp_files(:).name},features_id(idx_rem));
 
-files_to_rem = cellfun(@(x) fullfile(whereisroot,'feature_files',x),{shp_files(idx_f_to_rem).name},'un',0);
+files_to_rem = cellfun(@(x) fullfile(Espresso_user_folder,'feature_files',x),{shp_files(idx_f_to_rem).name},'un',0);
 
 cellfun(@delete,files_to_rem);
 

@@ -205,7 +205,7 @@ switch fig_anc.SelectionType
                 new_feature = feature_cl('Point',[cp(1,1) cp(1,2)],'Zone',zone,'ID',ID);
                 
                 % save as shapefile
-                new_feature.feature_to_shapefile(fullfile(whereisroot,'feature_files'));
+                new_feature.feature_to_shapefile(fullfile(Espresso_user_folder,'feature_files'));
                 
             case 'stacked_wc'
 
@@ -503,7 +503,7 @@ end
         new_feature = feature_cl('Polygon',poly,'Zone',disp_config.get_zone(),'ID',ID);
         
         % save as shapefile
-        new_feature.feature_to_shapefile(fullfile(whereisroot,'feature_files'));
+        new_feature.feature_to_shapefile(fullfile(Espresso_user_folder,'feature_files'));
         
         % finalize new feature
         save_new_feature();

@@ -43,7 +43,11 @@ delete(ext_figs);
 delete(main_figure);
 clear fData
 
-fprintf('...Done.\n');
+fprintf('...Done. Find a log of this output at %s. \n',Espresso_diary_file);
+diary off
 
+if isdeployed()
+    pause(1); % give reader time to read that last line
+end
 
 end

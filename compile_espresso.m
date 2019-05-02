@@ -1,5 +1,23 @@
-% compile_espresso(pwd,'Espresso.m');
+%% compile_espresso.m
+%
+% Compiles Espresso
+%
+%% Help
+%
+% *USE*
+%
+% Just specify path and name of the .m file of the main function (normally
+% "Espresso.m") 
+%
+% *EXAMPLE*
+%
+%  compile_espresso(pwd,'Espresso.m'); % if in the right folder
+%
+% *AUTHOR, AFFILIATION & COPYRIGHT*
+%
+% Yoann Ladroit, Alexandre Schimel, NIWA.
 
+%% Function
 function compile_espresso(root_folder,nomFunc)
 
 folders = folders_list(root_folder);

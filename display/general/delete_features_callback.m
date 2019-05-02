@@ -113,10 +113,10 @@
 % 
 % idx_rem=ismember(features_id,IDs);
 % 
-% shp_files=dir(fullfile(whereisroot,'feature_files'));
+% shp_files=dir(fullfile(Espresso_user_folder,'feature_files'));
 % idx_f_to_rem=contains({shp_files(:).name},features_id(idx_rem));
 % 
-% files_to_rem=cellfun(@(x) fullfile(whereisroot,'feature_files',x),{shp_files(idx_f_to_rem).name},'un',0);
+% files_to_rem=cellfun(@(x) fullfile(Espresso_user_folder,'feature_files',x),{shp_files(idx_f_to_rem).name},'un',0);
 % cellfun(@delete,files_to_rem);
 % 
 % features(idx_rem)=[];
