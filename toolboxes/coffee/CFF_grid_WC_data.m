@@ -34,9 +34,9 @@
 % origing, "b" is a code indicating data dimensions, and "c" is the data
 % name. See the help of function CFF_convert_ALLdata_to_fData.m for
 % description of codes.
-% * |res|: Description (Information). Default: 1 XXX
-% * |vert_res|: Description (Information). Default: 1 XXX
-% * |dim|: Description (Information). '2D' or '3D' (default) XXX
+% * |grid_horz_res|: Description (Information). Default: 1 XXX
+% * |grid_vert_res|: Description (Information). Default: 1 XXX
+% * |grid_type|: Description (Information). '2D' or '3D' (default) XXX
 % * |dr_sub|: Description (Information). Default: 4 XXX
 % * |db_sub|: Description (Information). Default: 2 XXX
 % * |e_lim|: Description (Information). Default: [] XXX
@@ -83,17 +83,17 @@ function fData = CFF_grid_WC_data(fData,varargin)
 p = inputParser;
 
 % grid mode (2D map or 3D) and resolution (horizontal and vertical)
-addParameter(p,'dim','3D',@(x) ismember(x,{'2D' '3D'}));
-addParameter(p,'res',1,@(x) isnumeric(x)&&x>0);
-addParameter(p,'vert_res',1,@(x) isnumeric(x)&&x>0);
+addParameter(p,'grid_type','3D',@(x) ismember(x,{'2D' '3D'}));
+addParameter(p,'grid_horz_res',1,@(x) isnumeric(x)&&x>0);
+addParameter(p,'grid_vert_res',1,@(x) isnumeric(x)&&x>0);
 
 % decimation factors
 addParameter(p,'dr_sub',4,@(x) isnumeric(x)&&x>0);
 addParameter(p,'db_sub',2,@(x) isnumeric(x)&&x>0);
 
 % grid limitation parameters
-addParameter(p,'grdlim_mode','between',@(x) ismember(x,{'between', 'outside_of'}));
-addParameter(p,'grdlim_var','depth_below_sonar',@(x) ismember(x,{'depth_below_sonar', 'height_above_seafloor'}));
+addParameter(p,'grdlim_mode','between',@(x) ismember(x,{'between', 'outside of'}));
+addParameter(p,'grdlim_var','depth below sonar',@(x) ismember(x,{'depth below sonar', 'height above bottom'}));
 addParameter(p,'grdlim_mindist',0,@isnumeric);
 addParameter(p,'grdlim_maxdist',inf,@isnumeric);
 addParameter(p,'grdlim_east',[],@isnumeric);
@@ -103,9 +103,9 @@ addParameter(p,'grdlim_north',[],@isnumeric);
 parse(p,varargin{:})
 
 % get results
-dim       = p.Results.dim;
-res       = p.Results.res;
-vert_res  = p.Results.vert_res;
+grid_type     = p.Results.grid_type;
+grid_horz_res = p.Results.grid_horz_res;
+grid_vert_res = p.Results.grid_vert_res;
 dr_sub = p.Results.dr_sub;
 db_sub = p.Results.db_sub;
 grdlim_mode    = p.Results.grdlim_mode;
@@ -163,7 +163,7 @@ minBlockE = nan(1,nBlocks);
 minBlockN = nan(1,nBlocks);
 maxBlockE = nan(1,nBlocks);
 maxBlockN = nan(1,nBlocks);
-switch dim
+switch grid_type
     case '3D'
         minBlockH = nan(1,nBlocks);
         maxBlockH = nan(1,nBlocks);
@@ -192,7 +192,7 @@ for iB = 1:nBlocks
     minBlockN(iB) = min(blockN(:));
     maxBlockN(iB) = max(blockN(:));
     
-    switch dim
+    switch grid_type
         case '3D'
             minBlockH(iB) = min(blockH(:));
             maxBlockH(iB) = max(blockH(:));
@@ -203,21 +203,21 @@ end
 % Get grid boundaries from the min and max of those blocks
 minGridE = floor(min(minBlockE));
 maxGridE = ceil(max(maxBlockE));
-numElemGridE = ceil((maxGridE-minGridE)./res)+1;
+numElemGridE = ceil((maxGridE-minGridE)./grid_horz_res)+1;
 minGridN = floor(min(minBlockN));
 maxGridN = ceil(max(maxBlockN));
-numElemGridN = ceil((maxGridN-minGridN)./res)+1;
-switch dim
+numElemGridN = ceil((maxGridN-minGridN)./grid_horz_res)+1;
+switch grid_type
     case '3D'
         minGridH = floor(min(minBlockH));
         maxGridH = ceil(max(maxBlockH));
-        numElemGridH = ceil((maxGridH-minGridH)./vert_res)+1;
+        numElemGridH = ceil((maxGridH-minGridH)./grid_vert_res)+1;
 end
 
 
 %% initalize the grids (sum and points density per cell)
 
-switch dim
+switch grid_type
     case '2D'
         gridSum   = zeros(numElemGridN,numElemGridE,'single');
         gridCount = zeros(numElemGridN,numElemGridE,'single');
@@ -268,17 +268,17 @@ for iB = 1:nBlocks
     % get indices of samples we want to keep in the calculation
     switch grdlim_var
         
-        case 'depth_below_sonar'
+        case 'depth below sonar'
             
             % H is already as depth below sonar so it's pretty easy
             switch grdlim_mode
                 case 'between'
                     idx_keep = blockH<=-grdlim_mindist & blockH>=-grdlim_maxdist;
-                case 'outside_of'
+                case 'outside of'
                     idx_keep = blockH>=-grdlim_mindist | blockH<=-grdlim_maxdist;
             end
             
-        case 'height_above_seafloor'
+        case 'height above bottom'
             
             % first need to calculate height above seafloor for each sample
             % and the interpolation takes a while
@@ -289,7 +289,7 @@ for iB = 1:nBlocks
             switch grdlim_mode
                 case 'between'
                     idx_keep = block_sampleHeightAboveSeafloor>=grdlim_mindist & block_sampleHeightAboveSeafloor<=grdlim_maxdist;
-                case 'outside_of'
+                case 'outside of'
                     idx_keep = block_sampleHeightAboveSeafloor<=grdlim_mindist | block_sampleHeightAboveSeafloor>=grdlim_maxdist;
             end
             
@@ -316,8 +316,8 @@ for iB = 1:nBlocks
     end
     
     % data indices in full grid
-    E_idx = round((blockE-minGridE)/res+1);
-    N_idx = round((blockN-minGridN)/res+1);
+    E_idx = round((blockE-minGridE)/grid_horz_res+1);
+    N_idx = round((blockN-minGridN)/grid_horz_res+1);
     
     clear blockE blockN
     
@@ -334,7 +334,7 @@ for iB = 1:nBlocks
     N_N = max(N_idx);
     
     % now gridding...
-    switch dim
+    switch grid_type
         
         case '2D'
             
@@ -365,7 +365,7 @@ for iB = 1:nBlocks
         case '3D'
             
             % prepare indices
-            H_idx = round((blockH-minGridH)/vert_res+1);
+            H_idx = round((blockH-minGridH)/grid_vert_res+1);
             clear blockH
             idx_H_start = min(H_idx);
             H_idx = H_idx - min(H_idx) + 1;
@@ -398,7 +398,7 @@ end
 
 
 %% crop the edges of the grids (they were built based on original data size)
-switch dim
+switch grid_type
     
     case '2D'
         
@@ -417,8 +417,8 @@ switch dim
         gridSum   = gridSum(minNidx:maxNidx,minEidx:maxEidx);
         
         % define and crop dim vectors
-        gridNorthing = (0:numElemGridN-1)'.*res + minGridN;
-        gridEasting  = (0:numElemGridE-1) .*res + minGridE;
+        gridNorthing = (0:numElemGridN-1)'.*grid_horz_res + minGridN;
+        gridEasting  = (0:numElemGridE-1) .*grid_horz_res + minGridE;
         gridNorthing = gridNorthing(minNidx:maxNidx);
         gridEasting  = gridEasting(:,minEidx:maxEidx);
         
@@ -444,9 +444,9 @@ switch dim
         gridSum   = gridSum(minNidx:maxNidx,minEidx:maxEidx,minHidx:maxHidx);
         
         % define and crop dim vectors
-        gridNorthing = (0:numElemGridN-1)'.*res + minGridN;
-        gridEasting  = (0:numElemGridE-1) .*res + minGridE;
-        gridHeight   = permute((0:numElemGridH-1).*res + minGridH,[3,1,2]);
+        gridNorthing = (0:numElemGridN-1)'.*grid_horz_res + minGridN;
+        gridEasting  = (0:numElemGridE-1) .*grid_horz_res + minGridE;
+        gridHeight   = permute((0:numElemGridH-1).*grid_horz_res + minGridH,[3,1,2]);
         gridNorthing = gridNorthing(minNidx:maxNidx);
         gridEasting  = gridEasting(:,minEidx:maxEidx);
         gridHeight   = gridHeight(:,:,minHidx:maxHidx);
@@ -471,12 +471,12 @@ fData.X_NEH_gridLevel   = gridLevel;
 fData.X_NEH_gridDensity = gridCount;
 fData.X_1E_gridEasting  = gridEasting;
 fData.X_N1_gridNorthing = gridNorthing;
-fData.X_1_gridHorizontalResolution = res;
+fData.X_1_gridHorizontalResolution = grid_horz_res;
 
-switch dim
+switch grid_type
     case '3D'
-        fData.X_11H_gridHeight  = gridHeight;
-        fData.X_1_gridVerticalResolution = vert_res;
+        fData.X_11H_gridHeight = gridHeight;
+        fData.X_1_gridVerticalResolution = grid_vert_res;
 end
 
 
