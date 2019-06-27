@@ -129,7 +129,7 @@ switch current_figure.SelectionType
         
         disp_config.AcrossDist = sign(z)*across_dist;
         disp_config.Fdata_ID = IDs_tot(idx_fData);
-        
+        fprintf('Line %s Ping %d of %d\n',fData.ALLfilename{1},ip,numel(E));
         disp_config.Iping = ip;
         
         

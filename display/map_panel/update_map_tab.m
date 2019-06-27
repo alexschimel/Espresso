@@ -76,7 +76,7 @@
 % Yoann Ladroit, Alexandre Schimel, NIWA. XXX
 
 %% Function
-function update_map_tab(main_figure,varargin)
+function up_wc=update_map_tab(main_figure,varargin)
 
 
 %% INTRO
@@ -97,9 +97,12 @@ update_line_index = p.Results.update_line_index;
 if ~isdeployed()
     disp('Update Map Tab');
 end
-    
+
+up_wc=0;  %up_wc will be 0 if the function finishes before updating all objects (ie. sliding windows etc), so that we not open wc tabs in that case.
+   
 % exit if no data loaded
 fData_tot = getappdata(main_figure,'fData');
+
 if isempty(fData_tot)
     return;
 end
@@ -379,7 +382,7 @@ if ~any(idx_active_lines)
 else
     map_tab_comp.ping_window.Visible = 'on';
 end
-    
+
 %% SLIDING WINDOW POLYGON
 
 IDs = cellfun(@(c) c.ID,fData_tot);
@@ -399,9 +402,9 @@ usrdata.str_disp = str_disp;
 
 [new_vert,idx_pings,idx_angles] = poly_vertices_from_fData(fData,disp_config,[]);
 
-if isempty(new_vert)
-    return;
-end
+% if isempty(new_vert)
+%     return;
+% end
 
 % save all of these in usrdata for later retrieval in stacked view
 usrdata.idx_pings  = idx_pings;
@@ -476,6 +479,7 @@ fmt = '%.2f';
 set(ax,'yticklabel',y_labels);
 set(ax,'xticklabel',x_labels);
 
+up_wc=1;
 
 end
 

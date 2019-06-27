@@ -282,7 +282,8 @@ for iB = 1:nBlocks
             
             % first need to calculate height above seafloor for each sample
             % and the interpolation takes a while
-            F = scatteredInterpolant(fData.X_BP_bottomEasting(:),fData.X_BP_bottomNorthing(:),fData.X_BP_bottomHeight(:));
+            idx_val=~isnan(fData.X_BP_bottomHeight)&~isinf(fData.X_BP_bottomHeight);
+            F = scatteredInterpolant(fData.X_BP_bottomEasting(idx_val),fData.X_BP_bottomNorthing(idx_val),fData.X_BP_bottomHeight(idx_val));
             block_bottomHeight = F(blockE,blockN);
             block_sampleHeightAboveSeafloor = blockH - block_bottomHeight;
             

@@ -304,11 +304,11 @@ disp_config = getappdata(main_figure,'disp_config');
 disp_config.Fdata_ID =fData_tot{idx_fData(end)}.ID;
 
 % update the map, no zoom adjustment
-update_map_tab(main_figure,0,0,0,[]);
-
-update_wc_tab(main_figure);
-update_stacked_wc_tab(main_figure);
-
+up_wc=update_map_tab(main_figure,0,0,0,[]);
+if up_wc>0
+    update_wc_tab(main_figure);
+    update_stacked_wc_tab(main_figure);
+end
 
 end
 
@@ -537,12 +537,13 @@ disp_config.Fdata_ID =fData_tot{idx_fData(end)}.ID;
 
 
 % update map with new grid, zoom on changed lines
-update_map_tab(main_figure,1,0,1,idx_fData);
+up_wc=update_map_tab(main_figure,1,0,1,idx_fData);
 
 % update WC view and stacked view
-update_wc_tab(main_figure);
-update_stacked_wc_tab(main_figure);
-
+if up_wc>0
+    update_wc_tab(main_figure);
+    update_stacked_wc_tab(main_figure);
+end
 end
 
 

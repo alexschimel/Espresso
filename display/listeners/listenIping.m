@@ -90,12 +90,13 @@ end
 
 %profile on;
 % update all lines on main map without changing zoom
-update_map_tab(main_figure,0,0,0,[]);
-
-% update wc and stacked views
-update_wc_tab(main_figure);
-update_stacked_wc_tab(main_figure);
-display_features(main_figure,{},{'wc_tab' 'stacked_wc_tab'});
+up_wc=update_map_tab(main_figure,0,0,0,[]);
+if up_wc>0
+    % update wc and stacked views
+    update_wc_tab(main_figure);
+    update_stacked_wc_tab(main_figure);
+    display_features(main_figure,{},{'wc_tab' 'stacked_wc_tab'});
+end
 %  profile off;
 %  profile viewer;
 end
