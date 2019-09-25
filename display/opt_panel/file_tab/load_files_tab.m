@@ -419,7 +419,7 @@ for nF = 1:numel(files_to_load)
     
     
     %% Check if paths in fData are accurate and change them if necessary
-
+    
     % flag to trigger re-save data
     dirchange_flag = 0;
     
@@ -482,7 +482,7 @@ for nF = 1:numel(files_to_load)
             % and projection that are relevant to the data
             
             % Interpolating navigation data from ancillary sensors to ping
-            % time 
+            % time
             fprintf('...Interpolating navigation data from ancillary sensors to ping time...\n');
             fData_temp = CFF_compute_ping_navigation(fData_temp);
             
@@ -520,21 +520,21 @@ for nF = 1:numel(files_to_load)
                 end
                 
                 % Interpolating navigation data from ancillary sensors to
-                % ping time 
+                % ping time
                 fprintf('...Interpolating navigation data from ancillary sensors to ping time...\n');
                 fData_temp = CFF_compute_ping_navigation(fData_temp, ...
                     disp_config.MET_datagramSource, ...
                     disp_config.MET_ellips, ...
                     disp_config.MET_tmproj);
-          
-            end
                 
+            end
+            
         else
             % File has not been projected yet, just do it now using
             % project's info
             
             % Interpolating navigation data from ancillary sensors to ping
-            % time 
+            % time
             fprintf('...Interpolating navigation data from ancillary sensors to ping time...\n');
             fData_temp = CFF_compute_ping_navigation(fData_temp, ...
                 disp_config.MET_datagramSource, ...
@@ -587,6 +587,9 @@ update_file_tab(main_figure);
 
 % update tab of lines loaded
 update_fdata_tab(main_figure);
+if isempty(fData)
+    return;
+end
 
 % update dispconfig to focus on the last line loaded
 disp_config.Fdata_ID = fData{end}.ID;
