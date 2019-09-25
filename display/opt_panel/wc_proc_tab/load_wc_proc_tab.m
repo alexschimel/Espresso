@@ -356,6 +356,11 @@ for i = idx_fData(:)'
     disp('...Initializing processing...');
     fData_tot{i} = CFF_initialize_WC_processing(fData_tot{i},'fast');
     
+    % radiometric corrections
+    % add a radio button like the others eventually TO DO XXX
+    disp('...Applying radiometric corrections...');
+    fData_tot{i} = CFF_WC_radiometric_corrections(fData_tot{i});
+    
     % filtering sidelobe artefact
     if wc_proc_tab_comp.sidelobe.Value
         
@@ -367,7 +372,7 @@ for i = idx_fData(:)'
     % masking
     if wc_proc_tab_comp.masking.Value
         
-        disp('...Creating mask...');
+        disp('...Masking data...');
         fData_tot{i} = CFF_mask_WC_data(fData_tot{i},...
             mask_params.remove_angle,...
             mask_params.remove_closerange,...
@@ -378,16 +383,20 @@ for i = idx_fData(:)'
     % disp
     fprintf('...Done. Elapsed time: %f seconds.\n',toc);
     
-     % get folder for converted data
+     % get folder for converted data and converted filename
     folder_for_converted_data = CFF_converted_data_folder(fData_tot{i}.ALLfilename{1});
-    fData=fData_tot{i};
-    % converted filename fData
     mat_fdata_file = fullfile(folder_for_converted_data,'fdata.mat');
+    
+    % save
+    fData = fData_tot{i};
     save(mat_fdata_file,'-struct','fData','-v7.3');
     clear fData;
+    
 end
+
 %profile off;
 %profile viewer;
+
 % general timer
 timer_end = now;
 fprintf('Total time for processing: %f seconds (~%.2f minutes).\n',(timer_end-timer_start)*24*60*60,(timer_end-timer_start)*24*60);
