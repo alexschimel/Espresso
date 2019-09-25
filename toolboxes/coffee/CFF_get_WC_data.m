@@ -134,12 +134,12 @@ switch p.Results.output_format
         nan_val = fData.(sprintf('%s_1_%s_Nanval',fieldN(1:idx_undsc(1)-1),fieldN(idx_undsc(2)+1:end)));
  
         % convert to single class
-
-        data = single(data);        
+        data = single(data);
+        
         % add nans
         data(data==single(nan_val)) = single(NaN);
         
-        % factor top get true values
+        % factor top get true dB values
         data = data*fact;
         
 end

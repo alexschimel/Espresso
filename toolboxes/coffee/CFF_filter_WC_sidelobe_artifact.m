@@ -205,17 +205,15 @@ switch method_spec
         
         % define 11 middle beams for reference level
         nadirBeams = (floor((nBeams./2)-5):ceil((nBeams./2)+5)); % middle beams
-        
-        %% Block processing
-        mem_struct=memory;
 
-        blockLength=ceil(mem_struct.MemAvailableAllArrays/(nSamples*nBeams*8)/20);
         % block processing setup
-        %blockLength = 200;
+        mem_struct = memory;
+        blockLength = ceil(mem_struct.MemAvailableAllArrays/(nSamples*nBeams*8)/20);
         nBlocks = ceil(nPings./blockLength);
         blocks = [ 1+(0:nBlocks-1)'.*blockLength , (1:nBlocks)'.*blockLength ];
         blocks(end,2) = nPings;
         
+        % Block processing
         for iB = 1:nBlocks
             
             % list of pings in this block

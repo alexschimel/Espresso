@@ -113,7 +113,9 @@ file_X_SBP_WaterColumnProcessed  = fullfile(wc_dir,'X_SBP_WaterColumnProcessed.d
 switch method
     
     case 'fast'
-        % initialization is simpler - just copy original data
+        % with this method, we simply copy the original data. It's fast,
+        % but then we're bound to use the wcdata_class (or format) of that
+        % original data.
         
         % Do the job differently if processed data already exist and in the right format
         if exist(file_X_SBP_WaterColumnProcessed,'file') && ...
@@ -152,7 +154,10 @@ switch method
         fData.X_1_WaterColumnProcessed_Nanval = wcdata_nanval;
         
     case 'precise'
-        % initialization is more difficult as we can't just copy original data
+        % with this method, we actually initialise the processed data. It's
+        % much slower, but we're able to set the wcdata_class (or format)
+        % to a much more precise format ("single"), allowing precise
+        % recording of processing calculations.
         
         wcdataproc_class   = 'single';
         wcdataproc_factor  = 1;
@@ -165,15 +170,15 @@ switch method
                 strcmp(fData.X_1_WaterColumnProcessed_Class,wcdataproc_class)
             
             % Processed data file exists and is reuseable. Re-initialize
-            
-            %% Block processing
-            
-            % main computation section will be done in blocks
-            blockLength = 50;
+
+            % block processing setup
+            mem_struct = memory;
+            blockLength = ceil(mem_struct.MemAvailableAllArrays/(nSamples*nBeams*8)/20);
             nBlocks = ceil(nPings./blockLength);
             blocks = [ 1+(0:nBlocks-1)'.*blockLength , (1:nBlocks)'.*blockLength ];
             blocks(end) = nPings;
             
+            % block processing
             for iB = 1:nBlocks
                 
                 % list of pings in this block
@@ -200,15 +205,15 @@ switch method
             
             % open
             fid = fopen(file_X_SBP_WaterColumnProcessed,'w+');
-            
-            %% Block processing
-            
-            % main computation section will be done in blocks
-            blockLength = 50;
+
+            % block processing setup
+            mem_struct = memory;
+            blockLength = ceil(mem_struct.MemAvailableAllArrays/(nSamples*nBeams*8)/20);
             nBlocks = ceil(nPings./blockLength);
             blocks = [ 1+(0:nBlocks-1)'.*blockLength , (1:nBlocks)'.*blockLength ];
             blocks(end) = nPings;
             
+            % Block processing
             for iB = 1:nBlocks
                 
                 % list of pings in this block

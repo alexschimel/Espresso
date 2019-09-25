@@ -76,11 +76,12 @@
 %% Function
 function out = CFF_check_ALLfilename(file)
 
-% does filename has an extension
+% test if filename has an extension
 if ~isempty(CFF_file_extension(file))
-    % if filename has an extension
+    % Filename does have an extension
     
-    % check it's a kongsberg file and that it exists.
+    % check the extension is that of a Kongsberg file (.all, .wcd) and that
+    % it exists. 
     out = CFF_is_Kongsberg_file(file) && exist(file,'file');
     
 else
@@ -89,7 +90,10 @@ else
     % build the all and wcd full filenames
     file = CFF_get_Kongsberg_files(file);
     
-    % check that they both exist
-    out = exist(file{1},'file') && exist(file{2},'file');
+    % % check that they both exist
+    % out = exist(file{1},'file') && exist(file{2},'file');
+    
+    % check that at least one of them exist
+    out = exist(file{1},'file') || exist(file{2},'file');
     
 end

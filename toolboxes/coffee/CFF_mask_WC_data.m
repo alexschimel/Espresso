@@ -114,26 +114,21 @@ wcdata_nanval = fData.X_1_WaterColumnProcessed_Nanval;
 % Source datagram
 datagramSource = fData.MET_datagramSource;
 
-
 % inter-sample distance
 soundSpeed          = fData.(sprintf('%s_1P_SoundSpeed',datagramSource)).*0.1; %m/s
 samplingFrequencyHz = fData.(sprintf('%s_1P_SamplingFrequencyHz',datagramSource)); %Hz
 dr_samples = soundSpeed./(samplingFrequencyHz.*2);
 
-
-
-%% Block processing
-
+% block processing setup
 % main computation section will be done in blocks, and saved as numerical
 % arrays or processedDataFile depending on fData.(sprintf('%s_SBP_SampleAmplitudes',datagramSource)).
-mem_struct=memory;
-
-blockLength=ceil(mem_struct.MemAvailableAllArrays/(nSamples*nBeams*8)/20);
-%blockLength = 50;
+mem_struct = memory;
+blockLength = ceil(mem_struct.MemAvailableAllArrays/(nSamples*nBeams*8)/20);
 nBlocks = ceil(nPings./blockLength);
 blocks = [ 1+(0:nBlocks-1)'.*blockLength , (1:nBlocks)'.*blockLength ];
 blocks(end) = nPings;
 
+% Block processing
 for iB = 1:nBlocks
     
     % list of pings in this block

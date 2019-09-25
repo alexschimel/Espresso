@@ -236,8 +236,8 @@ switch datagramSource
         wc_d = 88;
 end
 
-% adding position, attitude, and runtime datagrams to the list of datagrams
-% to parse
+% We also need installation parameters (73), position (80), and runtime
+% parameters (82) datagrams. List datagrams required
 dg_wc = [73 80 82 wc_d];
 
 % get tab data
@@ -300,7 +300,7 @@ for nF = 1:numel(files_to_convert)
     dr_sub = 1; % none for now
     db_sub = 1; % none for now
     
-    % converstion and saving on the disk
+    % conversion and saving on the disk
     if ~exist(mat_fdata_file,'file') || reconvert
         
         % if output file does not exist OR if forcing reconversion, simply convert
@@ -320,7 +320,7 @@ for nF = 1:numel(files_to_convert)
         %
         % NOTE: as coded now, this will never occur as we have an escape
         % clause in case the file already exists and asking to "convert"
-        % instead of "reconvert"
+        % instead of "reconvert"... TO DO XXX
         
         % load existing file
         fData = load(mat_fdata_file);

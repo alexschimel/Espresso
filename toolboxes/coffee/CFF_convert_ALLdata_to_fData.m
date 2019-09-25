@@ -305,6 +305,7 @@ for iF = 1:nStruct
             fData.Ru_1D_TimeSinceMidnightInMilliseconds = ALLdata.EM_Runtime.TimeSinceMidnightInMilliseconds;
             fData.Ru_1D_PingCounter                     = ALLdata.EM_Runtime.PingCounter;
             % the rest to code... XXX
+            fData.Ru_1D_TransmitPowerReMaximum          = ALLdata.EM_Runtime.TransmitPowerReMaximum;
             fData.Ru_1D_ReceiveBeamwidth                = ALLdata.EM_Runtime.ReceiveBeamwidth;
             % the rest to code... XXX
             
@@ -915,6 +916,13 @@ for iF = 1:nStruct
                                 nSamp_sub = ceil(nSamp/dr_sub);
                                 
                                 % read the data in original file and record
+                                % water column data are recorded in "int8
+                                % (-128 to 126) with -128 being the NaN
+                                % value, and with a resolution of 0.5dB,
+                                % aka it needs to be multiplied by a factor
+                                % of 1/2 to retrieve the appropriate value,
+                                % aka an int8 record of -41 is actually
+                                % -20.5dB
                                 pos = ALLdata.EM_WaterColumn.SampleAmplitudePosition{iDatagrams(iD)}(iBeamSource(iB));
                                 fseek(fid_all,pos,'bof');
                                 SB_temp(1:nSamp_sub,nBeamTot+iB) = fread(fid_all,nSamp_sub,'int8',dr_sub-1);
@@ -943,9 +951,11 @@ for iF = 1:nStruct
             end
             
             % and link to it through memmapfile
+            % remember data is in int8 format
             fData.WC_SBP_SampleAmplitudes = memmapfile(file_binary,'Format',{'int8' [maxNSamples_sub maxNBeams_sub nPings] 'val'},'repeat',1,'writable',true);
             
-            % save info about data format for later access
+            % save info about data format for later access and conversion
+            % to dB
             fData.WC_1_SampleAmplitudes_Class = 'int8';
             fData.WC_1_SampleAmplitudes_Nanval = -128;
             fData.WC_1_SampleAmplitudes_Factor = 1/2;
@@ -1132,7 +1142,7 @@ for iF = 1:nStruct
             fData.AP_1_SamplePhase_Class  = 'int16';
             fData.AP_1_SamplePhase_Nanval = 0;
             fData.AP_1_SamplePhase_Factor = 1/30;
-            
+ 
         end
         
     end
