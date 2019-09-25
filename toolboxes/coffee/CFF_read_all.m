@@ -147,23 +147,35 @@ datagrams_to_parse = p.Results.datagrams;
 
 %% PREP
 
-% if filename has no extension, build the full all/wcd filenames
 if ~isempty(CFF_file_extension(ALLfilename))
+    % if filename has an extension, simply convert it to cell
     
     ALLfilename = {ALLfilename};
     
 else
+    % if filename does not have an extension. Check for the existence of
+    % .all and/or .wcd
     
     ALLfilename = CFF_get_Kongsberg_files(ALLfilename);
     
-    % in case of a pair of all/wcd files, the order is important as this
-    % function only reads in the 2nd file what it could not find in the
-    % 1st. By default, we want the wcd file to be read first, and only grab
-    % from the all file what is needed and couldn't be found in the wcd
-    % file. Flipping it here rather than in CFF_get_Kongsberg_files because
-    % I want this function to output all/wcd by default and not wcd/all
-    if ~strcmp(CFF_file_extension(ALLfilename{1}),'.wcd')
-        ALLfilename = fliplr(ALLfilename);
+    % test for file existence
+    ind = [ exist(ALLfilename{1},'file'), exist(ALLfilename{2},'file') ];
+    ALLfilename = ALLfilename{ind>0};
+    
+    if ~all(ind)
+        % only one file exists, save as cell
+        ALLfilename = {ALLfilename};
+    else
+        % in case of an existing pair of all/wcd files, the order is important
+        % as this function only reads in the 2nd file what it could not find in
+        % the first.
+        % By default, we want the wcd file to be read first, and only grab
+        % from the all file what is needed and couldn't be found in the wcd
+        % file. Flipping it here rather than in CFF_get_Kongsberg_files because
+        % I want this function to output all/wcd by default and not wcd/all
+        if ~strcmp(CFF_file_extension(ALLfilename{1}),'.wcd')
+            ALLfilename = fliplr(ALLfilename);
+        end
     end
     
 end
