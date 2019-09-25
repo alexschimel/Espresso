@@ -147,8 +147,7 @@ vesselHeading      = fData.X_1P_pingHeading; %deg
 sonarHeadingOffset = fData.IP_ASCIIparameters.S1H; %deg
 sonarHeading       = deg2rad(-mod(gridConvergence + vesselHeading + sonarHeadingOffset,360));
 
-
-%% block processing setup depending on memory available
+% block processing setup
 mem_struct = memory;
 blockLength = ceil(mem_struct.MemAvailableAllArrays/(nSamples*nBeams*8)/20);
 nBlocks = ceil(nPings./blockLength);
