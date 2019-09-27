@@ -76,9 +76,21 @@
 % Yoann Ladroit, Alexandre Schimel, NIWA. XXX
 
 %% Function
-function data = CFF_WC_radiometric_corrections_CORE(data, fData)
+function [data, warning_text] = CFF_WC_radiometric_corrections_CORE(data, fData)
+
+% initialize flag
+warning_text = '';
 
 % get dB offset
+if ~isfield(fData,'Ru_1D_TransmitPowerReMaximum')
+    warning_text = ['This file was converted with an older version of ', ...
+        'Espresso, which used to not convert the dB offset, so this file ', ...
+        'was processed without that correction applied. You ',...
+        'may want to terminate your session, reconvert your files, ',...
+        'reload them, and redo the processing.'];
+    return
+end
+
 dBoffset = fData.Ru_1D_TransmitPowerReMaximum;
 
 if numel(unique(dBoffset)) == 1
@@ -98,5 +110,3 @@ end
 
 % apply to data
 data = data + dBoffset;
-
-

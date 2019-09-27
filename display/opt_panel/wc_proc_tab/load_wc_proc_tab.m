@@ -466,7 +466,7 @@ for i = idx_fData(:)'
         
         % radiometric corrections
         % add a radio button to possibly turn this off too? TO DO XXX
-        data = CFF_WC_radiometric_corrections_CORE(data,fData_tot{i});
+        [data, warning_text] = CFF_WC_radiometric_corrections_CORE(data,fData_tot{i});
         
         % filtering sidelobe artefact
         if wc_proc_tab_comp.sidelobe.Value
@@ -533,6 +533,11 @@ for i = idx_fData(:)'
     % disp
     textprogressbar(100)
     textprogressbar(sprintf(' done. Elapsed time: %f seconds.',toc));
+    
+    % throw warning
+    if ~isempty(warning_text)
+        warning(warning_text);
+    end
     
 end
 
