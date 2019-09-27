@@ -268,18 +268,21 @@ for nF = 1:numel(files_to_convert)
     end
     
     % Otherwise, starting conversion...
-    fprintf('Converting file "%s" (%i/%i). Started at %s... \n',file_to_convert,nF,numel(files_to_convert),datestr(now));
+    fprintf('Converting file "%s" (%i/%i)...\n',file_to_convert,nF,numel(files_to_convert));
+    textprogressbar(sprintf('...Started at %s. Progress: ',datestr(now)));    
+    textprogressbar(0);
     tic
     
     % conversion to ALLdata format
     [EMdata,datags_parsed_idx] = CFF_read_all(file_to_convert, dg_wc);
+    textprogressbar(50);
     
     % if not all datagrams were found at this point, message and abort
     if ~all(datags_parsed_idx)
         if ismember(wc_d,dg_wc(~datags_parsed_idx))
-            fprintf('...File does not contain required water-column datagrams. Check file contents. Conversion aborted.\n');
+            textprogressbar(' error. File does not contain required water-column datagrams. Check file contents. Conversion aborted.');
         else
-            fprintf('...File does not contain all necessary datagrams. Check file contents. Conversion aborted.\n');
+            textprogressbar(' error. File does not contain all necessary datagrams. Check file contents. Conversion aborted.');
         end
         continue
     end
@@ -305,6 +308,7 @@ for nF = 1:numel(files_to_convert)
         
         % if output file does not exist OR if forcing reconversion, simply convert
         fData = CFF_convert_ALLdata_to_fData(EMdata,dr_sub,db_sub);
+        textprogressbar(90);
         
         % add datagram source
         fData.MET_datagramSource = datagramSource;
@@ -324,9 +328,11 @@ for nF = 1:numel(files_to_convert)
         
         % load existing file
         fData = load(mat_fdata_file);
+        textprogressbar(75);
         
         % compare data to that already existing
         [fData,update_flag] = CFF_convert_ALLdata_to_fData(EMdata,dr_sub,db_sub,fData);
+        textprogressbar(90);
         
         % if it's different, update the result
         if update_flag > 0
@@ -337,7 +343,8 @@ for nF = 1:numel(files_to_convert)
     end
     
     % End of conversion
-    fprintf('...Done. Elapsed time: %f seconds.\n',toc);
+    textprogressbar(100);
+    textprogressbar(sprintf(' done. Elapsed time: %f seconds.',toc));
     
 end
 
@@ -411,7 +418,8 @@ for nF = 1:numel(files_to_load)
     end
     
     % Loading can begin
-    fprintf('Loading converted file "%s" (%i/%i). Started at %s... \n',file_to_load,nF,numel(files_to_load),datestr(now));
+    fprintf('Loading converted file "%s" (%i/%i)...\n',file_to_load,nF,numel(files_to_load));
+    fprintf('...Started at %s...\n',datestr(now));
     tic
     
     % loading temp

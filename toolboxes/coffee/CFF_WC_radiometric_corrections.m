@@ -58,18 +58,11 @@
 %% Function
 function [fData] = CFF_WC_radiometric_corrections(fData)
 
-%% INPUT PARSING
-
-% none yet
-
-
-%% Extract info about WCD
+% extract info about WCD
 wcdata_class  = fData.X_1_WaterColumnProcessed_Class; % int8 or int16
 wcdata_factor = fData.X_1_WaterColumnProcessed_Factor;
 wcdata_nanval = fData.X_1_WaterColumnProcessed_Nanval;
 [nSamples, nBeams, nPings] = size(fData.X_SBP_WaterColumnProcessed.Data.val);
-
-%% Processing prep
 
 % block processing setup
 mem_struct = memory;
@@ -78,40 +71,23 @@ nBlocks = ceil(nPings./blockLength);
 blocks = [ 1+(0:nBlocks-1)'.*blockLength , (1:nBlocks)'.*blockLength ];
 blocks(end,2) = nPings;
 
-%% Block processing
+% block processing
 for iB = 1:nBlocks
     
     % list of pings in this block
     blockPings  = (blocks(iB,1):blocks(iB,2));
-    nBlockPings = length(blockPings);
     
-    % grab data
+    % grab data in dB
     data = CFF_get_WC_data(fData,'X_SBP_WaterColumnProcessed','iPing',blockPings,'output_format','true');
     
-    %% apply radiometric corrections to data here
-    dBoffset = fData.Ru_1D_TransmitPowerReMaximum;
+    % core processing
+    data = CFF_WC_radiometric_corrections_CORE(data,fData);
     
-    if numel(unique(dBoffset)) == 1
-        
-        data = data + dBoffset(1);
-        
-    else
-       % dB offset changed within the file. Need to extract and compare the
-       % time of Ru and WC datagrams to find which db offset applies to
-       % which pings.
-       % ... TO DO XXX
-       % for now we will just take the first value and apply to everything
-       % so that processing can continue...
-       data = data + dBoffset(1);
-       
-    end
-    
-    %% convert result back into its storage format, and store
+    % convert modified data back to raw format and store
     data = data./wcdata_factor;
     data(isnan(data)) = wcdata_nanval;
     fData.X_SBP_WaterColumnProcessed.Data.val(:,:,blockPings) = cast(data,wcdata_class);
     
-
 end
 
 

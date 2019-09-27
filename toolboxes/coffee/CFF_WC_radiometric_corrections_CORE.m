@@ -1,4 +1,4 @@
-%% function_name.m
+%% CFF_WC_radiometric_corrections_CORE.m
 %
 % _This section contains a very short description of the function, for the
 % user to know this function is part of the software and what it does for
@@ -76,7 +76,27 @@
 % Yoann Ladroit, Alexandre Schimel, NIWA. XXX
 
 %% Function
-function output = function_name(input, varargin)
+function data = CFF_WC_radiometric_corrections_CORE(data, fData)
 
+% get dB offset
+dBoffset = fData.Ru_1D_TransmitPowerReMaximum;
+
+if numel(unique(dBoffset)) == 1
+    
+    dBoffset = dBoffset(1);
+    
+else
+    % dB offset changed within the file. Need to extract and compare the
+    % time of Ru and WC datagrams to find which db offset applies to
+    % which pings.
+    % ... TO DO XXX
+    % for now we will just take the first value and apply to everything
+    % so that processing can continue...
+    dBoffset = dBoffset(1);
+    
+end
+
+% apply to data
+data = data + dBoffset;
 
 
