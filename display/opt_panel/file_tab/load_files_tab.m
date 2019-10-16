@@ -261,6 +261,19 @@ for nF = 1:numel(files_to_convert)
     % get file to convert
     file_to_convert = files_to_convert{nF};
     
+    
+    [folder_f,file_to_convert_name,f_ext]=fileparts(file_to_convert);
+    
+    if isempty(f_ext)
+        if isfile([file_to_convert,'.wcd'])
+            f_ext='.wcd';
+        elseif isfile([file_to_convert,'.all'])
+            f_ext='.all';            
+        elseif isfile([file_to_convert,'.s7k'])
+            f_ext='.s7k';  
+        end
+    end
+    
     % if file already converted and not asking for reconversion, exit here
     if files_already_converted(nF) && ~reconvert
         fprintf('File "%s" (%i/%i) is already converted.\n',file_to_convert,nF,numel(files_to_convert));
@@ -273,18 +286,27 @@ for nF = 1:numel(files_to_convert)
     textprogressbar(0);
     tic
     
-    % conversion to ALLdata format
-    [EMdata,datags_parsed_idx] = CFF_read_all(file_to_convert, dg_wc);
-    textprogressbar(50);
     
-    % if not all datagrams were found at this point, message and abort
-    if ~all(datags_parsed_idx)
-        if ismember(wc_d,dg_wc(~datags_parsed_idx))
-            textprogressbar(' error. File does not contain required water-column datagrams. Check file contents. Conversion aborted.');
-        else
-            textprogressbar(' error. File does not contain all necessary datagrams. Check file contents. Conversion aborted.');
-        end
-        continue
+    switch f_ext
+        case {'.all' '.wcd'}
+            % conversion to ALLdata format
+            [EMdata,datags_parsed_idx] = CFF_read_all(file_to_convert, dg_wc);
+            textprogressbar(50);
+            
+            % if not all datagrams were found at this point, message and abort
+            if ~all(datags_parsed_idx)
+                if ismember(wc_d,dg_wc(~datags_parsed_idx))
+                    textprogressbar(' error. File does not contain required water-column datagrams. Check file contents. Conversion aborted.');
+                else
+                    textprogressbar(' error. File does not contain all necessary datagrams. Check file contents. Conversion aborted.');
+                end
+                continue
+            end
+            
+        case '.s7k'
+            [RESONdata,datags_parsed_idx] = CFF_read_s7k(file_to_convert);
+        otherwise
+            continue;    
     end
     
     % get folder for converted data

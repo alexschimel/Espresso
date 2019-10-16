@@ -88,36 +88,11 @@ clear p
 
 
 %% get .all files
-AllFilename_list = dir(fullfile(folder_init,'*.all'));
-% AllFilename_list = subdir(fullfile(folder_init,'*.all')); % including subdirectories
-
-if ~isempty(AllFilename_list)
-    
-    % split in folders and file names and recombine
-    AllFilename_cell = {AllFilename_list([AllFilename_list(:).isdir]==0).name};
-    [~,all_files,~] = cellfun(@fileparts,AllFilename_cell,'UniformOutput',0);
-    all_folders = {AllFilename_list([AllFilename_list(:).isdir]==0).folder};
-    all_files = fullfile(all_folders,all_files);
-    
-else
-    all_files = {};
-end
-
+all_files=list_data(folder_init,'*.wcd');
 %% get .wcd files
-WCDFilename_list = dir(fullfile(folder_init,'*.wcd'));
-% WCDFilename_list = subdir(fullfile(folder_init,'*.wcd')); % including subdirectories
-
-if ~isempty(WCDFilename_list)
-    
-    % split in folders and file names and recombine
-    WCDFilename_cell = {WCDFilename_list([WCDFilename_list(:).isdir]==0).name};
-    [~,wcd_files,~] = cellfun(@fileparts,WCDFilename_cell,'UniformOutput',0);
-    wcd_folders = {WCDFilename_list([WCDFilename_list(:).isdir]==0).folder};
-    wcd_files = fullfile(wcd_folders,wcd_files);
-    
-else
-    wcd_files = {};
-end
+wcd_files=list_data(folder_init,'*.all');
+%% get .s7k files
+s7k_files=list_data(folder_init,'*.s7k');
 
 
 %% files to keep
@@ -136,8 +111,8 @@ else
         end
     end
 end
-    
-    
+
+
 %% warnings
 switch warning_flag
     case 'warning_on'
@@ -161,6 +136,9 @@ switch warning_flag
         end
 end
 
+
+files_full=union(files_full,s7k_files);
+
 %% output
 if isempty(files_full)
     
@@ -181,6 +159,19 @@ else
     if ischar(mat_fdata_files)
         mat_fdata_files = {mat_fdata_files};
     end
-    converted = cellfun(@(x) exist(x,'file')>0,mat_fdata_files);    
+    converted = cellfun(@(x) exist(x,'file')>0,mat_fdata_files);
     
+end
+end
+
+function files=list_data(folder_init,ext)
+Filename_list = dir(fullfile(folder_init,ext));
+if ~isempty(Filename_list)
+    Filename_cell = {Filename_list([Filename_list(:).isdir]==0).name};
+    [~,files,~] = cellfun(@fileparts,Filename_cell,'UniformOutput',0);
+    folders = {Filename_list([Filename_list(:).isdir]==0).folder};
+    files = fullfile(folders,files);
+else
+    files={};
+end
 end
