@@ -248,7 +248,7 @@ for iF = 1:nStruct
             
             % remove carriage returns, tabs and linefeed
             ASCIIdata = regexprep(ASCIIdata,char(9),'');
-            ASCIIdata = regexprep(ASCIIdata,char(10),'');
+            ASCIIdata = regexprep(ASCIIdata,newline,'');
             ASCIIdata = regexprep(ASCIIdata,char(13),'');
             
             % read individual fields
@@ -917,7 +917,7 @@ for iF = 1:nStruct
                                 
                                 % read the data in original file and record
                                 % water column data are recorded in "int8
-                                % (-128 to 126) with -128 being the NaN
+                                % (-128 to 127) with -128 being the NaN
                                 % value, and with a resolution of 0.5dB,
                                 % aka it needs to be multiplied by a factor
                                 % of 1/2 to retrieve the appropriate value,

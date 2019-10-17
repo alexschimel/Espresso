@@ -14,8 +14,8 @@ addRequired(p,argName,argCheck);
 % datagrams as optional argument.
 % Check that cell array
 argName = 'datagrams';
-argDefault = [];
-argCheck = @(x) isnumeric(x); % that last part allows the use of the couple name,param
+argDefault = {};
+argCheck = @(x) isnumeric(x)||isempty(x); % that last part allows the use of the couple name,param
 addOptional(p,argName,argDefault,argCheck);
 
 % now parse inputs
@@ -57,7 +57,7 @@ end
 
 % read data
 S7Kdata = CFF_read_s7k_from_fileinfo(S7Kfilename, info);
-disp('Done');
+
 
 
 

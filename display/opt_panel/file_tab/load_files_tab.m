@@ -223,22 +223,7 @@ function convert_files_callback(~,~,main_figure,reconvert)
 % instead. If there is no water-column datagram, you can still use Espresso
 % to convert and load and display data, using the depths datagrams 'De' or
 % 'X8'
-datagramSource = 'WC'; % 'WC', 'AP', 'De', 'X8'
-
-switch datagramSource
-    case 'WC'
-        wc_d = 107;
-    case 'AP'
-        wc_d = 114;
-    case 'De'
-        wc_d = 68;
-    case 'X8'
-        wc_d = 88;
-end
-
-% We also need installation parameters (73), position (80), and runtime
-% parameters (82) datagrams. List datagrams required
-dg_wc = [73 80 82 wc_d];
+;
 
 % get tab data
 file_tab_comp = getappdata(main_figure,'file_tab');
@@ -289,6 +274,23 @@ for nF = 1:numel(files_to_convert)
     
     switch f_ext
         case {'.all' '.wcd'}
+            datagramSource = 'WC'; % 'WC', 'AP', 'De', 'X8'
+            
+            switch datagramSource
+                case 'WC'
+                    wc_d = 107;
+                case 'AP'
+                    wc_d = 114;
+                case 'De'
+                    wc_d = 68;
+                case 'X8'
+                    wc_d = 88;
+            end
+            
+            % We also need installation parameters (73), position (80), and runtime
+            % parameters (82) datagrams. List datagrams required
+            dg_wc = [73 80 82 wc_d];
+            
             % conversion to ALLdata format
             [EMdata,datags_parsed_idx] = CFF_read_all(file_to_convert, dg_wc);
             textprogressbar(50);
@@ -304,7 +306,10 @@ for nF = 1:numel(files_to_convert)
             end
             
         case '.s7k'
-            [RESONdata,datags_parsed_idx] = CFF_read_s7k(file_to_convert);
+            datagramSource = 'AP'; % 'WC', 'AP', 'De', 'X8'
+            %dg={'R1015_Navigation' 'R1003_Position' 'R7042_CompressedWaterColumn' 'R7000_SonarSettings' 'R7001_7kConfiguration' 'R7004_7kBeamGeometry' 'R7027_RAWdetection'};
+            dg_wc = [1015 1003 7042 7000 7001 7004 7027];
+            [RESONdata,datags_parsed_idx] = CFF_read_s7k(file_to_convert,dg_wc);
         otherwise
             continue;    
     end
@@ -328,16 +333,31 @@ for nF = 1:numel(files_to_convert)
     % conversion and saving on the disk
     if ~exist(mat_fdata_file,'file') || reconvert
         
-        % if output file does not exist OR if forcing reconversion, simply convert
-        fData = CFF_convert_ALLdata_to_fData(EMdata,dr_sub,db_sub);
-        textprogressbar(90);
-        
-        % add datagram source
-        fData.MET_datagramSource = datagramSource;
-        
-        % and save
-        save(mat_fdata_file,'-struct','fData','-v7.3');
-        clear fData;
+        switch f_ext
+            case {'.all' '.wcd'}
+                % if output file does not exist OR if forcing reconversion, simply convert
+                fData = CFF_convert_ALLdata_to_fData(EMdata,dr_sub,db_sub);
+                textprogressbar(90);
+                
+                % add datagram source
+                fData.MET_datagramSource = datagramSource;
+                
+                % and save
+                save(mat_fdata_file,'-struct','fData','-v7.3');
+                clear fData;
+                
+            case '.s7k'
+                 % if output file does not exist OR if forcing reconversion, simply convert
+                fData = CFF_convert_S7Kdata_to_fData(EMdata,dr_sub,db_sub);
+                textprogressbar(90);
+                
+                % add datagram source
+                fData.MET_datagramSource = datagramSource;
+                
+                % and save
+                save(mat_fdata_file,'-struct','fData','-v7.3');
+                clear fData;
+        end
         
     else
         
@@ -351,11 +371,14 @@ for nF = 1:numel(files_to_convert)
         % load existing file
         fData = load(mat_fdata_file);
         textprogressbar(75);
-        
-        % compare data to that already existing
-        [fData,update_flag] = CFF_convert_ALLdata_to_fData(EMdata,dr_sub,db_sub,fData);
+        switch f_ext
+            case {'.all' '.wcd'}
+                % compare data to that already existing
+                [fData,update_flag] = CFF_convert_ALLdata_to_fData(EMdata,dr_sub,db_sub,fData);
+            case '.s7k'
+                [fData,update_flag] = CFF_convert_S7Kdata_to_fData(EMdata,dr_sub,db_sub,fData);
+        end
         textprogressbar(90);
-        
         % if it's different, update the result
         if update_flag > 0
             save(mat_fdata_file,'-struct','fData','-v7.3');
