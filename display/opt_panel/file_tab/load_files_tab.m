@@ -315,10 +315,10 @@ for nF = 1:numel(files_to_convert)
             end
             
         case '.s7k'
-            datagramSource = 'AP'; % 'WC', 'AP', 'De', 'X8'
+
             wc_d=7042;
             %dg={'R1015_Navigation' 'R1003_Position' 'R7042_CompressedWaterColumn' 'R7000_SonarSettings' 'R7001_7kConfiguration' 'R7004_7kBeamGeometry' 'R7027_RAWdetection'};
-            dg_wc = [1015 1003 7042 7000 7001 7004 7027];
+            dg_wc = [1015 1003 7042 7018 7000 7001 7004 7027];
                      
             [RESONdata,datags_parsed_idx] = CFF_read_s7k(file_to_convert,dg_wc);
             % if not all datagrams were found at this point, message and abort
@@ -326,11 +326,17 @@ for nF = 1:numel(files_to_convert)
                 if ismember(wc_d,dg_wc(~datags_parsed_idx))
                     textprogressbar(' error. File does not contain required water-column datagrams. Check file contents. Conversion aborted.');
                     continue;
-                elseif nansum(datags_parsed_idx(1:2))==0
+                elseif nansum(datags_parsed_idx(1:2))==0||nansum(datags_parsed_idx(3:4))==0
                     textprogressbar(' error. File does not contain all necessary datagrams. Check file contents. Conversion aborted.');
                     continue;
                 end          
-            end       
+            end   
+            if datags_parsed_idx(4)
+                datagramSource='WC';
+            else
+                datagramSource='AP';
+            end
+            
         otherwise
             continue;
     end

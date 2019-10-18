@@ -229,11 +229,100 @@ for iF = 1:nStruct
         end
         
         
-        %% R7018 TODO
+        %% R7018_7kBeamformedData TODO
+        
+        if isfield(S7Kdata,'R7018_7kBeamformedData') 
+            if ~isfield(fData,'WC_1P_Date')
+                if update_mode
+                    update_flag = 1;
+                end
+                % get indices of first datagram for each ping
+                pingNumber=1:numel(S7Kdata.R7018_7kBeamformedData.SonarId);
+                maxNBeams=nanmax(numel,S7Kdata.R7018_7kBeamformedData.N);
+                nPings=numel(S7Kdata.R7018_7kBeamformedData.N);
+                maxNSamples=nanmax(S7Kdata.R7018_7kBeamformedData.S);
+                maxNTransmitSectors = 1;
+                
+                
+                % read data per ping from first datagram of each ping
+                fData.WC_1P_Date                            = S7Kdata.R7018_7kBeamformedData.Date;
+                fData.WC_1P_TimeSinceMidnightInMilliseconds = S7Kdata.R7018_7kBeamformedData.TimeSinceMidnightInMilliseconds;
+                fData.WC_1P_PingCounter                     = pingNumber;
+                fData.WC_1P_NumberOfDatagrams               = ones(size(pingNumber));
+                fData.WC_1P_NumberOfTransmitSectors         = ones(size(pingNumber));
+                fData.WC_1P_TotalNumberOfReceiveBeams       = S7Kdata.R7018_7kBeamformedData.N;
+                fData.WC_1P_SoundSpeed                      = S7Kdata.R7000_SonarSettings.SoundVelocity;
+                fData.WC_1P_SamplingFrequencyHz             = S7Kdata.R7000_SonarSettings.SampleRate; % in Hz
+                fData.WC_1P_TXTimeHeave                     = nan(ones(size(pingNumber)));
+                fData.WC_1P_TVGFunctionApplied              = nan(size(pingNumber));
+                fData.WC_1P_TVGOffset                       = nan(size(pingNumber));
+                fData.WC_1P_ScanningInfo                    = nan(size(pingNumber));
+                
+                % initialize data per transmit sector and ping
+                fData.WC_TP_TiltAngle            = nan(maxNTransmitSectors,nPings);
+                fData.WC_TP_CenterFrequency      = S7Kdata.R7000_SonarSettings.Frequency;
+                fData.WC_TP_TransmitSectorNumber = nan(maxNTransmitSectors,nPings);
+                
+                % initialize data per decimated beam and ping
+                fData.WC_BP_BeamPointingAngle      = nan(maxNBeams,nPings);
+                fData.WC_BP_StartRangeSampleNumber = nan(maxNBeams,nPings);
+                fData.WC_BP_NumberOfSamples        = nan(maxNBeams,nPings);
+                fData.WC_BP_DetectedRangeInSamples = zeros(maxNBeams,nPings);
+                fData.WC_BP_TransmitSectorNumber   = nan(maxNBeams,nPings);
+                fData.WC_BP_BeamNumber             = nan(maxNBeams,nPings);
+                
+                % path to binary file for WC data
+                file_amp_binary   = fullfile(wc_dir,'WC_SBP_SampleAmplitudes.dat');
+                file_phase_binary = fullfile(wc_dir,'WC_SBP_SamplePhase.dat');
+                
+                % if file does not exist or we're re-sampling it, create a new
+                % one ready for writing
+                if exist(file_amp_binary,'file')==0
+                    file_amp_id = fopen(file_amp_binary,'w+');
+                else
+                    % if we're here, it means the file already exists and
+                    % already contain the data at the proper sampling. So we
+                    % just need to store the metadata and link to it as
+                    % memmapfile.
+                    file_amp_id = -1;
+                end
+                
+                % repeat for phase file
+                if exist(file_phase_binary,'file')==0
+                    file_phase_id = fopen(file_phase_binary,'w+');
+                else
+                    file_phase_id = -1;
+                end
+                mag_fmt='uint16';
+                phase_fmt='int16';
+                
+                % now get data for each ping
+                for iP = 1:nPings
+                   fseek(fid_all,S7Kdata.R7018_7kBeamformedData.BeamformedDataPos(iP),'bof'); 
+                   Mag_tmp=(fread(fid_all,[S7Kdata.R7018_7kBeamformedData.N(iP) S7Kdata.R7018_7kBeamformedData.S(iP)],mag_fmt,1))';
+                   fseek(fid_all,S7Kdata.R7018_7kBeamformedData.BeamformedDataPos(iP)+1,'bof'); 
+                   Ph_tmp=(fread(fid_all,[S7Kdata.R7018_7kBeamformedData.N(iP) S7Kdata.R7018_7kBeamformedData.S(iP)],phase_fmt,1))';  
+                   
+                   Ph_tmp=Ph_tmp/10430/pi*180;
+                   
+                   Mag_tmp(Mag_tmp==eval([mag_fmt '(-inf)']))=eval([mag_fmt '(-inf)']);
+                   % store amp data on binary file
+                   if file_amp_id >= 0
+                       fwrite(file_amp_id,Mag_tmp,mag_fmt);
+                   end
+                   
+                   % store phase data on binary file
+                   if file_phase_id>=0
+                       fwrite(file_phase_id,Ph_tmp,phase_fmt);
+                   end
+                end
+                
+            end
+        end
         
         %% R7042_CompressedWaterColumn
         
-        if isfield(S7Kdata,'R7042_CompressedWaterColumn') %%%TODOOOOO
+        if isfield(S7Kdata,'R7042_CompressedWaterColumn') 
             
             % only convert these datagrams if this type doesn't already exist in output
             if ~isfield(fData,'AP_1P_Date')
@@ -330,9 +419,9 @@ for iF = 1:nStruct
                     if file_amp_id >= 0 || file_phase_id >= 0
                         
                         if flags.magnitudeOnly
-                            Mag_tmp=zeros(maxNSamples,maxNBeams,mag_fmt);
+                            Mag_tmp=ones(maxNSamples,maxNBeams,mag_fmt)*eval([mag_fmt '(-inf)']);
                         else
-                            Mag_tmp=zeros(maxNSamples,maxNBeams,mag_fmt);
+                            Mag_tmp=ones(maxNSamples,maxNBeams,mag_fmt)*eval([mag_fmt '(-inf)']);
                             Ph_tmp=zeros(maxNSamples,maxNBeams,phase_fmt);
                         end
                         start_sample=S7Kdata.R7042_CompressedWaterColumn.FirstSample(iP)+1;
@@ -417,8 +506,8 @@ for iF = 1:nStruct
                 fData.AP_1_SampleAmplitudes_Nanval = eval([mag_fmt '(-inf)']);
                 fData.AP_1_SampleAmplitudes_Factor = 1;
                 fData.AP_1_SamplePhase_Class  = phase_fmt;
-                fData.AP_1_SamplePhase_Nanval = 0;
-                fData.AP_1_SamplePhase_Factor = 1/30;
+                fData.AP_1_SamplePhase_Nanval = 200;
+                fData.AP_1_SamplePhase_Factor = 180/128;
                 
             end
             

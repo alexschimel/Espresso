@@ -368,7 +368,7 @@ for iDatag = datagToParse'
             parsed = 1;
             
         case 7018
-            %% 7018 – 7k Beamformed Data TODO
+            %% 7018 – 7k Beamformed Data
             fieldname='R7018_7kBeamformedData';
             if ~(isempty(p.Results.OutputFields)||any(strcmp(fieldname,p.Results.OutputFields)))
                 continue;
@@ -376,6 +376,14 @@ for iDatag = datagToParse'
             try i7018=i7018+1; catch, i7018=1; end
             icurr_field=i7018;
             
+            S7Kdata.R7018_7kBeamformedData.SonarId(i7018)            = fread(fid,1,'uint64');
+            S7Kdata.R7018_7kBeamformedData.PingNumber(i7018)         = fread(fid,1,'uint32');
+            S7Kdata.R7018_7kBeamformedData.MultipingSequence(i7018)  = fread(fid,1,'uint16');
+            S7Kdata.R7018_7kBeamformedData.N(i7018)                  = fread(fid,1,'uint16');
+            S7Kdata.R7018_7kBeamformedData.S(i7018)                  = fread(fid,1,'uint32');
+            S7Kdata.R7018_7kBeamformedData.Reserved{i7018}           = fread(fid,8,'uint32');
+            S7Kdata.R7018_7kBeamformedData.BeamformedDataPos(i7018)  = ftell(fid);
+
             parsed = 1;
         case 7021
             %% 7021 – 7k Built-In Test Environment Data TODO
