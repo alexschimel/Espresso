@@ -120,6 +120,14 @@ end
 if isempty(iRange)   
     iRange = 1:size(fData.(fieldN).Data.val,1);
 end
+iRange(iRange>size(fData.(fieldN).Data.val,1))=[];
+iBeam(iBeam>size(fData.(fieldN).Data.val,2))=[];
+iPing(iPing>size(fData.(fieldN).Data.val,3))=[];
+
+if isempty(iRange)||isempty(iBeam)||isempty(iPing)
+    data=[];
+    return;
+end
 
 data = fData.(fieldN).Data.val(iRange(1):p.Results.dr_sub:iRange(end),iBeam(1):p.Results.db_sub:iBeam(end),iPing);
 

@@ -70,7 +70,7 @@ function [fData] = CFF_georeference_WC_bottom_detect(fData)
 
 % Extract needed ping info
 datagramSource = fData.MET_datagramSource;
-X_1P_soundSpeed           = fData.(sprintf('%s_1P_SoundSpeed',datagramSource)).*0.1; %m/s
+X_1P_soundSpeed           = fData.(sprintf('%s_1P_SoundSpeed',datagramSource)); %m/s
 X_1P_samplingFrequencyHz  = fData.(sprintf('%s_1P_SamplingFrequencyHz',datagramSource)); %Hz
 X_1P_sonarHeight          = fData.X_1P_pingH; %m
 X_1P_sonarEasting         = fData.X_1P_pingE; %m
@@ -81,7 +81,7 @@ X_1_sonarHeadingOffsetDeg = fData.IP_ASCIIparameters.S1H; %deg
 
 % Extract needed beam info
 % X_BP_startRangeSampleNumber = fData.WC_BP_StartRangeSampleNumber; % not needed for bottom detect (I think)
-X_BP_beamPointingAngleDeg   = fData.(sprintf('%s_BP_BeamPointingAngle',datagramSource)).*0.01; %deg
+X_BP_beamPointingAngleDeg   = fData.(sprintf('%s_BP_BeamPointingAngle',datagramSource)); %deg
 X_BP_beamPointingAngleRad   = deg2rad(X_BP_beamPointingAngleDeg);
 
 % Grab sample corresponding to bottom:

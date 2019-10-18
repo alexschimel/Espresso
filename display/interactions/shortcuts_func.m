@@ -99,7 +99,7 @@ end
 fData = fData_tot{disp_config.Fdata_ID ==IDs};
 
 % total number of pings
-nb_pings = numel(fData.WC_1P_Date);
+nb_pings = numel(fData.X_1P_pingCounter);
 
 % ?
 replace_interaction(src,'interaction','KeyPressFcn','id',1);

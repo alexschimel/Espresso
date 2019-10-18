@@ -18,6 +18,7 @@ argDefault = {};
 argCheck = @(x) isnumeric(x)||isempty(x); % that last part allows the use of the couple name,param
 addOptional(p,argName,argDefault,argCheck);
 
+
 % now parse inputs
 parse(p,S7Kfilename,varargin{:});
 

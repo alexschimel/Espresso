@@ -127,8 +127,8 @@ end
 if nargin>3
     tmproj = varargin{3};
 else
-    firstPosLat = fData.Po_1D_Latitude(1)./20000000;
-    firstPosLon = fData.Po_1D_Longitude(1)./10000000;
+    firstPosLat = fData.Po_1D_Latitude(1);
+    firstPosLon = fData.Po_1D_Longitude(1);
     [~,~,~,~,tmproj] = CFF_ll2tm(firstPosLon,firstPosLat,ellips,'utm');
     tmproj = ['utm' tmproj];
     %fprintf(['tmproj not specified. Using ''' tmproj '''...\n']);
@@ -150,10 +150,10 @@ end
 % in the future, offer possibility to import position/orientation from
 % other files, say SBET
 
-posLatitude  = fData.Po_1D_Latitude./20000000; % now in decimal degrees
-posLongitude = fData.Po_1D_Longitude./10000000; % now in decimal degrees
-posHeading   = fData.Po_1D_HeadingOfVessel./100; % now in degrees relative to north
-posSpeed     = fData.Po_1D_SpeedOfVesselOverGround./100; % now in m/s
+posLatitude  = fData.Po_1D_Latitude; % now in decimal degrees
+posLongitude = fData.Po_1D_Longitude; % now in decimal degrees
+posHeading   = fData.Po_1D_HeadingOfVessel; % now in degrees relative to north
+posSpeed     = fData.Po_1D_SpeedOfVesselOverGround; % now in m/s
 posTSMIM     = fData.Po_1D_TimeSinceMidnightInMilliseconds; % in ms
 
 posDate      = datenum(cellfun(@num2str,num2cell(fData.Po_1D_Date),'un',0),'yyyymmdd');
@@ -169,7 +169,7 @@ posSDN       = posDate(:)'+ posTSMIM/(24*60*60*1000);
 pingSDN = pingDate(:)'+ pingTSMIM/(24*60*60*1000) + navLat./(1000.*60.*60.*24);
 
 if isfield(fData,'He_1D_Height')
-    heiHeight = fData.He_1D_Height./100; % now m
+    heiHeight = fData.He_1D_Height; % now m
     heiDate   = datenum(cellfun(@num2str,num2cell(fData.He_1D_Date),'un',0),'yyyymmdd');
     heiSDN    = heiDate(:)' + fData.He_1D_TimeSinceMidnightInMilliseconds/(24*60*60*1000);
 else

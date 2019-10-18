@@ -21,7 +21,7 @@ if ~ismember(disp_config.Fdata_ID , IDs)
 end
 
 fData = fData_tot{disp_config.Fdata_ID==IDs};
-nb_pings=numel(fData.WC_1P_Date);
+nb_pings=numel(fData.X8_1P_Date);
 ah=stacked_wc_tab_comp.wc_axes;
 
 current_fig = gcf;

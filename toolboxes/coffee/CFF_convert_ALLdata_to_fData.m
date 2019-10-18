@@ -412,7 +412,7 @@ for iF = 1:nStruct
             fData.He_1D_Date                            = ALLdata.EM_Height.Date;
             fData.He_1D_TimeSinceMidnightInMilliseconds = ALLdata.EM_Height.TimeSinceMidnightInMilliseconds;
             fData.He_1D_HeightCounter                   = ALLdata.EM_Height.HeightCounter;
-            fData.He_1D_Height                          = ALLdata.EM_Height.Height;
+            fData.He_1D_Height                          = ALLdata.EM_Height.Height/100;
             
         end
         
@@ -434,10 +434,10 @@ for iF = 1:nStruct
             fData.Po_1D_Date                            = ALLdata.EM_Position.Date;
             fData.Po_1D_TimeSinceMidnightInMilliseconds = ALLdata.EM_Position.TimeSinceMidnightInMilliseconds;
             fData.Po_1D_PositionCounter                 = ALLdata.EM_Position.PositionCounter;
-            fData.Po_1D_Latitude                        = ALLdata.EM_Position.Latitude;
-            fData.Po_1D_Longitude                       = ALLdata.EM_Position.Longitude;
-            fData.Po_1D_SpeedOfVesselOverGround         = ALLdata.EM_Position.SpeedOfVesselOverGround;
-            fData.Po_1D_HeadingOfVessel                 = ALLdata.EM_Position.HeadingOfVessel;
+            fData.Po_1D_Latitude                        = ALLdata.EM_Position.Latitude./20000000;
+            fData.Po_1D_Longitude                       = ALLdata.EM_Position.Longitude/.10000000;
+            fData.Po_1D_SpeedOfVesselOverGround         = ALLdata.EM_Position.SpeedOfVesselOverGround./100;
+            fData.Po_1D_HeadingOfVessel                 = ALLdata.EM_Position.HeadingOfVessel./100;
             
         end
         
@@ -462,7 +462,7 @@ for iF = 1:nStruct
             fData.De_1P_TimeSinceMidnightInMilliseconds = ALLdata.EM_Depth.TimeSinceMidnightInMilliseconds;
             fData.De_1P_PingCounter                     = ALLdata.EM_Depth.PingCounter;
             fData.De_1P_HeadingOfVessel                 = ALLdata.EM_Depth.HeadingOfVessel;
-            fData.De_1P_SoundSpeedAtTransducer          = ALLdata.EM_Depth.SoundSpeedAtTransducer;
+            fData.De_1P_SoundSpeedAtTransducer          = ALLdata.EM_Depth.SoundSpeedAtTransducer*0.1;
             fData.De_1P_TransmitTransducerDepth         = ALLdata.EM_Depth.TransmitTransducerDepth + 65536.*ALLdata.EM_Depth.TransducerDepthOffsetMultiplier;
             fData.De_1P_MaximumNumberOfBeamsPossible    = ALLdata.EM_Depth.MaximumNumberOfBeamsPossible;
             fData.De_1P_NumberOfValidBeams              = ALLdata.EM_Depth.NumberOfValidBeams;
@@ -521,7 +521,7 @@ for iF = 1:nStruct
             fData.X8_1P_TimeSinceMidnightInMilliseconds = ALLdata.EM_XYZ88.TimeSinceMidnightInMilliseconds;
             fData.X8_1P_PingCounter                     = ALLdata.EM_XYZ88.PingCounter;
             fData.X8_1P_HeadingOfVessel                 = ALLdata.EM_XYZ88.HeadingOfVessel;
-            fData.X8_1P_SoundSpeedAtTransducer          = ALLdata.EM_XYZ88.SoundSpeedAtTransducer;
+            fData.X8_1P_SoundSpeedAtTransducer          = ALLdata.EM_XYZ88.SoundSpeedAtTransducer*0.1;
             fData.X8_1P_TransmitTransducerDepth         = ALLdata.EM_XYZ88.TransmitTransducerDepth;
             fData.X8_1P_NumberOfBeamsInDatagram         = ALLdata.EM_XYZ88.NumberOfBeamsInDatagram;
             fData.X8_1P_NumberOfValidDetections         = ALLdata.EM_XYZ88.NumberOfValidDetections;
@@ -751,7 +751,7 @@ for iF = 1:nStruct
             % first head
             fData.WC_1P_Date                            = ALLdata.EM_WaterColumn.Date(iFirstDatagram(:,1));
             fData.WC_1P_TimeSinceMidnightInMilliseconds = ALLdata.EM_WaterColumn.TimeSinceMidnightInMilliseconds(iFirstDatagram(:,1));
-            fData.WC_1P_SoundSpeed                      = ALLdata.EM_WaterColumn.SoundSpeed(iFirstDatagram(:,1));
+            fData.WC_1P_SoundSpeed                      = ALLdata.EM_WaterColumn.SoundSpeed(iFirstDatagram(:,1))*0.1;
             fData.WC_1P_OriginalSamplingFrequencyHz     = ALLdata.EM_WaterColumn.SamplingFrequency(iFirstDatagram(:,1)).*0.01; % in Hz
             fData.WC_1P_SamplingFrequencyHz             = (ALLdata.EM_WaterColumn.SamplingFrequency(iFirstDatagram(:,1)).*0.01)./dr_sub; % in Hz
             fData.WC_1P_TXTimeHeave                     = ALLdata.EM_WaterColumn.TXTimeHeave(iFirstDatagram(:,1));
@@ -800,7 +800,7 @@ for iF = 1:nStruct
             fData.WC_TP_SystemSerialNumber   = nan(maxNTransmitSectors,nPings);
             
             % initialize data per decimated beam and ping
-            fData.WC_BP_BeamPointingAngle      = nan(maxNBeams_sub,nPings);
+            fData.WC_BP_BeamPointingAngle      = nan(maxNBeams_sub,nPings)/100;
             fData.WC_BP_StartRangeSampleNumber = nan(maxNBeams_sub,nPings);
             fData.WC_BP_NumberOfSamples        = nan(maxNBeams_sub,nPings);
             fData.WC_BP_DetectedRangeInSamples = zeros(maxNBeams_sub,nPings);
@@ -896,7 +896,7 @@ for iF = 1:nStruct
                         % indices of those beams in output structure
                         iBeamDest = nBeamTot + (1:nBeam);
                         
-                        fData.WC_BP_BeamPointingAngle(iBeamDest,iP)      = ALLdata.EM_WaterColumn.BeamPointingAngle{iDatagrams(iD)}(iBeamSource);
+                        fData.WC_BP_BeamPointingAngle(iBeamDest,iP)      = ALLdata.EM_WaterColumn.BeamPointingAngle{iDatagrams(iD)}(iBeamSource)/100;
                         fData.WC_BP_StartRangeSampleNumber(iBeamDest,iP) = round(ALLdata.EM_WaterColumn.StartRangeSampleNumber{iDatagrams(iD)}(iBeamSource)./dr_sub);
                         fData.WC_BP_NumberOfSamples(iBeamDest,iP)        = round(ALLdata.EM_WaterColumn.NumberOfSamples{iDatagrams(iD)}(iBeamSource)./dr_sub);
                         fData.WC_BP_DetectedRangeInSamples(iBeamDest,iP) = round(ALLdata.EM_WaterColumn.DetectedRangeInSamples{iDatagrams(iD)}(iBeamSource)./dr_sub);
@@ -995,7 +995,7 @@ for iF = 1:nStruct
             fData.AP_1P_NumberOfDatagrams               = ALLdata.EM_AmpPhase.NumberOfDatagrams(iFirstDatagram);
             fData.AP_1P_NumberOfTransmitSectors         = ALLdata.EM_AmpPhase.NumberOfTransmitSectors(iFirstDatagram);
             fData.AP_1P_TotalNumberOfReceiveBeams       = ALLdata.EM_AmpPhase.TotalNumberOfReceiveBeams(iFirstDatagram);
-            fData.AP_1P_SoundSpeed                      = ALLdata.EM_AmpPhase.SoundSpeed(iFirstDatagram);
+            fData.AP_1P_SoundSpeed                      = ALLdata.EM_AmpPhase.SoundSpeed(iFirstDatagram)*0.1;
             fData.AP_1P_SamplingFrequencyHz             = (ALLdata.EM_AmpPhase.SamplingFrequency(iFirstDatagram).*0.01)./dr_sub; % in Hz
             fData.AP_1P_TXTimeHeave                     = ALLdata.EM_AmpPhase.TXTimeHeave(iFirstDatagram);
             fData.AP_1P_TVGFunctionApplied              = ALLdata.EM_AmpPhase.TVGFunctionApplied(iFirstDatagram);
@@ -1075,7 +1075,7 @@ for iF = 1:nStruct
                     % idx_beams = (1:numel(iBeams));
                     
                     % ping x beam data
-                    fData.AP_BP_BeamPointingAngle(iBeams,iP)      = ALLdata.EM_AmpPhase.BeamPointingAngle{iDatagrams(iD)}(idx_beams);
+                    fData.AP_BP_BeamPointingAngle(iBeams,iP)      = ALLdata.EM_AmpPhase.BeamPointingAngle{iDatagrams(iD)}(idx_beams)/100;
                     fData.AP_BP_StartRangeSampleNumber(iBeams,iP) = round(ALLdata.EM_AmpPhase.StartRangeSampleNumber{iDatagrams(iD)}(idx_beams)./dr_sub);
                     fData.AP_BP_NumberOfSamples(iBeams,iP)        = round(ALLdata.EM_AmpPhase.NumberOfSamples{iDatagrams(iD)}(idx_beams)./dr_sub);
                     fData.AP_BP_DetectedRangeInSamples(iBeams,iP) = round(ALLdata.EM_AmpPhase.DetectedRangeInSamples{iDatagrams(iD)}(idx_beams)./dr_sub);

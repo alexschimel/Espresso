@@ -117,26 +117,6 @@ datagramsformat = S7Kfileinfo.datagramsformat;
 S7Kdata.S7Kfilename     = S7Kfilename;
 S7Kdata.datagramsformat = datagramsformat;
 
-
-% path to binary file for WC data
-wc_dir = CFF_converted_data_folder(S7Kfilename);
-file_amp_binary   = fullfile(wc_dir,'AP_SBP_SampleAmplitudes.dat');
-file_phase_binary = fullfile(wc_dir,'AP_SBP_SamplePhase.dat');
-
-if exist(file_amp_binary,'file')==0
-    file_amp_id = fopen(file_amp_binary,'w+');
-else
-    file_amp_id = -1;
-end
-
-if exist(file_phase_binary,'file')==0
-    file_phase_id = fopen(file_phase_binary,'w+');
-else
-    file_phase_id = -1;
-end
-
-
-
 % Open file
 [fid,~] = fopen(S7Kfilename, 'r',datagramsformat);
 
@@ -148,7 +128,7 @@ tx_pulse_modes={{'Single ping' 'Multi-ping 2' 'Multi-ping 3' 'Multi-ping 4'};{1 
 proj_beam_types={{'Rectangular' 'Chebychev' 'Gauss'};{0 1 2}};
 rx_beam_win={{'Chebychev' 'Kaiser'};{0 1}};
 height_source={{'None' 'RTK' 'Tide'};{0  1 2}};
-nb_sample_max_tot=0;
+
 %% Reading datagrams
 for iDatag = datagToParse'
     
@@ -190,17 +170,17 @@ for iDatag = datagToParse'
             S7Kdata.R1003_Position.Latency(i1003)  = fread(fid,1,'float32');
             if S7Kdata.R1003_Position.Datum_id(i1003)==0
                 S7Kdata.R1003_Position.Latitude(i1003)  = fread(fid,1,'float64')/pi*180;
-                S7Kdata.R1003_Position.Longtitude(i1003)  = fread(fid,1,'float64')/pi*180;
+                S7Kdata.R1003_Position.Longitude(i1003)  = fread(fid,1,'float64')/pi*180;
             else
                 S7Kdata.R1003_Position.LatitudeRadOrNorthing(i1003)  = fread(fid,1,'float64');
-                S7Kdata.R1003_Position.LongtitudeRadOrEasting(i1003)  = fread(fid,1,'float64');
+                S7Kdata.R1003_Position.LongitudeRadOrEasting(i1003)  = fread(fid,1,'float64');
             end
             S7Kdata.R1003_Position.PositionTypeFlag(i1003)  = fread(fid,1,'uint8');
             S7Kdata.R1003_Position.UTMZone(i1003)  = fread(fid,1,'uint8');
             S7Kdata.R1003_Position.QualityFlag(i1003)  = fread(fid,1,'uint8');
             S7Kdata.R1003_Position.PositioningMethod(i1003)  = fread(fid,1,'uint8');
             S7Kdata.R1003_Position.NumberOfSatellites(i1003)  = fread(fid,1,'uint8');
-            
+             parsed=1;
         case 1012
             %% 1012 – Roll Pitch Heave
             fieldname='R1012_RollPitchHeave';
@@ -255,7 +235,9 @@ for iDatag = datagToParse'
             S7Kdata.R7000_SonarSettings.TXPulseMode{i7000}=get_param_val(tx_pulse_modes,t_temp);%1=Single Ping, 2= Multi-ping 2, 3=Multi-ping 3, 4= Multi-ping 4
             S7Kdata.R7000_SonarSettings.TXPulseReserved(i7000)=fread(fid,1,'uint16');
             S7Kdata.R7000_SonarSettings.MaxPingRate(i7000)=fread(fid,1,'float32');%in pings per seconds
+            S7Kdata.R7000_SonarSettings.PingPeriod(i7000)=fread(fid,1,'float32');%in pings per seconds
             S7Kdata.R7000_SonarSettings.RangeSelection(i7000)=fread(fid,1,'float32');
+            S7Kdata.R7000_SonarSettings.PowerSelection(i7000)=fread(fid,1,'float32');
             S7Kdata.R7000_SonarSettings.GainSelection(i7000)=fread(fid,1,'float32');
             S7Kdata.R7000_SonarSettings.ControlFlags(i7000)=fread(fid,1,'uint32');
             S7Kdata.R7000_SonarSettings.ProjectIdentifier(i7000)=fread(fid,1,'uint32');
@@ -308,7 +290,7 @@ for iDatag = datagToParse'
                 S7Kdata.R7001_7kConfiguration.DeviceInfo{i7001}{i_inf}=fread(fid,l_tmp,'*char')';
             end
             
-            
+             parsed=1;
         case 7002
             %% 7002 – 7k Match Filter TODO
             fieldname='R7001_7kMatchFilter';
@@ -436,7 +418,6 @@ for iDatag = datagToParse'
             S7Kdata.R7027_RAWdetection.Reserved{i7027}           = fread(fid,15,'uint32');
             
             S7Kdata.R7027_RAWdetection.TimeSinceMidnightInMilliseconds(i7027)  = S7Kfileinfo.timeSinceMidnightInMilliseconds(iDatag);
-            S7Kdata.R7027_RAWdetection.Date(i7027)                             = S7Kfileinfo.date(iDatag);
             % parsing RD
             % repeat cycle: N entries of S bytes
             temp = ftell(fid);
@@ -501,7 +482,7 @@ for iDatag = datagToParse'
                 S7Kdata.R7027_RAWdetection.Heave(i7027)            = nan;
                 S7Kdata.R7027_RAWdetection.VehicleDepth(i7027)     = nan;
                 
-                S7Kdata.R7027_RAWdetection.Depth{i7027}               = {};
+                S7Kdata.R7027_RAWdetection.Depth{i7027}               = nan(1,N);
                 S7Kdata.R7027_RAWdetection.AlongTrackDistance{i7027}  = nan(1,N);
                 S7Kdata.R7027_RAWdetection.AcrossTrackDistance{i7027} = nan(1,N);
                 S7Kdata.R7027_RAWdetection.PointingAngle{i7027}       = nan(1,N);
@@ -557,7 +538,7 @@ for iDatag = datagToParse'
             S7Kdata.R7042_CompressedWaterColumn.Reserved(i7042)          = fread(fid,1,'uint32');
             
             % flag processing
-            [flags,sample_size,mag_fmt,phase_fmt]=CFF_get_R7042_flags(S7Kdata.R7042_CompressedWaterColumn.Flags(i7042));
+            [flags,sample_size,~,~]=CFF_get_R7042_flags(S7Kdata.R7042_CompressedWaterColumn.Flags(i7042));
             if sample_size==0
                 warning('%s: WC flag combination non taken into account',fieldname);
                 fields_wc = fieldnames(S7Kdata.R7042_CompressedWaterColumn);
@@ -593,7 +574,6 @@ for iDatag = datagToParse'
             S7Kdata.R7042_CompressedWaterColumn.SampleStartPositionInFile{i7042} = nan(1,B);
             
             Ns = zeros(1,B); % Number of samples in matrix form
-            start_sample=S7Kdata.R7042_CompressedWaterColumn.FirstSample(i7042)+1;
             id  = zeros(1,B+1); % offset for start of each Nrx block
             % now parse the data
             if flags.segmentNumbersAvailable
@@ -636,73 +616,6 @@ for iDatag = datagToParse'
             
             if wc_parsing_error == 0
                 
-                nb_sample_max=nanmax(S7Kdata.R7042_CompressedWaterColumn.FirstSample(i7042)+1+Ns);
-                nb_sample_max_tot=nanmax(nb_sample_max_tot,nb_sample_max);
-                
-                 if flags.magnitudeOnly
-                     Mag_tmp=zeros(nb_sample_max,B,mag_fmt);
-                 else
-                    Mag_tmp=zeros(nb_sample_max,B,mag_fmt);
-                    Ph_tmp=zeros(nb_sample_max,B,phase_fmt);
-                 end
-                
-                for jj=1:B
-                    
-                    DataSamples_tmp=blocktmp(id(jj)+7:(6*jj + sum(Ns(1:jj))*sample_size))';
-                    
-                    if flags.magnitudeOnly
-                        if flags.int32BitsData && ~flags.int8BitCompression
-                            % F) 32 bit Mag (32 bits total, no phase)
-                            Mag_tmp((start_sample:start_sample+Ns(jj)-1),jj)=pow2db(typecast(DataSamples_tmp,mag_fmt));
-                        elseif ~flags.int32BitsData && flags.int8BitCompression
-                            % D) 8 bit Mag (8 bits total, no phase)
-                            Mag_tmp((start_sample:start_sample+Ns(jj)-1),jj)=DataSamples_tmp;
-                        elseif ~flags.int32BitsData && ~flags.int8BitCompression
-                            % B) 16 bit Mag (16 bits total, no phase)
-                            Mag_tmp((start_sample:start_sample+Ns(jj)-1),jj)=typecast(DataSamples_tmp,mag_fmt);
-                        else
-                            warning('%s: WC compression flag issue',fieldname);
-                        end
-                    else
-                        if ~flags.int32BitsData && flags.int8BitCompression
-                            % C) 8 bit Mag & 8 bit Phase (16 bits total)
-                            Ph_tmp((start_sample:start_sample+Ns(jj)-1),jj)=DataSamples_tmp(2:2:end,:);
-                            Mag_tmp((start_sample:start_sample+Ns(jj)-1),jj)=DataSamples_tmp(1:2:end,:);
-                        elseif ~flags.int32BitsData && ~flags.int8BitCompression
-                            % A) 16 bit Mag & 16bit Phase (32 bits total)
-                            idx_tot=rem(1:numel(DataSamples_tmp),4);
-                            idx_phase=idx_tot==1|idx_tot==2;
-                            idx_mag=idx_tot==3|idx_tot==0;
-                            
-                            Ph_tmp((start_sample:start_sample+Ns(jj)-1),jj)=pow2db(typecast(DataSamples_tmp(idx_mag,:),mag_fmt));
-                            Mag_tmp((start_sample:start_sample+Ns(jj)-1),jj)=typecast(DataSamples_tmp(idx_phase,:),phase_fmt);
-                        else
-                            warning('%s: WC flag combination non taken into account',fieldname);
-                        end
-                    end
-                    
-                end
-                
-                % store amp data on binary file
-                if file_amp_id >= 0
-                    fwrite(file_amp_id,Mag_tmp,mag_fmt);
-                end
-                
-                % store phase data on binary file
-                if file_phase_id>=0
-                    fwrite(file_phase_id,Ph_tmp,phase_fmt);
-                end
-                
-            if 0
-                f=figure();
-                ax_mag=axes(f,'outerposition',[0 0.5 1 0.5]);
-                imagesc(ax_mag,Mag_tmp);
-                ax_phase=axes(f,'outerposition',[0 0 1 0.5]);
-                imagesc(ax_phase,Ph_tmp);
-            end
-            
-             
-            
                 % HERE if data parsing all went well
                 
                 if OD_size~=0
@@ -731,7 +644,7 @@ for iDatag = datagToParse'
             else
                 % HERE if data parsing failed, add a blank datagram in
                 % output
-                
+                warning('%s: error while parsing datagram',fieldname);
                 % copy field names of previous entries
                 fields_wc = fieldnames(S7Kdata.R7042_CompressedWaterColumn);
                 
@@ -859,39 +772,11 @@ for iDatag = datagToParse'
     S7Kfileinfo.parsed(iDatag,1) = parsed;
     if parsed==1
         S7Kdata.(fieldname).TimeSinceMidnightInMilliseconds(icurr_field)  = S7Kfileinfo.timeSinceMidnightInMilliseconds(iDatag);
-        S7Kdata.(fieldname).Date{icurr_field}                             = S7Kfileinfo.date{iDatag};
+        S7Kdata.(fieldname).Date(icurr_field)                             = str2double(S7Kfileinfo.date{iDatag});
     end
     
 end
 
-% close binary data file
-if file_amp_id >= 0
-    fclose(file_amp_id);
-end
-
-% close binary data file
-if file_phase_id >= 0
-    fclose(file_phase_id);
-end
-
-if i7042>1
-     % and link to them through memmapfile
-     
-     maxNSamples=nb_sample_max_tot;
-     maxNBeams=nanmax(cellfun(@numel,S7Kdata.R7042_CompressedWaterColumn.BeamNumber));
-     nPings=numel(S7Kdata.R7042_CompressedWaterColumn.BeamNumber);
-     S7Kdata.AP_SBP_SampleAmplitudes = memmapfile(file_amp_binary,'Format',{'int16' [maxNSamples maxNBeams nPings] 'val'},'repeat',1,'writable',true);
-     S7Kdata.AP_SBP_SamplePhase      = memmapfile(file_phase_binary,'Format',{'int16' [maxNSamples maxNBeams nPings] 'val'},'repeat',1,'writable',true);
-     
-     % save info about data format for later access
-     S7Kdata.AP_1_SampleAmplitudes_Class  = mag_fmt;
-     S7Kdata.AP_1_SampleAmplitudes_Nanval = eval([mag_fmt '(-inf)']);
-     S7Kdata.AP_1_SampleAmplitudes_Factor = 1;
-     S7Kdata.AP_1_SamplePhase_Class  = phase_fmt;
-     S7Kdata.AP_1_SamplePhase_Nanval = 0;
-     S7Kdata.AP_1_SamplePhase_Factor = 1/30;
-            
-end
 
 %% close fid
 fclose(fid);

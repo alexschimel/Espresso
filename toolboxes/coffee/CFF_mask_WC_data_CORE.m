@@ -104,7 +104,7 @@ nPings = numel(blockPings);
 datagramSource = fData.MET_datagramSource;
 
 % calculate inter-sample distance
-soundSpeed          = fData.(sprintf('%s_1P_SoundSpeed',datagramSource)).*0.1; %m/s
+soundSpeed          = fData.(sprintf('%s_1P_SoundSpeed',datagramSource)); %m/s
 samplingFrequencyHz = fData.(sprintf('%s_1P_SamplingFrequencyHz',datagramSource)); %Hz
 dr_samples = soundSpeed./(samplingFrequencyHz.*2);
 dr_samples = dr_samples(blockPings);
@@ -113,7 +113,7 @@ dr_samples = dr_samples(blockPings);
 if ~isinf(remove_angle)
     
     % extract needed data
-    angles = fData.(sprintf('%s_BP_BeamPointingAngle',datagramSource))(:,blockPings)./100;
+    angles = fData.(sprintf('%s_BP_BeamPointingAngle',datagramSource))(:,blockPings);
     
     % build mask: 1: to conserve, 0: to remove
     X_BP_OuterBeamsMask = angles>=-abs(remove_angle) & angles<=abs(remove_angle);
@@ -147,7 +147,7 @@ end
 if ~isinf(remove_bottomrange)
     
     % beam pointing angle
-    theta = deg2rad(fData.(sprintf('%s_BP_BeamPointingAngle',datagramSource))(:,blockPings)/100);
+    theta = deg2rad(fData.(sprintf('%s_BP_BeamPointingAngle',datagramSource))(:,blockPings));
     
     % beamwidth (nominal and with steering)
     psi = deg2rad(fData.Ru_1D_ReceiveBeamwidth(1)./10);

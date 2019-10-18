@@ -119,8 +119,10 @@ grdlim_north   = p.Results.grdlim_north;
 %% Extract info about WCD
 if isfield(fData,'X_SBP_WaterColumnProcessed')
     field_to_grid = 'X_SBP_WaterColumnProcessed';
-else
+elseif isfield(fData,'WC_SBP_SampleAmplitudes')
     field_to_grid = 'WC_SBP_SampleAmplitudes';
+else 
+    field_to_grid = 'AP_SBP_SampleAmplitudes';
 end
 
 % size
@@ -132,7 +134,7 @@ end
 datagramSource = fData.MET_datagramSource;
 
 % inter-sample distance
-soundSpeed           = fData.(sprintf('%s_1P_SoundSpeed',datagramSource)).*0.1; %m/s
+soundSpeed           = fData.(sprintf('%s_1P_SoundSpeed',datagramSource)); %m/s
 samplingFrequencyHz  = fData.(sprintf('%s_1P_SamplingFrequencyHz',datagramSource)); %Hz
 interSamplesDistance = soundSpeed./(samplingFrequencyHz.*2); % in m
 
@@ -179,7 +181,7 @@ for iB = 1:nBlocks
     % beam and two outer beams, for all pings.
     idxSamples = [1 nSamples]';
     startSampleNumber = fData.(sprintf('%s_BP_StartRangeSampleNumber',datagramSource))([1 round(nBeams./2) nBeams],blockPings);
-    beamPointingAngle = deg2rad(fData.(sprintf('%s_BP_BeamPointingAngle',datagramSource))([1 round(nBeams./2) nBeams],blockPings)/100);
+    beamPointingAngle = deg2rad(fData.(sprintf('%s_BP_BeamPointingAngle',datagramSource))([1 round(nBeams./2) nBeams],blockPings));
     
     % Get easting, northing and height
     [blockE, blockN, blockH] = CFF_georeference_sample(idxSamples, startSampleNumber, interSamplesDistance(blockPings), beamPointingAngle, ...
@@ -244,7 +246,7 @@ for iB = 1:nBlocks
     % number and in beams
     idxSamples = (1:dr_sub:nSamples)';
     startSampleNumber = fData.(sprintf('%s_BP_StartRangeSampleNumber',datagramSource))(1:db_sub:end,blockPings);
-    beamPointingAngle = deg2rad(fData.(sprintf('%s_BP_BeamPointingAngle',datagramSource))(1:db_sub:end,blockPings)/100);
+    beamPointingAngle = deg2rad(fData.(sprintf('%s_BP_BeamPointingAngle',datagramSource))(1:db_sub:end,blockPings));
     
     % Get easting, northing and height
     [blockE, blockN, blockH] = CFF_georeference_sample(idxSamples, startSampleNumber, interSamplesDistance(blockPings), beamPointingAngle, ...

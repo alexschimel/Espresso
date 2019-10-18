@@ -162,11 +162,11 @@ end
 %% Water-column swath display
 
 % get distances across and upwards for all samples
-soundSpeed          = fData.(sprintf('%s_1P_SoundSpeed',datagramSource)).*0.1; %m/s
+soundSpeed          = fData.(sprintf('%s_1P_SoundSpeed',datagramSource)); %m/s
 samplingFrequencyHz = fData.(sprintf('%s_1P_SamplingFrequencyHz',datagramSource)); %Hz
 dr_samples = soundSpeed./(samplingFrequencyHz.*2);
 sampleRange = CFF_get_samples_range((1:size(amp,1))',fData.(sprintf('%s_BP_StartRangeSampleNumber',datagramSource))(:,ip),dr_samples(ip));
-[sampleAcrossDist,sampleUpDist] = CFF_get_samples_dist(sampleRange,fData.(sprintf('%s_BP_BeamPointingAngle',datagramSource))(:,ip)/100/180*pi);
+[sampleAcrossDist,sampleUpDist] = CFF_get_samples_dist(sampleRange,fData.(sprintf('%s_BP_BeamPointingAngle',datagramSource))(:,ip)/180*pi);
 
 % display WC data itself
 set(wc_tab_comp.wc_gh,...

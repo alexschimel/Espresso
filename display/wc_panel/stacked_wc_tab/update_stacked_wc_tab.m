@@ -181,12 +181,23 @@ if up_stacked_wc_bool
     % samples # into range (m) for the display. Problem is it is not
     % constant over subsequent pings! For each sample #, calculate mean
     % range of all beams within stack view for the main ping.
-    soundSpeed          = fData.(sprintf('%s_1P_SoundSpeed',datagramSource)).*0.1; %m/s
+    soundSpeed          = fData.(sprintf('%s_1P_SoundSpeed',datagramSource)); %m/s
     samplingFrequencyHz = fData.(sprintf('%s_1P_SamplingFrequencyHz',datagramSource)); %Hz
     %profile on;
     dr_samples = soundSpeed./(samplingFrequencyHz.*2);
     
     disp_type=disp_config.StackAngularMode;
+    
+     switch str_disp
+        case 'Original'
+            dtg_to_load=sprintf('%s_SBP_SampleAmplitudes',datagramSource);
+        case 'Processed'
+            dtg_to_load='X_SBP_WaterColumnProcessed';
+        case 'Phase'
+            dtg_to_load=sprintf('%s_SBP_SamplePhase',datagramSource);
+            
+    end
+    
     
     
     switch disp_type
@@ -219,15 +230,7 @@ if up_stacked_wc_bool
     nPings = numel(idx_pings);
     nBlocks = ceil(nPings/(blockLength));
     
-    switch str_disp
-        case 'Original'
-            dtg_to_load=sprintf('%s_SBP_SampleAmplitudes',datagramSource);
-        case 'Processed'
-            dtg_to_load='X_SBP_WaterColumnProcessed';
-        case 'Phase'
-            dtg_to_load=sprintf('%s_SBP_SamplePhase',datagramSource);
-            
-    end
+   
     
     blocks = [ 1+(0:nBlocks-1)'.*blockLength , (1:nBlocks)'.*blockLength ];
     blocks(end,2) = nPings;
@@ -238,8 +241,11 @@ if up_stacked_wc_bool
         
         % list of pings in this block
         blockPings  = (blocks(iB,1):blocks(iB,2));
-        angleData=fData.(sprintf('%s_BP_BeamPointingAngle',datagramSource))(idx_angle_keep,idx_pings(blockPings))/100/180*pi;
+        angleData=fData.(sprintf('%s_BP_BeamPointingAngle',datagramSource))(idx_angle_keep,idx_pings(blockPings))/180*pi;
         wc_data = CFF_get_WC_data(fData,dtg_to_load,'iPing',idx_pings(blockPings),'iBeam',idx_angle_keep,'iRange',idx_r);
+        if isempty(wc_data)
+            continue;
+        end
         wc_data(:,idx_angles(idx_angle_keep,blockPings)) = nan;
         
         switch disp_type
@@ -268,8 +274,8 @@ if up_stacked_wc_bool
                 end
                 
             case 'range'
-                
-                amp_al(:,blockPings) = squeeze(nanmean(wc_data,2));
+                idx_r_tmp=intersect(idx_r,1:size(wc_data,1));
+                amp_al(idx_r_tmp,blockPings) = squeeze(nanmean(wc_data,2));
         end
     end
     

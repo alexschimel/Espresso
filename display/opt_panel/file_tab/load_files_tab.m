@@ -223,7 +223,6 @@ function convert_files_callback(~,~,main_figure,reconvert)
 % instead. If there is no water-column datagram, you can still use Espresso
 % to convert and load and display data, using the depths datagrams 'De' or
 % 'X8'
-;
 
 % get tab data
 file_tab_comp = getappdata(main_figure,'file_tab');
@@ -253,9 +252,9 @@ for nF = 1:numel(files_to_convert)
         if isfile([file_to_convert,'.wcd'])
             f_ext='.wcd';
         elseif isfile([file_to_convert,'.all'])
-            f_ext='.all';            
+            f_ext='.all';
         elseif isfile([file_to_convert,'.s7k'])
-            f_ext='.s7k';  
+            f_ext='.s7k';
         end
     end
     
@@ -267,10 +266,20 @@ for nF = 1:numel(files_to_convert)
     
     % Otherwise, starting conversion...
     fprintf('Converting file "%s" (%i/%i)...\n',file_to_convert,nF,numel(files_to_convert));
-    textprogressbar(sprintf('...Started at %s. Progress: ',datestr(now)));    
+    textprogressbar(sprintf('...Started at %s. Progress: ',datestr(now)));
     textprogressbar(0);
     tic
     
+    % get folder for converted data
+    folder_for_converted_data = CFF_converted_data_folder(file_to_convert);
+    % converted filename fData
+    mat_fdata_file = fullfile(folder_for_converted_data,'fdata.mat');
+    
+    % if output folder doesn't exist, create it
+    MATfilepath = fileparts(mat_fdata_file);
+    if ~exist(MATfilepath,'dir') && ~isempty(MATfilepath)
+        mkdir(MATfilepath);
+    end
     
     switch f_ext
         case {'.all' '.wcd'}
@@ -307,23 +316,23 @@ for nF = 1:numel(files_to_convert)
             
         case '.s7k'
             datagramSource = 'AP'; % 'WC', 'AP', 'De', 'X8'
+            wc_d=7042;
             %dg={'R1015_Navigation' 'R1003_Position' 'R7042_CompressedWaterColumn' 'R7000_SonarSettings' 'R7001_7kConfiguration' 'R7004_7kBeamGeometry' 'R7027_RAWdetection'};
             dg_wc = [1015 1003 7042 7000 7001 7004 7027];
+                     
             [RESONdata,datags_parsed_idx] = CFF_read_s7k(file_to_convert,dg_wc);
+            % if not all datagrams were found at this point, message and abort
+            if ~all(datags_parsed_idx)
+                if ismember(wc_d,dg_wc(~datags_parsed_idx))
+                    textprogressbar(' error. File does not contain required water-column datagrams. Check file contents. Conversion aborted.');
+                    continue;
+                elseif nansum(datags_parsed_idx(1:2))==0
+                    textprogressbar(' error. File does not contain all necessary datagrams. Check file contents. Conversion aborted.');
+                    continue;
+                end          
+            end       
         otherwise
-            continue;    
-    end
-    
-    % get folder for converted data
-    folder_for_converted_data = CFF_converted_data_folder(file_to_convert);
-    
-    % converted filename fData
-    mat_fdata_file = fullfile(folder_for_converted_data,'fdata.mat');
-    
-    % if output folder doesn't exist, create it
-    MATfilepath = fileparts(mat_fdata_file);
-    if ~exist(MATfilepath,'dir') && ~isempty(MATfilepath)
-        mkdir(MATfilepath);
+            continue;
     end
     
     % subsampling factors:
@@ -347,8 +356,8 @@ for nF = 1:numel(files_to_convert)
                 clear fData;
                 
             case '.s7k'
-                 % if output file does not exist OR if forcing reconversion, simply convert
-                fData = CFF_convert_S7Kdata_to_fData(EMdata,dr_sub,db_sub);
+                % if output file does not exist OR if forcing reconversion, simply convert
+                fData = CFF_convert_S7Kdata_to_fData(RESONdata,dr_sub,db_sub);
                 textprogressbar(90);
                 
                 % add datagram source
@@ -376,7 +385,7 @@ for nF = 1:numel(files_to_convert)
                 % compare data to that already existing
                 [fData,update_flag] = CFF_convert_ALLdata_to_fData(EMdata,dr_sub,db_sub,fData);
             case '.s7k'
-                [fData,update_flag] = CFF_convert_S7Kdata_to_fData(EMdata,dr_sub,db_sub,fData);
+                [fData,update_flag] = CFF_convert_S7Kdata_to_fData(RESONdata,dr_sub,db_sub,fData);
         end
         textprogressbar(90);
         % if it's different, update the result
@@ -487,10 +496,28 @@ for nF = 1:numel(files_to_load)
     end
     
     % checking path to water-column data binary file
-    [filepath_in_fData,name,ext] = fileparts(fData_temp.WC_SBP_SampleAmplitudes.Filename);
-    if ~strcmp(filepath_in_fData,folder_for_converted_data)
-        fData_temp.WC_SBP_SampleAmplitudes.Filename = fullfile(folder_for_converted_data,[name ext]);
-        dirchange_flag = 1;
+    if isfield(fData_temp,'WC_SBP_SampleAmplitudes')
+        [filepath_in_fData,name,ext] = fileparts(fData_temp.WC_SBP_SampleAmplitudes.Filename);
+        if ~strcmp(filepath_in_fData,folder_for_converted_data)
+            fData_temp.WC_SBP_SampleAmplitudes.Filename = fullfile(folder_for_converted_data,[name ext]);
+            dirchange_flag = 1;
+        end
+    end
+    
+    if isfield(fData_temp,'AP_SBP_SampleAmplitudes')
+        [filepath_in_fData,name,ext] = fileparts(fData_temp.AP_SBP_SampleAmplitudes.Filename);
+        if ~strcmp(filepath_in_fData,folder_for_converted_data)
+            fData_temp.AP_SBP_SampleAmplitudes.Filename = fullfile(folder_for_converted_data,[name ext]);
+            dirchange_flag = 1;
+        end
+    end
+    
+    if isfield(fData_temp,'AP_SBP_SamplePhase')
+        [filepath_in_fData,name,ext] = fileparts(fData_temp.AP_SBP_SamplePhase.Filename);
+        if ~strcmp(filepath_in_fData,folder_for_converted_data)
+            fData_temp.AP_SBP_SamplePhase.Filename = fullfile(folder_for_converted_data,[name ext]);
+            dirchange_flag = 1;
+        end
     end
     
     % checking path to processed water-column data binary file
