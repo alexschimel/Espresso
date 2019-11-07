@@ -197,7 +197,8 @@ set(wc_tab_comp.wc_axes,...
 set(wc_tab_comp.ac_gh,...
     'XData',[across_dist across_dist],...
     'YData',get(wc_tab_comp.wc_axes,'YLim'));
-disp_config.Cax_wc=disp_config.Cax_wc;
+
+disp_config.Cax_wc = disp_config.Cax_wc;
 
 %% set Fdata_ID
 fname = fData.ALLfilename{1};
@@ -210,8 +211,7 @@ if change_line_flag
     % ensure that the line now displayed in WC is selected in the list of
     % files loaded
     
-IDs=cellfun(@(c) c.ID,fData_tot);
-
+    IDs = cellfun(@(c) c.ID,fData_tot);
     
     if ~ismember(disp_config.Fdata_ID , IDs)
         disp_config.Fdata_ID = IDs(1);
@@ -219,24 +219,25 @@ IDs=cellfun(@(c) c.ID,fData_tot);
         return;
     end
     
-    %removed cause it re-updates everything..
-%     line_idx = find(disp_config.Fdata_ID ==IDs);
-% 
-%     fdata_tab_comp = getappdata(main_figure,'fdata_tab');
-%     if ~ismember(line_idx,fdata_tab_comp.selected_idx)
-% 
-%         % select the cell in the table. Unfortunately, findjobj takes a while
-%         % but seems the only solution to select a cell programmatically
-%         jUIScrollPane = findjobj(fdata_tab_comp.table);
-%         jUITable = jUIScrollPane.getViewport.getView;
-%         jUITable.changeSelection(line_idx-1,0, false, false);
-% 
-%         % and update selected_idx
-%         fdata_tab_comp.selected_idx = unique([fdata_tab_comp.selected_idx;line_idx]);
-% 
-%         % and save back
-%         setappdata(main_figure,'fdata_tab',fdata_tab_comp);
-%     end
+    %% THIS SECTION REMOVED because it re-updates everything..
+    %     line_idx = find(disp_config.Fdata_ID ==IDs);
+    %
+    %     fdata_tab_comp = getappdata(main_figure,'fdata_tab');
+    %     if ~ismember(line_idx,fdata_tab_comp.selected_idx)
+    %
+    %         % select the cell in the table. Unfortunately, findjobj takes a while
+    %         % but seems the only solution to select a cell programmatically
+    %         jUIScrollPane = findjobj(fdata_tab_comp.table);
+    %         jUITable = jUIScrollPane.getViewport.getView;
+    %         jUITable.changeSelection(line_idx-1,0, false, false);
+    %
+    %         % and update selected_idx
+    %         fdata_tab_comp.selected_idx = unique([fdata_tab_comp.selected_idx;line_idx]);
+    %
+    %         % and save back
+    %         setappdata(main_figure,'fdata_tab',fdata_tab_comp);
+    %     end
+    
 end
 
 end

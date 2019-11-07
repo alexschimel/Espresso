@@ -88,9 +88,8 @@ for iF = 1:nStruct
     ping_TSMIM=S7Kdata.R7000_SonarSettings.TimeSinceMidnightInMilliseconds;
     %ping_time=cellfun(@(x) datenum(x,'yyyymmdd'),ping_date)+ping_TSMIM/(24*60*60*1e3);
     
+    
     %% S7K_Height
-    
-    
     
     % only convert these datagrams if this type doesn't already exist in output
     if ~isfield(fData,'He_1D_Date')
@@ -171,10 +170,6 @@ for iF = 1:nStruct
             warning('Po_1D_Date:Could not find position data in the file');
         end
         
-        
-        
-        
-        
         %% EM_XYZ88
         
         if isfield(S7Kdata,'R7027_RAWdetection') %%%%TODO
@@ -231,7 +226,7 @@ for iF = 1:nStruct
         
         %% R7018_7kBeamformedData TODO
         
-        if isfield(S7Kdata,'R7018_7kBeamformedData') 
+        if isfield(S7Kdata,'R7018_7kBeamformedData')
             if ~isfield(fData,'WC_1P_Date')
                 if update_mode
                     update_flag = 1;
@@ -298,23 +293,23 @@ for iF = 1:nStruct
                 
                 % now get data for each ping
                 for iP = 1:nPings
-                   fseek(fid_all,S7Kdata.R7018_7kBeamformedData.BeamformedDataPos(iP),'bof'); 
-                   Mag_tmp=(fread(fid_all,[S7Kdata.R7018_7kBeamformedData.N(iP) S7Kdata.R7018_7kBeamformedData.S(iP)],mag_fmt,1))';
-                   fseek(fid_all,S7Kdata.R7018_7kBeamformedData.BeamformedDataPos(iP)+1,'bof'); 
-                   Ph_tmp=(fread(fid_all,[S7Kdata.R7018_7kBeamformedData.N(iP) S7Kdata.R7018_7kBeamformedData.S(iP)],phase_fmt,1))';  
-                   
-                   Ph_tmp=Ph_tmp/10430/pi*180;
-                   
-                   Mag_tmp(Mag_tmp==eval([mag_fmt '(-inf)']))=eval([mag_fmt '(-inf)']);
-                   % store amp data on binary file
-                   if file_amp_id >= 0
-                       fwrite(file_amp_id,Mag_tmp,mag_fmt);
-                   end
-                   
-                   % store phase data on binary file
-                   if file_phase_id>=0
-                       fwrite(file_phase_id,Ph_tmp,phase_fmt);
-                   end
+                    fseek(fid_all,S7Kdata.R7018_7kBeamformedData.BeamformedDataPos(iP),'bof');
+                    Mag_tmp=(fread(fid_all,[S7Kdata.R7018_7kBeamformedData.N(iP) S7Kdata.R7018_7kBeamformedData.S(iP)],mag_fmt,1))';
+                    fseek(fid_all,S7Kdata.R7018_7kBeamformedData.BeamformedDataPos(iP)+1,'bof');
+                    Ph_tmp=(fread(fid_all,[S7Kdata.R7018_7kBeamformedData.N(iP) S7Kdata.R7018_7kBeamformedData.S(iP)],phase_fmt,1))';
+                    
+                    Ph_tmp=Ph_tmp/10430/pi*180;
+                    
+                    Mag_tmp(Mag_tmp==eval([mag_fmt '(-inf)']))=eval([mag_fmt '(-inf)']);
+                    % store amp data on binary file
+                    if file_amp_id >= 0
+                        fwrite(file_amp_id,Mag_tmp,mag_fmt);
+                    end
+                    
+                    % store phase data on binary file
+                    if file_phase_id>=0
+                        fwrite(file_phase_id,Ph_tmp,phase_fmt);
+                    end
                 end
                 
             end
@@ -322,7 +317,7 @@ for iF = 1:nStruct
         
         %% R7042_CompressedWaterColumn
         
-        if isfield(S7Kdata,'R7042_CompressedWaterColumn') 
+        if isfield(S7Kdata,'R7042_CompressedWaterColumn')
             
             % only convert these datagrams if this type doesn't already exist in output
             if ~isfield(fData,'AP_1P_Date')
@@ -475,10 +470,10 @@ for iF = 1:nStruct
                         end
                         
                         if 0
-                            f=figure();
-                            ax_mag=axes(f,'outerposition',[0 0.5 1 0.5]);
+                            f = figure();
+                            ax_mag = axes(f,'outerposition',[0 0.5 1 0.5]);
                             imagesc(ax_mag,Mag_tmp);
-                            ax_phase=axes(f,'outerposition',[0 0 1 0.5]);
+                            ax_phase = axes(f,'outerposition',[0 0 1 0.5]);
                             imagesc(ax_phase,Ph_tmp);
                         end
                         
@@ -496,7 +491,6 @@ for iF = 1:nStruct
                 if file_phase_id >= 0
                     fclose(file_phase_id);
                 end
-                
                 
                 fData.AP_SBP_SampleAmplitudes = memmapfile(file_amp_binary,'Format',{mag_fmt [maxNSamples maxNBeams nPings] 'val'},'repeat',1,'writable',true);
                 fData.AP_SBP_SamplePhase      = memmapfile(file_phase_binary,'Format',{phase_fmt [maxNSamples maxNBeams nPings] 'val'},'repeat',1,'writable',true);

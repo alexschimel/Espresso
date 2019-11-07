@@ -243,7 +243,6 @@ while pif_nextrecordstart < filesize
     sevenKTime_seconds     = fread(fid,1,'float32');
     sevenKTime_hours       = fread(fid,1,'uint8');
     sevenKTime_minutes     = fread(fid,1,'uint8');
-    date=datestr(datenum(num2str(sevenKTime_year),'yyyy')+sevenKTime_day,'yyyymmdd');
     recordVersion          = fread(fid,1,'uint16');
     recordTypeIdentifier   = fread(fid,1,'uint32');
     deviceIdentifier       = fread(fid,1,'uint32');
@@ -339,7 +338,7 @@ while pif_nextrecordstart < filesize
     S7Kfileinfo.syncCounter(kk,1) = syncCounter;
     
     % record time info
-    S7Kfileinfo.date{kk,1} = date;
+    S7Kfileinfo.date{kk,1} = datestr(datenum(num2str(sevenKTime_year),'yyyy') + sevenKTime_day,'yyyymmdd');
     S7Kfileinfo.timeSinceMidnightInMilliseconds(kk,1) = (sevenKTime_hours.*3600 + sevenKTime_minutes.*60 + sevenKTime_seconds).*1000;
     
     

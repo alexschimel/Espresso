@@ -15,9 +15,8 @@ addRequired(p,argName,argCheck);
 % Check that cell array
 argName = 'datagrams';
 argDefault = {};
-argCheck = @(x) isnumeric(x)||isempty(x); % that last part allows the use of the couple name,param
+argCheck = @(x) isnumeric(x)||isempty(x);
 addOptional(p,argName,argDefault,argCheck);
-
 
 % now parse inputs
 parse(p,S7Kfilename,varargin{:});
@@ -26,9 +25,8 @@ parse(p,S7Kfilename,varargin{:});
 S7Kfilename        = p.Results.S7Kfilename;
 datagrams_to_parse = p.Results.datagrams;
 
-
 if isempty(CFF_file_extension(S7Kfilename))
-    S7Kfilename=[S7Kfilename,'.s7k'];
+    S7Kfilename = [S7Kfilename,'.s7k'];
 end
 
 info = CFF_s7k_file_info(S7Kfilename);

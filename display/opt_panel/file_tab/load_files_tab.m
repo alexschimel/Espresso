@@ -245,16 +245,15 @@ for nF = 1:numel(files_to_convert)
     % get file to convert
     file_to_convert = files_to_convert{nF};
     
-    
-    [folder_f,file_to_convert_name,f_ext]=fileparts(file_to_convert);
+    [~,~,f_ext] = fileparts(file_to_convert);
     
     if isempty(f_ext)
         if isfile([file_to_convert,'.wcd'])
-            f_ext='.wcd';
+            f_ext = '.wcd';
         elseif isfile([file_to_convert,'.all'])
-            f_ext='.all';
+            f_ext = '.all';
         elseif isfile([file_to_convert,'.s7k'])
-            f_ext='.s7k';
+            f_ext = '.s7k';
         end
     end
     
@@ -283,6 +282,8 @@ for nF = 1:numel(files_to_convert)
     
     switch f_ext
         case {'.all' '.wcd'}
+            
+            % set datagram source
             datagramSource = 'WC'; % 'WC', 'AP', 'De', 'X8'
             
             switch datagramSource
@@ -315,11 +316,11 @@ for nF = 1:numel(files_to_convert)
             end
             
         case '.s7k'
-
+            
             wc_d=7042;
             %dg={'R1015_Navigation' 'R1003_Position' 'R7042_CompressedWaterColumn' 'R7000_SonarSettings' 'R7001_7kConfiguration' 'R7004_7kBeamGeometry' 'R7027_RAWdetection'};
             dg_wc = [1015 1003 7042 7018 7000 7001 7004 7027];
-                     
+            
             [RESONdata,datags_parsed_idx] = CFF_read_s7k(file_to_convert,dg_wc);
             % if not all datagrams were found at this point, message and abort
             if ~all(datags_parsed_idx)
@@ -329,8 +330,8 @@ for nF = 1:numel(files_to_convert)
                 elseif nansum(datags_parsed_idx(1:2))==0||nansum(datags_parsed_idx(3:4))==0
                     textprogressbar(' error. File does not contain all necessary datagrams. Check file contents. Conversion aborted.');
                     continue;
-                end          
-            end   
+                end
+            end
             if datags_parsed_idx(4)
                 datagramSource='WC';
             else
@@ -686,8 +687,6 @@ update_map_tab(main_figure,0,0,1,[]);
 % update WC view and stacked view
 update_wc_tab(main_figure);
 update_stacked_wc_tab(main_figure);
-
-
 
 % not sure the following is needed...
 % enabled_obj = findobj(main_figure,'Enable','off');

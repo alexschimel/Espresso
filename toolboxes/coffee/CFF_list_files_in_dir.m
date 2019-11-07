@@ -69,33 +69,21 @@
 function [folders,files,converted] = CFF_list_files_in_dir(folder_init, varargin)
 
 %% input parsing
-
-% init
 p = inputParser;
-
-% required
 addRequired(p,'folder_init',@ischar);
-
-% optional
 addOptional(p,'warning_flag','warning_off',@(x) ischar(x) && ismember(x,{'warning_on' 'warning_off'}));
-
-% parse
 parse(p,folder_init,varargin{:})
-
-% get results
 warning_flag = p.Results.warning_flag;
 clear p
 
 
-%% get .all files
-all_files=list_data(folder_init,'*.wcd');
-%% get .wcd files
-wcd_files=list_data(folder_init,'*.all');
-%% get .s7k files
-s7k_files=list_data(folder_init,'*.s7k');
+%% get file names
+all_files = list_data(folder_init,'*.wcd');
+wcd_files = list_data(folder_init,'*.all');
+s7k_files = list_data(folder_init,'*.s7k');
 
 
-%% files to keep
+%% manage all/wcd pais
 % take pairs of files, or at default wcd files, or at default all files
 files_pair = intersect(all_files,wcd_files);
 if ~isempty(files_pair)
@@ -111,6 +99,10 @@ else
         end
     end
 end
+
+
+%% adding s7k
+files_full = union(files_full,s7k_files);
 
 
 %% warnings
@@ -136,14 +128,11 @@ switch warning_flag
         end
 end
 
-
-files_full=union(files_full,s7k_files);
-
 %% output
 if isempty(files_full)
     
-    folders = {};
-    files = {};
+    folders   = {};
+    files     = {};
     converted = [];
     
 else
@@ -162,9 +151,12 @@ else
     converted = cellfun(@(x) exist(x,'file')>0,mat_fdata_files);
     
 end
+
 end
 
-function files=list_data(folder_init,ext)
+%% subfunctions %%
+
+function files = list_data(folder_init,ext)
 Filename_list = dir(fullfile(folder_init,ext));
 if ~isempty(Filename_list)
     Filename_cell = {Filename_list([Filename_list(:).isdir]==0).name};
@@ -172,6 +164,7 @@ if ~isempty(Filename_list)
     folders = {Filename_list([Filename_list(:).isdir]==0).folder};
     files = fullfile(folders,files);
 else
-    files={};
+    files = {};
 end
+
 end
