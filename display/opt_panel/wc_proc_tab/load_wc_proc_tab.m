@@ -532,7 +532,7 @@ for i = idx_fData(:)'
     
     % disp
     textprogressbar(100)
-    textprogressbar(sprintf(' done. Elapsed time: %f seconds.',toc));
+    textprogressbar(sprintf(' done. Elapsed time: %f seconds.\n',toc));
     
     % throw warning
     if ~isempty(warning_text)

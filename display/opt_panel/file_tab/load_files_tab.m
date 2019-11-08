@@ -271,6 +271,7 @@ for nF = 1:numel(files_to_convert)
     
     % get folder for converted data
     folder_for_converted_data = CFF_converted_data_folder(file_to_convert);
+    
     % converted filename fData
     mat_fdata_file = fullfile(folder_for_converted_data,'fdata.mat');
     
@@ -405,7 +406,7 @@ for nF = 1:numel(files_to_convert)
     
     % End of conversion
     textprogressbar(100);
-    textprogressbar(sprintf(' done. Elapsed time: %f seconds.',toc));
+    textprogressbar(sprintf(' done. Elapsed time: %f seconds.\n',toc));
     
 end
 

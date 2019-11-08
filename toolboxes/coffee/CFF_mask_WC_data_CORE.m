@@ -104,10 +104,8 @@ nPings = numel(blockPings);
 datagramSource = fData.MET_datagramSource;
 
 % calculate inter-sample distance
-soundSpeed          = fData.(sprintf('%s_1P_SoundSpeed',datagramSource)); %m/s
-samplingFrequencyHz = fData.(sprintf('%s_1P_SamplingFrequencyHz',datagramSource)); %Hz
-dr_samples = soundSpeed./(samplingFrequencyHz.*2);
-dr_samples = dr_samples(blockPings);
+interSamplesDistance = CFF_inter_sample_distance(fData);
+interSamplesDistance = interSamplesDistance(blockPings);
 
 % MASK 1: OUTER BEAMS REMOVAL
 if ~isinf(remove_angle)
@@ -131,7 +129,7 @@ end
 if remove_closerange>0
     
     % extract needed data
-    ranges = CFF_get_samples_range( (1:nSamples)', fData.(sprintf('%s_BP_StartRangeSampleNumber',datagramSource))(:,blockPings), dr_samples);
+    ranges = CFF_get_samples_range( (1:nSamples)', fData.(sprintf('%s_BP_StartRangeSampleNumber',datagramSource))(:,blockPings), interSamplesDistance);
     
     % build mask: 1: to conserve, 0: to remove
     X_SBP_CloseRangeMask = ranges>=remove_closerange;
@@ -165,7 +163,7 @@ if ~isinf(remove_bottomrange)
     M =2* (sin(abs(theta)+psi/2) - sin(abs(theta)-psi/2) ) .* fData.X_BP_bottomRange(:,blockPings);
     % calculate max sample beyond which mask is to be applied
     X_BP_maxRange  = fData.X_BP_bottomRange(:,blockPings) + remove_bottomrange - abs(M);
-    X_BP_maxSample = bsxfun(@rdivide,X_BP_maxRange,dr_samples);
+    X_BP_maxSample = bsxfun(@rdivide,X_BP_maxRange,interSamplesDistance);
     X_BP_maxSample = round(X_BP_maxSample);
     X_BP_maxSample(X_BP_maxSample>nSamples|isnan(X_BP_maxSample)) = nSamples;
     

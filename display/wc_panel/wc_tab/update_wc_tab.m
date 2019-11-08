@@ -1,10 +1,6 @@
-%% this_function_name.m
+%% update_wc_tab.m
 %
-% _This section contains a very short description of the function, for the
-% user to know this function is part of the software and what it does for
-% it. Example below to replace. Delete these lines XXX._
-%
-% Template of ESP3 function header. XXX
+% Updates the WC swath display
 %
 %% Help
 %
@@ -78,6 +74,11 @@
 %% Function
 function update_wc_tab(main_figure,varargin)
 
+if ~isdeployed()
+    disp('Update WC Tab');
+end
+
+% input parser
 p = inputParser;
 addOptional(p,'change_line_flag',1);
 addOptional(p,'change_ping_flag',1);
@@ -85,38 +86,25 @@ parse(p,varargin{:});
 change_line_flag = p.Results.change_line_flag;
 change_ping_flag = p.Results.change_ping_flag;
 
-if ~isdeployed()
-    disp('Update WC Tab');
-end
-
-%% check if there are data to display
+% check if there are data to display
 fData_tot = getappdata(main_figure,'fData');
 if isempty(fData_tot)
     no_data_clear_all_displays(main_figure);
     return;
 end
 
-%% clean-up disp_config
+% clean-up disp_config
 disp_config = getappdata(main_figure,'disp_config');
 disp_config.cleanup(main_figure);
 
+% get fdata to be displayed
+fData_tot_IDs = cellfun(@(c) c.ID,fData_tot);
+fData = fData_tot{fData_tot_IDs==disp_config.Fdata_ID};
+datagramSource = fData.MET_datagramSource;
 
-%% get fdata, current ping and across-dist to be displayed
-
-IDs=cellfun(@(c) c.ID,fData_tot);
-
-
-if ~ismember(disp_config.Fdata_ID , IDs)
-    disp_config.Fdata_ID = IDs(1);
-    disp_config.Iping = 1;
-    return;
-end
-
-fData = fData_tot{disp_config.Fdata_ID==IDs};
+% get ping and across-dist to be displayed
 ip          = disp_config.Iping;
 across_dist = disp_config.AcrossDist;
-
-%% get data
 
 % get data type to be grabbed
 wc_tab_comp  = getappdata(main_figure,'wc_tab');
@@ -131,40 +119,27 @@ if strcmp(str_disp,'Processed') && ~isfield(fData,'X_SBP_WaterColumnProcessed') 
     str_disp = 'Original';
 end
 
-% get colour extents
+% get colour extents to limit data
 wc_proc_tab_comp = getappdata(main_figure,'wc_proc_tab');
 cax_min = str2double(wc_proc_tab_comp.clim_min_wc.String);
 cax_max = str2double(wc_proc_tab_comp.clim_max_wc.String);
 cax = [cax_min cax_max];
 
-datagramSource = fData.MET_datagramSource;
-
+% now extract data
 switch str_disp
-    
     case 'Original'
-        
         amp = CFF_get_WC_data(fData,sprintf('%s_SBP_SampleAmplitudes',datagramSource),'iPing',ip);
         idx_keep = amp >= cax(1);
-        
     case 'Processed'
-        
         amp = CFF_get_WC_data(fData,'X_SBP_WaterColumnProcessed','iPing',ip);
-        idx_keep = amp >= cax(1);
-        
+        idx_keep = amp >= cax(1);       
     case 'Phase'
-        
         amp = CFF_get_WC_data(fData,sprintf('%s_SBP_SamplePhase',datagramSource),'iPing',ip);
         idx_keep = amp ~= 0;
-        
 end
 
-
-%% Water-column swath display
-
 % get distances across and upwards for all samples
-soundSpeed          = fData.(sprintf('%s_1P_SoundSpeed',datagramSource)); %m/s
-samplingFrequencyHz = fData.(sprintf('%s_1P_SamplingFrequencyHz',datagramSource)); %Hz
-dr_samples = soundSpeed./(samplingFrequencyHz.*2);
+dr_samples = CFF_inter_sample_distance(fData);
 sampleRange = CFF_get_samples_range((1:size(amp,1))',fData.(sprintf('%s_BP_StartRangeSampleNumber',datagramSource))(:,ip),dr_samples(ip));
 [sampleAcrossDist,sampleUpDist] = CFF_get_samples_dist(sampleRange,fData.(sprintf('%s_BP_BeamPointingAngle',datagramSource))(:,ip)/180*pi);
 

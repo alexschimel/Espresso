@@ -150,11 +150,11 @@ end
 % in the future, offer possibility to import position/orientation from
 % other files, say SBET
 
-posLatitude  = fData.Po_1D_Latitude; % now in decimal degrees
-posLongitude = fData.Po_1D_Longitude; % now in decimal degrees
-posHeading   = fData.Po_1D_HeadingOfVessel; % now in degrees relative to north
-posSpeed     = fData.Po_1D_SpeedOfVesselOverGround; % now in m/s
-posTSMIM     = fData.Po_1D_TimeSinceMidnightInMilliseconds; % in ms
+posLatitude  = fData.Po_1D_Latitude; 
+posLongitude = fData.Po_1D_Longitude;
+posHeading   = fData.Po_1D_HeadingOfVessel;
+posSpeed     = fData.Po_1D_SpeedOfVesselOverGround;
+posTSMIM     = fData.Po_1D_TimeSinceMidnightInMilliseconds;
 
 posDate      = datenum(cellfun(@num2str,num2cell(fData.Po_1D_Date),'un',0),'yyyymmdd');
 posSDN       = posDate(:)'+ posTSMIM/(24*60*60*1000);

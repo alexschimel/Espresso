@@ -171,9 +171,8 @@ cax_min = str2double(wc_proc_tab_comp.clim_min_wc.String);
 cax_max = str2double(wc_proc_tab_comp.clim_max_wc.String);
 cax = [cax_min cax_max];
 
-
-%% get data for stacked view
 datagramSource = fData.MET_datagramSource;
+
 %% Stacked view display
 if up_stacked_wc_bool
     % stacked data is "amp_al". Its columns are idx_pings and its rows
@@ -181,12 +180,11 @@ if up_stacked_wc_bool
     % samples # into range (m) for the display. Problem is it is not
     % constant over subsequent pings! For each sample #, calculate mean
     % range of all beams within stack view for the main ping.
-    soundSpeed          = fData.(sprintf('%s_1P_SoundSpeed',datagramSource)); %m/s
-    samplingFrequencyHz = fData.(sprintf('%s_1P_SamplingFrequencyHz',datagramSource)); %Hz
+    dr_samples = CFF_inter_sample_distance(fData);
+
     %profile on;
-    dr_samples = soundSpeed./(samplingFrequencyHz.*2);
     
-    disp_type=disp_config.StackAngularMode;
+    disp_type = disp_config.StackAngularMode;
     
      switch str_disp
         case 'Original'

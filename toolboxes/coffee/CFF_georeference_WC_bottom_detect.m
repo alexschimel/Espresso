@@ -70,8 +70,6 @@ function [fData] = CFF_georeference_WC_bottom_detect(fData)
 
 % Extract needed ping info
 datagramSource = fData.MET_datagramSource;
-X_1P_soundSpeed           = fData.(sprintf('%s_1P_SoundSpeed',datagramSource)); %m/s
-X_1P_samplingFrequencyHz  = fData.(sprintf('%s_1P_SamplingFrequencyHz',datagramSource)); %Hz
 X_1P_sonarHeight          = fData.X_1P_pingH; %m
 X_1P_sonarEasting         = fData.X_1P_pingE; %m
 X_1P_sonarNorthing        = fData.X_1P_pingN; %m
@@ -105,7 +103,7 @@ end
 %% Computations
 
 % OWTT distance traveled in one sample
-X_1P_oneSampleDistance = X_1P_soundSpeed./(X_1P_samplingFrequencyHz.*2);
+X_1P_oneSampleDistance = CFF_inter_sample_distance(fData);
 
 % Compute the horizontal rotation angle between the swath frame (Ys forward
 % and Yp northing)

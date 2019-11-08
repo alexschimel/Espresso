@@ -432,12 +432,12 @@ for iF = 1:nStruct
             % NumberOfDatagrams = length(ALLdata.EM_Position.TypeOfDatagram);
             
             fData.Po_1D_Date                            = ALLdata.EM_Position.Date;
-            fData.Po_1D_TimeSinceMidnightInMilliseconds = ALLdata.EM_Position.TimeSinceMidnightInMilliseconds;
+            fData.Po_1D_TimeSinceMidnightInMilliseconds = ALLdata.EM_Position.TimeSinceMidnightInMilliseconds;  % in ms
             fData.Po_1D_PositionCounter                 = ALLdata.EM_Position.PositionCounter;
-            fData.Po_1D_Latitude                        = ALLdata.EM_Position.Latitude./20000000;
-            fData.Po_1D_Longitude                       = ALLdata.EM_Position.Longitude/.10000000;
-            fData.Po_1D_SpeedOfVesselOverGround         = ALLdata.EM_Position.SpeedOfVesselOverGround./100;
-            fData.Po_1D_HeadingOfVessel                 = ALLdata.EM_Position.HeadingOfVessel./100;
+            fData.Po_1D_Latitude                        = ALLdata.EM_Position.Latitude./20000000; % now in decimal degrees
+            fData.Po_1D_Longitude                       = ALLdata.EM_Position.Longitude./10000000; % now in decimal degrees
+            fData.Po_1D_SpeedOfVesselOverGround         = ALLdata.EM_Position.SpeedOfVesselOverGround./100;  % now in m/s
+            fData.Po_1D_HeadingOfVessel                 = ALLdata.EM_Position.HeadingOfVessel./100;  % now in degrees relative to north
             
         end
         

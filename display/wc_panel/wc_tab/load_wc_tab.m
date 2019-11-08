@@ -1,6 +1,6 @@
 %% load_wc_tab.m
 %
-% Creates "WC" tab in Espresso's Swath Panel
+% Creates the "WC" tab in Espresso, aka WC swath view
 %
 %% Help
 %
@@ -82,14 +82,19 @@ switch parent_tab_group.Type
         wc_tab_comp.wc_tab = parent_tab_group;
 end
 
-
+% str_disp empty at start
 if isempty(str_disp)
-    str_disp='Processed';
+    str_disp = 'Processed';
 end
 
-str_disp_list={'Original' 'Phase' 'Processed'};
 
-% pos = getpixelposition(wc_tab_comp.wc_tab);
+
+%
+%% create the tab components
+%
+
+% data displayed
+str_disp_list = {'Original' 'Phase' 'Processed'};
 uicontrol(wc_tab_comp.wc_tab,'style','text','String','Data',...
     'BackgroundColor','White',...
     'units','pixels',...
@@ -101,6 +106,8 @@ wc_tab_comp.data_disp = uicontrol(wc_tab_comp.wc_tab,...
     'String',str_disp_list,...
     'Value',find(strcmpi(str_disp,str_disp_list)),...
     'Callback',{@change_wc_disp_cback,main_figure});
+
+% stack view settings
 uicontrol(wc_tab_comp.wc_tab,'style','text','String','Stack',...
     'BackgroundColor','White',...
     'units','pixels',...
@@ -113,6 +120,7 @@ wc_tab_comp.data_disp_stack = uicontrol(wc_tab_comp.wc_tab,...
     'Value',find(strcmpi(disp_config.StackAngularMode,{'Range' 'Depth'})),...
     'Callback',{@change_StackAngularMode_cback,main_figure});
 
+% angular limits
 uicontrol(wc_tab_comp.wc_tab,'style','text','String',['Angular lim. (' char(hex2dec('00B0')) ')'],...
     'BackgroundColor','White',...
     'units','pixels',...
@@ -128,18 +136,18 @@ wc_tab_comp.alim_max = uicontrol(wc_tab_comp.wc_tab,'style','edit','String',num2
     'position',[240 10 40 20],...
     'Callback',{@change_alim_cback,main_figure});
 
+% number of pings
 uicontrol(wc_tab_comp.wc_tab,'style','text','String','Pings',...
     'BackgroundColor','White',...
     'units','pixels',...
     'position',[290 30 40 20]);
-
 wc_tab_comp.StackPingWidth = uicontrol(wc_tab_comp.wc_tab,'style','edit','String',num2str(disp_config.StackPingWidth*2),...
     'BackgroundColor','White',...
     'units','pixels',...
     'position',[290 10 40 20],...
     'Callback',{@change_StackPingWidth_cback,main_figure});
 
-
+% axes and contents
 wc_tab_comp.wc_axes = axes(wc_tab_comp.wc_tab,...
     'Units','normalized',...
     'outerposition',[0 0 1 1],...
@@ -147,8 +155,6 @@ wc_tab_comp.wc_axes = axes(wc_tab_comp.wc_tab,...
     'YDir','normal',...
     'Tag','wc');
 axis(wc_tab_comp.wc_axes,'equal');
-
-
 [cmap,col_ax,col_lab,col_grid,col_bot,col_txt] = init_cmap(disp_config.Cmap);
 title(wc_tab_comp.wc_axes,'N/A','Interpreter','none','FontSize',10,'FontWeight','normal');
 colorbar(wc_tab_comp.wc_axes,'southoutside');
@@ -162,16 +168,16 @@ wc_tab_comp.wc_gh = pcolor(wc_tab_comp.wc_axes,[],[],[]);
 set(wc_tab_comp.wc_gh,'facealpha','flat','LineStyle','none','AlphaData',[]);
 wc_tab_comp.ac_gh = plot(wc_tab_comp.wc_axes,nan,nan,'--k','Tag','ac','linewidth',2);
 wc_tab_comp.bot_gh = plot(wc_tab_comp.wc_axes,nan,nan,'.k','Tag','ac','markersize',4);
+% axis(wc_tab_comp.wc_axes,'equal');
 
-%axis(wc_tab_comp.wc_axes,'equal');
-
+% save the tab to appdata
 setappdata(main_figure,'wc_tab',wc_tab_comp);
-fData = getappdata(main_figure,'fData');
 
+% update tab if data is loaded
+fData = getappdata(main_figure,'fData');
 if isempty(fData)
     return;
 end
-
 update_wc_tab(main_figure);
 
 end
