@@ -79,21 +79,25 @@
 function data = CFF_mask_WC_data_CORE(data, fData, blockPings, varargin)
 
 % input parsing
-try remove_angle = varargin{1};
+try mask_angle = varargin{1};
 catch
-    remove_angle = inf; % default
+    mask_angle = inf; % default
 end
-try remove_closerange = varargin{2};
+try mask_closerange = varargin{2};
 catch
-    remove_closerange = 0; % default
+    mask_closerange = 0; % default
 end
-try remove_bottomrange = varargin{3};
+try mask_bottomrange = varargin{3};
 catch
-    remove_bottomrange = inf; % default
+    mask_bottomrange = inf; % default
 end
 try mypolygon = varargin{4}; 
 catch
     mypolygon = []; % default
+end
+try mask_ping = varargin{5}; 
+catch
+    mask_ping = 100; % default
 end
 
 % data size
@@ -108,13 +112,13 @@ interSamplesDistance = CFF_inter_sample_distance(fData);
 interSamplesDistance = interSamplesDistance(blockPings);
 
 % MASK 1: OUTER BEAMS REMOVAL
-if ~isinf(remove_angle)
+if ~isinf(mask_angle)
     
     % extract needed data
     angles = fData.(sprintf('%s_BP_BeamPointingAngle',datagramSource))(:,blockPings);
     
     % build mask: 1: to conserve, 0: to remove
-    X_BP_OuterBeamsMask = angles>=-abs(remove_angle) & angles<=abs(remove_angle);
+    X_BP_OuterBeamsMask = angles>=-abs(mask_angle) & angles<=abs(mask_angle);
     
     X_1BP_OuterBeamsMask = permute(X_BP_OuterBeamsMask ,[3,1,2]);
     
@@ -126,13 +130,13 @@ else
 end
 
 % MASK 2: CLOSE RANGE REMOVAL
-if remove_closerange>0
+if mask_closerange>0
     
     % extract needed data
     ranges = CFF_get_samples_range( (1:nSamples)', fData.(sprintf('%s_BP_StartRangeSampleNumber',datagramSource))(:,blockPings), interSamplesDistance);
     
     % build mask: 1: to conserve, 0: to remove
-    X_SBP_CloseRangeMask = ranges>=remove_closerange;
+    X_SBP_CloseRangeMask = ranges>=mask_closerange;
     
 else
     
@@ -142,7 +146,7 @@ else
 end
 
 % MASK 3: BOTTOM RANGE REMOVAL
-if ~isinf(remove_bottomrange)
+if ~isinf(mask_bottomrange)
     
     % beam pointing angle
     theta = deg2rad(fData.(sprintf('%s_BP_BeamPointingAngle',datagramSource))(:,blockPings));
@@ -162,7 +166,7 @@ if ~isinf(remove_bottomrange)
     %         M(idx_grazing) = 2*( sin(theta(idx_grazing)+psi(idx_grazing)/2) - sin(theta(idx_grazing)-psi(idx_grazing)/2) ) .* fData.X_BP_bottomRange(idx_grazing,blockPings);
     M =2* (sin(abs(theta)+psi/2) - sin(abs(theta)-psi/2) ) .* fData.X_BP_bottomRange(:,blockPings);
     % calculate max sample beyond which mask is to be applied
-    X_BP_maxRange  = fData.X_BP_bottomRange(:,blockPings) + remove_bottomrange - abs(M);
+    X_BP_maxRange  = fData.X_BP_bottomRange(:,blockPings) + mask_bottomrange - abs(M);
     X_BP_maxSample = bsxfun(@rdivide,X_BP_maxRange,interSamplesDistance);
     X_BP_maxSample = round(X_BP_maxSample);
     X_BP_maxSample(X_BP_maxSample>nSamples|isnan(X_BP_maxSample)) = nSamples;
@@ -200,8 +204,38 @@ else
     
 end
 
+% MASK 5: PINGS REMOVAL
+if mask_ping<100
+
+    % for now we will use the percentage of faulty bottom detects as a
+    % threshold to mask the entire ping. Aka, if mask_ping=10, then we
+    % will mask the entire ping if 10% or more of its bottom detects are
+    % faulty
+    
+    % extract needed data
+    bottomdetect = fData.(sprintf('%s_BP_DetectedRangeInSamples',datagramSource))(:,blockPings);
+    proportion_faulty_detect = 100.*sum(bottomdetect==0)./nBeams;
+    
+    % build mask: 1: to conserve, 0: to remove
+    X_1P_PingMask = proportion_faulty_detect<mask_ping;
+    X_11P_PingMask = permute(X_1P_PingMask ,[3,1,2]);
+    
+else
+    
+    % conserve all data
+    X_11P_PingMask = true(1,1,nPings);
+    
+end
+
+
 % MULTIPLYING ALL MASKS
-mask = bsxfun(@and,X_1BP_OuterBeamsMask,(X_SBP_CloseRangeMask & X_SBP_BottomRangeMask & X_SBP_PolygonMask));
+% for earlier versions of Matlab
+% if verLessThan('matlab','9.1')
+% mask_temp = X_SBP_CloseRangeMask & X_SBP_BottomRangeMask & X_SBP_PolygonMask;
+% mask_temp = bsxfun(@and,X_1BP_OuterBeamsMask,mask_temp);
+% mask = bsxfun(@and,X_11P_PingMask,mask_temp);
+
+mask = X_11P_PingMask & X_1BP_OuterBeamsMask & X_SBP_CloseRangeMask & X_SBP_BottomRangeMask & X_SBP_PolygonMask;
 
 % apply mask
 data(~mask) = NaN;
