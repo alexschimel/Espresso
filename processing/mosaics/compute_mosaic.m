@@ -106,6 +106,8 @@ for iF = 1:numel(fData_tot)
         L = gather(L);
     end
     
+    % if L has a height dimension, average through the water-column here
+    % first (in natural values, then convert result back to dB).
     if size(L,3) > 1
         data = pow2db_perso(nanmean(10.^(L/10),3));
     else
@@ -134,7 +136,7 @@ for iF = 1:numel(fData_tot)
     N_mat(idx_nan) = [];
     E_mat(idx_nan) = [];
     
-    % turn data from db to natural? After we did the contrary before?
+    % turn data from dB to natural before mosaicking
     data = (10.^(data./10));
     
     E_idx = round((E_mat-E_lim(1))/res+1);
