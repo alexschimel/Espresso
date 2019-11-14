@@ -214,27 +214,38 @@ switch grid_type
 end
 
 
-%% initalize the grids (sum and points density per cell)
+%% initalize the grids:
+% weighted sum and total sum of weights.
+% in absence of weights, the total sum of weights is simply the count of
+% points, and the weighted sum is simply the sum
 
 switch grid_type
     case '2D'
-        gridSum   = zeros(numElemGridN,numElemGridE,'single');
-        gridCount = zeros(numElemGridN,numElemGridE,'single');
+        gridWeightedSum = zeros(numElemGridN,numElemGridE,'single');
+        gridTotalWeight = zeros(numElemGridN,numElemGridE,'single');
     case '3D'
-        gridSum   = zeros(numElemGridN,numElemGridE,numElemGridH,'single');
-        gridCount = zeros(numElemGridN,numElemGridE,numElemGridH,'single');
+        gridWeightedSum = zeros(numElemGridN,numElemGridE,numElemGridH,'single');
+        gridTotalWeight = zeros(numElemGridN,numElemGridE,numElemGridH,'single');
 end
 
 % if GPU is avaialble for computation, setup for it
 gpu_comp = get_gpu_comp_stat();
 if gpu_comp > 0
-    gridSum   = gpuArray(gridSum);
-    gridCount = gpuArray(gridCount);
+    gridWeightedSum = gpuArray(gridWeightedSum);
+    gridTotalWeight = gpuArray(gridTotalWeight);
+end
+
+
+%% if gridding is in height above bottom, prepare the interpolant
+% needed to calculate height above seafloor for each sample
+if strcmp(grdlim_var,'height above bottom')
+    idx_val = ~isnan(fData.X_BP_bottomHeight) & ~isinf(fData.X_BP_bottomHeight);
+    HeightInterpolant = scatteredInterpolant(fData.X_BP_bottomEasting(idx_val),fData.X_BP_bottomNorthing(idx_val),fData.X_BP_bottomHeight(idx_val));
+    clear idx_val
 end
 
 
 %% fill the grids with block processing
-
 for iB = 1:nBlocks
     
     % list of pings in this block
@@ -253,12 +264,16 @@ for iB = 1:nBlocks
     % get data to grid
     blockL = CFF_get_WC_data(fData,field_to_grid,'iPing',blockPings,'dr_sub',dr_sub,'db_sub',db_sub,'output_format','true');
     
+    % get weights or define them as ones here
+    blockW = ones(size(blockL),class(blockL));
+    
     % start with removing all data where level is NaN
-    indNan = isnan(blockL);
+    indNan = isnan(blockL) | isnan(blockW);
     blockL(indNan) = [];
     if isempty(blockL)
         continue;
     end
+    blockW(indNan) = [];
     blockE(indNan) = [];
     blockN(indNan) = [];
     blockH(indNan) = [];
@@ -279,11 +294,9 @@ for iB = 1:nBlocks
             
         case 'height above bottom'
             
-            % first need to calculate height above seafloor for each sample
-            % and the interpolation takes a while
-            idx_val=~isnan(fData.X_BP_bottomHeight)&~isinf(fData.X_BP_bottomHeight);
-            F = scatteredInterpolant(fData.X_BP_bottomEasting(idx_val),fData.X_BP_bottomNorthing(idx_val),fData.X_BP_bottomHeight(idx_val));
-            block_bottomHeight = F(blockE,blockN);
+            % Apply interpolant to get height above seafloor for each
+            % sample 
+            block_bottomHeight = HeightInterpolant(blockE,blockN);
             block_sampleHeightAboveSeafloor = blockH - block_bottomHeight;
             
             switch grdlim_mode
@@ -302,20 +315,22 @@ for iB = 1:nBlocks
     if isempty(blockL)
         continue;
     end
+    blockW(~idx_keep) = [];
     blockE(~idx_keep) = [];
     blockN(~idx_keep) = [];
     blockH(~idx_keep) = [];
-    block_size = size(blockN');
     clear idx_keep
     
-    % pass grid level in natural before gridding
+    % at this stage, pass blockL and blockW as GPU arrays if using GPUs
     if gpu_comp > 0
-        blockL = 10.^(gpuArray(blockL)./10);
-    else
-        blockL = 10.^(blockL./10);
+        blockL = gpuArray(blockL);
+        blockW = gpuArray(blockW);
     end
     
-    % data indices in full grid
+    % pass grid level in natural before gridding
+    blockL = 10.^(blockL./10);
+    
+    % data indices in the full grid
     E_idx = round((blockE-minGridE)/grid_horz_res+1);
     N_idx = round((blockN-minGridN)/grid_horz_res+1);
     
@@ -325,7 +340,7 @@ for iB = 1:nBlocks
     idx_E_start = min(E_idx);
     idx_N_start = min(N_idx);
     
-    % data indices in temp grid
+    % data indices in temp grid (grid just for this block of pings)
     E_idx = E_idx - min(E_idx) + 1;
     N_idx = N_idx - min(N_idx) + 1;
     
@@ -340,59 +355,68 @@ for iB = 1:nBlocks
             
             clear blockH
             
-            % prepare indices
-            subs = single([N_idx' E_idx']);
+            % we use the accumarray function to sum all values in both the
+            % total weight grid, and the weighted sum grid. Prepare the
+            % common values here  
+            subs    = single([N_idx' E_idx']); % indices in the temp grid of each data point
+            sz      = single([N_N N_E]);       % size of ouptut
+            fillval = single(0);               % filling value in output if no data contributed
             clear N_idx E_idx
             
-            if gpu_comp > 0
-                gridCountTemp = gather(accumarray(subs,gpuArray(ones(block_size,'single')),single([N_N N_E]),@sum,single(0)));
-                gridSumTemp   = gather(accumarray(subs,gpuArray(blockL'),single([N_N N_E]),@sum,single(0)));
-            else
-                gridCountTemp = accumarray(subs,ones(block_size,'single'),single([N_N N_E]),@sum,single(0));
-                gridSumTemp   = accumarray(subs,blockL',single([N_N N_E]),@sum,single(0));
-            end
+            % calculate the sum of weights per grid cell
+            gridTotalWeightTemp = accumarray(subs,blockW',sz,@sum,fillval);
             
-            clear blockL subs
+            % calculate the sum of weighted levels per grid cell
+            gridWeightedSumTemp = accumarray(subs,blockW'.*blockL',sz,@sum,fillval);
             
-            % Summing sums in full grid
-            gridCount(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1) = ...
-                gridCount(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1)+gridCountTemp;
+            clear blockL blockW subs
             
-            % Summing density in full grid
-            gridSum(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1) = ...
-                gridSum(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1)+gridSumTemp;
+            % Add the temp grid of weights sum to the full one
+            gridTotalWeight(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1) = ...
+                gridTotalWeight(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1) + gridTotalWeightTemp;
+            
+            % Add the temp grid of sum of weighted levels to the full one
+            gridWeightedSum(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1) = ...
+                gridWeightedSum(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1) + gridWeightedSumTemp;
+            
+            clear gridTotalWeightTemp gridWeightedSumTemp
             
         case '3D'
             
-            % prepare indices
+            % prepare indices as we did before in E,N, this time in height
             H_idx = round((blockH-minGridH)/grid_vert_res+1);
             clear blockH
             idx_H_start = min(H_idx);
             H_idx = H_idx - min(H_idx) + 1;
             N_H = max(H_idx);
-            subs = single([N_idx' E_idx' H_idx']);
+            
+            % we use the accumarray function to sum all values in both the
+            % total weight grid, and the weighted sum grid. Prepare the
+            % common values here  
+            subs    = single([N_idx' E_idx' H_idx']); % indices in the temp grid of each data point
+            sz      = single([N_N N_E N_H]);          % size of ouptut
+            fillval = single(0);                      % filling value in output if no data contributed
             clear N_idx E_idx H_idx
             
-            if gpu_comp > 0
-                gridCountTemp = gather(accumarray(subs,gpuArray(ones(block_size,'single')),single([N_N N_E N_H]),@sum,single(0)));
-                gridSumTemp   = gather(accumarray(subs,gpuArray(blockL'),single([N_N N_E N_H]),@sum,single(0)));
-            else
-                gridCountTemp = accumarray(subs,gpuArray(ones(block_size,'single'),single([N_N N_E N_H]),@sum,single(0)));
-                gridSumTemp   = accumarray(subs,blockL',single([N_N N_E N_H]),@sum,single(0));
-            end
-            clear blockL subs
+            % calculate the sum of weights per grid cell
+            gridTotalWeightTemp = accumarray(subs,blockW',sz,@sum,fillval);
             
-            % Summing sums in full grid
-            gridCount(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1,idx_H_start:idx_H_start+N_H-1) = ...
-                gridCount(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1,idx_H_start:idx_H_start+N_H-1)+gridCountTemp;
+            % calculate the sum of weighted levels per grid cell
+            gridWeightedSumTemp = accumarray(subs,blockW'.*blockL',sz,@sum,fillval);
+
+            clear blockL blockW subs
             
-            % Summing density in full grid
-            gridSum(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1,idx_H_start:idx_H_start+N_H-1) = ...
-                gridSum(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1,idx_H_start:idx_H_start+N_H-1)+gridSumTemp;
+            % Add the temp grid of weights sum to the full one
+            gridTotalWeight(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1,idx_H_start:idx_H_start+N_H-1) = ...
+                gridTotalWeight(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1,idx_H_start:idx_H_start+N_H-1) + gridTotalWeightTemp;
+            
+            % Add the temp grid of sum of weighted levels to the full one
+            gridWeightedSum(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1,idx_H_start:idx_H_start+N_H-1) = ...
+                gridWeightedSum(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1,idx_H_start:idx_H_start+N_H-1) + gridWeightedSumTemp;
+            
+            clear gridTotalWeightTemp gridWeightedSumTemp
             
     end
-    
-    clear gridCountTemp gridSumTemp
     
 end
 
@@ -403,18 +427,18 @@ switch grid_type
     case '2D'
         
         % dimensional sums
-        sumGridCount_N = sum(gridCount,2);
-        sumGridCount_E = sum(gridCount,1);
+        sumgridTotalWeight_N = sum(gridTotalWeight,2);
+        sumgridTotalWeight_E = sum(gridTotalWeight,1);
         
         % min and max indices for cropping
-        minNidx = find(sumGridCount_N,1,'first');
-        maxNidx = find(sumGridCount_N,1,'last');
-        minEidx = find(sumGridCount_E,1,'first');
-        maxEidx = find(sumGridCount_E,1,'last');
+        minNidx = find(sumgridTotalWeight_N,1,'first');
+        maxNidx = find(sumgridTotalWeight_N,1,'last');
+        minEidx = find(sumgridTotalWeight_E,1,'first');
+        maxEidx = find(sumgridTotalWeight_E,1,'last');
         
-        % crop count and sum
-        gridCount = gridCount(minNidx:maxNidx,minEidx:maxEidx);
-        gridSum   = gridSum(minNidx:maxNidx,minEidx:maxEidx);
+        % crop weight and sum
+        gridTotalWeight = gridTotalWeight(minNidx:maxNidx,minEidx:maxEidx);
+        gridWeightedSum = gridWeightedSum(minNidx:maxNidx,minEidx:maxEidx);
         
         % define and crop dim vectors
         gridNorthing = (0:numElemGridN-1)'.*grid_horz_res + minGridN;
@@ -425,23 +449,23 @@ switch grid_type
     case '3D'
         
         % dimensional sums
-        sumGridCount_1EH = sum(gridCount,1);
-        sumGridCount_N1H = sum(gridCount,2);
-        sumGridCount_N = sum(sumGridCount_N1H,3);
-        sumGridCount_E = sum(sumGridCount_1EH,3);
-        sumGridCount_H = sum(sumGridCount_1EH,2);
+        sumgridTotalWeight_1EH = sum(gridTotalWeight,1);
+        sumgridTotalWeight_N1H = sum(gridTotalWeight,2);
+        sumgridTotalWeight_N = sum(sumgridTotalWeight_N1H,3);
+        sumgridTotalWeight_E = sum(sumgridTotalWeight_1EH,3);
+        sumgridTotalWeight_H = sum(sumgridTotalWeight_1EH,2);
         
         % min and max indices for cropping
-        minNidx = find(sumGridCount_N,1,'first');
-        maxNidx = find(sumGridCount_N,1,'last');
-        minEidx = find(sumGridCount_E,1,'first');
-        maxEidx = find(sumGridCount_E,1,'last');
-        minHidx = find(sumGridCount_H,1,'first');
-        maxHidx = find(sumGridCount_H,1,'last');
+        minNidx = find(sumgridTotalWeight_N,1,'first');
+        maxNidx = find(sumgridTotalWeight_N,1,'last');
+        minEidx = find(sumgridTotalWeight_E,1,'first');
+        maxEidx = find(sumgridTotalWeight_E,1,'last');
+        minHidx = find(sumgridTotalWeight_H,1,'first');
+        maxHidx = find(sumgridTotalWeight_H,1,'last');
         
         % crop count and sum
-        gridCount = gridCount(minNidx:maxNidx,minEidx:maxEidx,minHidx:maxHidx);
-        gridSum   = gridSum(minNidx:maxNidx,minEidx:maxEidx,minHidx:maxHidx);
+        gridTotalWeight = gridTotalWeight(minNidx:maxNidx,minEidx:maxEidx,minHidx:maxHidx);
+        gridWeightedSum = gridWeightedSum(minNidx:maxNidx,minEidx:maxEidx,minHidx:maxHidx);
         
         % define and crop dim vectors
         gridNorthing = (0:numElemGridN-1)'.*grid_horz_res + minGridN;
@@ -454,21 +478,23 @@ switch grid_type
 end
 
 % final calculations: average and back in dB
-gridLevel = 10.*log10(gridSum./gridCount);
+gridLevel = 10.*log10(gridWeightedSum./gridTotalWeight);
+
+clear gridWeightedSum
 
 % revert gpuArrays back to regular arrays before storing so that data can
 % be used even without the parallel computing toolbox and so that loading
 % data don't overload the limited GPU memory
 if gpu_comp > 0
-    gridLevel = gather(gridLevel);
-    gridCount = gather(gridCount);
+    gridLevel       = gather(gridLevel);
+    gridTotalWeight = gather(gridTotalWeight);
 end
 
 
 %% saving results:
 
 fData.X_NEH_gridLevel   = gridLevel;
-fData.X_NEH_gridDensity = gridCount;
+fData.X_NEH_gridDensity = gridTotalWeight;
 fData.X_1E_gridEasting  = gridEasting;
 fData.X_N1_gridNorthing = gridNorthing;
 fData.X_1_gridHorizontalResolution = grid_horz_res;

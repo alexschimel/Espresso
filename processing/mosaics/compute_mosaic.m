@@ -82,34 +82,57 @@ E_lim = mosaic.E_lim;
 N_lim = mosaic.N_lim;
 res   = mosaic.res;
 
-% initialize Sum and Count grids
+if res<mosaic.best_res
+    warning('Cannot mosaic data at higher resolution than coarsest constituent grid. Best resolution possible is %.2g m.', mosaic.best_res);
+    return
+end
+
+%% initalize the grids:
+% weighted sum and total sum of weights.
+% in absence of weights, the total sum of weights is simply the count of
+% points, and the weighted sum is simply the sum
 [numElemGridN,numElemGridE] = size(mosaic.mosaic_level);
-mosaicSum   = zeros(numElemGridN,numElemGridE,'single');
-mosaicCount = zeros(numElemGridN,numElemGridE,'single');
+mosaicWeightedSum = zeros(numElemGridN,numElemGridE,'single');
+mosaicTotalWeight = zeros(numElemGridN,numElemGridE,'single');
+
+% Test if GPU is avaialble for computation and setup for it
+gpu_comp = get_gpu_comp_stat();
+if gpu_comp > 0
+    mosaicWeightedSum = gpuArray(mosaicWeightedSum);
+    mosaicTotalWeight = gpuArray(mosaicTotalWeight);
+end
 
 % loop over all files loaded
 for iF = 1:numel(fData_tot)
     
-    % get data and add tag mosaic
-    fData = fData_tot{iF};
-    mosaic.Fdata_ID(iF) = fData.ID;
-    
-    if ~isfield(fData,'X_1E_gridEasting')
-        continue;
-    end
-    
     % get data
+    fData = fData_tot{iF};
     E = fData.X_1E_gridEasting;
     N = fData.X_N1_gridNorthing;
     L = fData.X_NEH_gridLevel;
-    if isa(L,'gpuArray')
-        L = gather(L);
+    W = fData.X_NEH_gridDensity;
+    if ~gpu_comp
+        if isa(L,'gpuArray')
+            L = gather(L);
+        end
+        if isa(W,'gpuArray')
+            W = gather(W);
+        end
+    else
+        if ~isa(L,'gpuArray')
+            L = gpuArray(L);
+        end
+        if ~isa(W,'gpuArray')
+            W = gpuArray(W);
+        end
     end
     
+    % if L has a height dimension, average through the water-column
     if size(L,3) > 1
-        data = pow2db_perso(nanmean(10.^(L/10),3));
-    else
-        data = L;
+        L = nanmean(L,3);
+    end
+    if size(W,3) > 1
+        W = nansum(W,3);
     end
     
     % remove all data outside of mosaic boundaries
@@ -117,63 +140,86 @@ for iF = 1:numel(fData_tot)
     idx_keep_N = N>N_lim(1) & N<N_lim(2);
     E(~idx_keep_E) = [];
     N(~idx_keep_N) = [];
-    data(~idx_keep_N,:) = [];
-    data(:,~idx_keep_E) = [];
+    L(~idx_keep_N,:) = [];
+    L(:,~idx_keep_E) = [];
+    W(~idx_keep_N,:) = [];
+    W(:,~idx_keep_E) = [];
+    
+    % vectorize
+    [numel_N, numel_E] = size(L);
+    E = repmat(E,numel_N,1);
+    N = repmat(N,1,numel_E);
+    E = E(:);
+    N = N(:);
+    L = L(:);
+    W = W(:);
     
     % remove nans
-    idx_nan = isnan(data);
-    data(idx_nan) = [];
+    indNan = isnan(L);
+    E(indNan) = [];
+    N(indNan) = [];
+    L(indNan) = [];
+    W(indNan) = [];
     
-    % if no data within mosaic bounds, continue to next file
-    if isempty(data)
+    % This should not happen as it's been checked already but if no data
+    % within mosaic bounds, continue to next file 
+    if isempty(L)
         continue;
     end
     
-    E_mat = repmat(E,numel(N),1);
-    N_mat = repmat(N,1,numel(E));
-    N_mat(idx_nan) = [];
-    E_mat(idx_nan) = [];
+    % pass grid level in natural before gridding. 
+    L = 10.^(L./10);
     
-    % turn data from db to natural? After we did the contrary before?
-    data = (10.^(data./10));
+    % data indices in the mosaic
+    E_idx = round((E-E_lim(1))/res+1);
+    N_idx = round((N-N_lim(1))/res+1);
     
-    E_idx = round((E_mat-E_lim(1))/res+1);
-    N_idx = round((N_mat-N_lim(1))/res+1);
-    
+    % first index
     idx_E_start = min(E_idx);
     idx_N_start = min(N_idx);
     
+    % data indices in temp mosaic (mosaic just for this file)
     E_idx = E_idx - min(E_idx) + 1;
     N_idx = N_idx - min(N_idx) + 1;
     
+    % size of temp mosaic
     N_E = max(E_idx);
     N_N = max(N_idx);
     
-    subs = single([N_idx(:) E_idx(:)]);
+    % we use the accumarray function to sum all values in both the
+    % total weight mosaic, and the weighted sum mosaic. Prepare the
+    % common values here
+    subs    = single([N_idx E_idx]); % indices in the temp grid of each data point
+    sz      = single([N_N N_E]);     % size of ouptut
+    fillval = single(0);             % filling value in output if no data contributed
     
-    mosaicCountTemp = accumarray(subs, ones(size(data(:)'),'single'), single([N_N N_E]), @sum, single(0));
+    % calculate the sum of weights per mosaic cell
+    mosaicTotalWeightTemp = accumarray(subs,W',sz,@sum,fillval);
     
-    mosaicSumTemp = accumarray(subs,data(:)',single([N_N N_E]),@sum,single(0));
+    % calculate the sum of weighted levels per mosaic cell
+    mosaicWeightedSumTemp = accumarray(subs,W'.*L',sz,@sum,fillval);
     
-    mosaicCount(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1) = mosaicCount(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1) + mosaicCountTemp;
+    % Add the temp mosaic of weights sum to the full one
+    mosaicTotalWeight(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1) = ...
+        mosaicTotalWeight(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1) + mosaicTotalWeightTemp;
     
-    mosaicSum(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1) = mosaicSum(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1) + mosaicSumTemp;
-    
-    mosaic.Fdata_ID = [mosaic.Fdata_ID fData.ID];
-    
+    % Add the temp mosaic of sum of weighted levels to the full one
+    mosaicWeightedSum(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1) = ...
+        mosaicWeightedSum(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1) + mosaicWeightedSumTemp;
+        
 end
 
-mosaic.mosaic_level = single(10.*log10(mosaicSum./mosaicCount));
+% final calculations: average and back in dB
+mosaic_level = 10.*log10(mosaicWeightedSum./mosaicTotalWeight);
+
+if isa(mosaic_level,'gpuArray')
+    mosaic_level = gather(mosaic_level);
+end
+
+% save
+mosaic.mosaic_level = mosaic_level;
 
 end
 
-%% subfunctions
-
-function db = pow2db_perso(pow)
-
-pow(pow<0) = nan;
-db = 10*log10(pow);
-
-end
 
 
