@@ -79,9 +79,7 @@
 function compute_and_add_mosaic(main_figure,E_lim,N_lim)
 
 fData_tot = getappdata(main_figure,'fData');
-
 fdata_tab_comp = getappdata(main_figure,'fdata_tab');
-
 idx_fData = find(cell2mat(fdata_tab_comp.table.Data(:,3)));
 fData_tot = fData_tot(idx_fData);
 
@@ -91,7 +89,7 @@ end
 
 mosaic = init_mosaic(E_lim,N_lim,0);
 
-mosaic = get_default_res(mosaic,fData_tot);
+[mosaic, fData_tot] = prep_mosaic(mosaic,fData_tot);
 
 % mosaic requested outside of data available
 if mosaic.res == 0

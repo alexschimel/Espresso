@@ -81,6 +81,7 @@ mosaic.res      = res;
 mosaic.mode     = 'normal';
 mosaic.ID       = str2double(datestr(now,'yyyymmddHHMMSSFFF'));
 mosaic.Fdata_ID = [];
+mosaic.best_res = [];
 
 if res > 0
     numElemMosaicE = ceil((E_lim(2)-E_lim(1))./res)+1;

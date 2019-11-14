@@ -223,12 +223,25 @@ switch evt.Indices(2)
         mosaics(idx_mosaic).name = evt.NewData;
     case 2
         % resolution update
-        if ~isnan(evt.NewData) && evt.NewData>0
+        if ~isnan(evt.NewData) && evt.NewData>=mosaics(idx_mosaic).best_res
             
+            % initialize a new mosaic with bounds of old mosaic but new
+            % resolution 
+            tmp_mosaic = init_mosaic(mosaics(idx_mosaic).E_lim,mosaics(idx_mosaic).N_lim,evt.NewData);
+            
+            % new resolution and blank mosaic grid
             mosaics(idx_mosaic).res = evt.NewData;
-            mosaics(idx_mosaic) = get_default_res(mosaics(idx_mosaic),fData_tot);
-            mosaics(idx_mosaic) = compute_mosaic(mosaics(idx_mosaic),fData_tot);
+            mosaics(idx_mosaic).mosaic_level = tmp_mosaic.mosaic_level;
             
+            % recompute mosaic with new resolution, but only with original fData
+            fData_tot_IDs = cellfun(@(x) x.ID, fData_tot);
+            ind_fData_tot_in_mosaic = ismember( fData_tot_IDs, mosaics(idx_mosaic).Fdata_ID );
+            mosaics(idx_mosaic) = compute_mosaic(mosaics(idx_mosaic),fData_tot(ind_fData_tot_in_mosaic));
+            
+        elseif ~isnan(evt.NewData) && evt.NewData>0
+            % valid new resolution but not possible
+            warning('Cannot mosaic data at higher resolution than coarsest constituent grid. Best resolution possible is %.2g m.', mosaics(idx_mosaic).best_res);
+            src.Data{evt.Indices(1),evt.Indices(2)} = evt.PreviousData;
         else
             % not a valid new resolution
             src.Data{evt.Indices(1),evt.Indices(2)} = evt.PreviousData;

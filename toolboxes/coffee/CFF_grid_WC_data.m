@@ -215,9 +215,9 @@ end
 
 
 %% initalize the grids:
-% running weighted sum, and total sum of weights
+% weighted sum and total sum of weights.
 % in absence of weights, the total sum of weights is simply the count of
-% points, and the running weighted sum is simply the running sum
+% points, and the weighted sum is simply the sum
 
 switch grid_type
     case '2D'
