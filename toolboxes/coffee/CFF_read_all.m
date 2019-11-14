@@ -160,7 +160,7 @@ else
     
     % test for file existence
     ind = [ exist(ALLfilename{1},'file'), exist(ALLfilename{2},'file') ];
-    ALLfilename = ALLfilename{ind>0};
+    ALLfilename = ALLfilename(ind>0);
     
     if ~all(ind)
         % only one file exists, save as cell
