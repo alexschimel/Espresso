@@ -264,6 +264,7 @@ for iB = 1:nBlocks
     % Get easting, northing, height and across distance from the samples
     [blockE, blockN, blockH, blockAccD] = CFF_georeference_sample(idxSamples, startSampleNumber, interSamplesDistance(blockPings), beamPointingAngle, ...
         sonarEasting(blockPings), sonarNorthing(blockPings), sonarHeight(blockPings), sonarHeading(blockPings));
+    blockAccD = single(blockAccD);
     
     % get data to grid
     blockL = CFF_get_WC_data(fData,field_to_grid,'iPing',blockPings,'dr_sub',dr_sub,'db_sub',db_sub,'output_format','true');
@@ -300,7 +301,7 @@ for iB = 1:nBlocks
                 % apply to SIAcorrection to get the weight scores (between
                 % 0 and 1)
                 fact   = downramp_fun(SIAcorrection,start_ramp,end_ramp,1,0);
-                blockW = repmat(fact,1,size(blockL,2),1);
+                blockW = single(repmat(fact,1,size(blockL,2),1));
             else
                 warning('This weighting mode cannot be used because processed data do not include the needed field. Using no-weighting mode for now.');
                 blockW = ones(size(blockL),class(blockL));
