@@ -76,7 +76,7 @@
 % Yoann Ladroit, Alexandre Schimel, NIWA. XXX
 
 %% Function
-function data = CFF_filter_WC_sidelobe_artifact_CORE(data, fData, blockPings)
+function [data, correction] = CFF_filter_WC_sidelobe_artifact_CORE(data, fData, blockPings)
 
 %% DVPT NOTES
 % I originally developed several methods to filter the sidelobe artefact.
@@ -125,6 +125,8 @@ end
 %% compensate data for mean level and introduce reference level
 data = data - meanAcrossBeams + refLevel;
 
+% save mean across beams for further use
+correction = meanAcrossBeams;
 
 %% MORE DVPT NOTES
 

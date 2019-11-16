@@ -482,7 +482,10 @@ for i = idx_fData(:)'
         
         % filtering sidelobe artefact
         if wc_proc_tab_comp.sidelobe.Value
-            data = CFF_filter_WC_sidelobe_artifact_CORE(data, fData_tot{i}, blockPings);
+            [data, correction] = CFF_filter_WC_sidelobe_artifact_CORE(data, fData_tot{i}, blockPings);
+            % uncomment this for weighted gridding based on sidelobe
+            % correction
+            % fData_tot{i}.X_S1P_sidelobeArtifactCorrection(:,:,blockPings) = correction;
         end
         
         % masking data
@@ -700,17 +703,18 @@ fprintf('Total time for gridding: %f seconds (~%.2f minutes).\n',(timer_end-time
 setappdata(main_figure,'fData',fData_tot);
 
 disp_config = getappdata(main_figure,'disp_config');
-disp_config.Fdata_ID =fData_tot{idx_fData(end)}.ID;
+disp_config.Fdata_ID = fData_tot{idx_fData(end)}.ID;
 
 
 % update map with new grid, zoom on changed lines
-up_wc=update_map_tab(main_figure,1,0,1,idx_fData);
+up_wc = update_map_tab(main_figure,1,0,1,idx_fData);
 
 % update WC view and stacked view
 if up_wc>0
     update_wc_tab(main_figure);
     update_stacked_wc_tab(main_figure);
 end
+
 end
 
 

@@ -117,7 +117,7 @@ for iB = 1:nBlocks
     data = CFF_get_WC_data(fData,'X_SBP_WaterColumnProcessed','iPing',blockPings,'output_format','true');
     
     % core processing
-    data = CFF_filter_WC_sidelobe_artifact_CORE(data, fData, blockPings);
+    [data, correction] = CFF_filter_WC_sidelobe_artifact_CORE(data, fData, blockPings);
     
     % convert result back to raw format and store
     data = data./wcdata_factor;
