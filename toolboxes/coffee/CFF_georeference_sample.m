@@ -84,7 +84,7 @@
 % Alexandre Schimel, Yoann Ladroit, NIWA.
 
 %% Function
-function [sampleEasting, sampleNorthing, sampleHeight,sampleAcrossDistance,sampleUpwardsDistance,sampleRange] = CFF_georeference_sample(idxSamples, startRangeSampleNumber, interSamplesDistance, beamPointingAngle, sonarEasting, sonarNorthing, sonarHeight, sonarHeading)
+function [sampleEasting, sampleNorthing, sampleHeight, sampleAcrossDistance, sampleUpwardsDistance, sampleRange] = CFF_georeference_sample(idxSamples, startRangeSampleNumber, interSamplesDistance, beamPointingAngle, sonarEasting, sonarNorthing, sonarHeight, sonarHeading)
 
 
 %% Calculate range for the sample(s). 

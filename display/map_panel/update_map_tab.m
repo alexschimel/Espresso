@@ -76,7 +76,7 @@
 % Yoann Ladroit, Alexandre Schimel, NIWA. XXX
 
 %% Function
-function up_wc=update_map_tab(main_figure,varargin)
+function up_wc = update_map_tab(main_figure,varargin)
 
 
 %% INTRO
@@ -98,7 +98,9 @@ if ~isdeployed()
     disp('Update Map Tab');
 end
 
-up_wc=0;  %up_wc will be 0 if the function finishes before updating all objects (ie. sliding windows etc), so that we not open wc tabs in that case.
+% up_wc will be 0 if the function finishes before updating all objects (ie.
+% sliding windows etc), so that we not open wc tabs in that case.  
+up_wc = 0;
    
 % exit if no data loaded
 fData_tot = getappdata(main_figure,'fData');
@@ -123,7 +125,7 @@ fData = fData_tot{disp_config.Fdata_ID==IDs};
 ip = disp_config.Iping;
 
 if ip > numel(fData.X_1P_pingE)
-    disp_config.Iping=1;
+    disp_config.Iping = 1;
     return;
 end
 
@@ -391,7 +393,7 @@ if ~ismember(disp_config.Fdata_ID , IDs)
     return;
 end
 
-fData = fData_tot{disp_config.Fdata_ID ==IDs};
+fData = fData_tot{disp_config.Fdata_ID==IDs};
 
 % save info in usrdata as an ID
 usrdata.ID = fData.ID;
@@ -479,7 +481,7 @@ fmt = '%.2f';
 set(ax,'yticklabel',y_labels);
 set(ax,'xticklabel',x_labels);
 
-up_wc=1;
+up_wc = 1;
 
 end
 
@@ -488,17 +490,17 @@ end
 
 function traverse_plot_fcn(src,~,hplot)
 set(src, 'Pointer', 'hand');
-ax=ancestor(hplot(1),'axes');
-cp=ax.CurrentPoint;
-objt=findobj(ax,'Tag','tooltipt');
-xlim=get(ax,'XLim');
-dx=diff(xlim)/1e2;
+ax = ancestor(hplot(1),'axes');
+cp = ax.CurrentPoint;
+objt = findobj(ax,'Tag','tooltipt');
+xlim = get(ax,'XLim');
+dx = diff(xlim)/1e2;
 if isempty(objt)
     text(ax,cp(1,1)+dx,cp(1,2),hplot(1).UserData.Filename,'Tag','tooltipt','EdgeColor','k','BackgroundColor','y','VerticalAlignment','Bottom','Interpreter','none');
 else
     set(objt,'Position',[cp(1,1)+dx,cp(1,2)],'String',hplot(1).UserData.Filename);
 end
-% obj=findobj(ax,'Tag','tooltip');
+% obj = findobj(ax,'Tag','tooltip');
 % if isempty(obj)
 % 
 %     plot(ax,cp(1,1),cp(1,2),'Marker','o','MarkerEdgeColor','r','MarkerFaceColor','k','MarkerSize',6,'Tag','tooltip');
@@ -509,10 +511,10 @@ end
 
 function exit_plot_fcn(src,~,hplot)
 set(src, 'Pointer', 'hand');
-ax=ancestor(hplot(1),'axes');
-% obj=findobj(ax,'Tag','tooltip');
+ax = ancestor(hplot(1),'axes');
+% obj = findobj(ax,'Tag','tooltip');
 % delete(obj);
-objt=findobj(ax,'Tag','tooltipt');
+objt = findobj(ax,'Tag','tooltipt');
 delete(objt);
 end
 
