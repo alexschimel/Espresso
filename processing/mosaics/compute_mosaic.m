@@ -87,19 +87,23 @@ if res<mosaic.best_res
     return
 end
 
-%% initalize the grids:
-% weighted sum and total sum of weights.
-% in absence of weights, the total sum of weights is simply the count of
-% points, and the weighted sum is simply the sum
+%% initalize the mosaic:
+% * weighted sum and total sum of weights. In absence of weights, the total
+% sum of weights is simply the count of points, and the weighted sum is
+% simply the sum
+% * Now also doing a grid containing the maximum horizontal distance to
+% nadir, to be used when mosaicking using the "stitching" method.
 [numElemGridN,numElemGridE] = size(mosaic.mosaic_level);
-mosaicWeightedSum = zeros(numElemGridN,numElemGridE,'single');
-mosaicTotalWeight = zeros(numElemGridN,numElemGridE,'single');
+mosaicWeightedSum  = zeros(numElemGridN,numElemGridE,'single');
+mosaicTotalWeight  = zeros(numElemGridN,numElemGridE,'single');
+mosaicMaxHorizDist =   nan(numElemGridN,numElemGridE,'single');
 
 % Test if GPU is avaialble for computation and setup for it
 gpu_comp = get_gpu_comp_stat();
 if gpu_comp > 0
-    mosaicWeightedSum = gpuArray(mosaicWeightedSum);
-    mosaicTotalWeight = gpuArray(mosaicTotalWeight);
+    mosaicWeightedSum  = gpuArray(mosaicWeightedSum);
+    mosaicTotalWeight  = gpuArray(mosaicTotalWeight);
+    mosaicMaxHorizDist = gpuArray(mosaicMaxHorizDist);
 end
 
 % loop over all files loaded
@@ -111,6 +115,7 @@ for iF = 1:numel(fData_tot)
     N = fData.X_N1_gridNorthing;
     L = fData.X_NEH_gridLevel;
     W = fData.X_NEH_gridDensity;
+    D = fData.X_NEH_gridMaxHorizDist;
     if ~gpu_comp
         if isa(L,'gpuArray')
             L = gather(L);
@@ -118,12 +123,18 @@ for iF = 1:numel(fData_tot)
         if isa(W,'gpuArray')
             W = gather(W);
         end
+        if isa(D,'gpuArray')
+            D = gather(D);
+        end
     else
         if ~isa(L,'gpuArray')
             L = gpuArray(L);
         end
         if ~isa(W,'gpuArray')
             W = gpuArray(W);
+        end
+        if ~isa(D,'gpuArray')
+            D = gpuArray(D);
         end
     end
     
@@ -133,6 +144,9 @@ for iF = 1:numel(fData_tot)
     end
     if size(W,3) > 1
         W = nansum(W,3);
+    end
+    if size(D,3) > 1
+        D = nanmax(D,3);
     end
     
     % remove all data outside of mosaic boundaries
@@ -144,6 +158,8 @@ for iF = 1:numel(fData_tot)
     L(:,~idx_keep_E) = [];
     W(~idx_keep_N,:) = [];
     W(:,~idx_keep_E) = [];
+    D(~idx_keep_N,:) = [];
+    D(:,~idx_keep_E) = [];
     
     % vectorize
     [numel_N, numel_E] = size(L);
@@ -153,6 +169,7 @@ for iF = 1:numel(fData_tot)
     N = N(:);
     L = L(:);
     W = W(:);
+    D = D(:);
     
     % remove nans
     indNan = isnan(L);
@@ -160,6 +177,7 @@ for iF = 1:numel(fData_tot)
     N(indNan) = [];
     L(indNan) = [];
     W(indNan) = [];
+    D(indNan) = [];
     
     % This should not happen as it's been checked already but if no data
     % within mosaic bounds, continue to next file 
@@ -189,24 +207,55 @@ for iF = 1:numel(fData_tot)
     % we use the accumarray function to sum all values in both the
     % total weight mosaic, and the weighted sum mosaic. Prepare the
     % common values here
-    subs    = single([N_idx E_idx]); % indices in the temp grid of each data point
-    sz      = single([N_N N_E]);     % size of ouptut
-    fillval = single(0);             % filling value in output if no data contributed
+    subs = single([N_idx E_idx]); % indices in the temp grid of each data point
+    sz   = single([N_N N_E]);     % size of ouptut
     
-    % calculate the sum of weights per mosaic cell
-    mosaicTotalWeightTemp = accumarray(subs,W',sz,@sum,fillval);
+    % calculate the sum of weights per mosaic cell, and the sum of weighted
+    % levels per mosaic cell 
+    mosaicTotalWeightTemp = accumarray(subs,W',sz,@sum,single(0));
+    mosaicWeightedSumTemp = accumarray(subs,W'.*L',sz,@sum,single(0));
     
-    % calculate the sum of weighted levels per mosaic cell
-    mosaicWeightedSumTemp = accumarray(subs,W'.*L',sz,@sum,fillval);
-    
-    % Add the temp mosaic of weights sum to the full one
-    mosaicTotalWeight(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1) = ...
-        mosaicTotalWeight(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1) + mosaicTotalWeightTemp;
-    
-    % Add the temp mosaic of sum of weighted levels to the full one
-    mosaicWeightedSum(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1) = ...
-        mosaicWeightedSum(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1) + mosaicWeightedSumTemp;
+    switch mosaic.mode
         
+        case 'blend'
+            % In this mode, any cell of the mosaic will contain the
+            % weighted average of all grids that contribute to it, as per
+            % their weight. It effectively "blends" grids together.
+            
+            % Add the temp mosaic of weights sum to the full one
+            mosaicTotalWeight(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1) = ...
+                mosaicTotalWeight(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1) + mosaicTotalWeightTemp;
+            
+            % Add the temp mosaic of sum of weighted levels to the full one
+            mosaicWeightedSum(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1) = ...
+                mosaicWeightedSum(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1) + mosaicWeightedSumTemp;
+            
+        case 'stitch'
+            % In this mode, any cell of the mosaic will contain the value
+            % of the grid for which this cell was closest to nadir. It
+            % effectively "stitches" grids together with stitches occuring
+            % at equidistance from the vessel tracks.
+            
+            % calculate maximum horiz distance from nadir per grid cell
+            mosaicMaxHorizDistTemp = accumarray(subs,D',sz,@max,single(NaN));
+            
+            % Add the temp grid of maximum horiz dist
+            mosaicMaxHorizDistExtract = mosaicMaxHorizDist(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1);
+            [~,ind] = nanmin( [mosaicMaxHorizDistExtract(:),mosaicMaxHorizDistTemp(:)],[],2 );
+            ind = reshape(ind,size(mosaicMaxHorizDistExtract));
+            mosaicMaxHorizDistExtract(ind==2) = mosaicMaxHorizDistTemp(ind==2);
+            mosaicMaxHorizDist(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1) = mosaicMaxHorizDistExtract;
+            
+            mosaicTotalWeightExtract = mosaicTotalWeight(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1);
+            mosaicTotalWeightExtract(ind==2) = mosaicTotalWeightTemp(ind==2);
+            mosaicTotalWeight(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1) = mosaicTotalWeightExtract;
+            
+            mosaicWeightedSumExtract = mosaicWeightedSum(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1);
+            mosaicWeightedSumExtract(ind==2) = mosaicWeightedSumTemp(ind==2);
+            mosaicWeightedSum(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1) = mosaicWeightedSumExtract;
+            
+    end
+    
 end
 
 % final calculations: average and back in dB

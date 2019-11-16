@@ -72,13 +72,17 @@
 % Yoann Ladroit, Alexandre Schimel, NIWA. XXX
 
 %% Function
-function mosaic = init_mosaic(E_lim,N_lim,res)
+function mosaic = init_mosaic(E_lim,N_lim,res,mode)
 
+% XXX clearn this up with an input parser
 mosaic.name     = 'New Mosaic';
 mosaic.E_lim    = E_lim;
 mosaic.N_lim    = N_lim;
 mosaic.res      = res;
-mosaic.mode     = 'normal';
+try mosaic.mode = mode; % 'blend' (default) or 'stitch'
+catch
+    mosaic.mode = 'blend';
+end
 mosaic.ID       = str2double(datestr(now,'yyyymmddHHMMSSFFF'));
 mosaic.Fdata_ID = [];
 mosaic.best_res = [];
