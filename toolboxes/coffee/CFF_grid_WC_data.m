@@ -215,24 +215,28 @@ end
 
 
 %% initalize the grids:
-% weighted sum and total sum of weights.
-% in absence of weights, the total sum of weights is simply the count of
-% points, and the weighted sum is simply the sum
-
+% * weighted sum and total sum of weights. In absence of weights, the total
+% sum of weights is simply the count of points, and the weighted sum is
+% simply the sum
+% * Now also doing a grid containing the maximum horizontal distance to
+% nadir, to be used when mosaicking using the "stitching" method.
 switch grid_type
     case '2D'
-        gridWeightedSum = zeros(numElemGridN,numElemGridE,'single');
-        gridTotalWeight = zeros(numElemGridN,numElemGridE,'single');
+        gridWeightedSum  = zeros(numElemGridN,numElemGridE,'single');
+        gridTotalWeight  = zeros(numElemGridN,numElemGridE,'single');
+        gridMaxHorizDist =   nan(numElemGridN,numElemGridE,'single');
     case '3D'
-        gridWeightedSum = zeros(numElemGridN,numElemGridE,numElemGridH,'single');
-        gridTotalWeight = zeros(numElemGridN,numElemGridE,numElemGridH,'single');
+        gridWeightedSum  = zeros(numElemGridN,numElemGridE,numElemGridH,'single');
+        gridTotalWeight  = zeros(numElemGridN,numElemGridE,numElemGridH,'single');
+        gridMaxHorizDist =   nan(numElemGridN,numElemGridE,numElemGridH,'single');
 end
 
 % if GPU is avaialble for computation, setup for it
 gpu_comp = get_gpu_comp_stat();
 if gpu_comp > 0
-    gridWeightedSum = gpuArray(gridWeightedSum);
-    gridTotalWeight = gpuArray(gridTotalWeight);
+    gridWeightedSum  = gpuArray(gridWeightedSum);
+    gridTotalWeight  = gpuArray(gridTotalWeight);
+    gridMaxHorizDist = gpuArray(gridMaxHorizDist);
 end
 
 
@@ -257,15 +261,51 @@ for iB = 1:nBlocks
     startSampleNumber = fData.(sprintf('%s_BP_StartRangeSampleNumber',datagramSource))(1:db_sub:end,blockPings);
     beamPointingAngle = deg2rad(fData.(sprintf('%s_BP_BeamPointingAngle',datagramSource))(1:db_sub:end,blockPings));
     
-    % Get easting, northing and height
-    [blockE, blockN, blockH] = CFF_georeference_sample(idxSamples, startSampleNumber, interSamplesDistance(blockPings), beamPointingAngle, ...
+    % Get easting, northing, height and across distance from the samples
+    [blockE, blockN, blockH, blockAccD] = CFF_georeference_sample(idxSamples, startSampleNumber, interSamplesDistance(blockPings), beamPointingAngle, ...
         sonarEasting(blockPings), sonarNorthing(blockPings), sonarHeight(blockPings), sonarHeading(blockPings));
     
     % get data to grid
     blockL = CFF_get_WC_data(fData,field_to_grid,'iPing',blockPings,'dr_sub',dr_sub,'db_sub',db_sub,'output_format','true');
     
-    % get weights or define them as ones here
-    blockW = ones(size(blockL),class(blockL));
+    % define weights here
+    weighting_mode = 'none'; % 'SIAfilter' or 'none'
+    switch weighting_mode
+        case 'none'
+            % all samples have the same weight (1) in the gridding
+            blockW = ones(size(blockL),class(blockL));
+        case 'SIAfilter'
+            % samples have a weight dependent on how strongly they were
+            % affected by the SIA filter. The ranges where specular occured
+            % had a strong mean BS to which we will apply a small weight
+            % (towards 0), while the ranges that had no speculars had a
+            % relatively lower mean BS, and those we will apply a larger
+            % weight (towards 1).
+            % This correction requires to have saved the sidelobe artifact
+            % correction at the processing stage.
+            if isfield(fData, 'X_S1P_sidelobeArtifactCorrection')
+                
+                SIAcorrection = fData.X_S1P_sidelobeArtifactCorrection(1:dr_sub:end,1,blockPings);
+                
+                % define downramp function, going down linearly from
+                % (X1,Y1) to (X2,Y2). Equals Y1 for x<X1, and equals Y2 for
+                % x>X2.
+                downramp_fun  = @(x,X1,X2,Y1,Y2) min(max(x.*(Y1-Y2)./(X1-X2)+(Y2.*X1-Y1.*X2)./(X1-X2),Y2),Y1);
+                
+                % use inverse percentiles to figure the start and end of
+                % the ramp.
+                start_ramp = CFF_invpercentile(SIAcorrection(:),20);
+                end_ramp   = CFF_invpercentile(SIAcorrection(:),80);
+                
+                % apply to SIAcorrection to get the weight scores (between
+                % 0 and 1)
+                fact   = downramp_fun(SIAcorrection,start_ramp,end_ramp,1,0);
+                blockW = repmat(fact,1,size(blockL,2),1);
+            else
+                warning('This weighting mode cannot be used because processed data do not include the needed field. Using no-weighting mode for now.');
+                blockW = ones(size(blockL),class(blockL));
+            end
+    end
     
     % start with removing all data where level is NaN
     indNan = isnan(blockL) | isnan(blockW);
@@ -273,10 +313,11 @@ for iB = 1:nBlocks
     if isempty(blockL)
         continue;
     end
-    blockW(indNan) = [];
-    blockE(indNan) = [];
-    blockN(indNan) = [];
-    blockH(indNan) = [];
+    blockW(indNan)    = [];
+    blockE(indNan)    = [];
+    blockN(indNan)    = [];
+    blockH(indNan)    = [];
+    blockAccD(indNan) = [];
     clear indNan
     
     % get indices of samples we want to keep in the calculation
@@ -315,36 +356,42 @@ for iB = 1:nBlocks
     if isempty(blockL)
         continue;
     end
-    blockW(~idx_keep) = [];
-    blockE(~idx_keep) = [];
-    blockN(~idx_keep) = [];
-    blockH(~idx_keep) = [];
+    blockW(~idx_keep)    = [];
+    blockE(~idx_keep)    = [];
+    blockN(~idx_keep)    = [];
+    blockH(~idx_keep)    = [];
+    blockAccD(~idx_keep) = [];
     clear idx_keep
     
     % at this stage, pass blockL and blockW as GPU arrays if using GPUs
     if gpu_comp > 0
-        blockL = gpuArray(blockL);
-        blockW = gpuArray(blockW);
+        blockL    = gpuArray(blockL);
+        blockW    = gpuArray(blockW);
+        blockAccD = gpuArray(blockAccD);
     end
     
     % pass grid level in natural before gridding
     blockL = 10.^(blockL./10);
     
+    % also, turn across distance (signed) to horizontal distance from nadir
+    % (unsigned)
+    blockD = abs(blockAccD);
+    clear blockAccD
+    
     % data indices in the full grid
     E_idx = round((blockE-minGridE)/grid_horz_res+1);
     N_idx = round((blockN-minGridN)/grid_horz_res+1);
-    
     clear blockE blockN
     
     % first index
     idx_E_start = min(E_idx);
     idx_N_start = min(N_idx);
     
-    % data indices in temp grid (grid just for this block of pings)
+    % data indices in the small grid built just for this block of pings
     E_idx = E_idx - min(E_idx) + 1;
     N_idx = N_idx - min(N_idx) + 1;
     
-    % size of temp grid
+    % size of this small grid
     N_E = max(E_idx);
     N_N = max(N_idx);
     
@@ -360,26 +407,32 @@ for iB = 1:nBlocks
             % common values here  
             subs    = single([N_idx' E_idx']); % indices in the temp grid of each data point
             sz      = single([N_N N_E]);       % size of ouptut
-            fillval = single(0);               % filling value in output if no data contributed
             clear N_idx E_idx
             
-            % calculate the sum of weights per grid cell
-            gridTotalWeightTemp = accumarray(subs,blockW',sz,@sum,fillval);
+            % sum of weights per grid cell, and sum of weighted levels per
+            % grid cell 
+            gridTotalWeight_forBlock = accumarray(subs,blockW',sz,@sum,single(0));
+            gridWeightedSum_forBlock = accumarray(subs,blockW'.*blockL',sz,@sum,single(0));
+            clear blockL blockW 
             
-            % calculate the sum of weighted levels per grid cell
-            gridWeightedSumTemp = accumarray(subs,blockW'.*blockL',sz,@sum,fillval);
+            % maximum horiz distance from nadir per grid cell
+            gridMaxHorizDist_forBlock = accumarray(subs,blockD',sz,@max,single(NaN));
+            clear blockD subs
             
-            clear blockL blockW subs
-            
-            % Add the temp grid of weights sum to the full one
+            % Add the block's small grid of weights sum to the full one,
+            % and the block's small grid of sum of weighted levels to the
+            % full one
             gridTotalWeight(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1) = ...
-                gridTotalWeight(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1) + gridTotalWeightTemp;
-            
-            % Add the temp grid of sum of weighted levels to the full one
+                gridTotalWeight(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1) + gridTotalWeight_forBlock;
             gridWeightedSum(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1) = ...
-                gridWeightedSum(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1) + gridWeightedSumTemp;
+                gridWeightedSum(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1) + gridWeightedSum_forBlock;
+            clear gridTotalWeight_forBlock gridWeightedSum_forBlock
             
-            clear gridTotalWeightTemp gridWeightedSumTemp
+            % Add the block's small grid of maximum horiz dist to the full
+            % one: just keep in the grid whatever the maximum is per cell
+            gridMaxHorizDist(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1) = nanmax( ...
+                gridMaxHorizDist(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1), gridMaxHorizDist_forBlock);
+            clear gridMaxHorizDist_forBlock
             
         case '3D'
             
@@ -395,26 +448,31 @@ for iB = 1:nBlocks
             % common values here  
             subs    = single([N_idx' E_idx' H_idx']); % indices in the temp grid of each data point
             sz      = single([N_N N_E N_H]);          % size of ouptut
-            fillval = single(0);                      % filling value in output if no data contributed
             clear N_idx E_idx H_idx
             
-            % calculate the sum of weights per grid cell
-            gridTotalWeightTemp = accumarray(subs,blockW',sz,@sum,fillval);
+            % sum of weights per grid cell, and sum of weighted levels per grid cell
+            gridTotalWeight_forBlock = accumarray(subs,blockW',sz,@sum,single(0));
+            gridWeightedSum_forBlock = accumarray(subs,blockW'.*blockL',sz,@sum,single(0));
+            clear blockL blockW 
             
-            % calculate the sum of weighted levels per grid cell
-            gridWeightedSumTemp = accumarray(subs,blockW'.*blockL',sz,@sum,fillval);
-
-            clear blockL blockW subs
+            % maximum horiz distance from nadir per grid cell
+            gridMaxHorizDist_forBlock = accumarray(subs,blockD',sz,@max,single(NaN));
+            clear blockD subs
             
-            % Add the temp grid of weights sum to the full one
+            % Add the block's small grid of weights sum to the full one,
+            % and the block's small grid of sum of weighted levels to the
+            % full one 
             gridTotalWeight(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1,idx_H_start:idx_H_start+N_H-1) = ...
-                gridTotalWeight(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1,idx_H_start:idx_H_start+N_H-1) + gridTotalWeightTemp;
-            
-            % Add the temp grid of sum of weighted levels to the full one
+                gridTotalWeight(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1,idx_H_start:idx_H_start+N_H-1) + gridTotalWeight_forBlock;
             gridWeightedSum(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1,idx_H_start:idx_H_start+N_H-1) = ...
-                gridWeightedSum(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1,idx_H_start:idx_H_start+N_H-1) + gridWeightedSumTemp;
+                gridWeightedSum(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1,idx_H_start:idx_H_start+N_H-1) + gridWeightedSum_forBlock;
+            clear gridTotalWeight_forBlock gridWeightedSum_forBlock
             
-            clear gridTotalWeightTemp gridWeightedSumTemp
+            % Add the block's small grid of maximum horiz dist to the full
+            % one: just keep in the grid whatever the maximum is per cell
+            gridMaxHorizDist(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1,idx_H_start:idx_H_start+N_H-1) = nanmax( ...
+                gridMaxHorizDist(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1,idx_H_start:idx_H_start+N_H-1), gridMaxHorizDist_forBlock);
+            clear gridMaxHorizDist_forBlock
             
     end
     
@@ -436,9 +494,10 @@ switch grid_type
         minEidx = find(sumgridTotalWeight_E,1,'first');
         maxEidx = find(sumgridTotalWeight_E,1,'last');
         
-        % crop weight and sum
-        gridTotalWeight = gridTotalWeight(minNidx:maxNidx,minEidx:maxEidx);
-        gridWeightedSum = gridWeightedSum(minNidx:maxNidx,minEidx:maxEidx);
+        % crop the grids
+        gridTotalWeight  = gridTotalWeight(minNidx:maxNidx,minEidx:maxEidx);
+        gridWeightedSum  = gridWeightedSum(minNidx:maxNidx,minEidx:maxEidx);
+        gridMaxHorizDist = gridMaxHorizDist(minNidx:maxNidx,minEidx:maxEidx);
         
         % define and crop dim vectors
         gridNorthing = (0:numElemGridN-1)'.*grid_horz_res + minGridN;
@@ -463,9 +522,10 @@ switch grid_type
         minHidx = find(sumgridTotalWeight_H,1,'first');
         maxHidx = find(sumgridTotalWeight_H,1,'last');
         
-        % crop count and sum
-        gridTotalWeight = gridTotalWeight(minNidx:maxNidx,minEidx:maxEidx,minHidx:maxHidx);
-        gridWeightedSum = gridWeightedSum(minNidx:maxNidx,minEidx:maxEidx,minHidx:maxHidx);
+        % crop the grids
+        gridTotalWeight  = gridTotalWeight(minNidx:maxNidx,minEidx:maxEidx,minHidx:maxHidx);
+        gridWeightedSum  = gridWeightedSum(minNidx:maxNidx,minEidx:maxEidx,minHidx:maxHidx);
+        gridMaxHorizDist = gridMaxHorizDist(minNidx:maxNidx,minEidx:maxEidx,minHidx:maxHidx);
         
         % define and crop dim vectors
         gridNorthing = (0:numElemGridN-1)'.*grid_horz_res + minGridN;
@@ -479,24 +539,26 @@ end
 
 % final calculations: average and back in dB
 gridLevel = 10.*log10(gridWeightedSum./gridTotalWeight);
-
 clear gridWeightedSum
 
 % revert gpuArrays back to regular arrays before storing so that data can
 % be used even without the parallel computing toolbox and so that loading
 % data don't overload the limited GPU memory
 if gpu_comp > 0
-    gridLevel       = gather(gridLevel);
-    gridTotalWeight = gather(gridTotalWeight);
+    gridLevel        = gather(gridLevel);
+    gridTotalWeight  = gather(gridTotalWeight);
+    gridMaxHorizDist = gather(gridMaxHorizDist);
 end
-
 
 %% saving results:
 
-fData.X_NEH_gridLevel   = gridLevel;
-fData.X_NEH_gridDensity = gridTotalWeight;
+fData.X_NEH_gridLevel        = gridLevel;
+fData.X_NEH_gridDensity      = gridTotalWeight;
+fData.X_NEH_gridMaxHorizDist = gridMaxHorizDist;
+
 fData.X_1E_gridEasting  = gridEasting;
 fData.X_N1_gridNorthing = gridNorthing;
+
 fData.X_1_gridHorizontalResolution = grid_horz_res;
 
 switch grid_type
@@ -504,5 +566,3 @@ switch grid_type
         fData.X_11H_gridHeight = gridHeight;
         fData.X_1_gridVerticalResolution = grid_vert_res;
 end
-
-
