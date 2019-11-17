@@ -88,17 +88,22 @@ end
 %%
 % Callback when selecting a line in the table
 %
-function cell_select_cback(~,evt,main_figure)
+function cell_select_cback(src,evt,main_figure)
 
 % indices of selected line
 if ~isempty(evt.Indices)
     selected_idx = (evt.Indices(:,1));
-    %selected_row =(evt.Indices(:,2));
+    selected_row =(evt.Indices(:,2));
 else
     selected_idx = [];
-    %selected_row= [];
+    selected_row= [];
 end
 
+if any(unique(selected_row)==3)&&numel(unique(selected_row))==1
+    return;
+end
+    
+   
 % update the selected lines in fdata_tab
 fdata_tab_comp = getappdata(main_figure,'fdata_tab');
 fdata_tab_comp.selected_idx = unique(selected_idx);
@@ -153,7 +158,6 @@ if evt.Indices(2) == 3
     %     disp_config.Iping = 1;
     update_map_tab(main_figure,0,0,0,evt.Indices(1));
 end
-
 
 
 end
