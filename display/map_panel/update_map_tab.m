@@ -184,7 +184,7 @@ for i = update_line_index(:)'
             'Visible','on','Color',nav_col,'ButtonDownFcn',{@disp_wc_ping_cback,main_figure},'UserData',user_data);
         
         % draw dots as subsampled navigation
-        df = 10;
+        df = 50;
         handle_plot_2 = plot(ax,[fData.X_1P_pingE(1:df:end),fData.X_1P_pingE(end)],[fData.X_1P_pingN(1:df:end),fData.X_1P_pingN(end)],'.','Tag',tag_id_nav,...
             'Visible','on','Color',nav_col,'ButtonDownFcn',{@disp_wc_ping_cback,main_figure},'UserData',user_data);
         

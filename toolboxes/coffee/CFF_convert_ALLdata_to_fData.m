@@ -770,9 +770,9 @@ for iF = 1:nStruct
             % one is detected
             if length(headNumber) > 1
                 fields = {'Date','TimeSinceMidnightInMilliseconds','SoundSpeed','SamplingFrequency','TXTimeHeave','TVGFunctionApplied','TVGOffset','ScanningInfo'};
-                for iF = 1:length(fields)                    
-                    if any(any(ALLdata.EM_WaterColumn.(fields{iF})(iFirstDatagram(:,1))'.*ones(1,length(headNumber))~=ALLdata.EM_WaterColumn.(fields{iF})(iFirstDatagram)))
-                        warning(sprintf('System has more than one head and "%s" data are inconsistent between heads for at least one ping. Using information from first head anyway.',fields{iF}));
+                for iFi = 1:length(fields)                    
+                    if any(any(ALLdata.EM_WaterColumn.(fields{iFi})(iFirstDatagram(:,1))'.*ones(1,length(headNumber))~=ALLdata.EM_WaterColumn.(fields{iFi})(iFirstDatagram)))
+                        warning('System has more than one head and "%s" data are inconsistent between heads for at least one ping. Using information from first head anyway.',fields{iFi});
                     end
                 end
             end

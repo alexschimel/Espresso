@@ -256,11 +256,42 @@ for nF = 1:numel(files_to_convert)
             f_ext = '.s7k';
         end
     end
+        % get folder for converted data
+    folder_for_converted_data = CFF_converted_data_folder(file_to_convert);
+    
+    % converted filename fData
+    mat_fdata_file = fullfile(folder_for_converted_data,'fdata.mat');
+    
+    % subsampling factors:
+    dr_sub = 1; % none for now
+    db_sub = 1; % none for now
+    
+    dr_sub_old = 0;
+    db_sub_old = 0;
+    ver='0.0';
+    
+    if isfile(mat_fdata_file)
+        fData_old = load(mat_fdata_file);
+        if isfield(fData_old,'MET_Fmt_version')
+            %added a version for fData
+            ver=fData_old.MET_Fmt_version;
+        end
+        dr_sub_old = fData_old.dr_sub;
+        db_sub_old = fData_old.db_sub; 
+    else
+        fData_old={};
+    end
+    
+    if ~strcmpi(ver,CFF_get_current_fData_version)
+        clean_fdata(fData_old);
+    end
+    
+    convert=reconvert||~isfile(mat_fdata_file) || ~strcmpi(ver,CFF_get_current_fData_version) || dr_sub_old~=dr_sub || db_sub_old~=db_sub || ~files_already_converted(nF);
     
     % if file already converted and not asking for reconversion, exit here
-    if files_already_converted(nF) && ~reconvert
+    if ~convert
         fprintf('File "%s" (%i/%i) is already converted.\n',file_to_convert,nF,numel(files_to_convert));
-        continue
+        continue;
     end
     
     % Otherwise, starting conversion...
@@ -269,11 +300,7 @@ for nF = 1:numel(files_to_convert)
     textprogressbar(0);
     tic
     
-    % get folder for converted data
-    folder_for_converted_data = CFF_converted_data_folder(file_to_convert);
-    
-    % converted filename fData
-    mat_fdata_file = fullfile(folder_for_converted_data,'fdata.mat');
+
     
     % if output folder doesn't exist, create it
     MATfilepath = fileparts(mat_fdata_file);
@@ -285,7 +312,7 @@ for nF = 1:numel(files_to_convert)
         case {'.all' '.wcd'}
             
             % set datagram source
-            datagramSource = 'WC'; % 'WC', 'AP', 'De', 'X8'
+            datagramSource = 'WC'; % 'AP', 'De', 'X8'
             
             switch datagramSource
                 case 'WC'
@@ -343,84 +370,27 @@ for nF = 1:numel(files_to_convert)
             continue;
     end
     
-    % subsampling factors:
-    dr_sub = 1; % none for now
-    db_sub = 1; % none for now
-    ver='0.0';
-    
-    if isfile(mat_fdata_file)
-        fData = load(mat_fdata_file);
-        if isfield(fData,'MET_Fmt_version')
-            %added a version for fData
-            ver=fData.MET_Fmt_version;
-        end  
+
+    switch f_ext
+        case {'.all' '.wcd'}
+            % if output file does not exist OR if forcing reconversion, simply convert
+            fData = CFF_convert_ALLdata_to_fData(EMdata,dr_sub,db_sub,fData_old);
+            textprogressbar(90);
+            
+            
+        case '.s7k'
+            % if output file does not exist OR if forcing reconversion, simply convert
+            fData = CFF_convert_S7Kdata_to_fData(RESONdata,dr_sub,db_sub,fData_old);
+            textprogressbar(90);
+            
     end
     
-    % conversion and saving on the disk
-    if ~isfile(mat_fdata_file) || reconvert || ~strcmpi(ver,CFF_get_current_fData_version)
-        
-        switch f_ext
-            case {'.all' '.wcd'}
-                % if output file does not exist OR if forcing reconversion, simply convert
-                fData = CFF_convert_ALLdata_to_fData(EMdata,dr_sub,db_sub);
-                textprogressbar(90);
-                
-                % add datagram source
-                fData.MET_datagramSource = datagramSource;
-                
-                % and save
-                save(mat_fdata_file,'-struct','fData','-v7.3');
-                clear fData;
-                
-            case '.s7k'
-                % if output file does not exist OR if forcing reconversion, simply convert
-                fData = CFF_convert_S7Kdata_to_fData(RESONdata,dr_sub,db_sub);
-                textprogressbar(90);
-                
-                % add datagram source
-                fData.MET_datagramSource = datagramSource;
-                
-                % and save
-                save(mat_fdata_file,'-struct','fData','-v7.3');
-                clear fData;
-        end
-        
-    else
-        
-        % If output file already exists (and not forcing reconversion), see
-        % if existing file cannot be fully or partly reused to save time
-        %
-        % NOTE: as coded now, this will never occur as we have an escape
-        % clause in case the file already exists and asking to "convert"
-        % instead of "reconvert"... TO DO XXX
-        
-        % load existing file
-        fData = load(mat_fdata_file);
-        if ~isfield(fData,'MET_Fmt_version')
-            %added a version for fData
-            fData.MET_Fmt_version='0.0';
-        end
-        
-        textprogressbar(75);
-        switch f_ext
-            case {'.all' '.wcd'}
-                % compare data to that already existing
-                [fData,update_flag] = CFF_convert_ALLdata_to_fData(EMdata,dr_sub,db_sub,fData);
-            case '.s7k'
-                [fData,update_flag] = CFF_convert_S7Kdata_to_fData(RESONdata,dr_sub,db_sub,fData);
-        end
-        textprogressbar(90);
-        % if it's different, update the result
-        if update_flag > 0
-            save(mat_fdata_file,'-struct','fData','-v7.3');
-            clear fData;
-        end
-        
-    end
+    % add datagram source
+    fData.MET_datagramSource = datagramSource;
     
-    % End of conversion
-    textprogressbar(100);
-    textprogressbar(sprintf(' done. Elapsed time: %f seconds.\n',toc));
+    % and save
+    save(mat_fdata_file,'-struct','fData','-v7.3');
+    clear fData;
     
 end
 

@@ -72,7 +72,7 @@
 % Yoann Ladroit, Alexandre Schimel, NIWA. XXX
 
 %% Function
-function dname = clean_fdata(fData)
+function fData = clean_fdata(fData)
 
 if ~iscell(fData)
     fData = {fData};
@@ -87,12 +87,41 @@ for i = 1:numel(fData)
     fields = fieldnames(fData{i});
     
     for ifi = 1:numel(fields)
+        rmb=0;
         if isa(fData{i}.(fields{ifi}),'memmapfile')
             j = j+1;
-            [dname{j},~,~] = fileparts(fData{i}.(fields{ifi}).Filename);
+            rmb=1;
+            dname{j}= fData{i}.(fields{ifi}).Filename;
+            fData{i}.(fields{ifi})=[];
+        elseif iscell(fData{i}.(fields{ifi}))
+            
+            for ic=1:numel(fData{i}.(fields{ifi}))
+                if isa(fData{i}.(fields{ifi}){ic},'memmapfile')
+                    rmb=1;
+                    j = j+1;
+                    dname{j} = fData{i}.(fields{ifi}){ic}.Filename;
+                    fData{i}.(fields{ifi}){ic}=[];
+                end
+            end
+            
+        end
+        if rmb>0
+            fData{i}=rmfield(fData{i},fields{ifi});
         end
     end
     
 end
 
 dname = unique(dname);
+
+for id=1:numel(dname)
+    if isfile(dname{id})
+        try
+            sprintf('Deleting file %s',dname{id});
+            delete(dname{id});
+        catch
+            sprintf('ERROR while deleting file %s',dname{id});
+        end
+        
+    end
+end
