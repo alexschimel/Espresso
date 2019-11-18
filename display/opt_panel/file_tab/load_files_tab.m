@@ -284,7 +284,9 @@ for nF = 1:numel(files_to_convert)
     
     if ~strcmpi(ver,CFF_get_current_fData_version)
         fData_old=clean_fdata(fData_old);
-        fData_old=fData_old{1};
+        if ~isempty(fData_old)
+            fData_old=fData_old{1};
+        end
     end
     
     convert=reconvert||~isfile(mat_fdata_file) || ~strcmpi(ver,CFF_get_current_fData_version) || dr_sub_old~=dr_sub || db_sub_old~=db_sub || ~files_already_converted(nF);

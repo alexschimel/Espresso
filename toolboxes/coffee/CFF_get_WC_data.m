@@ -132,7 +132,7 @@ if isempty(iRange)
     iRange = 1:cellfun(@(x) nanmax(size(x.Data.val,1)),fData.(fieldN));
 end
 
-data_tot=nan(numel(iRange),numel(iBeam),numel(iPing),'single');
+data_tot=nan(ceil(numel(iRange)/p.Results.dr_sub),ceil(numel(iBeam)/p.Results.db_sub),numel(iPing),'single');
 ip=0;
 % f=figure();
 % ax=axes(f);

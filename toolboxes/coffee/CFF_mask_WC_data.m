@@ -77,7 +77,8 @@ function [fData] = CFF_mask_WC_data(fData,varargin)
 wcdata_class  = fData.X_1_WaterColumnProcessed_Class; % int8 or int16
 wcdata_factor = fData.X_1_WaterColumnProcessed_Factor; 
 wcdata_nanval = fData.X_1_WaterColumnProcessed_Nanval;
-[nSamples, nBeams, nPings] = size(fData.X_SBP_WaterColumnProcessed.Data.val);
+
+[nSamples, nBeams, nPings] = CFF_get_WC_size(fData);
 
 % block processing setup
 mem_struct = memory;

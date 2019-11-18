@@ -126,7 +126,7 @@ else
 end
 
 % size
-[nSamples, nBeams, nPings] = size(fData.(field_to_grid).Data.val);
+[nSamples, nBeams, nPings] = CFF_get_WC_size(fData);
 
 %% Prepare needed 1xP data for computations
 

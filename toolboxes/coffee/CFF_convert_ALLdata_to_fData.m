@@ -180,7 +180,6 @@ nStruct = length(ALLdataGroup);
 % initialize fData if one not given in input
 if isempty(fData)
     
-    update_mode = 0;
     
     % initialize FABC structure by writing in the raw data filenames to be
     % added here
@@ -193,16 +192,20 @@ if isempty(fData)
     fData.dr_sub = dr_sub;
     fData.db_sub = db_sub;
     
-else
-    
-    update_mode = 1;
-    
 end
 
 
 if ~isfield(fData,'MET_Fmt_version')&&~isempty(fData)
     %added a version for fData
     fData.MET_Fmt_version='0.0';
+end
+
+if ~strcmpi(ver,CFF_get_current_fData_version)
+    f_reconvert = 1;
+    update_mode = 0;
+else
+    f_reconvert = 0;
+    update_mode = 1;
 end
 
 % initialize update_flag
@@ -241,7 +244,7 @@ for iF = 1:nStruct
     if isfield(ALLdata,'EM_InstallationStart')
         
         % only convert these datagrams if this type doesn't already exist in output
-        if ~isfield(fData,'IP_ASCIIparameters')
+        if f_reconvert || ~isfield(fData,'IP_ASCIIparameters')
             
             if update_mode
                 update_flag = 1;
@@ -299,7 +302,7 @@ for iF = 1:nStruct
     if isfield(ALLdata,'EM_Runtime')
         
         % only convert these datagrams if this type doesn't already exist in output
-        if ~isfield(fData,'Ru_1D_Date')
+        if f_reconvert || ~isfield(fData,'Ru_1D_Date')
             
             if update_mode
                 update_flag = 1;
@@ -326,7 +329,7 @@ for iF = 1:nStruct
     if isfield(ALLdata,'EM_SoundSpeedProfile')
         
         % only convert these datagrams if this type doesn't already exist in output
-        if ~isfield(fData,'SS_1D_Date')
+        if f_reconvert || ~isfield(fData,'SS_1D_Date')
             
             if update_mode
                 update_flag = 1;
@@ -364,7 +367,7 @@ for iF = 1:nStruct
     if isfield(ALLdata,'EM_Attitude')
         
         % only convert these datagrams if this type doesn't already exist in output
-        if ~isfield(fData,'At_1D_Date')
+        if f_reconvert || ~isfield(fData,'At_1D_Date')
             
             if update_mode
                 update_flag = 1;
@@ -408,7 +411,7 @@ for iF = 1:nStruct
     if isfield(ALLdata,'EM_Height')
         
         % only convert these datagrams if this type doesn't already exist in output
-        if ~isfield(fData,'He_1D_Date')
+        if f_reconvert || ~isfield(fData,'He_1D_Date')
             
             if update_mode
                 update_flag = 1;
@@ -430,7 +433,7 @@ for iF = 1:nStruct
     if isfield(ALLdata,'EM_Position')
         
         % only convert these datagrams if this type doesn't already exist in output
-        if ~isfield(fData,'Po_1D_Date')
+        if f_reconvert || ~isfield(fData,'Po_1D_Date')
             
             if update_mode
                 update_flag = 1;
@@ -456,7 +459,7 @@ for iF = 1:nStruct
     if isfield(ALLdata,'EM_Depth')
         
         % only convert these datagrams if this type doesn't already exist in output
-        if ~isfield(fData,'De_1P_Date')
+        if f_reconvert || ~isfield(fData,'De_1P_Date')
             
             if update_mode
                 update_flag = 1;
@@ -515,7 +518,7 @@ for iF = 1:nStruct
     if isfield(ALLdata,'EM_XYZ88')
         
         % only convert these datagrams if this type doesn't already exist in output
-        if ~isfield(fData,'X8_1P_Date')
+        if f_reconvert || ~isfield(fData,'X8_1P_Date')
             
             if update_mode
                 update_flag = 1;
@@ -570,7 +573,7 @@ for iF = 1:nStruct
     if isfield(ALLdata,'EM_SeabedImage')
         
         % only convert these datagrams if this type doesn't already exist in output
-        if ~isfield(fData,'SI_1P_Date')
+        if f_reconvert || ~isfield(fData,'SI_1P_Date')
             
             if update_mode
                 update_flag = 1;
@@ -642,7 +645,7 @@ for iF = 1:nStruct
     if isfield(ALLdata,'EM_SeabedImage89')
         
         % only convert these datagrams if this type doesn't already exist in output
-        if ~isfield(fData,'S8_1P_Date')
+        if f_reconvert || ~isfield(fData,'S8_1P_Date')
             
             if update_mode
                 update_flag = 1;
@@ -714,7 +717,7 @@ for iF = 1:nStruct
     if isfield(ALLdata,'EM_WaterColumn')
         
         % only convert these datagrams if this type doesn't already exist in output
-        if ~isfield(fData,'WC_1P_Date') || fData.dr_sub~=dr_sub || fData.db_sub~=db_sub
+        if f_reconvert || ~isfield(fData,'WC_1P_Date') || fData.dr_sub~=dr_sub || fData.db_sub~=db_sub
             
             if update_mode
                 update_flag = 1;
@@ -994,7 +997,7 @@ for iF = 1:nStruct
     if isfield(ALLdata,'EM_AmpPhase')
         
         % only convert these datagrams if this type doesn't already exist in output
-        if ~isfield(fData,'AP_1P_Date') || fData.dr_sub~=dr_sub || fData.db_sub~=db_sub
+        if f_reconvert || ~isfield(fData,'AP_1P_Date') || fData.dr_sub~=dr_sub || fData.db_sub~=db_sub
             
             if update_mode
                 update_flag = 1;

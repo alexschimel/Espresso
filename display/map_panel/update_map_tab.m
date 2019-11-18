@@ -229,6 +229,7 @@ for i = update_line_index(:)'
         E = fData.X_1E_gridEasting;
         N = fData.X_N1_gridNorthing;
         L = fData.X_NEH_gridLevel;
+        
         if isa(L,'gpuArray')
             L = gather(L);
         end

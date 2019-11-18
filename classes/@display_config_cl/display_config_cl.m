@@ -96,7 +96,7 @@ classdef display_config_cl <handle
             addParameter(p,'Cax_wc_int',[-35 -15],@isnumeric); % colour axis limits for the map when variable displayed is integrated water column
             addParameter(p,'Cax_wc',[-50 -10],@isnumeric); % colour axis limits for the WC view
             addParameter(p,'Cax_bs',[-40 -15],@isnumeric); % colour axis limits for the map when variable displayed is backscatter
-            addParameter(p,'Cax_bathy',[-50 -10],@isnumeric); % colour axis limits for the map when variable displayed is bathymetry
+            addParameter(p,'Cax_bathy',[-500 -100],@isnumeric); % colour axis limits for the map when variable displayed is bathymetry
             addParameter(p,'Mode','Normal',@ischar); % Mode of mouse interaction with the map
             addParameter(p,'MET_datagramSource','',@(x) ismember(x,{'WC' 'AP'})); % Source datagram for watercolumn data
             addParameter(p,'MET_ellips','',@ischar); % UTM projection of the map, normally 'wgs84'
