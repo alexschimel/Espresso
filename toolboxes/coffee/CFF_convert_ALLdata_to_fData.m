@@ -842,7 +842,7 @@ for iF = 1:nStruct
                 
                 % ping number (ex: 50455)
                 pingCounter = fData.WC_1P_PingCounter(1,iP);
-                if pingCounter>ping_group_end(ig)
+                if pingCounter-fData.WC_1P_PingCounter(1,1)+1>ping_group_end(ig)
                     ig=ig+1;
                 end
                 % initialize the water column data matrix for that ping.
@@ -963,8 +963,8 @@ for iF = 1:nStruct
                 
             end
             
-            fData.WC_n_start=ping_group_start+1;
-            fData.WC_n_end=ping_group_end+1;
+            fData.WC_n_start=ping_group_start;
+            fData.WC_n_end=ping_group_end;
             fData.WC_n_maxNSamples=maxNSamples_groups;
             
             % close binary data file

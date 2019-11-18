@@ -101,7 +101,8 @@ catch
 end
 
 % data size
-[nSamples, nBeams, ~] = size(fData.(sprintf('%s_SBP_SampleAmplitudes',fData.MET_datagramSource)).Data.val);
+[nSamples, nBeams, ~] = size(data);
+
 nPings = numel(blockPings);
 
 % source datagram

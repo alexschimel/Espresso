@@ -112,8 +112,13 @@ iRange = p.Results.iRange;
 if isempty(iPing)
     iPing = 1:cellfun(@(x) nansum(size(x.Data.val,3)),fData.(fieldN));
 end
-ping_group_start=fData.([fieldN(1:2) '_n_start']);
-ping_group_end=fData.([fieldN(1:2) '_n_end']);
+if isfield(fData,'WC_n_start')
+    ping_group_start=fData.WC_n_start;
+    ping_group_end=fData.WC_n_end;
+else
+    ping_group_start=fData.AP_n_start;
+    ping_group_end=fData.AP_n_end;
+end
 %maxNSamples_groups=fData.([fieldN(1:2) '_n_maxNSamples']);
 
 istart=find(ping_group_start<=nanmin(iPing),1,'last');
@@ -169,11 +174,11 @@ for ig=istart:iend
             
     end
     
-%     for i=1:size(data_tot,3)
-%         imagesc(ax,squeeze(data(:,:,i)));
-%         drawnow;
-%     end
-
+    %     for i=1:size(data_tot,3)
+    %         imagesc(ax,squeeze(data(:,:,i)));
+    %         drawnow;
+    %     end
+    
     data_tot(1:size(data,1),1:(size(data,2)),ip+(1:(size(data,3))))=data;
     ip=ip+(size(data,3));
 end

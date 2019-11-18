@@ -107,7 +107,9 @@ meanAcrossBeams = mean(data,2,'omitnan');
 % beams closest to nadir.
 
 % find the 11 beams nearest to nadir
-[~, nBeams, ~] = size(fData.(sprintf('%s_SBP_SampleAmplitudes',fData.MET_datagramSource)).Data.val);
+
+[~, nBeams, ~] = size(data);
+
 nadirBeams = (floor((nBeams./2)-5):ceil((nBeams./2)+5));
 
 % calculate the average bottom detect for those beams for each ping

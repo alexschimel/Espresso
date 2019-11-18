@@ -483,19 +483,19 @@ for i = idx_fData(:)'
         
         % block processing setup
         mem_struct = memory;
-        blockLength = ceil(mem_struct.MemAvailableAllArrays/(nSamples*nBeams*8)/20);
+        blockLength = ceil(mem_struct.MemAvailableAllArrays/(nSamples(ig)*nBeams(ig)*8)/20);
         nBlocks = ceil(nPings(ig)./blockLength);
         blocks = [ 1+(0:nBlocks-1)'.*blockLength , (1:nBlocks)'.*blockLength ];
-        blocks(end,2) = nPings;
+        blocks(end,2) = nPings(ig);
         iPings=ping_gr_start(ig):ping_gr_end(ig);
         % processing per block of pings in file
         for iB = 1:nBlocks
             
             % list of pings in this block
-            blockPings  = iPings(blocks(iB,1):blocks(iB,2));
-            
+            blockPings_f  = iPings(blocks(iB,1):blocks(iB,2));
+            blockPings  = (blocks(iB,1):blocks(iB,2));
             % grab original data in dB
-            data = CFF_get_WC_data(fData_tot{i},sprintf('%s_SBP_SampleAmplitudes',fData_tot{i}.MET_datagramSource),'iPing',blockPings,'output_format','true');
+            data = CFF_get_WC_data(fData_tot{i},sprintf('%s_SBP_SampleAmplitudes',fData_tot{i}.MET_datagramSource),'iPing',blockPings_f,'iRange',1:nSamples(ig),'output_format','true');
             
             % radiometric corrections
             % add a radio button to possibly turn this off too? TO DO XXX
@@ -503,7 +503,7 @@ for i = idx_fData(:)'
             
             % filtering sidelobe artefact
             if wc_proc_tab_comp.sidelobe.Value
-                [data, correction] = CFF_filter_WC_sidelobe_artifact_CORE(data, fData_tot{i}, blockPings);
+                [data, correction] = CFF_filter_WC_sidelobe_artifact_CORE(data, fData_tot{i}, blockPings_f);
                 % uncomment this for weighted gridding based on sidelobe
                 % correction
                 % fData_tot{i}.X_S1P_sidelobeArtifactCorrection(:,:,blockPings) = correction;
@@ -511,7 +511,7 @@ for i = idx_fData(:)'
             
             % masking data
             if wc_proc_tab_comp.masking.Value
-                data = CFF_mask_WC_data_CORE(data, fData_tot{i}, blockPings, mask_angle, mask_closerange, mask_bottomrange, [], mask_ping);
+                data = CFF_mask_WC_data_CORE(data, fData_tot{i}, blockPings_f, mask_angle, mask_closerange, mask_bottomrange, [], mask_ping);
             end
             
             % saving
@@ -548,7 +548,7 @@ for i = idx_fData(:)'
             fclose(fid(ig));
             
             % add to fData as memmapfile
-            fData_tot{i}.X_SBP_WaterColumnProcessed{ig} = memmapfile(file_X_SBP_WaterColumnProcessed{ig}, 'Format',{wcdataproc_class [nSamples nBeams nPings] 'val'},'repeat',1,'writable',true);
+            fData_tot{i}.X_SBP_WaterColumnProcessed{ig} = memmapfile(file_X_SBP_WaterColumnProcessed{ig}, 'Format',{wcdataproc_class [nSamples(ig) nBeams(ig) nPings(ig)] 'val'},'repeat',1,'writable',true);
             
             % and record info
             fData_tot{i}.X_1_WaterColumnProcessed_Class  = wcdataproc_class;
