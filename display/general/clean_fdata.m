@@ -117,10 +117,10 @@ dname = unique(dname);
 for id=1:numel(dname)
     if isfile(dname{id})
         try
-            sprintf('Deleting file %s',dname{id});
+            fprintf('Deleting file %s\n',dname{id});
             delete(dname{id});
         catch
-            sprintf('ERROR while deleting file %s',dname{id});
+            fprintf('ERROR while deleting file %s\n',dname{id});
         end
         
     end

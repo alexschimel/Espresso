@@ -200,9 +200,9 @@ else
 end
 
 
-if ~isfield(fData,'MET_Fmt_version')
+if ~isfield(fData,'MET_Fmt_version')&&~isempty(fData)
     %added a version for fData
-    fData.MET_Fmt_version=CFF_get_current_fData_version();
+    fData.MET_Fmt_version='0.0';
 end
 
 % initialize update_flag
@@ -1175,5 +1175,5 @@ for iF = 1:nStruct
     
     % close the original raw file
     fclose(fid_all);
-    
+    fData.MET_Fmt_version=CFF_get_current_fData_version();
 end
