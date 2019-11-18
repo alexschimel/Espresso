@@ -81,7 +81,7 @@
 % Yoann Ladroit, Alexandre Schimel, NIWA.
 
 %% Function
-function data = CFF_get_WC_data(fData,fieldN,varargin)
+function data_tot = CFF_get_WC_data(fData,fieldN,varargin)
 
 
 %% input parsing
@@ -110,49 +110,72 @@ iRange = p.Results.iRange;
 
 %% get raw data
 if isempty(iPing)
-    iPing = 1:size(fData.(fieldN).Data.val,3);
+    iPing = 1:cellfun(@(x) nansum(size(x.Data.val,3)),fData.(fieldN));
 end
+ping_group_start=fData.([fieldN(1:2) '_n_start']);
+ping_group_end=fData.([fieldN(1:2) '_n_end']);
+%maxNSamples_groups=fData.([fieldN(1:2) '_n_maxNSamples']);
+
+istart=find(ping_group_start<=nanmin(iPing),1,'last');
+iend=find(ping_group_end>=nanmax(iPing),1,'first');
 
 if isempty(iBeam)
-    iBeam = 1:size(fData.(fieldN).Data.val,2);
+    iBeam = 1:cellfun(@(x) nanmax(size(x.Data.val,2)),fData.(fieldN));
 end
 
 if isempty(iRange)
-    iRange = 1:size(fData.(fieldN).Data.val,1);
+    iRange = 1:cellfun(@(x) nanmax(size(x.Data.val,1)),fData.(fieldN));
 end
 
-iRange(iRange>size(fData.(fieldN).Data.val,1)) = [];
-iBeam(iBeam>size(fData.(fieldN).Data.val,2))   = [];
-iPing(iPing>size(fData.(fieldN).Data.val,3))   = [];
-
-if isempty(iRange)||isempty(iBeam)||isempty(iPing)
-    data = [];
-    return;
-end
-
-data = fData.(fieldN).Data.val(iRange(1):p.Results.dr_sub:iRange(end),iBeam(1):p.Results.db_sub:iBeam(end),iPing);
-
-%% transform to true values if required
-switch p.Results.output_format
+data_tot=nan(numel(iRange),numel(iBeam),numel(iPing),'single');
+ip=0;
+% f=figure();
+% ax=axes(f);
+for ig=istart:iend
+    iRange_tmp=iRange;
+    iBeam_tmp=iBeam;
+    iPing_tmp=iPing;
+    iPing_tmp_gr=intersect(iPing_tmp,ping_group_start(ig):ping_group_end(ig));
+    iPing_tmp=iPing_tmp_gr-ping_group_start(ig)+1;
+    iRange_tmp(iRange_tmp>size(fData.(fieldN){ig}.Data.val,1)) = [];
+    iBeam_tmp(iBeam_tmp>size(fData.(fieldN){ig}.Data.val,2))   = [];
+    iPing_tmp(iPing_tmp>size(fData.(fieldN){ig}.Data.val,3))   = [];
     
-    case 'true'
+    if isempty(iRange_tmp)||isempty(iBeam_tmp)||isempty(iPing_tmp)
+        data_tot = [];
+        continue;
+    end
+    
+    data = fData.(fieldN){ig}.Data.val(iRange_tmp(1):p.Results.dr_sub:iRange_tmp(end),iBeam_tmp(1):p.Results.db_sub:iBeam_tmp(end),iPing_tmp);
+    
+    %% transform to true values if required
+    switch p.Results.output_format
         
-        % get info about data
-        idx_undsc = regexp(fieldN,'_');
-        fact    = fData.(sprintf('%s_1_%s_Factor',fieldN(1:idx_undsc(1)-1),fieldN(idx_undsc(2)+1:end)));
-        nan_val = fData.(sprintf('%s_1_%s_Nanval',fieldN(1:idx_undsc(1)-1),fieldN(idx_undsc(2)+1:end)));
-        
-        % convert to single class
-        data = single(data);
-        
-        % add nans
-        data(data==single(nan_val)) = single(NaN);
-        
-        % factor top get true dB values
-        data = data*fact;
-        
+        case 'true'
+            
+            % get info about data
+            idx_undsc = regexp(fieldN,'_');
+            fact    = fData.(sprintf('%s_1_%s_Factor',fieldN(1:idx_undsc(1)-1),fieldN(idx_undsc(2)+1:end)));
+            nan_val = fData.(sprintf('%s_1_%s_Nanval',fieldN(1:idx_undsc(1)-1),fieldN(idx_undsc(2)+1:end)));
+            
+            % convert to single class
+            data = single(data);
+            
+            % add nans
+            data(data==single(nan_val)) = single(NaN);
+            
+            % factor top get true dB values
+            data = data*fact;
+            
+    end
+    
+%     for i=1:size(data_tot,3)
+%         imagesc(ax,squeeze(data(:,:,i)));
+%         drawnow;
+%     end
+
+    data_tot(1:size(data,1),1:(size(data,2)),ip+(1:(size(data,3))))=data;
+    ip=ip+(size(data,3));
 end
-
-
 
 

@@ -199,8 +199,15 @@ else
     
 end
 
+
+if ~isfield(fData,'MET_Fmt_version')
+    %added a version for fData
+    fData.MET_Fmt_version=CFF_get_current_fData_version();
+end
+
 % initialize update_flag
 update_flag = 0;
+
 
 
 %% take one ALLdata structure at a time and add its contents to fData
@@ -793,6 +800,24 @@ for iF = 1:nStruct
             maxNSamples         = max(cellfun(@(x) max(x), ALLdata.EM_WaterColumn.NumberOfSamples(ismember(ALLdata.EM_WaterColumn.PingCounter,pingCounters))));
             maxNSamples_sub     = ceil(maxNSamples/dr_sub); % number of samples to extract (decimated)
             
+            [maxNSamples_groups,ping_group_start,ping_group_end]=CFF_group_pings_per_samples(ALLdata.EM_WaterColumn.NumberOfSamples,pingCounters,ALLdata.EM_WaterColumn.PingCounter);
+            maxNSamples_groups=maxNSamples_groups/dr_sub;
+           
+            % path to binary file for WC data
+            file_binary=cell(1,numel(maxNSamples_groups));
+            fileID=-ones(1,numel(maxNSamples_groups));
+            
+            for uig=1:numel(ping_group_start)
+                file_binary{uig} = fullfile(wc_dir,sprintf('WC_SBP_SampleAmplitudes_%.0f_%.0f.dat',ping_group_start(uig),ping_group_end(uig)));
+                if ~exist(file_binary{uig},'file') || fData.dr_sub~=dr_sub || fData.db_sub~=db_sub
+                    fileID(uig) = fopen(file_binary{uig},'w+');
+                    % if we're not here, it means the file already exists and
+                    % already contain the data at the proper sampling. So we
+                    % just need to store the metadata and link to it as
+                    % memmapfile.
+                end
+            end
+            
             % initialize data per transmit sector and ping
             fData.WC_TP_TiltAngle            = nan(maxNTransmitSectors,nPings);
             fData.WC_TP_CenterFrequency      = nan(maxNTransmitSectors,nPings);
@@ -808,32 +833,23 @@ for iF = 1:nStruct
             fData.WC_BP_BeamNumber             = nan(maxNBeams_sub,nPings);
             fData.WC_BP_SystemSerialNumber     = nan(maxNBeams_sub,nPings);
             
-            % path to binary file for WC data
-            file_binary = fullfile(wc_dir,'WC_SBP_SampleAmplitudes.dat');
-            
-            % if file does not exist or we're re-sampling it, create a new
-            % one ready for writing
-            if ~exist(file_binary,'file') || fData.dr_sub~=dr_sub || fData.db_sub~=db_sub
-                fileID = fopen(file_binary,'w+');
-            else
-                % if we're here, it means the file already exists and
-                % already contain the data at the proper sampling. So we
-                % just need to store the metadata and link to it as
-                % memmapfile.
-                fileID = -1;
-            end
-            
+
+            ig=1;
             % now get data for each ping
+%             fp=figure();
+%             ax=axes(fp);
             for iP = 1:nPings
                 
                 % ping number (ex: 50455)
                 pingCounter = fData.WC_1P_PingCounter(1,iP);
-                
+                if pingCounter>ping_group_end(ig)
+                    ig=ig+1;
+                end
                 % initialize the water column data matrix for that ping.
                 % Original data are in "int8" format, the NaN equivalent
                 % will be -128
-                if fileID >= 0
-                    SB_temp = zeros(maxNSamples_sub,maxNBeams_sub,'int8') - 128;
+                if fileID(ig) >= 0
+                    SB_temp = zeros(maxNSamples_groups(ig),maxNBeams_sub,'int8') - 128;
                 end
                 
                 % intialize number of sectors and beams recorded so far for
@@ -905,7 +921,7 @@ for iF = 1:nStruct
                         fData.WC_BP_SystemSerialNumber(iBeamDest,iP)     = headSSN;
                         
                         % now getting watercolumn data (beams x samples)
-                        if fileID >= 0
+                        if fileID(ig) >= 0
                             
                             for iB = 1:nBeam
                                 
@@ -939,20 +955,29 @@ for iF = 1:nStruct
                 end
                 
                 % store data on binary file
-                if fileID >= 0
-                    fwrite(fileID,SB_temp,'int8');
+                if fileID(ig) >= 0
+                    fwrite(fileID(ig),SB_temp,'int8');
+%                     imagesc(ax,SB_temp);
+%                     drawnow;
                 end
                 
             end
             
-            % close binary data file
-            if fileID >= 0
-                fclose(fileID);
-            end
+            fData.WC_n_start=ping_group_start+1;
+            fData.WC_n_end=ping_group_end+1;
+            fData.WC_n_maxNSamples=maxNSamples_groups;
             
-            % and link to it through memmapfile
-            % remember data is in int8 format
-            fData.WC_SBP_SampleAmplitudes = memmapfile(file_binary,'Format',{'int8' [maxNSamples_sub maxNBeams_sub nPings] 'val'},'repeat',1,'writable',true);
+            % close binary data file
+            fData.WC_SBP_SampleAmplitudes=cell(1,numel(fileID));
+            for ig =1:numel(fileID)
+                if fileID(ig) >= 0
+                    fclose(fileID(ig));
+                end
+                % and link to it through memmapfile
+                % remember data is in int8 format
+
+                fData.WC_SBP_SampleAmplitudes{ig} = memmapfile(file_binary{ig},'Format',{'int8' [maxNSamples_groups(ig) maxNBeams_sub fData.WC_n_end(ig)-fData.WC_n_start(ig)+1] 'val'},'repeat',1,'writable',true);
+            end
             
             % save info about data format for later access and conversion
             % to dB
@@ -1014,6 +1039,7 @@ for iF = 1:nStruct
             fData.AP_BP_DetectedRangeInSamples = zeros(maxNBeams_sub,nPings);
             fData.AP_BP_TransmitSectorNumber   = nan(maxNBeams_sub,nPings);
             fData.AP_BP_BeamNumber             = nan(maxNBeams_sub,nPings);
+            
             
             % path to binary file for WC data
             file_amp_binary   = fullfile(wc_dir,'AP_SBP_SampleAmplitudes.dat');

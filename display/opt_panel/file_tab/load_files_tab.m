@@ -346,9 +346,18 @@ for nF = 1:numel(files_to_convert)
     % subsampling factors:
     dr_sub = 1; % none for now
     db_sub = 1; % none for now
+    ver='0.0';
+    
+    if isfile(mat_fdata_file)
+        fData = load(mat_fdata_file);
+        if isfield(fData,'MET_Fmt_version')
+            %added a version for fData
+            ver=fData.MET_Fmt_version;
+        end  
+    end
     
     % conversion and saving on the disk
-    if ~exist(mat_fdata_file,'file') || reconvert
+    if ~isfile(mat_fdata_file) || reconvert || ~strcmpi(ver,CFF_get_current_fData_version)
         
         switch f_ext
             case {'.all' '.wcd'}
@@ -387,6 +396,11 @@ for nF = 1:numel(files_to_convert)
         
         % load existing file
         fData = load(mat_fdata_file);
+        if ~isfield(fData,'MET_Fmt_version')
+            %added a version for fData
+            fData.MET_Fmt_version='0.0';
+        end
+        
         textprogressbar(75);
         switch f_ext
             case {'.all' '.wcd'}
@@ -504,38 +518,9 @@ for nF = 1:numel(files_to_load)
     end
     
     % checking path to water-column data binary file
-    if isfield(fData_temp,'WC_SBP_SampleAmplitudes')
-        [filepath_in_fData,name,ext] = fileparts(fData_temp.WC_SBP_SampleAmplitudes.Filename);
-        if ~strcmp(filepath_in_fData,folder_for_converted_data)
-            fData_temp.WC_SBP_SampleAmplitudes.Filename = fullfile(folder_for_converted_data,[name ext]);
-            dirchange_flag = 1;
-        end
-    end
-    
-    if isfield(fData_temp,'AP_SBP_SampleAmplitudes')
-        [filepath_in_fData,name,ext] = fileparts(fData_temp.AP_SBP_SampleAmplitudes.Filename);
-        if ~strcmp(filepath_in_fData,folder_for_converted_data)
-            fData_temp.AP_SBP_SampleAmplitudes.Filename = fullfile(folder_for_converted_data,[name ext]);
-            dirchange_flag = 1;
-        end
-    end
-    
-    if isfield(fData_temp,'AP_SBP_SamplePhase')
-        [filepath_in_fData,name,ext] = fileparts(fData_temp.AP_SBP_SamplePhase.Filename);
-        if ~strcmp(filepath_in_fData,folder_for_converted_data)
-            fData_temp.AP_SBP_SamplePhase.Filename = fullfile(folder_for_converted_data,[name ext]);
-            dirchange_flag = 1;
-        end
-    end
-    
-    % checking path to processed water-column data binary file
-    if isfield(fData_temp,'X_SBP_WaterColumnProcessed')
-        [filepath_in_fData,name,ext] = fileparts(fData_temp.X_SBP_WaterColumnProcessed.Filename);
-        if ~strcmp(filepath_in_fData,folder_for_converted_data)
-            fData_temp.X_SBP_WaterColumnProcessed.Filename = fullfile(folder_for_converted_data,[name ext]);
-            dirchange_flag = 1;
-        end
-    end
+
+    fields={'WC_SBP_SampleAmplitudes' 'AP_SBP_SampleAmplitudes' 'AP_SBP_SamplePhase' 'X_SBP_WaterColumnProcessed'};
+    [fData_temp.dirchange_flag]=CFF_check_memmap_location(fData_temp,fields,folder_for_converted_data);
     
     % saving on disk if changes have been made
     if dirchange_flag

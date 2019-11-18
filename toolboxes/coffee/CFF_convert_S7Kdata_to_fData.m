@@ -25,6 +25,8 @@ db_sub = p.Results.db_sub;
 fData = p.Results.fData;
 clear p;
 
+
+
 %% pre-processing
 
 if ~iscell(S7KdataGroup)
@@ -52,6 +54,11 @@ else
     
     update_mode = 1;
     
+end
+
+if ~isfield(fData,'MET_Fmt_version')
+    %added a version for fData
+    fData.MET_Fmt_version=CFF_get_current_fData_version();
 end
 
 % initialize update_flag
@@ -263,8 +270,9 @@ for iF = 1:nStruct
                 fData.WC_BP_StartRangeSampleNumber = nan(maxNBeams,nPings);
                 fData.WC_BP_NumberOfSamples        = nan(maxNBeams,nPings);
                 fData.WC_BP_DetectedRangeInSamples = zeros(maxNBeams,nPings);
-                fData.WC_BP_TransmitSectorNumber   = nan(maxNBeams,nPings);
+                fData.WC_BP_TransmitSectorNumber   = ones(maxNBeams,nPings);
                 fData.WC_BP_BeamNumber             = nan(maxNBeams,nPings);
+                
                 
                 % path to binary file for WC data
                 file_amp_binary   = fullfile(wc_dir,'WC_SBP_SampleAmplitudes.dat');
@@ -361,32 +369,45 @@ for iF = 1:nStruct
                 fData.AP_BP_TransmitSectorNumber   = nan(maxNBeams,nPings);
                 fData.AP_BP_BeamNumber             = nan(maxNBeams,nPings);
                 
+                [maxNSamples_groups,ping_group_start,ping_group_end]=CFF_group_pings_per_samples(S7Kdata.R7042_CompressedWaterColumn.NumberOfSamples,pingNumber,pingNumber);
+
+                
                 % path to binary file for WC data
-                file_amp_binary   = fullfile(wc_dir,'AP_SBP_SampleAmplitudes.dat');
-                file_phase_binary = fullfile(wc_dir,'AP_SBP_SamplePhase.dat');
+                file_amp_binary=cell(1,numel(maxNSamples_groups));
+                file_phase_binary=cell(1,numel(maxNSamples_groups));
+                file_amp_id=-ones(1,numel(maxNSamples_groups));
+                file_phase_id=-ones(1,numel(maxNSamples_groups));
                 
-                % if file does not exist or we're re-sampling it, create a new
-                % one ready for writing
-                if exist(file_amp_binary,'file')==0
-                    file_amp_id = fopen(file_amp_binary,'w+');
-                else
-                    % if we're here, it means the file already exists and
-                    % already contain the data at the proper sampling. So we
-                    % just need to store the metadata and link to it as
-                    % memmapfile.
-                    file_amp_id = -1;
+                for uig=1:numel(ping_group_start)
+                    file_amp_binary{uig} = fullfile(wc_dir,sprintf('AP_SBP_SampleAmplitudes_%.0f_%.0f.dat',ping_group_start(uig),ping_group_end(uig)));
+                    file_phase_binary{uig} = fullfile(wc_dir,sprintf('AP_SBP_SamplePhase_%.0f_%.0f.dat',ping_group_start(uig),ping_group_end(uig)));
+                    % if file does not exist or we're re-sampling it, create a new
+                    % one ready for writing
+                    if exist(file_amp_binary{uig},'file')==0
+                        file_amp_id(uig) = fopen(file_amp_binary{uig},'w+');
+                    else
+                        % if we're here, it means the file already exists and
+                        % already contain the data at the proper sampling. So we
+                        % just need to store the metadata and link to it as
+                        % memmapfile.
+                        file_amp_id(uig) = -1;
+                    end
+                    
+                    % repeat for phase file
+                    if exist(file_phase_binary{uig},'file')==0
+                        file_phase_id(uig) = fopen(file_phase_binary{uig},'w+');
+                    else
+                        file_phase_id(uig) = -1;
+                    end
                 end
                 
-                % repeat for phase file
-                if exist(file_phase_binary,'file')==0
-                    file_phase_id = fopen(file_phase_binary,'w+');
-                else
-                    file_phase_id = -1;
-                end
-                
-                
+                ig=1;
                 % now get data for each ping
                 for iP = 1:nPings
+                    
+                    if iP>ping_group_end(ig)
+                        ig=ig+1;
+                    end
                     
                     % find datagrams composing this ping
                     %pingCounter = fData.AP_1P_PingCounter(1,iP); % ping number (ex: 50455)
@@ -414,10 +435,10 @@ for iF = 1:nStruct
                     if file_amp_id >= 0 || file_phase_id >= 0
                         
                         if flags.magnitudeOnly
-                            Mag_tmp=ones(maxNSamples,maxNBeams,mag_fmt)*eval([mag_fmt '(-inf)']);
+                            Mag_tmp=ones(maxNSamples_groups(ig),maxNBeams,mag_fmt)*eval([mag_fmt '(-inf)']);
                         else
-                            Mag_tmp=ones(maxNSamples,maxNBeams,mag_fmt)*eval([mag_fmt '(-inf)']);
-                            Ph_tmp=zeros(maxNSamples,maxNBeams,phase_fmt);
+                            Mag_tmp=ones(maxNSamples_groups(ig),maxNBeams,mag_fmt)*eval([mag_fmt '(-inf)']);
+                            Ph_tmp=zeros(maxNSamples_groups(ig),maxNBeams,phase_fmt);
                         end
                         start_sample=S7Kdata.R7042_CompressedWaterColumn.FirstSample(iP)+1;
                         Ns=S7Kdata.R7042_CompressedWaterColumn.NumberOfSamples{iP};
@@ -460,13 +481,13 @@ for iF = 1:nStruct
                         end
                         Mag_tmp(Mag_tmp==eval([mag_fmt '(-inf)']))=eval([mag_fmt '(-inf)']);
                         % store amp data on binary file
-                        if file_amp_id >= 0
-                            fwrite(file_amp_id,Mag_tmp,mag_fmt);
+                        if file_amp_id(ig) >= 0
+                            fwrite(file_amp_id(ig),Mag_tmp,mag_fmt);
                         end
                         
                         % store phase data on binary file
-                        if file_phase_id>=0
-                            fwrite(file_phase_id,Ph_tmp,phase_fmt);
+                        if file_phase_id(ig)>=0
+                            fwrite(file_phase_id(ig),Ph_tmp,phase_fmt);
                         end
                         
                         if 0
@@ -482,19 +503,25 @@ for iF = 1:nStruct
                     
                 end
                 
-                % close binary data file
-                if file_amp_id >= 0
-                    fclose(file_amp_id);
+                fData.AP_SBP_SampleAmplitudes=cell(1,numel(maxNSamples_groups));
+                fData.AP_SBP_SamplePhase=cell(1,numel(maxNSamples_groups));
+                fData.AP_n_start=ping_group_start;
+                fData.AP_n_end=ping_group_end;
+                fData.AP_n_maxNSamples=maxNSamples_groups;
+                for ig=1:numel(maxNSamples_groups)
+                    % close binary data file
+                    if file_amp_id(ig) >= 0
+                        fclose(file_amp_id(ig));
+                    end
+                    
+                    % close binary data file
+                    if file_phase_id(ig) >= 0
+                        fclose(file_phase_id(ig));
+                    end
+                    
+                    fData.AP_SBP_SampleAmplitudes{ig} = memmapfile(file_amp_binary{ig},'Format',{mag_fmt [maxNSamples_groups(ig) maxNBeams nPings] 'val'},'repeat',1,'writable',true);
+                    fData.AP_SBP_SamplePhase{ig}      = memmapfile(file_phase_binary{ig},'Format',{phase_fmt [maxNSamples_groups(ig) maxNBeams nPings] 'val'},'repeat',1,'writable',true);
                 end
-                
-                % close binary data file
-                if file_phase_id >= 0
-                    fclose(file_phase_id);
-                end
-                
-                fData.AP_SBP_SampleAmplitudes = memmapfile(file_amp_binary,'Format',{mag_fmt [maxNSamples maxNBeams nPings] 'val'},'repeat',1,'writable',true);
-                fData.AP_SBP_SamplePhase      = memmapfile(file_phase_binary,'Format',{phase_fmt [maxNSamples maxNBeams nPings] 'val'},'repeat',1,'writable',true);
-                
                 % save info about data format for later access
                 fData.AP_1_SampleAmplitudes_Class  = mag_fmt;
                 fData.AP_1_SampleAmplitudes_Nanval = eval([mag_fmt '(-inf)']);
