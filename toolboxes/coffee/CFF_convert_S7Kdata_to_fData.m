@@ -36,10 +36,8 @@ end
 % number of individual S7Kdata structures in input S7KdataGroup
 nStruct = length(S7KdataGroup);
 
-% initialize fData if one not given in input
 if isempty(fData)
     
-    update_mode = 0;
     
     % initialize FABC structure by writing in the raw data filenames to be
     % added here
@@ -47,18 +45,25 @@ if isempty(fData)
     for iF = 1:nStruct
         fData.ALLfilename{iF} = S7KdataGroup{iF}.S7Kfilename;
     end
+    
     % add the decimation factors given here in input
     fData.dr_sub = dr_sub;
     fData.db_sub = db_sub;
-else
-    
-    update_mode = 1;
     
 end
 
-if ~isfield(fData,'MET_Fmt_version')
+
+if ~isfield(fData,'MET_Fmt_version')&&~isempty(fData)
     %added a version for fData
-    fData.MET_Fmt_version=CFF_get_current_fData_version();
+    fData.MET_Fmt_version='0.0';
+end
+
+if ~strcmpi(ver,CFF_get_current_fData_version)
+    f_reconvert = 1;
+    update_mode = 0;
+else
+    f_reconvert = 0;
+    update_mode = 1;
 end
 
 % initialize update_flag
@@ -99,7 +104,7 @@ for iF = 1:nStruct
     %% S7K_Height
     
     % only convert these datagrams if this type doesn't already exist in output
-    if ~isfield(fData,'He_1D_Date')
+    if f_reconvert || ~isfield(fData,'He_1D_Date')
         if update_mode
             update_flag = 1;
         end
@@ -118,7 +123,7 @@ for iF = 1:nStruct
     
     
     %% S7K_Position
-    if ~isfield(fData,'Po_1D_Date')
+    if f_reconvert || ~isfield(fData,'Po_1D_Date')
         
         if update_mode
             update_flag = 1;
@@ -182,7 +187,7 @@ for iF = 1:nStruct
         if isfield(S7Kdata,'R7027_RAWdetection') %%%%TODO
             
             % only convert these datagrams if this type doesn't already exist in output
-            if ~isfield(fData,'X8_1P_Date')
+            if f_reconvert || ~isfield(fData,'X8_1P_Date')
                 
                 if update_mode
                     update_flag = 1;
@@ -234,7 +239,7 @@ for iF = 1:nStruct
         %% R7018_7kBeamformedData TODO
         
         if isfield(S7Kdata,'R7018_7kBeamformedData')
-            if ~isfield(fData,'WC_1P_Date')
+            if f_reconvert || ~isfield(fData,'WC_1P_Date')
                 if update_mode
                     update_flag = 1;
                 end
@@ -323,12 +328,13 @@ for iF = 1:nStruct
             end
         end
         
+        
         %% R7042_CompressedWaterColumn
         
         if isfield(S7Kdata,'R7042_CompressedWaterColumn')
             
             % only convert these datagrams if this type doesn't already exist in output
-            if ~isfield(fData,'AP_1P_Date')
+            if f_reconvert || ~isfield(fData,'AP_1P_Date')
                 
                 if update_mode
                     update_flag = 1;
@@ -370,7 +376,7 @@ for iF = 1:nStruct
                 fData.AP_BP_BeamNumber             = nan(maxNBeams,nPings);
                 
                 [maxNSamples_groups,ping_group_start,ping_group_end]=CFF_group_pings_per_samples(S7Kdata.R7042_CompressedWaterColumn.NumberOfSamples,pingNumber,pingNumber);
-
+                
                 
                 % path to binary file for WC data
                 file_amp_binary=cell(1,numel(maxNSamples_groups));
@@ -432,7 +438,7 @@ for iF = 1:nStruct
                     
                     
                     % now getting watercolumn data (beams x samples)
-                    if file_amp_id >= 0 || file_phase_id >= 0
+                    if file_amp_id(ig) >= 0 || file_phase_id(ig) >= 0
                         
                         if flags.magnitudeOnly
                             Mag_tmp=ones(maxNSamples_groups(ig),maxNBeams,mag_fmt)*eval([mag_fmt '(-inf)']);
@@ -447,38 +453,37 @@ for iF = 1:nStruct
                             DataSamples_tmp=int8(fread(fid_all,Ns(jj)*sample_size,'int8'));
                             
                             if flags.magnitudeOnly
-                                if flags.int32BitsData && ~flags.int8BitCompression
-                                    % F) 32 bit Mag (32 bits total, no phase)
-                                    Mag_tmp((start_sample:start_sample+Ns(jj)-1),jj)=pow2db(typecast(DataSamples_tmp,mag_fmt));
-                                elseif ~flags.int32BitsData && flags.int8BitCompression
-                                    % D) 8 bit Mag (8 bits total, no phase)
-                                    Mag_tmp((start_sample:start_sample+Ns(jj)-1),jj)=DataSamples_tmp;
-                                elseif ~flags.int32BitsData && ~flags.int8BitCompression
-                                    % B) 16 bit Mag (16 bits total, no phase)
-                                    Mag_tmp((start_sample:start_sample+Ns(jj)-1),jj)=typecast(DataSamples_tmp,mag_fmt);
-                                else
-                                    warning('WC compression flag issue');
+                                switch mag_fmt
+                                    case 'float32'
+                                        Mag_tmp((start_sample:start_sample+Ns(jj)-1),jj)=pow2db(typecast(DataSamples_tmp,mag_fmt));
+                                    case 'int8'
+                                        Mag_tmp((start_sample:start_sample+Ns(jj)-1),jj)=typecast(DataSamples_tmp,mag_fmt);
+                                        
+                                    case 'int16'
+                                        Mag_tmp((start_sample:start_sample+Ns(jj)-1),jj)=typecast(DataSamples_tmp,mag_fmt);
+                                    otherwise
+                                        warning('WC compression flag issue');
                                 end
                             else
-                                if ~flags.int32BitsData && flags.int8BitCompression
-                                    % C) 8 bit Mag & 8 bit Phase (16 bits total)
-                                    
-                                    Ph_tmp((start_sample:start_sample+Ns(jj)-1),jj)=DataSamples_tmp(2:2:end,:);
-                                    Mag_tmp((start_sample:start_sample+Ns(jj)-1),jj)=DataSamples_tmp(1:2:end,:)-128;
-                                elseif ~flags.int32BitsData && ~flags.int8BitCompression
-                                    % A) 16 bit Mag & 16bit Phase (32 bits total)
-                                    idx_tot=rem(1:numel(DataSamples_tmp),4);
-                                    idx_phase=idx_tot==1|idx_tot==2;
-                                    idx_mag=idx_tot==3|idx_tot==0;
-                                    
-                                    Ph_tmp((start_sample:start_sample+Ns(jj)-1),jj)=pow2db(typecast(DataSamples_tmp(idx_mag,:),mag_fmt));
-                                    Mag_tmp((start_sample:start_sample+Ns(jj)-1),jj)=typecast(DataSamples_tmp(idx_phase,:),phase_fmt);
-                                else
-                                    warning('WC flag combination non taken into account');
+                                switch mag_fmt
+                                    case 'int8'
+                                        Ph_tmp((start_sample:start_sample+Ns(jj)-1),jj)=typecast(DataSamples_tmp(2:2:end,:),phase_fmt);
+                                        Mag_tmp((start_sample:start_sample+Ns(jj)-1),jj)=typecast(DataSamples_tmp(1:2:end,:),mag_fmt);
+                                    case 'int16'
+                                        idx_tot=rem(1:numel(DataSamples_tmp),4);
+                                        idx_phase=idx_tot==1|idx_tot==2;
+                                        idx_mag=idx_tot==3|idx_tot==0;
+                                        
+                                        Ph_tmp((start_sample:start_sample+Ns(jj)-1),jj)=typecast(DataSamples_tmp(idx_mag,:),phase_fmt);
+                                        Mag_tmp((start_sample:start_sample+Ns(jj)-1),jj)=typecast(DataSamples_tmp(idx_phase,:),mag_fmt);
+                                    otherwise
+                                        warning('WC compression flag issue');
                                 end
+                                
                             end
                             
                         end
+                        
                         Mag_tmp(Mag_tmp==eval([mag_fmt '(-inf)']))=eval([mag_fmt '(-inf)']);
                         % store amp data on binary file
                         if file_amp_id(ig) >= 0
@@ -493,14 +498,27 @@ for iF = 1:nStruct
                         if 0
                             f = figure();
                             ax_mag = axes(f,'outerposition',[0 0.5 1 0.5]);
-                            imagesc(ax_mag,Mag_tmp);
+                            %imagesc(ax_mag,pow2db(double(Mag_tmp)/double(intmax('int16'))));
+                            imagesc(ax_mag,double(Mag_tmp));
                             ax_phase = axes(f,'outerposition',[0 0 1 0.5]);
                             imagesc(ax_phase,Ph_tmp);
+                            drawnow;
                         end
                         
                         
                     end
                     
+                end
+                
+                switch mag_fmt
+                    case 'int8'
+                        Mag_tmp=Mag_tmp-128;
+                        mag_fact=1;
+                        phase_fact=360/256;
+                    case 'int16'
+                        mag_fact=10;
+                        Mag_tmp=int16(pow2db(double(Mag_tmp)/double(intmax('int16'))))*10;
+                        phase_fact=360/double(intmax('int16'));
                 end
                 
                 fData.AP_SBP_SampleAmplitudes=cell(1,numel(maxNSamples_groups));
@@ -525,10 +543,10 @@ for iF = 1:nStruct
                 % save info about data format for later access
                 fData.AP_1_SampleAmplitudes_Class  = mag_fmt;
                 fData.AP_1_SampleAmplitudes_Nanval = eval([mag_fmt '(-inf)']);
-                fData.AP_1_SampleAmplitudes_Factor = 1;
+                fData.AP_1_SampleAmplitudes_Factor = mag_fact;
                 fData.AP_1_SamplePhase_Class  = phase_fmt;
                 fData.AP_1_SamplePhase_Nanval = 200;
-                fData.AP_1_SamplePhase_Factor = 180/128;
+                fData.AP_1_SamplePhase_Factor = phase_fact;
                 
             end
             

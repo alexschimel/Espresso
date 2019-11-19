@@ -33,6 +33,7 @@ flags.magnitudeOnly = bin2dec(flag_bin(32-1));
 flags.int8BitCompression = bin2dec(flag_bin(32-2));
 
 % Bit 3 : Reserved.
+flags.Reserved = bin2dec(flag_bin(32-3));
 
 % Bit 4-7 : Downsampling divisor. Value = (BITS >> 4). Only
 % values 2-16 are valid. This field is ignored if downsampling
@@ -78,7 +79,6 @@ if flags.magnitudeOnly
         % more information about data format...
         warning('%s: WC compression flag issue',fieldname);
     end
-    phase_fmt = '';
 else
     if ~flags.int32BitsData && flags.int8BitCompression
         % C) 8 bit Mag & 8 bit Phase (16 bits total)
@@ -94,6 +94,9 @@ else
         % Again, if both flags.int32BitsData and
         % flags.int8BitCompression are = 1, I don't know what the
         % result would be.
+        % sample_size = 3;
+        % phase_fmt = 'int8';
+        % mag_fmt = 'int16';
         
         % There is another weird case: if flags.int32BitsData=1 and
         % flags.int8BitCompression=0, I would assume it would 32
@@ -104,7 +107,9 @@ else
         % would screw the code as we read the data in bytes,
         % aka multiples of 8 bits. We would need to modify the
         % code to work per bit if we ever had such a case.
-        
+%         sample_size = 5;
+%         phase_fmt = 'int8';
+%         mag_fmt = 'int32';
         % Anyway, throw error if you ever get here and look for
         % more information about data format...
         

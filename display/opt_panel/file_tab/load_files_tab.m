@@ -349,7 +349,7 @@ for nF = 1:numel(files_to_convert)
         case '.s7k'
             
             wc_d=7042;
-            %dg={'R1015_Navigation' 'R1003_Position' 'R7042_CompressedWaterColumn' 'R7000_SonarSettings' 'R7001_7kConfiguration' 'R7004_7kBeamGeometry' 'R7027_RAWdetection'};
+            %dg={'R1015_Navigation' 'R1003_Position' 'R7042_CompressedWaterColumn' 'R7018' 'R7000_SonarSettings' 'R7001_7kConfiguration' 'R7004_7kBeamGeometry' 'R7027_RAWdetection'};
             dg_wc = [1015 1003 7042 7018 7000 7001 7004 7027];
             
             [RESONdata,datags_parsed_idx] = CFF_read_s7k(file_to_convert,dg_wc);
