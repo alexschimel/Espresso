@@ -78,15 +78,62 @@
 %% Function
 function listenCax(src,~,main_figure)
 
+% exit if no data loaded
+fData_tot = getappdata(main_figure,'fData');
+
+if isempty(fData_tot)
+    return;
+end
+
+% get disp config
 disp_config = getappdata(main_figure,'disp_config');
+
+IDs = cellfun(@(c) c.ID,fData_tot);
+
+if ~ismember(disp_config.Fdata_ID , IDs)
+    disp_config.Fdata_ID = IDs(1);
+    disp_config.Iping = 1;
+    return;
+end
+cax = disp_config.get_cax();
 
 switch src.Name
     
-    case {'Cax_wc_int' 'Cax_bathy' 'Cax_bs'}'
-        % colour axis for map (whether variable shown is integrated water
-        % column, bathmyetry, or backscatter.
-        
-        update_map_tab(main_figure,0,0,0,[]);
+    case {'Cax_wc_int' 'Cax_bathy' 'Cax_bs'}
+        for ui=1:numel(fData_tot)
+            fData_tot_tmp=fData_tot{ui};
+            map_tab_comp = getappdata(main_figure,'Map_tab');
+            ax = map_tab_comp.map_axes;
+            % colour axis for map (whether variable shown is integrated water
+            % column, bathmyetry, or backscatter.
+            %% Processed water column grid
+            tag_id_wc = num2str(fData_tot_tmp.ID,'%.0f_wc');
+            obj_wc = findobj(ax,'Tag',tag_id_wc);
+            
+            
+            % grid transparency
+            data = get(obj_wc,'CData');
+
+            switch disp_config.Var_disp
+                case 'wc_int'
+                    if iscell(data)
+                        for ic=1:numel(data)
+                            set(obj_wc,'alphadata',data{ic} > cax(1));
+                        end
+                    else
+                        set(obj_wc,'alphadata',data > cax(1));
+                    end
+                case {'bathy' 'bs'}
+                    if iscell(data)
+                        for ic=1:numel(data)
+                            set(obj_wc,'alphadata',~isnan(data{ic}));
+                        end
+                    else
+                        set(obj_wc,'alphadata',~isnan(data));
+                    end
+            end
+        end
+        caxis(ax,cax);
         
     case 'Cax_wc'
         % colour axis for WC view and stacked view

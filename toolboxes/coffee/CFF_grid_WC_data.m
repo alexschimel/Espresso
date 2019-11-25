@@ -99,6 +99,10 @@ addParameter(p,'grdlim_maxdist',inf,@isnumeric);
 addParameter(p,'grdlim_east',[],@isnumeric);
 addParameter(p,'grdlim_north',[],@isnumeric);
 
+% grid other things...
+addParameter(p,'grid_bs',false,@islogical);
+addParameter(p,'grid_bathy',false,@islogical);
+
 % parse
 parse(p,varargin{:})
 
@@ -121,7 +125,7 @@ if isfield(fData,'X_SBP_WaterColumnProcessed')
     field_to_grid = 'X_SBP_WaterColumnProcessed';
 elseif isfield(fData,'WC_SBP_SampleAmplitudes')
     field_to_grid = 'WC_SBP_SampleAmplitudes';
-else 
+else
     field_to_grid = 'AP_SBP_SampleAmplitudes';
 end
 
@@ -231,6 +235,8 @@ switch grid_type
         gridMaxHorizDist =   nan(numElemGridN,numElemGridE,numElemGridH,'single');
 end
 
+
+
 % if GPU is avaialble for computation, setup for it
 gpu_comp = get_gpu_comp_stat();
 if gpu_comp > 0
@@ -242,11 +248,9 @@ end
 
 %% if gridding is in height above bottom, prepare the interpolant
 % needed to calculate height above seafloor for each sample
-if strcmp(grdlim_var,'height above bottom')
-    idx_val = ~isnan(fData.X_BP_bottomHeight) & ~isinf(fData.X_BP_bottomHeight);
-    HeightInterpolant = scatteredInterpolant(fData.X_BP_bottomEasting(idx_val),fData.X_BP_bottomNorthing(idx_val),fData.X_BP_bottomHeight(idx_val));
-    clear idx_val
-end
+idx_val = ~isnan(fData.X_BP_bottomHeight) & ~isinf(fData.X_BP_bottomHeight);
+HeightInterpolant = scatteredInterpolant(fData.X_BP_bottomNorthing(idx_val),fData.X_BP_bottomEasting(idx_val),fData.X_BP_bottomHeight(idx_val),'natural','none');
+
 
 
 %% fill the grids with block processing
@@ -337,8 +341,8 @@ for iB = 1:nBlocks
         case 'height above bottom'
             
             % Apply interpolant to get height above seafloor for each
-            % sample 
-            block_bottomHeight = HeightInterpolant(blockE,blockN);
+            % sample
+            block_bottomHeight = HeightInterpolant(blockN,blockE);
             block_sampleHeightAboveSeafloor = blockH - block_bottomHeight;
             
             switch grdlim_mode
@@ -405,16 +409,18 @@ for iB = 1:nBlocks
             
             % we use the accumarray function to sum all values in both the
             % total weight grid, and the weighted sum grid. Prepare the
-            % common values here  
+            % common values here
             subs    = single([N_idx' E_idx']); % indices in the temp grid of each data point
             sz      = single([N_N N_E]);       % size of ouptut
             clear N_idx E_idx
             
             % sum of weights per grid cell, and sum of weighted levels per
-            % grid cell 
+            % grid cell
             gridTotalWeight_forBlock = accumarray(subs,blockW',sz,@sum,single(0));
             gridWeightedSum_forBlock = accumarray(subs,blockW'.*blockL',sz,@sum,single(0));
-            clear blockL blockW 
+            
+            
+            clear blockL blockW
             
             % maximum horiz distance from nadir per grid cell
             gridMaxHorizDist_forBlock = accumarray(subs,blockD',sz,@max,single(NaN));
@@ -446,7 +452,7 @@ for iB = 1:nBlocks
             
             % we use the accumarray function to sum all values in both the
             % total weight grid, and the weighted sum grid. Prepare the
-            % common values here  
+            % common values here
             subs    = single([N_idx' E_idx' H_idx']); % indices in the temp grid of each data point
             sz      = single([N_N N_E N_H]);          % size of ouptut
             clear N_idx E_idx H_idx
@@ -454,7 +460,7 @@ for iB = 1:nBlocks
             % sum of weights per grid cell, and sum of weighted levels per grid cell
             gridTotalWeight_forBlock = accumarray(subs,blockW',sz,@sum,single(0));
             gridWeightedSum_forBlock = accumarray(subs,blockW'.*blockL',sz,@sum,single(0));
-            clear blockL blockW 
+            clear blockL blockW
             
             % maximum horiz distance from nadir per grid cell
             gridMaxHorizDist_forBlock = accumarray(subs,blockD',sz,@max,single(NaN));
@@ -462,7 +468,7 @@ for iB = 1:nBlocks
             
             % Add the block's small grid of weights sum to the full one,
             % and the block's small grid of sum of weighted levels to the
-            % full one 
+            % full one
             gridTotalWeight(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1,idx_H_start:idx_H_start+N_H-1) = ...
                 gridTotalWeight(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1,idx_H_start:idx_H_start+N_H-1) + gridTotalWeight_forBlock;
             gridWeightedSum(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1,idx_H_start:idx_H_start+N_H-1) = ...
@@ -550,6 +556,20 @@ if gpu_comp > 0
     gridTotalWeight  = gather(gridTotalWeight);
     gridMaxHorizDist = gather(gridMaxHorizDist);
 end
+
+[N,E] = ndgrid(gridNorthing,gridEasting);
+fData.X_NE_bathy = HeightInterpolant(N,E);
+
+if isfield(fData,'X8_BP_ReflectivityBS')
+    BSinterpolant = scatteredInterpolant(fData.X_BP_bottomNorthing(idx_val),fData.X_BP_bottomEasting(idx_val),fData.X8_BP_ReflectivityBS(idx_val),'natural','none');
+    fData.X_NE_bs = BSinterpolant(N,E);
+else
+    fData.X_NE_bs=nan(size(gridLevel));
+end
+
+ff=filter2(ones(5,5),nansum(gridTotalWeight,3));
+fData.X_NE_bs(ff==0)=nan;
+fData.X_NE_bathy(ff==0)=nan;
 
 %% saving results:
 

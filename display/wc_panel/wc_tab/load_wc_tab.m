@@ -195,6 +195,8 @@ function change_wc_disp_cback(~,~,main_figure)
 
 update_wc_tab(main_figure);
 update_stacked_wc_tab(main_figure);
+src.Name='Cax_wc';
+listenCax(src,[],main_figure);
 
 end
 

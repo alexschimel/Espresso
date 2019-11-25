@@ -84,9 +84,10 @@ loaded_files = get_loaded_files(main_figure);
 path_ori = get(file_tab_comp.path_box,'string');
 [folders,raw_filenames,converted] = CFF_list_files_in_dir(path_ori);
 nb_files = numel(folders);
+[~,raw_filenames_t,~] = cellfun(@fileparts,raw_filenames,'UniformOutput',0);
 
 % which of the raw files are loaded
-loaded = ismember(raw_filenames,loaded_filenames);
+loaded = ismember(raw_filenames_t,loaded_filenames);
 
 % prep new_entry array
 new_entry = cell(nb_files,2);

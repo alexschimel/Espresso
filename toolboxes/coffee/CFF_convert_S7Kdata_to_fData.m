@@ -234,6 +234,25 @@ for iF = 1:nStruct
             end
             
         end
+        %% R7000_SonarSettings TODO
+        
+        if isfield(S7Kdata,'R7000_SonarSettings')
+            if f_reconvert || ~isfield(fData,'Ru_1D_Date')
+                
+                if update_mode
+                    update_flag = 1;
+                end
+                
+                fData.Ru_1D_Date                            = S7Kdata.R7000_SonarSettings.Date;
+                fData.Ru_1D_TimeSinceMidnightInMilliseconds = S7Kdata.R7000_SonarSettings.TimeSinceMidnightInMilliseconds;
+                fData.Ru_1D_PingCounter                     = S7Kdata.R7000_SonarSettings.PingNumber;
+                % the rest to code... XXX
+                fData.Ru_1D_TransmitPowerReMaximum          = pow2db(S7Kdata.R7000_SonarSettings.PowerSelection);
+                fData.Ru_1D_ReceiveBeamwidth                = S7Kdata.R7000_SonarSettings.ReceiveBeamWidthRad/pi*180;
+                % the rest to code... XXX
+                
+            end
+        end
         
         
         %% R7018_7kBeamformedData TODO
@@ -409,6 +428,12 @@ for iF = 1:nStruct
                 
                 ig=1;
                 % now get data for each ping
+                disp_wc=0;
+                if disp_wc
+                    f = figure();
+                    ax_mag = axes(f,'outerposition',[0 0.5 1 0.5]);
+                    ax_phase = axes(f,'outerposition',[0 0 1 0.5]);
+                end
                 for iP = 1:nPings
                     
                     if iP>ping_group_end(ig)
@@ -436,6 +461,20 @@ for iF = 1:nStruct
                     fData.AP_BP_TransmitSectorNumber(iBeam,iP)   = 1;
                     fData.AP_BP_BeamNumber(iBeam,iP)             = S7Kdata.R7004_7kBeamGeometry.N(iP);
                     
+                    switch phase_fmt
+                        case 'int8'
+                            phase_fact=360/256;
+                        case 'int16'
+                            phase_fact=180/pi/10430;
+                    end
+                    
+                    switch mag_fmt
+                        case 'int8'
+                            mag_fact=1;
+                        case 'uint16'
+                            mag_fact=1/200;
+                    end
+                
                     
                     % now getting watercolumn data (beams x samples)
                     if file_amp_id(ig) >= 0 || file_phase_id(ig) >= 0
@@ -449,33 +488,40 @@ for iF = 1:nStruct
                         start_sample=S7Kdata.R7042_CompressedWaterColumn.FirstSample(iP)+1;
                         Ns=S7Kdata.R7042_CompressedWaterColumn.NumberOfSamples{iP};
                         for jj=1:S7Kdata.R7004_7kBeamGeometry.N(iP)
-                            fseek(fid_all,S7Kdata.R7042_CompressedWaterColumn.SampleStartPositionInFile{iP}(jj),'bof');
+                            pos=ftell(fid_all);
+                            fseek(fid_all,S7Kdata.R7042_CompressedWaterColumn.SampleStartPositionInFile{iP}(jj)-pos,'cof');
                             DataSamples_tmp=int8(fread(fid_all,Ns(jj)*sample_size,'int8'));
                             
                             if flags.magnitudeOnly
                                 switch mag_fmt
                                     case 'float32'
-                                        Mag_tmp((start_sample:start_sample+Ns(jj)-1),jj)=pow2db(typecast(DataSamples_tmp,mag_fmt));
+                                        Mag_tmp((start_sample:start_sample+Ns(jj)-1),jj)=20*log10(typecast(DataSamples_tmp,mag_fmt));
                                     case 'int8'
-                                        Mag_tmp((start_sample:start_sample+Ns(jj)-1),jj)=typecast(DataSamples_tmp,mag_fmt);
-                                        
-                                    case 'int16'
-                                        Mag_tmp((start_sample:start_sample+Ns(jj)-1),jj)=typecast(DataSamples_tmp,mag_fmt);
+                                        Mag_tmp((start_sample:start_sample+Ns(jj)-1),jj)=typecast(DataSamples_tmp,mag_fmt);   
+                                    case 'uint16'
+                                        Mag_tmp((start_sample:start_sample+Ns(jj)-1),jj)=DataSamples_tmp;
                                     otherwise
                                         warning('WC compression flag issue');
                                 end
                             else
-                                switch mag_fmt
-                                    case 'int8'
-                                        Ph_tmp((start_sample:start_sample+Ns(jj)-1),jj)=typecast(DataSamples_tmp(2:2:end,:),phase_fmt);
-                                        Mag_tmp((start_sample:start_sample+Ns(jj)-1),jj)=typecast(DataSamples_tmp(1:2:end,:),mag_fmt);
+                                switch phase_fmt
+                                    case'int8'
+                                        Ph_tmp((start_sample:start_sample+Ns(jj)-1),jj)=DataSamples_tmp(2:2:end,:);
                                     case 'int16'
                                         idx_tot=rem(1:numel(DataSamples_tmp),4);
-                                        idx_phase=idx_tot==1|idx_tot==2;
-                                        idx_mag=idx_tot==3|idx_tot==0;
-                                        
-                                        Ph_tmp((start_sample:start_sample+Ns(jj)-1),jj)=typecast(DataSamples_tmp(idx_mag,:),phase_fmt);
-                                        Mag_tmp((start_sample:start_sample+Ns(jj)-1),jj)=typecast(DataSamples_tmp(idx_phase,:),mag_fmt);
+                                        idx_phase=idx_tot==3|idx_tot==0;
+                                        Ph_tmp((start_sample:start_sample+Ns(jj)-1),jj)=typecast(DataSamples_tmp(idx_phase,:),phase_fmt);
+                                    otherwise
+                                        warning('WC compression flag issue');
+                                end
+                                
+                                switch mag_fmt
+                                    case 'int8'
+                                        Mag_tmp((start_sample:start_sample+Ns(jj)-1),jj)=DataSamples_tmp(1:2:end,:);
+                                    case 'uint16'
+                                        idx_tot=rem(1:numel(DataSamples_tmp),4);
+                                        idx_mag=idx_tot==1|idx_tot==2; 
+                                        Mag_tmp((start_sample:start_sample+Ns(jj)-1),jj)=typecast(DataSamples_tmp(idx_mag,:),mag_fmt);
                                     otherwise
                                         warning('WC compression flag issue');
                                 end
@@ -484,8 +530,35 @@ for iF = 1:nStruct
                             
                         end
                         
-                        Mag_tmp(Mag_tmp==eval([mag_fmt '(-inf)']))=eval([mag_fmt '(-inf)']);
+                        
+                        if disp_wc
+                            switch mag_fmt
+                                case 'int8'
+                                    imagesc(ax_mag,double(Mag_tmp)-128);
+                                case 'uint16'
+                                    imagesc(20*log10(double(Mag_tmp)/double(intmax('int16'))));
+                            end
+                            caxis(ax_mag,[-100 -20]);
+
+                            imagesc(ax_phase,Ph_tmp*phase_fact);
+                            drawnow;
+                        end
+                        
+                        
                         % store amp data on binary file
+                        switch mag_fmt
+                            case 'int8'
+                                Mag_tmp=(double(Mag_tmp)-128);
+                            case 'uint16'
+                                idx0=Mag_tmp==0;                              
+                                Mag_tmp=(20*log10(double(Mag_tmp)/double(intmax('uint16')))/mag_fact);
+                                Mag_tmp(idx0)=-inf;
+                                mag_fmt='int16';
+                        end
+                        
+                        
+
+                        
                         if file_amp_id(ig) >= 0
                             fwrite(file_amp_id(ig),Mag_tmp,mag_fmt);
                         end
@@ -495,32 +568,14 @@ for iF = 1:nStruct
                             fwrite(file_phase_id(ig),Ph_tmp,phase_fmt);
                         end
                         
-                        if 0
-                            f = figure();
-                            ax_mag = axes(f,'outerposition',[0 0.5 1 0.5]);
-                            %imagesc(ax_mag,pow2db(double(Mag_tmp)/double(intmax('int16'))));
-                            imagesc(ax_mag,double(Mag_tmp));
-                            ax_phase = axes(f,'outerposition',[0 0 1 0.5]);
-                            imagesc(ax_phase,Ph_tmp);
-                            drawnow;
-                        end
+
                         
                         
                     end
                     
                 end
                 
-                switch mag_fmt
-                    case 'int8'
-                        Mag_tmp=Mag_tmp-128;
-                        mag_fact=1;
-                        phase_fact=360/256;
-                    case 'int16'
-                        mag_fact=10;
-                        Mag_tmp=int16(pow2db(double(Mag_tmp)/double(intmax('int16'))))*10;
-                        phase_fact=360/double(intmax('int16'));
-                end
-                
+
                 fData.AP_SBP_SampleAmplitudes=cell(1,numel(maxNSamples_groups));
                 fData.AP_SBP_SamplePhase=cell(1,numel(maxNSamples_groups));
                 fData.AP_n_start=ping_group_start;
@@ -537,8 +592,8 @@ for iF = 1:nStruct
                         fclose(file_phase_id(ig));
                     end
                     
-                    fData.AP_SBP_SampleAmplitudes{ig} = memmapfile(file_amp_binary{ig},'Format',{mag_fmt [maxNSamples_groups(ig) maxNBeams nPings] 'val'},'repeat',1,'writable',true);
-                    fData.AP_SBP_SamplePhase{ig}      = memmapfile(file_phase_binary{ig},'Format',{phase_fmt [maxNSamples_groups(ig) maxNBeams nPings] 'val'},'repeat',1,'writable',true);
+                    fData.AP_SBP_SampleAmplitudes{ig} = memmapfile(file_amp_binary{ig},'Format',{mag_fmt [maxNSamples_groups(ig) maxNBeams fData.AP_n_end(ig)-fData.AP_n_start(ig)+1] 'val'},'repeat',1,'writable',true);
+                    fData.AP_SBP_SamplePhase{ig}      = memmapfile(file_phase_binary{ig},'Format',{phase_fmt [maxNSamples_groups(ig) maxNBeams fData.AP_n_end(ig)-fData.AP_n_start(ig)+1] 'val'},'repeat',1,'writable',true);
                 end
                 % save info about data format for later access
                 fData.AP_1_SampleAmplitudes_Class  = mag_fmt;

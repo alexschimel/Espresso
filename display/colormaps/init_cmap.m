@@ -79,7 +79,7 @@
 function [cmap,col_ax,col_lab,col_grid,col_bot,col_txt] = init_cmap(cmap_name)
 
 switch lower(cmap_name)
-    case {'parula' 'jet' 'hsv' 'winter' 'autumn' 'spring' 'hot' 'cool'}
+    case {'parula' 'jet' 'hsv' 'winter' 'autumn' 'spring' 'hot' 'cool' 'gray'}
         cmap = colormap(cmap_name);
         col_ax = 'w';
         col_lab = 'k';

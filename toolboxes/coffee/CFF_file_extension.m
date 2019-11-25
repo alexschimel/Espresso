@@ -35,3 +35,6 @@
 function ext = CFF_file_extension(filename)
 
 [~,~,ext] = fileparts(filename);
+if strcmpi(ext,'.db')
+    ext='';
+end

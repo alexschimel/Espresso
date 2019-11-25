@@ -438,7 +438,7 @@ end
                 dp=2;
                 ipings=(disp_config.Iping-dp):(disp_config.Iping+dp);
                 ipings=ipings+sum(ipings<1);
-                ipings=ipings-sum(ipings>numel(fData.WC_1P_PingCounter));
+                ipings=ipings-sum(ipings>numel(fData.X_1P_pingE));
                 poly=polyshape(...
                 [fData.X_BP_bottomEasting(i_beam_min,ipings(1)) fData.X_BP_bottomEasting(i_beam_max,ipings(1)) fData.X_BP_bottomEasting(i_beam_max,ipings(end)) fData.X_BP_bottomEasting(i_beam_min,ipings(end))],...
                 [fData.X_BP_bottomNorthing(i_beam_min,ipings(1)) fData.X_BP_bottomNorthing(i_beam_max,ipings(1)) fData.X_BP_bottomNorthing(i_beam_max,ipings(end)) fData.X_BP_bottomNorthing(i_beam_min,ipings(end))]);

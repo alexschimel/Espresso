@@ -7,10 +7,12 @@ for ifi=1:numel(fields)
             fData_temp.(fields{ifi})={fData_temp.(fields{ifi})};
         end
         for ic=1:numel(fData_temp.(fields{ifi}))
-            [filepath_in_fData,name,ext] = fileparts(fData_temp.(fields{ifi}){ic}.Filename);
-            if ~strcmp(filepath_in_fData,folder_for_converted_data)
-                fData_temp.(fields{ifi}){ic}.Filename = fullfile(folder_for_converted_data,[name ext]);
-                dirchange_flag=1;
+            if ~isempty(fData_temp.(fields{ifi}){ic})
+                [filepath_in_fData,name,ext] = fileparts(fData_temp.(fields{ifi}){ic}.Filename);
+                if ~strcmp(filepath_in_fData,folder_for_converted_data)
+                    fData_temp.(fields{ifi}){ic}.Filename = fullfile(folder_for_converted_data,[name ext]);
+                    dirchange_flag=1;
+                end
             end
         end
     end

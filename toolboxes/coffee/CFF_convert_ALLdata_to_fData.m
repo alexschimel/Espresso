@@ -1169,7 +1169,7 @@ for iF = 1:nStruct
             fData.AP_1_SampleAmplitudes_Nanval = int16(-inf);
             fData.AP_1_SampleAmplitudes_Factor = 1/40;
             fData.AP_1_SamplePhase_Class  = 'int16';
-            fData.AP_1_SamplePhase_Nanval = 0;
+            fData.AP_1_SamplePhase_Nanval = 200;
             fData.AP_1_SamplePhase_Factor = 1/30;
  
         end

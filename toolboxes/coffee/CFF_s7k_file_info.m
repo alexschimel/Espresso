@@ -163,7 +163,7 @@ list_recordTypeText = {...
     }; 
 
 % identifiers
-list_recordTypeIdentifier = cellfun(@(x) str2num(x(1:4)), list_recordTypeText);
+list_recordTypeIdentifier = cellfun(@(x) str2double(x(1:4)), list_recordTypeText);
 
 
 %% Open file and initializing
@@ -338,7 +338,7 @@ while pif_nextrecordstart < filesize
     S7Kfileinfo.syncCounter(kk,1) = syncCounter;
     
     % record time info
-    S7Kfileinfo.date{kk,1} = datestr(datenum(num2str(sevenKTime_year),'yyyy') + sevenKTime_day,'yyyymmdd');
+    S7Kfileinfo.date{kk,1}=datenum(sevenKTime_year,0, sevenKTime_day);
     S7Kfileinfo.timeSinceMidnightInMilliseconds(kk,1) = (sevenKTime_hours.*3600 + sevenKTime_minutes.*60 + sevenKTime_seconds).*1000;
     
     
@@ -351,6 +351,8 @@ while pif_nextrecordstart < filesize
     fseek(fid, pif_nextrecordstart, -1);
     
 end
+
+S7Kfileinfo.date=cellfun(@(x) datestr(x,'yyyymmdd'),S7Kfileinfo.date,'un',0);
 
 % initialize parsing field
 S7Kfileinfo.parsed = zeros(size(S7Kfileinfo.recordNumberInFile));

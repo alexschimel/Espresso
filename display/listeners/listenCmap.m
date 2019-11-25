@@ -83,8 +83,15 @@ disp_config = getappdata(main_figure,'disp_config');
 
 map_tab_comp = getappdata(main_figure,'Map_tab');
 wc_tab_comp = getappdata(main_figure,'wc_tab');
+stacked_wc_tab_comp  = getappdata(main_figure,'stacked_wc_tab');
 
-colormap(map_tab_comp.map_axes,cmap);
-colormap(wc_tab_comp.wc_axes,cmap);
+switch disp_config.Var_disp
+    case 'wc_int'
+        colormap(map_tab_comp.map_axes,cmap);
+        colormap(wc_tab_comp.wc_axes,cmap);
+        colormap(stacked_wc_tab_comp.wc_axes,cmap);
+    otherwise
+        colormap(map_tab_comp.map_axes,cmap);
+end
 
 end

@@ -70,7 +70,7 @@ if flags.magnitudeOnly
     elseif ~flags.int32BitsData && ~flags.int8BitCompression
         % B) 16 bit Mag (16 bits total, no phase)
         sample_size = 2;
-        mag_fmt = 'int16';
+        mag_fmt = 'uint16';
     else
         % if both flags.int32BitsData and flags.int8BitCompression are
         % =1, then I am not quite sure how it would work given
@@ -89,7 +89,7 @@ else
         % A) 16 bit Mag & 16bit Phase (32 bits total)
         sample_size = 4;
         phase_fmt = 'int16';
-        mag_fmt = 'int16';
+        mag_fmt = 'uint16';
     else
         % Again, if both flags.int32BitsData and
         % flags.int8BitCompression are = 1, I don't know what the

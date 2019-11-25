@@ -136,6 +136,9 @@ switch str_disp
     case 'Phase'
         amp = CFF_get_WC_data(fData,sprintf('%s_SBP_SamplePhase',datagramSource),'iPing',ip);
         idx_keep = amp ~= 0;
+        caxis(wc_tab_comp.wc_axes,[-180 180]);
+        stacked_wc_tab_comp = getappdata(main_figure,'stacked_wc_tab');
+        caxis(stacked_wc_tab_comp.wc_axes,[-180 180]);
 end
 
 % get distances across and upwards for all samples
@@ -173,12 +176,11 @@ set(wc_tab_comp.ac_gh,...
     'XData',[across_dist across_dist],...
     'YData',get(wc_tab_comp.wc_axes,'YLim'));
 
-disp_config.Cax_wc = disp_config.Cax_wc;
 
 %% set Fdata_ID
 fname = fData.ALLfilename{1};
 [~,fnamet,~] = fileparts(fname);
-tt = sprintf('File: %s. Ping: %.0f/%.0f. Time: %s.',fnamet,ip,numel(fData.(sprintf('%s_1P_PingCounter',datagramSource))),datestr(fData.X_1P_pingSDN(ip),'HH:MM:SS'));
+tt = sprintf('File: %s.\n Ping: %.0f/%.0f. Time: %s.',fnamet,ip,numel(fData.(sprintf('%s_1P_PingCounter',datagramSource))),datestr(fData.X_1P_pingSDN(ip),'HH:MM:SS'));
 wc_tab_comp.wc_axes.Title.String = tt;
 
 

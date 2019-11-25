@@ -12,7 +12,7 @@
 % cell arrays of string filenames.
 %
 % *INPUT VARIABLES*
-% 
+%
 % * |files_full|: Required. Description (Information). XXX
 %
 % *OUTPUT VARIABLES*
@@ -44,14 +44,19 @@ if ischar(files_full)
 end
 
 % get file's path and filename
-[filepath,name,~]  = cellfun(@fileparts,files_full,'UniformOutput',0);
+[filepath,name,ext]  = cellfun(@fileparts,files_full,'UniformOutput',0);
+ext(~strcmpi(ext,'.db'))='';
 
 % coffee folder
 coffee_dir = 'Coffee_files';
 coffee_dir = repmat({coffee_dir},size(files_full));
 
 % putting everything together
-wc_dir = cellfun(@fullfile,filepath,coffee_dir,name,'UniformOutput',0);
+if ~isempty(ext)
+    wc_dir = cellfun(@fullfile,filepath,coffee_dir,cellfun(@(x,y) [x y],name,ext,'un',0),'UniformOutput',0);
+else
+    wc_dir = cellfun(@fullfile,filepath,coffee_dir,name,'UniformOutput',0);
+end
 
 if numel(wc_dir) == 1
     wc_dir = cell2mat(wc_dir);

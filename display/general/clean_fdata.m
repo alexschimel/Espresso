@@ -113,11 +113,15 @@ for i = 1:numel(fData)
 end
 
 dname = unique(dname);
-
+fclose all;
 for id=1:numel(dname)
+    [folder,~,~]=fileparts(dname{id});
+    if isfile(fullfile(folder,'fdata.mat'))
+       delete(fullfile(folder,'fdata.mat'));
+    end
     if isfile(dname{id})
         try
-            fprintf('Deleting file %s\n',dname{id});
+            fprintf('\nDeleting file %s\n',dname{id});
             delete(dname{id});
         catch
             fprintf('ERROR while deleting file %s\n',dname{id});

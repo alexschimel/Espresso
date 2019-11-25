@@ -223,6 +223,9 @@ wc_proc_tab_comp.clim_max = uicontrol(wc_proc_tab_comp.wc_proc_tab,'style','edit
     'position',[0.51 0.1 0.1 0.05],...
     'Callback',{@change_cax_cback,main_figure});
 
+
+
+
 % swath display colour scale
 cax = disp_config.Cax_wc;
 
@@ -242,6 +245,18 @@ wc_proc_tab_comp.clim_max_wc = uicontrol(wc_proc_tab_comp.wc_proc_tab,'style','e
     'Callback',{@change_wc_cax_cback,main_figure});
 
 
+uicontrol(wc_proc_tab_comp.wc_proc_tab,'style','text','String','Map display:',...
+    'BackgroundColor','White',...
+    'units','normalized',...
+    'position',[0.70 0.1 0.25 0.05]);
+wc_proc_tab_comp.var_disp = uicontrol(wc_proc_tab_comp.wc_proc_tab,'style','popupmenu','String',{'Echo Integration' 'Bathy' 'BS'},...
+    'BackgroundColor','White',...
+    'units','normalized',...
+    'position',[0.70 0.05 0.25 0.05],...
+    'Callback',{@change_var_disp_cback,main_figure});
+
+
+
 setappdata(main_figure,'wc_proc_tab',wc_proc_tab_comp);
 
 end
@@ -253,6 +268,21 @@ end
 %%
 % Callback when pressing bottom-filter button
 %
+
+function change_var_disp_cback(src,~,main_figure)
+% get current cax_wc in disp_config
+disp_config = getappdata(main_figure,'disp_config');
+switch src.String{src.Value}
+    case 'Echo Integration'
+        disp_config.Var_disp='wc_int';
+    case 'Bathy'
+        disp_config.Var_disp='bathy';
+    case 'BS'
+        disp_config.Var_disp='bs';
+end
+
+end
+
 function filter_bottom_cback(~,~,main_figure)
 
 fData_tot = getappdata(main_figure,'fData');
@@ -285,18 +315,18 @@ u = 0;
 % general timer
 timer_start = now;
 
-for i = idx_fData(:)'
+for itt = idx_fData(:)'
     
     u = u+1;
     tic
     % disp
-    fprintf('Filtering bottom in file "%s" (%i/%i)...\n',fData_tot{i}.ALLfilename{1},u,numel(idx_fData));
+    fprintf('Filtering bottom in file "%s" (%i/%i)...\n',fData_tot{itt}.ALLfilename{1},u,numel(idx_fData));
     fprintf('...Started at %s...\n',datestr(now));
     tic
     
     
     % filtering bottom
-    fData_tot{i} = CFF_filter_WC_bottom_detect(fData_tot{i},...
+    fData_tot{itt} = CFF_filter_WC_bottom_detect(fData_tot{itt},...
         'method',botfilter.method,...
         'pingBeamWindowSize',botfilter.pingBeamWindowSize,...
         'maxHorizDist',botfilter.maxHorizDist,...
@@ -310,7 +340,7 @@ end
 
 % general timer
 timer_end = now;
-fprintf('Total time for processing: %f seconds (~%.2f minutes).\n',(timer_end-timer_start)*24*60*60,(timer_end-timer_start)*24*60);
+fprintf('\nTotal time for processing: %f seconds (~%.2f minutes).\n',(timer_end-timer_start)*24*60*60,(timer_end-timer_start)*24*60);
 
 setappdata(main_figure,'fData',fData_tot);
 
@@ -361,26 +391,26 @@ u = 0;
 timer_start = now;
 
 % processing per file
-for i = idx_fData(:)'
+for itt = idx_fData(:)'
     
     u = u+1;
     
     % disp
-    fprintf('Processing file "%s" (%i/%i)...\n',fData_tot{i}.ALLfilename{1},u,numel(idx_fData));
-    textprogressbar(sprintf('...Started at %s. Progress: ',datestr(now)));
+    fprintf('Processing file "%s" (%i/%i)...\n',fData_tot{itt}.ALLfilename{1},u,numel(idx_fData));
+    textprogressbar(sprintf('...Started at %s. Progress:',datestr(now)));
     textprogressbar(0);
     tic
     
     % original data filename and format info
-    wc_dir = CFF_converted_data_folder(fData_tot{i}.ALLfilename{1});
+    wc_dir = CFF_converted_data_folder(fData_tot{itt}.ALLfilename{1});
     
-    dg_source = fData_tot{i}.MET_datagramSource;
+    dg_source = fData_tot{itt}.MET_datagramSource;
     
-    [nSamples, nBeams, nPings] = cellfun(@(x) size(x.Data.val),fData_tot{i}.(sprintf('%s_SBP_SampleAmplitudes',dg_source)));
+    [nSamples, nBeams, nPings] = cellfun(@(x) size(x.Data.val),fData_tot{itt}.(sprintf('%s_SBP_SampleAmplitudes',dg_source)));
     
-    wcdata_class  = fData_tot{i}.(sprintf('%s_1_SampleAmplitudes_Class',fData_tot{i}.MET_datagramSource)); % int8 or int16
-    wcdata_factor = fData_tot{i}.(sprintf('%s_1_SampleAmplitudes_Factor',fData_tot{i}.MET_datagramSource));
-    wcdata_nanval = fData_tot{i}.(sprintf('%s_1_SampleAmplitudes_Nanval',fData_tot{i}.MET_datagramSource));
+    wcdata_class  = fData_tot{itt}.(sprintf('%s_1_SampleAmplitudes_Class',fData_tot{itt}.MET_datagramSource)); % int8 or int16
+    wcdata_factor = fData_tot{itt}.(sprintf('%s_1_SampleAmplitudes_Factor',fData_tot{itt}.MET_datagramSource));
+    wcdata_nanval = fData_tot{itt}.(sprintf('%s_1_SampleAmplitudes_Nanval',fData_tot{itt}.MET_datagramSource));
     
     % processed data filename
     
@@ -389,14 +419,15 @@ for i = idx_fData(:)'
     
     fid=-ones(1,numel(nSamples));
     
-    if isfield(fData_tot{i},'X_SBP_WaterColumnProcessed')
-        for uig=1:numel(fData_tot{i}.X_SBP_WaterColumnProcessed)
-            fData_tot{i}.X_SBP_WaterColumnProcessed{uig}=[];
+    if isfield(fData_tot{itt},'X_SBP_WaterColumnProcessed')
+        for uig=1:numel(fData_tot{itt}.X_SBP_WaterColumnProcessed)
+            fData_tot{itt}.X_SBP_WaterColumnProcessed{uig}=[];
         end
-        fData_tot{i} = rmfield(fData_tot{i},'X_SBP_WaterColumnProcessed');
+        
+        fData_tot{itt} = rmfield(fData_tot{itt},'X_SBP_WaterColumnProcessed');
     end
-    ping_gr_start=fData_tot{i}.(sprintf('%s_n_start',dg_source));
-    ping_gr_end=fData_tot{i}.(sprintf('%s_n_end',dg_source));
+    ping_gr_start=fData_tot{itt}.(sprintf('%s_n_start',dg_source));
+    ping_gr_end=fData_tot{itt}.(sprintf('%s_n_end',dg_source));
     for uig=1:numel(ping_gr_start)
         file_X_SBP_WaterColumnRaw{uig} = fullfile(wc_dir,sprintf('%s_SBP_SampleAmplitudes_%.0f_%.0f.dat',dg_source,...
             ping_gr_start(uig),ping_gr_end(uig)));
@@ -404,9 +435,6 @@ for i = idx_fData(:)'
         file_X_SBP_WaterColumnProcessed{uig} = fullfile(wc_dir,sprintf('X_SBP_WaterColumnProcessed_%.0f_%.0f.dat',...
             ping_gr_start(uig),ping_gr_end(uig)));
         
-        if exist(file_X_SBP_WaterColumnProcessed{uig},'file')
-            delete(file_X_SBP_WaterColumnProcessed{uig});
-        end
     end
     
     
@@ -432,12 +460,12 @@ for i = idx_fData(:)'
         
         % memmap if possible
         if isfile(file_X_SBP_WaterColumnProcessed{ig}) && ...
-                isfield(fData_tot{i},'X_SBP_WaterColumnProcessed') && ...
-                all(fData_tot{i}.X_SBP_WaterColumnProcessed{ig}.Format{2}==[nSamples(ig),nBeams(ig),nPings(ig)]) && ...
-                strcmp(fData_tot{i}.X_1_WaterColumnProcessed_Class,wcdataproc_class) && ...
-                fData_tot{i}.X_1_WaterColumnProcessed_Factor == wcdataproc_factor && ...
-                (isnan(fData_tot{i}.X_1_WaterColumnProcessed_Nanval) || ...
-                fData_tot{i}.X_1_WaterColumnProcessed_Nanval == wcdataproc_nanval)
+                isfield(fData_tot{itt},'X_SBP_WaterColumnProcessed') && ...
+                all(fData_tot{itt}.X_SBP_WaterColumnProcessed{ig}.Format{2}==[nSamples(ig),nBeams(ig),nPings(ig)]) && ...
+                strcmp(fData_tot{itt}.X_1_WaterColumnProcessed_Class,wcdataproc_class) && ...
+                fData_tot{itt}.X_1_WaterColumnProcessed_Factor == wcdataproc_factor && ...
+                (isnan(fData_tot{itt}.X_1_WaterColumnProcessed_Nanval) || ...
+                fData_tot{itt}.X_1_WaterColumnProcessed_Nanval == wcdataproc_nanval)
             
             % Processed data file exists, is memmapped to fData, and the
             % dimensions and format as recorded in fData correspond to what we
@@ -455,17 +483,20 @@ for i = idx_fData(:)'
             
             % Then, re-initialize
             if strcmp(saving_method,'low_precision')
-                
+                if exist(file_X_SBP_WaterColumnProcessed{uig},'file')
+                    delete(file_X_SBP_WaterColumnProcessed{uig});
+                end
                 % copy original data file as processed data file
-                copyfile(file_X_SBP_WaterColumnRaw{ig},file_X_SBP_WaterColumnProcessed{ig});
-                
-                % add to fData as a memmapfile
-                fData_tot{i}.X_SBP_WaterColumnProcessed{ig} = memmapfile(file_X_SBP_WaterColumnProcessed{ig}, 'Format',{wcdataproc_class [nSamples(ig) nBeams(ig) nPings(ig)] 'val'},'repeat',1,'writable',true);
+                if ~isfile(file_X_SBP_WaterColumnProcessed{ig})
+                    copyfile(file_X_SBP_WaterColumnRaw{ig},file_X_SBP_WaterColumnProcessed{ig}); 
+                    % add to fData as a memmapfile
+                    fData_tot{itt}.X_SBP_WaterColumnProcessed{ig} = memmapfile(file_X_SBP_WaterColumnProcessed{ig}, 'Format',{wcdataproc_class [nSamples(ig) nBeams(ig) nPings(ig)] 'val'},'repeat',1,'writable',true);
+                end
                 
                 % and record same info as original
-                fData_tot{i}.X_1_WaterColumnProcessed_Class  = wcdataproc_class;
-                fData_tot{i}.X_1_WaterColumnProcessed_Factor = wcdataproc_factor;
-                fData_tot{i}.X_1_WaterColumnProcessed_Nanval = wcdataproc_nanval;
+                fData_tot{itt}.X_1_WaterColumnProcessed_Class  = wcdataproc_class;
+                fData_tot{itt}.X_1_WaterColumnProcessed_Factor = wcdataproc_factor;
+                fData_tot{itt}.X_1_WaterColumnProcessed_Nanval = wcdataproc_nanval;
                 
                 % ready for data saving through memmap
                 flag_memmap = 1;
@@ -495,39 +526,38 @@ for i = idx_fData(:)'
             blockPings_f  = iPings(blocks(iB,1):blocks(iB,2));
             blockPings  = (blocks(iB,1):blocks(iB,2));
             % grab original data in dB
-            data = CFF_get_WC_data(fData_tot{i},sprintf('%s_SBP_SampleAmplitudes',fData_tot{i}.MET_datagramSource),'iPing',blockPings_f,'iRange',1:nSamples(ig),'output_format','true');
+            data = CFF_get_WC_data(fData_tot{itt},sprintf('%s_SBP_SampleAmplitudes',fData_tot{itt}.MET_datagramSource),'iPing',blockPings_f,'iRange',1:nSamples(ig),'output_format','true');
             
             % radiometric corrections
             % add a radio button to possibly turn this off too? TO DO XXX
-            [data, warning_text] = CFF_WC_radiometric_corrections_CORE(data,fData_tot{i});
+            [data, warning_text] = CFF_WC_radiometric_corrections_CORE(data,fData_tot{itt});
             
             % filtering sidelobe artefact
             if wc_proc_tab_comp.sidelobe.Value
-                [data, correction] = CFF_filter_WC_sidelobe_artifact_CORE(data, fData_tot{i}, blockPings_f);
+                [data, correction] = CFF_filter_WC_sidelobe_artifact_CORE(data, fData_tot{itt}, blockPings_f);
                 % uncomment this for weighted gridding based on sidelobe
                 % correction
-                % fData_tot{i}.X_S1P_sidelobeArtifactCorrection(:,:,blockPings) = correction;
+                % fData_tot{itt}.X_S1P_sidelobeArtifactCorrection(:,:,blockPings) = correction;
             end
             
             % masking data
             if wc_proc_tab_comp.masking.Value
-                data = CFF_mask_WC_data_CORE(data, fData_tot{i}, blockPings_f, mask_angle, mask_closerange, mask_bottomrange, [], mask_ping);
+                data = CFF_mask_WC_data_CORE(data, fData_tot{itt}, blockPings_f, mask_angle, mask_closerange, mask_bottomrange, [], mask_ping);
+            end
+            if wcdataproc_factor ~= 1
+                data = data./wcdataproc_factor;
             end
             
+            if ~isnan(wcdataproc_nanval)
+                data(isnan(data)) = wcdataproc_nanval;
+            end
             % saving
-            if flag_memmap
-                
+            if flag_memmap          
                 % convert result back to raw format and store through memmap
-                if wcdataproc_factor ~= 1
-                    data = data./wcdataproc_factor;
-                end
-                if ~isnan(wcdataproc_nanval)
-                    data(isnan(data)) = wcdataproc_nanval;
-                end
                 if strcmp(class(data),wcdataproc_class)
-                    fData_tot{i}.X_SBP_WaterColumnProcessed{ig}.Data.val(:,:,blockPings) = data;
+                    fData_tot{itt}.X_SBP_WaterColumnProcessed{ig}.Data.val(:,:,blockPings) = data;
                 else
-                    fData_tot{i}.X_SBP_WaterColumnProcessed{ig}.Data.val(:,:,blockPings) = cast(data,wcdataproc_class);
+                    fData_tot{itt}.X_SBP_WaterColumnProcessed{ig}.Data.val(:,:,blockPings) = cast(data,wcdataproc_class);
                 end
                 
             else
@@ -548,21 +578,21 @@ for i = idx_fData(:)'
             fclose(fid(ig));
             
             % add to fData as memmapfile
-            fData_tot{i}.X_SBP_WaterColumnProcessed{ig} = memmapfile(file_X_SBP_WaterColumnProcessed{ig}, 'Format',{wcdataproc_class [nSamples(ig) nBeams(ig) nPings(ig)] 'val'},'repeat',1,'writable',true);
+            fData_tot{itt}.X_SBP_WaterColumnProcessed{ig} = memmapfile(file_X_SBP_WaterColumnProcessed{ig}, 'Format',{wcdataproc_class [nSamples(ig) nBeams(ig) nPings(ig)] 'val'},'repeat',1,'writable',true);
             
             % and record info
-            fData_tot{i}.X_1_WaterColumnProcessed_Class  = wcdataproc_class;
-            fData_tot{i}.X_1_WaterColumnProcessed_Factor = wcdataproc_factor;
-            fData_tot{i}.X_1_WaterColumnProcessed_Nanval = wcdataproc_nanval;
+            fData_tot{itt}.X_1_WaterColumnProcessed_Class  = wcdataproc_class;
+            fData_tot{itt}.X_1_WaterColumnProcessed_Factor = wcdataproc_factor;
+            fData_tot{itt}.X_1_WaterColumnProcessed_Nanval = wcdataproc_nanval;
             
         end
     end
     % get folder for converted data and converted filename
-    folder_for_converted_data = CFF_converted_data_folder(fData_tot{i}.ALLfilename{1});
-    mat_fdata_file = fullfile(folder_for_converted_data,'fdata.mat');
+    folder_for_converted_data = CFF_converted_data_folder(fData_tot{itt}.ALLfilename{1});
+    mat_fdata_file = fullfile(folder_for_converted_data,'fData.mat');
     
     % save
-    fData = fData_tot{i};
+    fData = fData_tot{itt};
     save(mat_fdata_file,'-struct','fData','-v7.3');
     clear fData;
     
@@ -579,7 +609,7 @@ end
 
 % general timer
 timer_end = now;
-fprintf('Total time for processing: %f seconds (~%.2f minutes).\n',(timer_end-timer_start)*24*60*60,(timer_end-timer_start)*24*60);
+fprintf('\nTotal time for processing: %f seconds (~%.2f minutes).\n',(timer_end-timer_start)*24*60*60,(timer_end-timer_start)*24*60);
 
 setappdata(main_figure,'fData',fData_tot);
 
@@ -592,6 +622,17 @@ wc_tab_comp = getappdata(main_figure,'wc_tab');
 wc_tab_strings = wc_tab_comp.data_disp.String;
 [~,idx] = ismember('Processed',wc_tab_strings);
 wc_tab_comp.data_disp.Value = idx;
+
+switch disp_config.StackAngularMode
+    case 'range'
+        ylab='Range(m)';
+    case 'depth'
+        ylab='Depth (m)';
+end
+stacked_wc_tab_comp=getappdata(main_figure,'stacked_wc_tab');
+if ~strcmpi(ylab,stacked_wc_tab_comp.wc_axes.YLabel.String)
+    stacked_wc_tab_comp.wc_axes.YLabel.String=ylab;
+end
 
 update_wc_tab(main_figure);
 update_stacked_wc_tab(main_figure,1); % force the update of stacked view
@@ -681,17 +722,17 @@ u = 0;
 % general timer
 timer_start = now;
 
-for i = idx_fData(:)'
+for itt = idx_fData(:)'
     
     u = u+1;
     
     % disp
-    fprintf('Gridding file "%s" (%i/%i)...\n',fData_tot{i}.ALLfilename{1},u,numel(idx_fData));
+    fprintf('Gridding file "%s" (%i/%i)...\n',fData_tot{itt}.ALLfilename{1},u,numel(idx_fData));
     fprintf('...Started at %s...\n',datestr(now));
     tic
     
     % gridding
-    fData_tot{i} = CFF_grid_WC_data(fData_tot{i},...
+    fData_tot{itt} = CFF_grid_WC_data(fData_tot{itt},...
         'grid_horz_res',grid_horz_res,...
         'grid_vert_res',grid_vert_res,...
         'grid_type',grid_type,...
@@ -706,9 +747,9 @@ for i = idx_fData(:)'
     fprintf('...Done. Elapsed time: %f seconds.\n',toc);
     
     % get folder for converted data
-    folder_for_converted_data = CFF_converted_data_folder(fData_tot{i}.ALLfilename{1});
+    folder_for_converted_data = CFF_converted_data_folder(fData_tot{itt}.ALLfilename{1});
     
-    fData = fData_tot{i};
+    fData = fData_tot{itt};
     
     % converted filename fData
     mat_fdata_file = fullfile(folder_for_converted_data,'fdata.mat');
@@ -719,7 +760,7 @@ end
 
 % general timer
 timer_end = now;
-fprintf('Total time for gridding: %f seconds (~%.2f minutes).\n',(timer_end-timer_start)*24*60*60,(timer_end-timer_start)*24*60);
+fprintf('\nTotal time for gridding: %f seconds (~%.2f minutes).\n',(timer_end-timer_start)*24*60*60,(timer_end-timer_start)*24*60);
 
 setappdata(main_figure,'fData',fData_tot);
 
@@ -788,7 +829,7 @@ cax_wc_min = str2double(wc_proc_tab_comp.clim_min_wc.String);
 cax_wc_max = str2double(wc_proc_tab_comp.clim_max_wc.String);
 
 % if the min is more than max, don't accept change and reset current values
-if cax_wc_min > cax_wc_max
+if cax_wc_min >= cax_wc_max
     wc_proc_tab_comp.clim_min_wc.String = num2str(cax_wc(1));
     wc_proc_tab_comp.clim_max_wc.String = num2str(cax_wc(2));
 else

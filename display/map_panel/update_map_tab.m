@@ -99,9 +99,9 @@ if ~isdeployed()
 end
 
 % up_wc will be 0 if the function finishes before updating all objects (ie.
-% sliding windows etc), so that we not open wc tabs in that case.  
+% sliding windows etc), so that we not open wc tabs in that case.
 up_wc = 0;
-   
+
 % exit if no data loaded
 fData_tot = getappdata(main_figure,'fData');
 
@@ -153,7 +153,8 @@ update_line_index = unique(update_line_index);
 % set of active lines
 fdata_tab_comp = getappdata(main_figure,'fdata_tab');
 idx_active_lines = cell2mat(fdata_tab_comp.table.Data(:,3));
-
+cax=[nan nan];
+update_cax=0;
 for i = update_line_index(:)'
     
     % settings for navigation lines
@@ -168,7 +169,7 @@ for i = update_line_index(:)'
     end
     
     % get data
-    fData = fData_tot{i};    
+    fData = fData_tot{i};
     
     %% Navigation
     tag_id_nav = num2str(fData.ID,'%.0f_nav');
@@ -198,7 +199,7 @@ for i = update_line_index(:)'
         
         % draw circle as start of line
         plot(ax,fData.X_1P_pingE(1),fData.X_1P_pingN(1),'o','Tag',tag_id_nav,'Visible','on','Color',nav_col);
-       
+        
         % draw end of line
         % plot(ax,fData.X_1P_pingE(end),fData.X_1P_pingN(end),'s','Tag',tag_id_nav,'Visible','on','Color',nav_col);
         
@@ -221,68 +222,67 @@ for i = update_line_index(:)'
         delete(obj_wc);
         obj_wc = [];
     end
-
-    if isempty(obj_wc) && isfield(fData,'X_NEH_gridLevel')
+    
+    if isempty(obj_wc) && ...
+            isfield(fData,'X_1E_gridEasting')
         % grid to be drawn for the first time
-        
-        % grab data
+        % get vertical mean whether data is in 2D already or in 3D
         E = fData.X_1E_gridEasting;
         N = fData.X_N1_gridNorthing;
-        L = fData.X_NEH_gridLevel;
         
-        if isa(L,'gpuArray')
-            L = gather(L);
-        end
-        % get vertical mean whether data is in 2D already or in 3D
         switch disp_config.Var_disp
             case 'wc_int'
+                % grab data
+                
+                L = fData.X_NEH_gridLevel;
+                
+                if isa(L,'gpuArray')
+                    L = gather(L);
+                end
                 if size(L,3)>1
                     data = pow2db_perso(nanmean(10.^(L/10),3));
                 else
                     data = L;
                 end
                 
-            % other cases perhaps for later devpt
+                % other cases perhaps for later devpt
             case 'bathy'
-                data = nanmean(L,3);
+                data = fData.X_NE_bathy;
             case 'bs'
-                data = nanmean(L,3);
+                data = fData.X_NE_bs;
+            otherwise
+                data=nan(numel(N),numel(E));
         end
         
+        obj_wc = imagesc(ax,E,N,data,'Visible',wc_vis,'Tag',tag_id_wc);
         % draw grid as imagesc. Tag appropriately
         % NOTE: used to allow clicking on a grid to select a line/ping for
         % display but this conflicts with panning
         % obj_wc = imagesc(ax,E,N,data,'Visible',wc_vis,'Tag',tag_id_wc,'ButtonDownFcn',{@disp_wc_ping_cback,main_figure});
-        obj_wc = imagesc(ax,E,N,data,'Visible',wc_vis,'Tag',tag_id_wc);
+        
+       update_cax=1;
         
     else
         % grid already exists, just make visible if disp is checked
         
         set(obj_wc,'Visible',wc_vis);
-
+        
     end
     
-    % grid transparency
-    data = get(obj_wc,'CData');
-    switch disp_config.Var_disp
-        case 'wc_int'
-            alphadata = data > disp_config.Cax_wc_int(1);
-        case 'bathy'
-            alphadata = ones(size(data));
-        case 'bs'
-            alphadata = ones(size(data));
-    end
-    set(obj_wc,'alphadata',alphadata);
+    
+    
     
     % push grid to the bottom of the display stack so navigation is ontop
     uistack(obj_wc,'bottom');
+    
+    
     
     
     %% Calculate zoom extents
     if idx_active_lines(i)
         
         if isfield(fData,'X_NEH_gridLevel') && ~isempty(fData.X_NEH_gridLevel)
-
+            
             xlim(1) = nanmin(xlim(1),nanmin(fData.X_1E_gridEasting(:)));
             xlim(2) = nanmax(xlim(2),nanmax(fData.X_1E_gridEasting(:)));
             ylim(1) = nanmin(ylim(1),nanmin(fData.X_N1_gridNorthing(:)));
@@ -301,6 +301,32 @@ for i = update_line_index(:)'
     
 end
 
+if update_cax >0
+    switch disp_config.Var_disp
+        case 'wc_int'
+            cax= disp_config.get_cax();
+        case {'bathy' 'bs'}
+            obj_wc_img = findobj(ax,'Type','image');
+            if ~isempty(obj_wc_img)  
+                for uii=1:numel(obj_wc_img)
+                    data=obj_wc_img(uii).CData;
+                    cax= [nanmin(prctile(data(:),5),cax(1)) nanmax(prctile(data(:),95),cax(2))];
+                end
+                
+            end
+    end
+end
+
+if all(~isnan(cax))
+    switch disp_config.Var_disp
+        case 'wc_int'
+            disp_config.Cax_wc_int=cax;
+        case 'bs'
+            disp_config.Cax_bs= cax;
+        case 'bathy'
+            disp_config.Cax_bathy= cax;
+    end
+end
 
 
 %% MOSAICS
@@ -332,7 +358,7 @@ for imosaic = 1:numel(mosaics)
         % set(obj_box,'Position',[mosaic.E_lim(1),mosaic.N_lim(1),diff(mosaic.E_lim),diff(mosaic.N_lim)]);
     end
     
-    % get the mosaic object 
+    % get the mosaic object
     tag_id_mosaic = num2str(mosaic.ID,'%.0f_mosaic');
     obj_mosaic = findobj(ax,'Tag',tag_id_mosaic);
     
@@ -342,7 +368,7 @@ for imosaic = 1:numel(mosaics)
         delete(obj_mosaic);
         obj_mosaic = [];
     end
-   
+    
     % compute X and Y vectors and alphadata
     [numElemGridN,numElemGridE] = size(mosaic.mosaic_level);
     mosaicEasting  = (0:numElemGridE-1) .*mosaic.res + mosaic.E_lim(1);
@@ -357,7 +383,7 @@ for imosaic = 1:numel(mosaics)
         % obj_mosaic = imagesc(ax,mosaicEasting,mosaicNorthing,mosaic.mosaic_level,'Tag',tag_id_mosaic,'alphadata',alphadata,'ButtonDownFcn',{@move_map_cback,main_figure});
         obj_mosaic = imagesc(ax,mosaicEasting,mosaicNorthing,mosaic.mosaic_level,'Tag',tag_id_mosaic,'alphadata',alphadata);
     else
-        % mosaic already exists. 
+        % mosaic already exists.
         set(obj_mosaic,'XData',mosaicEasting,'YData',mosaicNorthing,'CData',mosaic.mosaic_level,'alphadata',alphadata);
     end
     
@@ -373,9 +399,6 @@ for imosaic = 1:numel(mosaics)
     
 end
 
-% set colour axis
-cax = disp_config.get_cax();
-caxis(ax,cax);
 
 %% IF NO LINE IS ACTIVE, STOP HERE
 if ~any(idx_active_lines)
@@ -403,29 +426,37 @@ wc_str = wc_tab_comp.data_disp.String;
 str_disp = wc_str{wc_tab_comp.data_disp.Value};
 usrdata.str_disp = str_disp;
 
-[new_vert,idx_pings,idx_angles] = poly_vertices_from_fData(fData,disp_config,[]);
 
 % if isempty(new_vert)
 %     return;
 % end
+if isfield(map_tab_comp.ping_window.UserData,'idx_pings')
+    idx_pings_ori=map_tab_comp.ping_window.UserData.idx_pings;
+else
+    idx_pings_ori=[];
+end
 
-% save all of these in usrdata for later retrieval in stacked view
-usrdata.idx_pings  = idx_pings;
-usrdata.idx_angles = idx_angles;
-
-% update vertices and tag in sliding window polygon
-map_tab_comp.ping_window.Shape.Vertices = new_vert;
-map_tab_comp.ping_window.Tag = sprintf('%.0f0_pingwindow',fData.ID);
-
-% add usrdata for later retrieval in stacked view
-map_tab_comp.ping_window.UserData = usrdata;
-
-% update xlim and ylim
-xlim(1) = nanmin(xlim(1),nanmin(new_vert(:,1)));
-xlim(2) = nanmax(xlim(2),nanmax(new_vert(:,1)));
-ylim(1) = nanmin(ylim(1),nanmin(new_vert(:,2)));
-ylim(2) = nanmax(ylim(2),nanmax(new_vert(:,2)));
-
+if ~any(ip==idx_pings_ori)
+    [new_vert,idx_pings,idx_angles] = poly_vertices_from_fData(fData,disp_config,[]);
+    
+    
+    % save all of these in usrdata for later retrieval in stacked view
+    usrdata.idx_pings  = idx_pings;
+    usrdata.idx_angles = idx_angles;
+    
+    % update vertices and tag in sliding window polygon
+    map_tab_comp.ping_window.Shape.Vertices = new_vert;
+    map_tab_comp.ping_window.Tag = sprintf('%.0f0_pingwindow',fData.ID);
+    
+    % add usrdata for later retrieval in stacked view
+    map_tab_comp.ping_window.UserData = usrdata;
+    
+    % update xlim and ylim
+    xlim(1) = nanmin(xlim(1),nanmin(new_vert(:,1)));
+    xlim(2) = nanmax(xlim(2),nanmax(new_vert(:,1)));
+    ylim(1) = nanmin(ylim(1),nanmin(new_vert(:,2)));
+    ylim(2) = nanmax(ylim(2),nanmax(new_vert(:,2)));
+end
 
 %% CURRENT PING SWATH LINE
 set(map_tab_comp.ping_swathe,'XData',fData.X_BP_bottomEasting(:,ip),'YData',fData.X_BP_bottomNorthing(:,ip));
@@ -449,7 +480,7 @@ if auto_zoom_extent_flag>0 && all(~isnan(xlim)) && all(~isnan(ylim))
     pos = getpixelposition(ax);
     ratio_window = pos(4)/pos(3);
     
-    ratio_data = diff(ylim)./diff(xlim);
+    ratio_data = diff(ylim)/diff(xlim);
     
     if ratio_data > ratio_window
         % ylim_new = [ylim(1) ylim(2)];
@@ -462,25 +493,25 @@ if auto_zoom_extent_flag>0 && all(~isnan(xlim)) && all(~isnan(ylim))
         dy = diff(xlim)*ratio_window;
         ylim_new = [-dy/2,dy/2] + ylim(1) + diff(ylim)/2;
     end
-
+    
     % set those new values to window
     set(ax,'YLim',ylim_new,'XLim',xlim_new);
-       
+    
 end
 
 
-%% xlabel and ylabel
-ytick = get(ax,'ytick');
-xtick = get(ax,'xtick');
-zone = disp_config.get_zone();
-[lat,~] = utm2ll(xtick,ylim(1)*ones(size(xtick)),zone);
-[~,lon] = utm2ll(xlim(1)*ones(size(ytick)),ytick,zone);
-lon(lon>180) = lon(lon>180)-360;
-fmt = '%.2f';
-[~,x_labels] = cellfun(@(x,y) latlon2str(x,y,fmt),num2cell(lon),num2cell(lon),'un',0);
-[y_labels,~] = cellfun(@(x,y) latlon2str(x,y,fmt),num2cell(lat),num2cell(lat),'un',0);
-set(ax,'yticklabel',y_labels);
-set(ax,'xticklabel',x_labels);
+% %% xlabel and ylabel
+% ytick = get(ax,'ytick');
+% xtick = get(ax,'xtick');
+% zone = disp_config.get_zone();
+% [lat,~] = utm2ll(xtick,ylim(1)*ones(size(xtick)),zone);
+% [~,lon] = utm2ll(xlim(1)*ones(size(ytick)),ytick,zone);
+% lon(lon>180) = lon(lon>180)-360;
+% fmt = '%.2f';
+% [~,x_labels] = cellfun(@(x,y) latlon2str(x,y,fmt),num2cell(lon),num2cell(lon),'un',0);
+% [y_labels,~] = cellfun(@(x,y) latlon2str(x,y,fmt),num2cell(lat),num2cell(lat),'un',0);
+% set(ax,'yticklabel',y_labels);
+% set(ax,'xticklabel',x_labels);
 
 up_wc = 1;
 
@@ -503,7 +534,7 @@ else
 end
 % obj = findobj(ax,'Tag','tooltip');
 % if isempty(obj)
-% 
+%
 %     plot(ax,cp(1,1),cp(1,2),'Marker','o','MarkerEdgeColor','r','MarkerFaceColor','k','MarkerSize',6,'Tag','tooltip');
 % else
 %      set(obj,'XData',cp(1,1),'YData',cp(1,2));

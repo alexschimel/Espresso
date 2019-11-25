@@ -96,7 +96,7 @@ ls = [ls addlistener(disp_config_obj,'Mode',             'PostSet',@(src,envdata
 ls = [ls addlistener(disp_config_obj,'Iping',            'PostSet',@(src,envdata) listenIping(src,envdata,main_figure)        )];
 ls = [ls addlistener(disp_config_obj,'StackPingWidth',   'PostSet',@(src,envdata) listenIping(src,envdata,main_figure)        )];
 ls = [ls addlistener(disp_config_obj,'StackAngularWidth','PostSet',@(src,envdata) listenIping(src,envdata,main_figure)        )];
-ls = [ls addlistener(disp_config_obj,'StackAngularMode','PostSet',@(src,envdata) listenIping(src,envdata,main_figure)        )];
+ls = [ls addlistener(disp_config_obj,'StackAngularMode','PostSet',@(src,envdata)    listenIping(src,envdata,main_figure)        )];
 ls = [ls addlistener(disp_config_obj,'Act_features',     'PostSet',@(src,envdata) listenAct_features(src,envdata,main_figure) )];
 
 % save back into main figure

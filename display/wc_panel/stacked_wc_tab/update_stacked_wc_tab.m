@@ -141,12 +141,6 @@ end
 %% check if stacked view needs to be changed (true) or not (false)
 stacked_wc_tab_comp  = getappdata(main_figure,'stacked_wc_tab');
 
-switch disp_config.StackAngularMode
-    case 'range'
-        ylabel(stacked_wc_tab_comp.wc_axes,'Range (m)');
-    case 'depth'
-        ylabel(stacked_wc_tab_comp.wc_axes,'Depth (m)');
-end
 [iangles,~] = find(idx_angles==0);
 idx_angle_keep = nanmin(iangles):nanmax(iangles);
 
@@ -181,12 +175,12 @@ if up_stacked_wc_bool
     % constant over subsequent pings! For each sample #, calculate mean
     % range of all beams within stack view for the main ping.
     dr_samples = CFF_inter_sample_distance(fData);
-
+    
     %profile on;
     
     disp_type = disp_config.StackAngularMode;
     
-     switch str_disp
+    switch str_disp
         case 'Original'
             dtg_to_load=sprintf('%s_SBP_SampleAmplitudes',datagramSource);
         case 'Processed'
@@ -213,7 +207,7 @@ if up_stacked_wc_bool
     sampleRange = CFF_get_samples_range(idx_r',fData.(sprintf('%s_BP_StartRangeSampleNumber',datagramSource))(idx_angle_keep,ip),dr_samples(ip));
     
     [gpu_comp,g] = get_gpu_comp_stat();
-
+    
     nSamples = numel(idx_r);
     nBeams = numel(idx_angle_keep);
     
@@ -228,7 +222,7 @@ if up_stacked_wc_bool
     nPings = numel(idx_pings);
     nBlocks = ceil(nPings/(blockLength));
     
-   
+    
     
     blocks = [ 1+(0:nBlocks-1)'.*blockLength , (1:nBlocks)'.*blockLength ];
     blocks(end,2) = nPings;
@@ -253,7 +247,7 @@ if up_stacked_wc_bool
                 idx_accum(idx_accum>size(sampleUpDist,1))=size(sampleUpDist,1);
                 idx_pings_mat=shiftdim(blockPings,-1);
                 idx_pings_mat=repmat(idx_pings_mat-blockPings(1)+1,size(idx_accum,1),size(idx_accum,2));
-
+                
                 
                 if gpu_comp>0
                     idx_nan=isnan(wc_data);
@@ -299,7 +293,7 @@ if up_stacked_wc_bool
             
     end
     
-    
+    usrdata.str_disp=str_disp;
     
     % display stacked view itself
     set(stacked_wc_tab_comp.wc_gh,...
@@ -324,7 +318,10 @@ if up_stacked_wc_bool
         'Ylim',ylim_stacked,...
         'Layer','top',...
         'UserData',usrdata);
-    
+    fname = fData.ALLfilename{1};
+    [~,fnamet,~] = fileparts(fname);
+    tt = sprintf('File: %s.',fnamet);
+    stacked_wc_tab_comp.wc_axes.Title.String = tt;
 end
 
 % Current ping vertical line
@@ -335,13 +332,7 @@ set(stacked_wc_tab_comp.ping_gh,...
 
 
 %% set Fdata_ID
-fname = fData.ALLfilename{1};
-[~,fnamet,~] = fileparts(fname);
-tt = sprintf('File: %s. Ping: %.0f/%.0f. Time: %s.',fnamet,ip,numel(fData.(sprintf('%s_1P_PingCounter',datagramSource))),datestr(fData.X_1P_pingSDN(ip),'HH:MM:SS'));
-stacked_wc_tab_comp.wc_axes.Title.String = tt;
 
-% ensure that the line now displayed in WC is selected in the list of
-% files loaded
 
 IDs=cellfun(@(c) c.ID,fData_tot);
 
@@ -353,20 +344,20 @@ if ~ismember(disp_config.Fdata_ID , IDs)
 end
 % Commen to avoid issued with double update.
 % line_idx = find(disp_config.Fdata_ID ==IDs);
-% 
-% 
+%
+%
 % fdata_tab_comp = getappdata(main_figure,'fdata_tab');
 % if ~ismember(line_idx,fdata_tab_comp.selected_idx)
-%     
+%
 %     % select the cell in the table. Unfortunately, findjobj takes a while
 %     % but seems the only solution to select a cell programmatically
 %     jUIScrollPane = findjobj(fdata_tab_comp.table);
 %     jUITable = jUIScrollPane.getViewport.getView;
 %     jUITable.changeSelection(line_idx-1,0, false, false);
-%     
+%
 %     % and update selected_idx
 %     fdata_tab_comp.selected_idx = unique([fdata_tab_comp.selected_idx;line_idx]);
-%     
+%
 %     % and save back
 %     setappdata(main_figure,'fdata_tab',fdata_tab_comp);
 % end

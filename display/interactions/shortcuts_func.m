@@ -125,11 +125,11 @@ try
             
         case {'uparrow'}
             % Use Up/Down arrow to move pings by a set offset
-            disp_config.Iping = nanmin(disp_config.Iping+ceil(disp_config.StackPingWidth/5),nb_pings);
+            disp_config.Iping = nanmin(disp_config.Iping+1,nb_pings);
             
         case {'downarrow'}
             % Use Up/Down arrow to move pings by a set offset
-            disp_config.Iping = nanmax(disp_config.Iping-ceil(disp_config.StackPingWidth/5),1);
+            disp_config.Iping = nanmax(disp_config.Iping-1,1);
             
     end
     
