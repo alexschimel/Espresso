@@ -390,7 +390,7 @@ for nF = 1:numel(files_to_convert)
     end
     
     % add datagram source
-    fData.MET_datagramSource = datagramSource;
+    fData.MET_datagramSource = CFF_get_datagramSource(fData,datagramSource);
     
     % and save
     save(mat_fdata_file,'-struct','fData','-v7.3');
@@ -520,7 +520,7 @@ for nF = 1:numel(files_to_load)
                 fprintf('...This file''s navigation data has already been processed.\n');
                 
                 % save the info in disp_config
-                disp_config.MET_datagramSource = fData_temp.MET_datagramSource;
+                disp_config.MET_datagramSource = CFF_get_datagramSource(fData_temp);
                 disp_config.MET_ellips         = fData_temp.MET_ellips;
                 disp_config.MET_tmproj         = fData_temp.MET_tmproj;
                 
@@ -534,7 +534,7 @@ for nF = 1:numel(files_to_load)
                 fData_temp = CFF_compute_ping_navigation(fData_temp);
                 
                 % save the info in disp_config
-                disp_config.MET_datagramSource = fData_temp.MET_datagramSource;
+                disp_config.MET_datagramSource = CFF_get_datagramSource(fData_temp);
                 disp_config.MET_ellips         = fData_temp.MET_ellips;
                 disp_config.MET_tmproj         = fData_temp.MET_tmproj;
                 
@@ -593,7 +593,7 @@ for nF = 1:numel(files_to_load)
         end
         
         %% Processing bottom detect
-        if ismember(fData_temp.MET_datagramSource,{'WC' 'AP'})
+        if ismember(CFF_get_datagramSource(fData_temp),{'WC' 'AP'})
             fprintf('...Processing bottom detect...\n');
             fData_temp = CFF_georeference_WC_bottom_detect(fData_temp);
         end

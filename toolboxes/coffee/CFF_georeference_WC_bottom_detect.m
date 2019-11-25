@@ -69,7 +69,7 @@ function [fData] = CFF_georeference_WC_bottom_detect(fData)
 %% info extraction
 
 % Extract needed ping info
-datagramSource = fData.MET_datagramSource;
+datagramSource = CFF_get_datagramSource(fData);
 X_1P_sonarHeight          = fData.X_1P_pingH; %m
 X_1P_sonarEasting         = fData.X_1P_pingE; %m
 X_1P_sonarNorthing        = fData.X_1P_pingN; %m

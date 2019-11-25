@@ -80,32 +80,7 @@ if nargin>1
     datagramSource = varargin{1};
 end
    
-if isempty(datagramSource)
-    
-    % datagramSource was not specified, check fData for it
-    if isfield(fData,'MET_datagramSource')
-        datagramSource = fData.MET_datagramSource;
-    else
-        % not in fData eiter, check for possible sources
-        fDataFields = fields(fData);
-        if sum(strcmp(fDataFields, 'De_1P_Date'))
-            datagramSource = 'De';
-            fprintf(['...datagramSource not specified for ping processing. Using ''' datagramSource '''...\n']);
-        elseif sum(strcmp(fDataFields, 'X8_1P_Date'))
-            datagramSource = 'X8';
-            fprintf(['...datagramSource not specified for ping processing. Using ''' datagramSource '''...\n']);
-        elseif sum(strcmp(fDataFields, 'WC_1P_Date'))
-            datagramSource = 'WC';
-            fprintf(['...datagramSource not specified for ping processing. Using ''' datagramSource '''...\n']);
-        elseif sum(strcmp(fDataFields, 'AP_1P_Date'))
-            datagramSource = 'AP';
-            fprintf(['...datagramSource not specified for ping processing. Using ''' datagramSource '''...\n']);
-        else
-            error('can''t find a suitable datagramSource')
-        end
-    end
-    
-end
+datagramSource=CFF_get_datagramSource(fData,datagramSource);
 
 % get ping time
 pingTSMIM    = fData.([datagramSource '_1P_TimeSinceMidnightInMilliseconds']);

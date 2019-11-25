@@ -135,7 +135,7 @@ end
 %% Prepare needed 1xP data for computations
 
 % Source datagram
-datagramSource = fData.MET_datagramSource;
+datagramSource = CFF_get_datagramSource(fData);
 
 % inter-sample distance
 interSamplesDistance = CFF_inter_sample_distance(fData); % in m

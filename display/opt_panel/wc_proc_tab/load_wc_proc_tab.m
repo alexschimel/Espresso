@@ -404,13 +404,13 @@ for itt = idx_fData(:)'
     % original data filename and format info
     wc_dir = CFF_converted_data_folder(fData_tot{itt}.ALLfilename{1});
     
-    dg_source = fData_tot{itt}.MET_datagramSource;
+    dg_source = CFF_get_datagramSource(fData_tot{itt});
     
     [nSamples, nBeams, nPings] = cellfun(@(x) size(x.Data.val),fData_tot{itt}.(sprintf('%s_SBP_SampleAmplitudes',dg_source)));
     
-    wcdata_class  = fData_tot{itt}.(sprintf('%s_1_SampleAmplitudes_Class',fData_tot{itt}.MET_datagramSource)); % int8 or int16
-    wcdata_factor = fData_tot{itt}.(sprintf('%s_1_SampleAmplitudes_Factor',fData_tot{itt}.MET_datagramSource));
-    wcdata_nanval = fData_tot{itt}.(sprintf('%s_1_SampleAmplitudes_Nanval',fData_tot{itt}.MET_datagramSource));
+    wcdata_class  = fData_tot{itt}.(sprintf('%s_1_SampleAmplitudes_Class',CFF_get_datagramSource(fData_tot{itt}))); % int8 or int16
+    wcdata_factor = fData_tot{itt}.(sprintf('%s_1_SampleAmplitudes_Factor',CFF_get_datagramSource(fData_tot{itt})));
+    wcdata_nanval = fData_tot{itt}.(sprintf('%s_1_SampleAmplitudes_Nanval',CFF_get_datagramSource(fData_tot{itt})));
     
     % processed data filename
     
@@ -526,7 +526,7 @@ for itt = idx_fData(:)'
             blockPings_f  = iPings(blocks(iB,1):blocks(iB,2));
             blockPings  = (blocks(iB,1):blocks(iB,2));
             % grab original data in dB
-            data = CFF_get_WC_data(fData_tot{itt},sprintf('%s_SBP_SampleAmplitudes',fData_tot{itt}.MET_datagramSource),'iPing',blockPings_f,'iRange',1:nSamples(ig),'output_format','true');
+            data = CFF_get_WC_data(fData_tot{itt},sprintf('%s_SBP_SampleAmplitudes',CFF_get_datagramSource(fData_tot{itt})),'iPing',blockPings_f,'iRange',1:nSamples(ig),'output_format','true');
             
             % radiometric corrections
             % add a radio button to possibly turn this off too? TO DO XXX

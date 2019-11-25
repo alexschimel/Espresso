@@ -165,7 +165,7 @@ cax_min = str2double(wc_proc_tab_comp.clim_min_wc.String);
 cax_max = str2double(wc_proc_tab_comp.clim_max_wc.String);
 cax = [cax_min cax_max];
 
-datagramSource = fData.MET_datagramSource;
+datagramSource = CFF_get_datagramSource(fData);
 
 %% Stacked view display
 if up_stacked_wc_bool
@@ -190,7 +190,8 @@ if up_stacked_wc_bool
             
     end
     
-    
+    idx_pings(idx_pings>numel(fData.(sprintf('%s_1P_Date',datagramSource))))=[];
+    idx_angle_keep(idx_angle_keep>size(fData.(sprintf('%s_BP_NumberOfSamples',datagramSource)),1))=[];
     
     switch disp_type
         case 'depth'
@@ -312,12 +313,14 @@ if up_stacked_wc_bool
     end
     idx_al_s = find(~isnan(nanmean(amp_al,2)),1,'first');
     idx_al_e = find(~isnan(nanmean(amp_al,2)),1,'last');
-    ylim_stacked = [sampleUpDistAl(idx_al_s)*0.9 sampleUpDistAl(idx_al_e)*1.1];
-    set(stacked_wc_tab_comp.wc_axes,...
-        'XLim',xlim_stacked,...
-        'Ylim',ylim_stacked,...
-        'Layer','top',...
-        'UserData',usrdata);
+    if ~isempty(idx_al_s)&&~isempty(idx_al_s)
+        ylim_stacked = [sampleUpDistAl(idx_al_s)*0.9 sampleUpDistAl(idx_al_e)*1.1];
+        set(stacked_wc_tab_comp.wc_axes,...
+            'XLim',xlim_stacked,...
+            'Ylim',ylim_stacked,...
+            'Layer','top',...
+            'UserData',usrdata);
+    end
     fname = fData.ALLfilename{1};
     [~,fnamet,~] = fileparts(fname);
     tt = sprintf('File: %s.',fnamet);

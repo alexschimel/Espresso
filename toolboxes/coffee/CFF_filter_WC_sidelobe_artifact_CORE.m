@@ -100,6 +100,7 @@ function [data, correction] = CFF_filter_WC_sidelobe_artifact_CORE(data, fData, 
 
 %% calculate mean level across all beams for each range (and each ping)
 meanAcrossBeams = mean(data,2,'omitnan');
+medianAcrossBeams = median(data,2,'omitnan');
 
 %% define and calculate a reference level
 % for reference level in each ping, we will use the average level of all
@@ -119,9 +120,18 @@ nadirBottom = round(inpaint_nans(nanmedian(bottom)));
 % calculate the average level in the WC above the average bottom detect,
 % and within the nadir beams
 refLevel = nan(1,1,numel(blockPings));
-for iP = 1:numel(blockPings)
-    nadir_data = data(1:nadirBottom(iP),nadirBeams,iP);
-    refLevel(1,1,iP) = nanmedian(nadir_data(:));
+process='med';
+switch process
+    case 'mode'
+        for iP = 1:numel(blockPings)
+            nadir_data = data(1:nadirBottom(iP),nadirBeams,iP);
+            refLevel(1,1,iP) = mode(nadir_data(~isnan(nadir_data)));
+        end
+    case 'med'
+        for iP = 1:numel(blockPings)
+            nadir_data = data(1:nadirBottom(iP),nadirBeams,iP);
+            refLevel(1,1,iP) = nanmedian(nadir_data(:));
+        end
 end
 
 %% compensate data for mean level and introduce reference level
@@ -134,8 +144,8 @@ correction = meanAcrossBeams;
 
 % Usually a "normalization" implies also the standard deviation: you
 % remove the mean, then divide by the standard deviation, and only then add
-% a reference level). This is correction "b" in Parnum. 
-% You'd need to calculate the std as 
+% a reference level). This is correction "b" in Parnum.
+% You'd need to calculate the std as
 %       stdAcrossBeams = std(data,0,2,'omitnan');
 % and in the final calculation do instead:
 %       data = (data-meanAcrossBeams)./stdAcrossBeams + refLevel;
@@ -170,6 +180,6 @@ correction = meanAcrossBeams;
 %         X = thisPing(ismp,:,:);
 %         sevenfiveperc(ismp,1) = CFF_invpercentile(X,75);
 %     end
-%     thisPing_corrected =  thisPing - sevenfiveperc; 
+%     thisPing_corrected =  thisPing - sevenfiveperc;
 % end
 

@@ -432,11 +432,12 @@ usrdata.str_disp = str_disp;
 % end
 if isfield(map_tab_comp.ping_window.UserData,'idx_pings')
     idx_pings_ori=map_tab_comp.ping_window.UserData.idx_pings;
+    ID_ori=map_tab_comp.ping_window.UserData.ID;
 else
     idx_pings_ori=[];
 end
 
-if ~any(ip==idx_pings_ori)
+if ~any(ip==idx_pings_ori)||disp_config.Fdata_ID~=ID_ori
     [new_vert,idx_pings,idx_angles] = poly_vertices_from_fData(fData,disp_config,[]);
     
     

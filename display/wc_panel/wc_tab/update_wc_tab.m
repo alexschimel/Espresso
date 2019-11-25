@@ -100,7 +100,7 @@ disp_config.cleanup(main_figure);
 % get fdata to be displayed
 fData_tot_IDs = cellfun(@(c) c.ID,fData_tot);
 fData = fData_tot{fData_tot_IDs==disp_config.Fdata_ID};
-datagramSource = fData.MET_datagramSource;
+datagramSource = CFF_get_datagramSource(fData);
 
 % get ping and across-dist to be displayed
 ip          = disp_config.Iping;

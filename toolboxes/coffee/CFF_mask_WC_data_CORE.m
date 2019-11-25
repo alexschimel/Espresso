@@ -106,7 +106,7 @@ end
 nPings = numel(blockPings);
 
 % source datagram
-datagramSource = fData.MET_datagramSource;
+datagramSource = CFF_get_datagramSource(fData);
 
 % calculate inter-sample distance
 interSamplesDistance = CFF_inter_sample_distance(fData);

@@ -1,6 +1,6 @@
 function [nSamples, nBeams, nPings] = CFF_get_WC_size(fData)
 
-fieldN=sprintf('%s_SBP_SampleAmplitudes',fData.MET_datagramSource);
+fieldN=sprintf('%s_SBP_SampleAmplitudes',CFF_get_datagramSource(fData));
 
 [nSamples, nBeams, nPings]=cellfun(@(x) size(x.Data.val),fData.(fieldN));
 

@@ -2,7 +2,7 @@
 function interSamplesDistance = CFF_inter_sample_distance(fData)
 
 % Source datagram
-datagramSource = fData.MET_datagramSource;
+datagramSource = CFF_get_datagramSource(fData);
 
 % inter-sample distance
 soundSpeed           = fData.(sprintf('%s_1P_SoundSpeed',datagramSource)); %m/s
