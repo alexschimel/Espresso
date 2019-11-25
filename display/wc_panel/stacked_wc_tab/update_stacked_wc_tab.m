@@ -160,9 +160,9 @@ else
 end
 
 % get colour extents
-wc_proc_tab_comp = getappdata(main_figure,'wc_proc_tab');
-cax_min = str2double(wc_proc_tab_comp.clim_min_wc.String);
-cax_max = str2double(wc_proc_tab_comp.clim_max_wc.String);
+display_tab_comp = getappdata(main_figure,'display_tab');
+cax_min = str2double(display_tab_comp.clim_min_wc.String);
+cax_max = str2double(display_tab_comp.clim_max_wc.String);
 cax = [cax_min cax_max];
 
 datagramSource = CFF_get_datagramSource(fData);

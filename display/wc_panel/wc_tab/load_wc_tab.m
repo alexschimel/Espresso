@@ -150,18 +150,22 @@ wc_tab_comp.StackPingWidth = uicontrol(wc_tab_comp.wc_tab,'style','edit','String
 % axes and contents
 wc_tab_comp.wc_axes = axes(wc_tab_comp.wc_tab,...
     'Units','normalized',...
-    'outerposition',[0 0 1 1],...
+    'outerposition',[0 0 1 0.9],...
     'nextplot','add',...
     'YDir','normal',...
     'Tag','wc');
+
 axis(wc_tab_comp.wc_axes,'equal');
 [cmap,col_ax,col_lab,col_grid,col_bot,col_txt] = init_cmap(disp_config.Cmap);
-title(wc_tab_comp.wc_axes,'N/A','Interpreter','none','FontSize',10,'FontWeight','normal');
 colorbar(wc_tab_comp.wc_axes,'southoutside');
 colormap(wc_tab_comp.wc_axes,cmap);
 caxis(wc_tab_comp.wc_axes,disp_config.Cax_wc);
-xlabel(wc_tab_comp.wc_axes,'Across Distance (m)','FontSize',10);
-ylabel(wc_tab_comp.wc_axes,'Depth (m)','FontSize',10);
+wc_tab_comp.wc_axes.XAxisLocation='top';
+wc_tab_comp.wc_axes.XAxis.TickLabelFormat='%.0fm';
+wc_tab_comp.wc_axes.YAxis.TickLabelFormat='%.0fm';
+wc_tab_comp.wc_axes.YAxis.FontSize=8;
+wc_tab_comp.wc_axes.XAxis.FontSize=8;
+
 grid(wc_tab_comp.wc_axes,'on');
 box(wc_tab_comp.wc_axes,'on')
 wc_tab_comp.wc_gh = pcolor(wc_tab_comp.wc_axes,[],[],[]);
@@ -169,6 +173,11 @@ set(wc_tab_comp.wc_gh,'facealpha','flat','LineStyle','none','AlphaData',[]);
 wc_tab_comp.ac_gh = plot(wc_tab_comp.wc_axes,nan,nan,'--k','Tag','ac','linewidth',2);
 wc_tab_comp.bot_gh = plot(wc_tab_comp.wc_axes,nan,nan,'.k','Tag','ac','markersize',4);
 % axis(wc_tab_comp.wc_axes,'equal');
+
+wc_tab_comp.wc_axes_tt = uicontrol(wc_tab_comp.wc_tab,...
+    'Units','normalized',...
+    'Style','Text',...
+    'position',[0 0.9 1 0.1],'BackgroundColor',[1 1 1]);
 
 % save the tab to appdata
 setappdata(main_figure,'wc_tab',wc_tab_comp);

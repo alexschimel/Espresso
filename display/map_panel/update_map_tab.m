@@ -239,8 +239,17 @@ for i = update_line_index(:)'
                 if isa(L,'gpuArray')
                     L = gather(L);
                 end
+                
                 if size(L,3)>1
-                    data = pow2db_perso(nanmean(10.^(L/10),3));
+                    display_tab_comp=getappdata(main_figure,'display_tab');
+                    d_max=nanmax(fData.X_BP_bottomHeight(:));
+                    d_min=nanmin(fData.X_BP_bottomHeight(:));
+                    d_line_max=nanmin(sscanf(display_tab_comp.d_line_max.Label,'%fm'),d_max);
+                    d_line_min=nanmax(sscanf(display_tab_comp.d_line_min.Label,'%fm'),d_min);
+
+                    L(:,:,(squeeze(fData.X_11H_gridHeight)<d_line_min)|squeeze(fData.X_11H_gridHeight)>d_line_max)=nan;
+                    
+                    data = pow2db_perso(nanmean(10.^(L(:,:,:)/10),3));
                 else
                     data = L;
                 end

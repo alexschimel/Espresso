@@ -100,7 +100,7 @@ function [data, correction] = CFF_filter_WC_sidelobe_artifact_CORE(data, fData, 
 
 %% calculate mean level across all beams for each range (and each ping)
 meanAcrossBeams = mean(data,2,'omitnan');
-medianAcrossBeams = median(data,2,'omitnan');
+%medianAcrossBeams = median(data,2,'omitnan');
 
 %% define and calculate a reference level
 % for reference level in each ping, we will use the average level of all
@@ -115,19 +115,22 @@ nadirBeams = (floor((nBeams./2)-5):ceil((nBeams./2)+5));
 
 % calculate the average bottom detect for those beams for each ping
 bottom = fData.X_BP_bottomSample(nadirBeams,blockPings);
-nadirBottom = round(inpaint_nans(nanmedian(bottom)));
+
 
 % calculate the average level in the WC above the average bottom detect,
 % and within the nadir beams
 refLevel = nan(1,1,numel(blockPings));
-process='med';
+process='mode';
+
 switch process
     case 'mode'
+        nadirBottom = round(inpaint_nans(nanmin(bottom)));
         for iP = 1:numel(blockPings)
-            nadir_data = data(1:nadirBottom(iP),nadirBeams,iP);
+            nadir_data = data(1:nadirBottom(iP),:,iP);
             refLevel(1,1,iP) = mode(nadir_data(~isnan(nadir_data)));
         end
     case 'med'
+        nadirBottom = round(inpaint_nans(nanmedian(bottom)));
         for iP = 1:numel(blockPings)
             nadir_data = data(1:nadirBottom(iP),nadirBeams,iP);
             refLevel(1,1,iP) = nanmedian(nadir_data(:));

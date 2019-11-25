@@ -261,7 +261,12 @@ for iB = 1:nBlocks
     
     % to speed up processing, we will only grid data decimated in samples
     % number and in beams
-    idxSamples = (1:dr_sub:nSamples)';
+    
+        % get data to grid
+    blockL = CFF_get_WC_data(fData,field_to_grid,'iPing',blockPings,'dr_sub',dr_sub,'db_sub',db_sub,'output_format','true');
+    nSamples_temp=size(blockL,1);
+    
+    idxSamples = (1:dr_sub:nSamples_temp*dr_sub)';
     startSampleNumber = fData.(sprintf('%s_BP_StartRangeSampleNumber',datagramSource))(1:db_sub:end,blockPings);
     beamPointingAngle = deg2rad(fData.(sprintf('%s_BP_BeamPointingAngle',datagramSource))(1:db_sub:end,blockPings));
     
@@ -270,9 +275,7 @@ for iB = 1:nBlocks
         sonarEasting(blockPings), sonarNorthing(blockPings), sonarHeight(blockPings), sonarHeading(blockPings));
     blockAccD = single(blockAccD);
     
-    % get data to grid
-    blockL = CFF_get_WC_data(fData,field_to_grid,'iPing',blockPings,'dr_sub',dr_sub,'db_sub',db_sub,'output_format','true');
-    
+
     % define weights here
     weighting_mode = 'none'; % 'SIAfilter' or 'none'
     switch weighting_mode

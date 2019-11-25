@@ -120,9 +120,9 @@ if strcmp(str_disp,'Processed') && ~isfield(fData,'X_SBP_WaterColumnProcessed') 
 end
 
 % get colour extents to limit data
-wc_proc_tab_comp = getappdata(main_figure,'wc_proc_tab');
-cax_min = str2double(wc_proc_tab_comp.clim_min_wc.String);
-cax_max = str2double(wc_proc_tab_comp.clim_max_wc.String);
+display_tab_comp = getappdata(main_figure,'display_tab');
+cax_min = str2double(display_tab_comp.clim_min_wc.String);
+cax_max = str2double(display_tab_comp.clim_max_wc.String);
 cax = [cax_min cax_max];
 
 % now extract data
@@ -181,8 +181,7 @@ set(wc_tab_comp.ac_gh,...
 fname = fData.ALLfilename{1};
 [~,fnamet,~] = fileparts(fname);
 tt = sprintf('File: %s.\n Ping: %.0f/%.0f. Time: %s.',fnamet,ip,numel(fData.(sprintf('%s_1P_PingCounter',datagramSource))),datestr(fData.X_1P_pingSDN(ip),'HH:MM:SS'));
-wc_tab_comp.wc_axes.Title.String = tt;
-
+wc_tab_comp.wc_axes_tt.String = tt;
 
 if change_line_flag
     % ensure that the line now displayed in WC is selected in the list of

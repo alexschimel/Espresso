@@ -283,12 +283,7 @@ for nF = 1:numel(files_to_convert)
         fData_old={};
     end
     
-    if ~strcmpi(ver,CFF_get_current_fData_version)
-        fData_old=clean_fdata(fData_old);
-        if ~isempty(fData_old)
-            fData_old=fData_old{1};
-        end
-    end
+
     
     convert=reconvert||~isfile(mat_fdata_file) || ~strcmpi(ver,CFF_get_current_fData_version) || dr_sub_old~=dr_sub || db_sub_old~=db_sub || ~files_already_converted(nF);
     
@@ -297,6 +292,14 @@ for nF = 1:numel(files_to_convert)
         fprintf('File "%s" (%i/%i) is already converted.\n',file_to_convert,nF,numel(files_to_convert));
         continue;
     end
+    
+    
+    clean_fdata(fData_old);
+    if isfile(mat_fdata_file)
+        delete(mat_fdata_file);
+    end
+    fData_old={};
+
     
     % Otherwise, starting conversion...
     fprintf('\nConverting file "%s" (%i/%i)...\n',file_to_convert,nF,numel(files_to_convert));
@@ -650,7 +653,7 @@ update_map_tab(main_figure,0,0,1,[]);
 % update WC view and stacked view
 update_wc_tab(main_figure);
 update_stacked_wc_tab(main_figure);
-
+update_display_tab(main_figure);
 % not sure the following is needed...
 % enabled_obj = findobj(main_figure,'Enable','off');
 % set(enabled_obj,'Enable','on');

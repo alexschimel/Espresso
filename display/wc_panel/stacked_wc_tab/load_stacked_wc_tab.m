@@ -104,11 +104,14 @@ colorbar(stacked_wc_tab_comp.wc_axes,'southoutside');
 colormap(stacked_wc_tab_comp.wc_axes,cmap);
 title(stacked_wc_tab_comp.wc_axes,'N/A','Interpreter','none','FontSize',10,'FontWeight','normal');
 caxis(stacked_wc_tab_comp.wc_axes,disp_config.Cax_wc);
-xlabel(stacked_wc_tab_comp.wc_axes,'Ping Number (#)','FontSize',10);
 ylabel(stacked_wc_tab_comp.wc_axes,'Range (m)','FontSize',10);
 grid(stacked_wc_tab_comp.wc_axes,'on');
 box(stacked_wc_tab_comp.wc_axes,'on')
 axis(stacked_wc_tab_comp.wc_axes,'ij');
+stacked_wc_tab_comp.wc_axes.XAxisLocation='top';
+stacked_wc_tab_comp.wc_axes.YAxis.TickLabelFormat='%.0fm';
+stacked_wc_tab_comp.wc_axes.YAxis.FontSize=8;
+stacked_wc_tab_comp.wc_axes.XAxis.FontSize=8;
 stacked_wc_tab_comp.wc_gh = pcolor(stacked_wc_tab_comp.wc_axes,[],[],[]);
 %stacked_wc_tab_comp.wc_gh.ButtonDownFcn = {@goToPing_cback,main_figure};
 set(stacked_wc_tab_comp.wc_gh,'facealpha','flat','LineStyle','none','AlphaData',[]);
