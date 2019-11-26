@@ -11,8 +11,14 @@ DEBUG = 0;
 if ispc
     javax.swing.UIManager.setLookAndFeel('com.sun.java.swing.plaf.windows.WindowsLookAndFeel');
 end
-warning('off','MATLAB:HandleGraphics:ObsoletedProperty:JavaFrame');
 
+warning('off','MATLAB:ui:javacomponent:FunctionToBeRemoved');
+warning('off','MATLAB:ui:javaframe:PropertyToBeRemoved');
+warning('off','MATLAB:HandleGraphics:ObsoletedProperty:JavaFrame');
+warning('off','MATLAB:polyshape:repairedBySimplify');
+warning('off','MATLAB:polyshape:boundaryLessThan2Points');
+warning('off','MATLAB:polyshape:boundary3Points');
+warning('off','MATLAB:chckxy:IgnoreNaN');
 
 
 %% Checking and parsing input variables
@@ -32,12 +38,14 @@ if ~isdeployed()
 end
 
 %% Starting diary
-if ~exist(Espresso_user_folder,'dir')
+if ~isfolder(Espresso_user_folder)
     mkdir(Espresso_user_folder);
 end
-if exist(Espresso_diary_file,'file')
+
+if isfile(Espresso_diary_file)
     delete(Espresso_diary_file);
 end
+
 diary(Espresso_diary_file);
 
 %% Starting messages

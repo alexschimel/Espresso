@@ -143,7 +143,7 @@ map_tab_comp.ping_window = plot(polyshape([0 0 1 1]-999,[1 0 0 1]-999),...
     'LineWidth',1);
 
 pointerBehavior.enterFcn = @(figHandle, currentPoint) set(figHandle, 'Pointer', 'fleur');
-pointerBehavior.exitFcn  = @(figHandle, currentPoint) set(figHandle, 'Pointer', 'fleur');
+pointerBehavior.exitFcn  = @(figHandle, currentPoint) set(figHandle, 'Pointer', 'arrow');
 pointerBehavior.traverseFcn = @(figHandle, currentPoint) set(figHandle, 'Pointer', 'fleur');
 
 iptSetPointerBehavior(map_tab_comp.ping_swathe,pointerBehavior);

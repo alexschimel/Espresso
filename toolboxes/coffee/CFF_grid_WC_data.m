@@ -93,11 +93,13 @@ addParameter(p,'db_sub',2,@(x) isnumeric(x)&&x>0);
 
 % grid limitation parameters
 addParameter(p,'grdlim_mode','between',@(x) ismember(x,{'between', 'outside of'}));
-addParameter(p,'grdlim_var','depth below sonar',@(x) ismember(x,{'depth below sonar', 'height above bottom'}));
+addParameter(p,'grdlim_var','Sonar',@(x) ismember(x,{'Sonar', 'Bottom'}));
+addParameter(p,'data_type','Processed',@(x) ismember(x,{'Processed', 'Original'}));
 addParameter(p,'grdlim_mindist',0,@isnumeric);
 addParameter(p,'grdlim_maxdist',inf,@isnumeric);
 addParameter(p,'grdlim_east',[],@isnumeric);
 addParameter(p,'grdlim_north',[],@isnumeric);
+%addParameter(p,'fields_to_grid',{'bathy' 'bs' 'wc'},@iscell);
 
 % grid other things...
 addParameter(p,'grid_bs',false,@islogical);
@@ -118,17 +120,26 @@ grdlim_mindist = p.Results.grdlim_mindist;
 grdlim_maxdist = p.Results.grdlim_maxdist;
 grdlim_east    = p.Results.grdlim_east;
 grdlim_north   = p.Results.grdlim_north;
+data_type   = p.Results.data_type;
 
 
 %% Extract info about WCD
-if isfield(fData,'X_SBP_WaterColumnProcessed')
-    field_to_grid = 'X_SBP_WaterColumnProcessed';
-elseif isfield(fData,'WC_SBP_SampleAmplitudes')
-    field_to_grid = 'WC_SBP_SampleAmplitudes';
-else
-    field_to_grid = 'AP_SBP_SampleAmplitudes';
+switch data_type
+    case 'Original'
+        if isfield(fData,'WC_SBP_SampleAmplitudes')
+            field_to_grid = 'WC_SBP_SampleAmplitudes';
+        else
+            field_to_grid = 'AP_SBP_SampleAmplitudes';
+        end
+    otherwise
+        if isfield(fData,'X_SBP_WaterColumnProcessed')
+            field_to_grid = 'X_SBP_WaterColumnProcessed';
+        elseif isfield(fData,'WC_SBP_SampleAmplitudes')
+            field_to_grid = 'WC_SBP_SampleAmplitudes';
+        else
+            field_to_grid = 'AP_SBP_SampleAmplitudes';
+        end
 end
-
 % size
 [nSamples, nBeams, nPings] = CFF_get_WC_size(fData);
 
@@ -277,6 +288,7 @@ for iB = 1:nBlocks
     nSamples_temp=size(blockL,1);
     
     idxSamples = (1:dr_sub:nSamples_temp*dr_sub)';
+    
     startSampleNumber = fData.(sprintf('%s_BP_StartRangeSampleNumber',datagramSource))(1:db_sub:end,blockPings);
     beamPointingAngle = deg2rad(fData.(sprintf('%s_BP_BeamPointingAngle',datagramSource))(1:db_sub:end,blockPings));
     
@@ -341,7 +353,7 @@ for iB = 1:nBlocks
     % get indices of samples we want to keep in the calculation
     switch grdlim_var
         
-        case 'depth below sonar'
+        case 'Sonar'
             
             % H is already as depth below sonar so it's pretty easy
             if  strcmp(grid_type,'2D')
@@ -352,10 +364,10 @@ for iB = 1:nBlocks
                         idx_keep = blockH>=-grdlim_mindist | blockH<=-grdlim_maxdist;
                 end
             else
-               idx_keep=~isnan(blockH);
+               idx_keep=~isnan(blockH)&blockH>=minGridH&blockH<=maxGridH;
             end
             
-        case 'height above bottom'
+        case 'Bottom'
             
             block_bottomHeight = HeightInterpolant(blockN,blockE);
             blockH = blockH - block_bottomHeight;
@@ -368,7 +380,7 @@ for iB = 1:nBlocks
                         idx_keep = block_sampleHeightAboveSeafloor<=grdlim_mindist | block_sampleHeightAboveSeafloor>=grdlim_maxdist;
                 end
             else
-                idx_keep=~isnan(blockH);
+                idx_keep=~isnan(blockH)&blockH>=0;
             end
             clear block_bottomHeight block_sampleHeightAboveSeafloor
             

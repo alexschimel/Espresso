@@ -328,13 +328,12 @@ for nF = 1:numel(files_to_convert)
                     wc_d = 114;
                 case 'De'
                     wc_d = 68;
-                case 'X8'
-                    wc_d = 88;
+
             end
             
             % We also need installation parameters (73), position (80), and runtime
             % parameters (82) datagrams. List datagrams required
-            dg_wc = [73 80 82 wc_d];
+            dg_wc = [73 80 82 88 wc_d];
             
             % conversion to ALLdata format
             [EMdata,datags_parsed_idx] = CFF_read_all(file_to_convert, dg_wc);
@@ -647,13 +646,14 @@ end
 % update dispconfig to focus on the last line loaded
 disp_config.Fdata_ID = fData{end}.ID;
 
+update_display_tab(main_figure);
 % update map adjusting the zoom on all lines loaded
 update_map_tab(main_figure,0,0,1,[]);
 
 % update WC view and stacked view
 update_wc_tab(main_figure);
 update_stacked_wc_tab(main_figure);
-update_display_tab(main_figure);
+
 % not sure the following is needed...
 % enabled_obj = findobj(main_figure,'Enable','off');
 % set(enabled_obj,'Enable','on');

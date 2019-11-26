@@ -118,7 +118,7 @@ set(stacked_wc_tab_comp.wc_gh,'facealpha','flat','LineStyle','none','AlphaData',
 stacked_wc_tab_comp.ping_gh = plot(stacked_wc_tab_comp.wc_axes,nan,nan,'--k','Tag','ac','linewidth',2,'ButtonDownFcn',{@grab_vert_ping_line_cback,main_figure});
 % stacked_wc_tab_comp.bot_gh = plot(stacked_wc_tab_comp.wc_axes,nan,nan,'.k','Tag','ac','markersize',4);
 pointerBehavior.enterFcn = @(figHandle, currentPoint) set(figHandle, 'Pointer', 'fleur');
-pointerBehavior.exitFcn  = @(figHandle, currentPoint) set(figHandle, 'Pointer', 'fleur');
+pointerBehavior.exitFcn  = @(figHandle, currentPoint) set(figHandle, 'Pointer', 'arrow');
 pointerBehavior.traverseFcn = @(figHandle, currentPoint) set(figHandle, 'Pointer', 'fleur');
 iptSetPointerBehavior(stacked_wc_tab_comp.ping_gh,pointerBehavior);
 

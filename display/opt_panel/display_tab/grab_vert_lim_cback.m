@@ -82,7 +82,7 @@ end
 
     function wbucb(~,~)
         
-        replace_interaction(main_figure,'interaction','WindowButtonMotionFcn','id',2);
+        replace_interaction(main_figure,'interaction','WindowButtonMotionFcn','id',2,'Pointer','arrow');
         replace_interaction(main_figure,'interaction','WindowButtonUpFcn','id',2);
         
         fdata_tab_comp = getappdata(main_figure,'fdata_tab');

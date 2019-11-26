@@ -248,13 +248,13 @@ for i = update_line_index(:)'
                     
                     
                     switch fData.X_grid_reference
-                        case 'depth below sonar'
+                        case {'depth below sonar' 'Sonar'}
                             d_max=0;
                             d_min=nanmin(fData.X_BP_bottomHeight(:));
                             d_line_max=nanmin(sscanf(display_tab_comp.d_line_max.Label,'%fm'),d_max);
                             d_line_min=nanmax(sscanf(display_tab_comp.d_line_min.Label,'%fm'),d_min);
                             idx_rem=(squeeze(fData.X_11H_gridHeight)-fData.X_1_gridVerticalResolution/2<d_line_min)|(squeeze(fData.X_11H_gridHeight)+fData.X_1_gridVerticalResolution/2>d_line_max);
-                        case 'height above bottom'
+                        case {'height above bottom' 'Bottom'}
                             d_max=nanmax(abs(nanmin(fData.X_BP_bottomHeight(:))));
                             d_min=0;
                             d_line_max=nanmin(sscanf(display_tab_comp.d_line_bot_max.Label,'%fm'),d_max);
