@@ -222,7 +222,7 @@ check_fmt_box(wc_tab_comp.StackPingWidth,[],1,Inf,spw*2,'%.0f');
 spw_box = str2double(wc_tab_comp.StackPingWidth.String);
 
 if (disp_config.StackPingWidth~=ceil(spw_box/2))
-disp_config.StackPingWidth=ceil(spw_box/2);
+    disp_config.StackPingWidth=ceil(spw_box/2);
 end
 
 end

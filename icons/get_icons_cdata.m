@@ -56,7 +56,8 @@ icon.edit_bot = iconRead(fullfile(icon_dir,'edit_bot.png'));
 % icon.ruler = iconRead(fullfile(icon_dir,'ruler.png'));
 % icon.create_reg = iconRead(fullfile(icon_dir,'create_reg.png'));
 % icon.brush = iconRead(fullfile(icon_dir,'brush.png'));
-% icon.next_lay = iconRead(fullfile(icon_dir,'greenarrowicon.gif'));
+ icon.up = iconRead(fullfile(icon_dir,'greenarrowicon.png'));
+ icon.down = iconRead(fullfile(icon_dir,'greenarrowicon_d.png'));
 % icon.prev_lay = icon.next_lay(:,(16:-1:1),:);
 
 end

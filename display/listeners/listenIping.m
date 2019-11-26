@@ -76,7 +76,7 @@
 % Yoann Ladroit, Alexandre Schimel, NIWA. XXX
 
 %% Function
-function listenIping(~,~,main_figure)
+function listenIping(src,evt,main_figure)
 
 fData_tot = getappdata(main_figure,'fData');
 
@@ -90,12 +90,13 @@ end
 
 %profile on;
 % update all lines on main map without changing zoom
-up_wc=update_map_tab(main_figure,0,0,0,[]);
 
+force_up=strcmpi(src.Name,'StackPingWidth');
+up_wc=update_map_tab(main_figure,0,0,0,[],force_up);
 if up_wc>0
     % update wc and stacked views
     update_wc_tab(main_figure);
-    update_stacked_wc_tab(main_figure);
+    update_stacked_wc_tab(main_figure,force_up);
     display_features(main_figure,{},{'wc_tab' 'stacked_wc_tab'});
 end
 %  profile off;

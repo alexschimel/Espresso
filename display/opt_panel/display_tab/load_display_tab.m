@@ -1,5 +1,10 @@
 function load_display_tab(main_figure,parent_tab_group)
 
+if isappdata(main_figure,'display_tab')
+    display_tab_comp=getappdata(main_figure,'display_tab');
+    delete(display_tab_comp.display_tab);
+end
+
 %% create tab variable
 switch parent_tab_group.Type
     case 'uitabgroup'
@@ -44,6 +49,8 @@ display_tab_comp.clim_max = uicontrol(display_tab_comp.display_tab,'style','edit
     'Callback',{@change_cax_cback,main_figure});
 
 
+
+
 % swath display colour scale
 cax = disp_config.Cax_wc;
 
@@ -64,26 +71,76 @@ display_tab_comp.clim_max_wc = uicontrol(display_tab_comp.display_tab,'style','e
 
 
 % level of echo_integrated WC to be displayed
-
+%%Sonar referenced
 display_tab_comp.d_lim_ax = axes( display_tab_comp.display_tab,...
     'units','norm',...
-    'Position', [0.1 0.1 0.05 0.5], ...
+    'Position', [0.1 0.05 0.05 0.5], ...
     'XLim', [0 1], ...
     'YLim', [0 1], ...
     'Box', 'on', ...
     'visible','on',...
     'ytick', [], ...
     'xtick', []);
+title(display_tab_comp.d_lim_ax,'3D Sonar Ref. grid ');
 
 display_tab_comp.d_lim_patch = patch( display_tab_comp.d_lim_ax,...
     'XData', [0 0 1 1], ...
     'visible','on',...
     'YData', [0 1 1 0],'FaceColor',[0 0 0.8],'FaceAlpha',0.2);
 
+
 display_tab_comp.d_line_max=yline(display_tab_comp.d_lim_ax,1,'color',[0.8 0 0],'Tag','d_line_max','linewidth',2,'LabelHorizontalAlignment','right','LabelVerticalAlignment','middle',...
-    'ButtonDownFcn',{@grab_vert_lim_cback,main_figure});
+    'ButtonDownFcn',{@grab_vert_lim_cback,main_figure,'sonar'});
 display_tab_comp.d_line_min=yline(display_tab_comp.d_lim_ax,0,'color',[0.8 0 0],'Tag','d_line_min','linewidth',2,'LabelHorizontalAlignment','left','LabelVerticalAlignment','middle',...
-    'ButtonDownFcn',{@grab_vert_lim_cback,main_figure});
+    'ButtonDownFcn',{@grab_vert_lim_cback,main_figure,'sonar'});
+display_tab_comp.d_line_mean=yline(display_tab_comp.d_lim_ax,0.5,'color',[0.8 0 0],'Tag','d_line_mean','linewidth',2,'LabelHorizontalAlignment','center','LabelVerticalAlignment','middle',...
+    'ButtonDownFcn',{@grab_vert_lim_cback,main_figure,'sonar'});
+icon = get_icons_cdata(fullfile(whereisroot(),'icons'));
+
+uicontrol(display_tab_comp.display_tab,'Style','pushbutton','String','','CData',icon.up,...
+    'units','normalized',...
+    'pos',[0.20 0.30 0.04 0.05],...
+    'callback',{@move_echo_slice_cback,main_figure,'up','sonar'});
+
+uicontrol(display_tab_comp.display_tab,'Style','pushbutton','String','','CData',icon.down,...
+    'units','normalized',...
+    'pos',[0.20 0.25 0.04 0.05],...
+    'callback',{@move_echo_slice_cback,main_figure,'down','sonar'});
+
+
+%%Bottom referenced
+
+display_tab_comp.d_lim_bot_ax = axes( display_tab_comp.display_tab,...
+    'units','norm',...
+    'Position', [0.35 0.05 0.05 0.5], ...
+    'XLim', [0 1], ...
+    'YLim', [0 1], ...
+    'Box', 'on', ...
+    'visible','on',...
+    'ytick', [], ...
+    'xtick', []);
+title(display_tab_comp.d_lim_bot_ax,'3D Bottom Ref. grid ');
+
+display_tab_comp.d_lim_bot_patch = patch( display_tab_comp.d_lim_bot_ax,...
+    'XData', [0 0 1 1], ...
+    'visible','on',...
+    'YData', [0 1 1 0],'FaceColor',[0 0 0.8],'FaceAlpha',0.2);
+display_tab_comp.d_line_bot_max=yline(display_tab_comp.d_lim_bot_ax,1,'color',[0.8 0 0],'Tag','d_line_max','linewidth',2,'LabelHorizontalAlignment','right','LabelVerticalAlignment','middle',...
+    'ButtonDownFcn',{@grab_vert_lim_cback,main_figure,'bot'});
+display_tab_comp.d_line_bot_min=yline(display_tab_comp.d_lim_bot_ax,0,'color',[0.8 0 0],'Tag','d_line_min','linewidth',2,'LabelHorizontalAlignment','left','LabelVerticalAlignment','middle',...
+    'ButtonDownFcn',{@grab_vert_lim_cback,main_figure,'bot'});
+display_tab_comp.d_line_bot_mean=yline(display_tab_comp.d_lim_bot_ax,0.5,'color',[0.8 0 0],'Tag','d_line_mean','linewidth',2,'LabelHorizontalAlignment','center','LabelVerticalAlignment','middle',...
+    'ButtonDownFcn',{@grab_vert_lim_cback,main_figure,'bot'});
+
+uicontrol(display_tab_comp.display_tab,'Style','pushbutton','String','','CData',icon.up,...
+    'units','normalized',...
+    'pos',[0.45 0.30 0.04 0.05],...
+    'callback',{@move_echo_slice_cback,main_figure,'up','bot'});
+
+uicontrol(display_tab_comp.display_tab,'Style','pushbutton','String','','CData',icon.down,...
+    'units','normalized',...
+    'pos',[0.45 0.25 0.04 0.05],...
+    'callback',{@move_echo_slice_cback,main_figure,'down','bot'});
 
 pointerBehavior.enterFcn = @(figHandle, currentPoint) set(figHandle, 'Pointer', 'fleur');
 pointerBehavior.exitFcn  = @(figHandle, currentPoint) set(figHandle, 'Pointer', 'fleur');
@@ -95,7 +152,70 @@ setappdata(main_figure,'display_tab',display_tab_comp);
 
 end
 
+function move_echo_slice_cback(src,evt,main_figure,direction,ref)
+fData_tot = getappdata(main_figure,'fData');
 
+if isempty(fData_tot)
+    return;
+end
+
+% disp_config = getappdata(main_figure,'disp_config');
+display_tab_comp = getappdata(main_figure,'display_tab');
+
+depth_min=nan;
+for ui=1:numel(fData_tot)
+    depth_min =  nanmin(depth_min,nanmin(fData_tot{ui}.X_BP_bottomHeight(:)));
+end
+
+switch ref
+    case'bot'
+        d_min=0;
+        d_max=abs(depth_min);
+        d_line_max_h=display_tab_comp.d_line_bot_max;
+        d_line_min_h=display_tab_comp.d_line_bot_min;
+        d_patch_h=display_tab_comp.d_lim_bot_patch;
+        d_line_mean_h=display_tab_comp.d_line_bot_mean;
+    case 'sonar'
+        d_max=0;
+        d_min=depth_min;
+        d_line_max_h=display_tab_comp.d_line_max;
+        d_line_min_h=display_tab_comp.d_line_min;
+        d_patch_h=display_tab_comp.d_lim_patch;
+        d_line_mean_h=display_tab_comp.d_line_mean;
+end
+
+d_line_max_val=d_line_max_h.Value;
+d_line_min_val=d_line_min_h.Value;
+dr=d_line_max_val-d_line_min_val;
+ip = d_line_mean_h.Value;
+switch direction
+    case 'up'
+        ip = d_line_mean_h.Value*1.1;
+        
+    case 'down'
+        ip = d_line_mean_h.Value*0.9;
+        
+end
+
+if ip+dr/2<=1&&ip-dr/2>0
+    d_line_max_h.Value=ip+dr/2;
+    d_line_min_h.Value=ip-dr/2;
+else
+    return;
+end
+y_patch=[d_line_min_h.Value d_line_max_h.Value d_line_max_h.Value d_line_min_h.Value];
+d_patch_h.YData=y_patch;
+d_line_max_h.Label=sprintf('%.1fm',d_min+(d_max-d_min)*d_line_max_h.Value);
+d_line_min_h.Label=sprintf('%.1fm',d_min+(d_max-d_min)*d_line_min_h.Value);
+d_line_mean_h.Value=(d_line_min_h.Value+d_line_max_h.Value)/2;
+fdata_tab_comp = getappdata(main_figure,'fdata_tab');
+
+selected_idx = find([fdata_tab_comp.table.Data{:,end-1}]);
+if ~isempty(selected_idx)
+    update_map_tab(main_figure,1,0,0,selected_idx);
+end
+
+end
 
 
 %%

@@ -171,7 +171,7 @@ switch grid_type
         minBlockH = nan(1,nBlocks);
         maxBlockH = nan(1,nBlocks);
 end
-
+%d_max=nanmax(fData.X_BP_bottomHeight(:));
 % find grid limits for each block
 for iB = 1:nBlocks
     
@@ -188,6 +188,8 @@ for iB = 1:nBlocks
     % Get easting, northing and height
     [blockE, blockN, blockH] = CFF_georeference_sample(idxSamples, startSampleNumber, interSamplesDistance(blockPings), beamPointingAngle, ...
         sonarEasting(blockPings), sonarNorthing(blockPings), sonarHeight(blockPings), sonarHeading(blockPings));
+    
+    %id_keep=blockH<d_max;
     
     % these subset of all samples should be enough to find the bounds for the entire block
     minBlockE(iB) = min(blockE(:));
@@ -210,6 +212,7 @@ numElemGridE = ceil((maxGridE-minGridE)./grid_horz_res)+1;
 minGridN = floor(min(minBlockN));
 maxGridN = ceil(max(maxBlockN));
 numElemGridN = ceil((maxGridN-minGridN)./grid_horz_res)+1;
+
 switch grid_type
     case '3D'
         minGridH = floor(min(minBlockH));
@@ -233,16 +236,23 @@ switch grid_type
         gridWeightedSum  = zeros(numElemGridN,numElemGridE,numElemGridH,'single');
         gridTotalWeight  = zeros(numElemGridN,numElemGridE,numElemGridH,'single');
         gridMaxHorizDist =   nan(numElemGridN,numElemGridE,numElemGridH,'single');
+        
 end
 
 
 
 % if GPU is avaialble for computation, setup for it
 gpu_comp = get_gpu_comp_stat();
+
 if gpu_comp > 0
-    gridWeightedSum  = gpuArray(gridWeightedSum);
-    gridTotalWeight  = gpuArray(gridTotalWeight);
-    gridMaxHorizDist = gpuArray(gridMaxHorizDist);
+    gpud=gpuDevice;
+    if gpud.AvailableMemory>numel(gridMaxHorizDist)*32*3
+        gridWeightedSum  = gpuArray(gridWeightedSum);
+        gridTotalWeight  = gpuArray(gridTotalWeight);
+        gridMaxHorizDist = gpuArray(gridMaxHorizDist);
+    else
+        gpu_comp=0;
+    end
 end
 
 
@@ -334,27 +344,32 @@ for iB = 1:nBlocks
         case 'depth below sonar'
             
             % H is already as depth below sonar so it's pretty easy
-            switch grdlim_mode
-                case 'between'
-                    idx_keep = blockH<=-grdlim_mindist & blockH>=-grdlim_maxdist;
-                case 'outside of'
-                    idx_keep = blockH>=-grdlim_mindist | blockH<=-grdlim_maxdist;
+            if  strcmp(grid_type,'2D')
+                switch grdlim_mode
+                    case 'between'
+                        idx_keep = blockH<=-grdlim_mindist & blockH>=-grdlim_maxdist;
+                    case 'outside of'
+                        idx_keep = blockH>=-grdlim_mindist | blockH<=-grdlim_maxdist;
+                end
+            else
+               idx_keep=~isnan(blockH);
             end
             
         case 'height above bottom'
             
-            % Apply interpolant to get height above seafloor for each
-            % sample
             block_bottomHeight = HeightInterpolant(blockN,blockE);
-            block_sampleHeightAboveSeafloor = blockH - block_bottomHeight;
-            
-            switch grdlim_mode
-                case 'between'
-                    idx_keep = block_sampleHeightAboveSeafloor>=grdlim_mindist & block_sampleHeightAboveSeafloor<=grdlim_maxdist;
-                case 'outside of'
-                    idx_keep = block_sampleHeightAboveSeafloor<=grdlim_mindist | block_sampleHeightAboveSeafloor>=grdlim_maxdist;
+            blockH = blockH - block_bottomHeight;
+            minGridH=0;
+            if  strcmp(grid_type,'2D')
+                switch grdlim_mode
+                    case 'between'
+                        idx_keep = block_sampleHeightAboveSeafloor>=grdlim_mindist & block_sampleHeightAboveSeafloor<=grdlim_maxdist;
+                    case 'outside of'
+                        idx_keep = block_sampleHeightAboveSeafloor<=grdlim_mindist | block_sampleHeightAboveSeafloor>=grdlim_maxdist;
+                end
+            else
+                idx_keep=~isnan(blockH);
             end
-            
             clear block_bottomHeight block_sampleHeightAboveSeafloor
             
     end
@@ -540,7 +555,7 @@ switch grid_type
         % define and crop dim vectors
         gridNorthing = (0:numElemGridN-1)'.*grid_horz_res + minGridN;
         gridEasting  = (0:numElemGridE-1) .*grid_horz_res + minGridE;
-        gridHeight   = permute((0:numElemGridH-1).*grid_horz_res + minGridH,[3,1,2]);
+        gridHeight   = permute((0:numElemGridH-1).*grid_vert_res + minGridH,[3,1,2]);
         gridNorthing = gridNorthing(minNidx:maxNidx);
         gridEasting  = gridEasting(:,minEidx:maxEidx);
         gridHeight   = gridHeight(:,:,minHidx:maxHidx);
@@ -567,12 +582,13 @@ if isfield(fData,'X8_BP_ReflectivityBS')
     BSinterpolant = scatteredInterpolant(fData.X_BP_bottomNorthing(idx_val),fData.X_BP_bottomEasting(idx_val),fData.X8_BP_ReflectivityBS(idx_val),'natural','none');
     fData.X_NE_bs = BSinterpolant(N,E);
 else
-    fData.X_NE_bs=nan(size(gridLevel));
+    fData.X_NE_bs=nan(numel(N),numel(E));
 end
 
 ff=filter2(ones(5,5),nansum(gridTotalWeight,3));
 fData.X_NE_bs(ff==0)=nan;
 fData.X_NE_bathy(ff==0)=nan;
+fData.X_grid_reference=grdlim_var;
 
 %% saving results:
 

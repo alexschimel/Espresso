@@ -118,7 +118,9 @@ ip          = disp_config.Iping;
 % get indices of pings and angles from main mab
 map_tab_comp = getappdata(main_figure,'Map_tab');
 usrdata = get(map_tab_comp.ping_window,'UserData');
+
 idx_pings = usrdata.idx_pings;
+
 idx_angles = usrdata.idx_angles;
 usrdata.StackAngularMode=disp_config.StackAngularMode;
 
@@ -258,17 +260,17 @@ if up_stacked_wc_bool
                     if g.AvailableMemory/8/4<=numel(wc_data)
                         gpuDevice(1);
                     end
-                    tmp=accumarray(gpuArray([idx_accum(:) idx_pings_mat(:)]),gpuArray(wc_data(:)),[],@sum,single(-999))./...
+                    tmp=accumarray(gpuArray([idx_accum(:) idx_pings_mat(:)]),gpuArray(10.^(wc_data(:)/10)),[],@sum,single(0))./...
                         accumarray(gpuArray([idx_accum(:) idx_pings_mat(:)]),gpuArray(1),[],@sum);
-                    amp_al(1:size(tmp,1),blockPings)=gather(tmp);
+                    amp_al(1:size(tmp,1),blockPings)=gather(10*log10(tmp));
                 else
-                    tmp=accumarray([idx_accum(:) idx_pings_mat(:)],wc_data(:),[],@nanmean,single(-999));
-                    amp_al(1:size(tmp,1),blockPings)=tmp;
+                    tmp=accumarray([idx_accum(:) idx_pings_mat(:)],10.^(wc_data(:)/10),[],@nanmean,single(0));
+                    amp_al(1:size(tmp,1),blockPings)=10*log10(tmp);
                 end
                 
             case 'range'
                 idx_r_tmp=intersect(idx_r,1:size(wc_data,1));
-                amp_al(idx_r_tmp,blockPings) = squeeze(nanmean(wc_data,2));
+                amp_al(idx_r_tmp,blockPings) = 10*log10(squeeze(nanmean(10.^(wc_data/10),2)));
         end
     end
     

@@ -87,11 +87,14 @@ addOptional(p,'new_grid_flag',0);
 addOptional(p,'new_mosaic_flag',0);
 addOptional(p,'auto_zoom_extent_flag',0);
 addOptional(p,'update_line_index',[]); % if empty update all lines
+addOptional(p,'update_poly',0); % if empty update all lines
+
 parse(p,varargin{:});
 new_grid_flag = p.Results.new_grid_flag;
 new_mosaic_flag = p.Results.new_mosaic_flag;
 auto_zoom_extent_flag = p.Results.auto_zoom_extent_flag;
 update_line_index = p.Results.update_line_index;
+update_poly = p.Results.update_poly;
 
 % display on devpt version
 if ~isdeployed()
@@ -242,14 +245,28 @@ for i = update_line_index(:)'
                 
                 if size(L,3)>1
                     display_tab_comp=getappdata(main_figure,'display_tab');
-                    d_max=nanmax(fData.X_BP_bottomHeight(:));
-                    d_min=nanmin(fData.X_BP_bottomHeight(:));
-                    d_line_max=nanmin(sscanf(display_tab_comp.d_line_max.Label,'%fm'),d_max);
-                    d_line_min=nanmax(sscanf(display_tab_comp.d_line_min.Label,'%fm'),d_min);
-
-                    L(:,:,(squeeze(fData.X_11H_gridHeight)<d_line_min)|squeeze(fData.X_11H_gridHeight)>d_line_max)=nan;
                     
-                    data = pow2db_perso(nanmean(10.^(L(:,:,:)/10),3));
+                    
+                    switch fData.X_grid_reference
+                        case 'depth below sonar'
+                            d_max=0;
+                            d_min=nanmin(fData.X_BP_bottomHeight(:));
+                            d_line_max=nanmin(sscanf(display_tab_comp.d_line_max.Label,'%fm'),d_max);
+                            d_line_min=nanmax(sscanf(display_tab_comp.d_line_min.Label,'%fm'),d_min);
+                            idx_rem=(squeeze(fData.X_11H_gridHeight)-fData.X_1_gridVerticalResolution/2<d_line_min)|(squeeze(fData.X_11H_gridHeight)+fData.X_1_gridVerticalResolution/2>d_line_max);
+                        case 'height above bottom'
+                            d_max=nanmax(abs(nanmin(fData.X_BP_bottomHeight(:))));
+                            d_min=0;
+                            d_line_max=nanmin(sscanf(display_tab_comp.d_line_bot_max.Label,'%fm'),d_max);
+                            d_line_min=nanmax(sscanf(display_tab_comp.d_line_bot_min.Label,'%fm'),d_min);
+                            idx_rem=(squeeze(fData.X_11H_gridHeight)-fData.X_1_gridVerticalResolution/2<d_line_min)|(squeeze(fData.X_11H_gridHeight)+fData.X_1_gridVerticalResolution/2>d_line_max);
+                    end
+                            
+                            
+                    %nansum(idx_rem)/size(L,3)
+                    L(:,:,idx_rem)=nan;
+                    
+                    data = 20*log10(nanmean(10.^(L(:,:,:)/20),3));
                 else
                     data = L;
                 end
@@ -316,10 +333,12 @@ if update_cax >0
             cax= disp_config.get_cax();
         case {'bathy' 'bs'}
             obj_wc_img = findobj(ax,'Type','image');
-            if ~isempty(obj_wc_img)  
+            if ~isempty(obj_wc_img)
                 for uii=1:numel(obj_wc_img)
-                    data=obj_wc_img(uii).CData;
-                    cax= [nanmin(prctile(data(:),5),cax(1)) nanmax(prctile(data(:),95),cax(2))];
+                    if contains(obj_wc_img(uii).Tag,'_wc')&&strcmpi(obj_wc_img(uii).Visible,'On')
+                        data=obj_wc_img(uii).CData;
+                        cax= [nanmin(prctile(data(:),5),cax(1)) nanmax(prctile(data(:),95),cax(2))];
+                    end
                 end
                 
             end
@@ -446,7 +465,7 @@ else
     idx_pings_ori=[];
 end
 
-if ~any(ip==idx_pings_ori)||disp_config.Fdata_ID~=ID_ori
+if ~any(ip==idx_pings_ori)||disp_config.Fdata_ID~=ID_ori||update_poly
     [new_vert,idx_pings,idx_angles] = poly_vertices_from_fData(fData,disp_config,[]);
     
     

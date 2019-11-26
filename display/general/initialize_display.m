@@ -44,8 +44,8 @@ setappdata(main_figure,'control_panel',control_panel);
 % create tabs in panel
 load_files_tab(main_figure,control_panel);
 load_fdata_tab(main_figure,control_panel);
-load_display_tab(main_figure,control_panel);
 load_wc_proc_tab(main_figure,control_panel);
+load_display_tab(main_figure,control_panel);
 load_mosaic_tab(main_figure,control_panel);
 
 

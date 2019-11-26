@@ -97,5 +97,5 @@ for nF = 1:numel(fdata)
 end
 
 fdata_tab_comp.table.Data = data_new;
-
+fdata_tab_comp.selected_idx = find([data_new{:,end-1}]);
 end
