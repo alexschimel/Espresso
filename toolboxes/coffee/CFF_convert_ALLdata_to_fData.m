@@ -550,16 +550,16 @@ for iF = 1:nStruct
             fData.X8_B1_BeamNumber                   = (1:MaxNumberOfBeams)';
             
             for iP = 1:NumberOfPings
-                
-                fData.X8_BP_DepthZ(1:MaxNumberOfBeams,iP)                       = cell2mat(ALLdata.EM_XYZ88.DepthZ(iP));
-                fData.X8_BP_AcrosstrackDistanceY(1:MaxNumberOfBeams,iP)         = cell2mat(ALLdata.EM_XYZ88.AcrosstrackDistanceY(iP));
-                fData.X8_BP_AlongtrackDistanceX(1:MaxNumberOfBeams,iP)          = cell2mat(ALLdata.EM_XYZ88.AlongtrackDistanceX(iP));
-                fData.X8_BP_DetectionWindowLength(1:MaxNumberOfBeams,iP)        = cell2mat(ALLdata.EM_XYZ88.DetectionWindowLength(iP));
-                fData.X8_BP_QualityFactor(1:MaxNumberOfBeams,iP)                = cell2mat(ALLdata.EM_XYZ88.QualityFactor(iP));
-                fData.X8_BP_BeamIncidenceAngleAdjustment(1:MaxNumberOfBeams,iP) = cell2mat(ALLdata.EM_XYZ88.BeamIncidenceAngleAdjustment(iP));
-                fData.X8_BP_DetectionInformation(1:MaxNumberOfBeams,iP)         = cell2mat(ALLdata.EM_XYZ88.DetectionInformation(iP));
-                fData.X8_BP_RealTimeCleaningInformation(1:MaxNumberOfBeams,iP)  = cell2mat(ALLdata.EM_XYZ88.RealTimeCleaningInformation(iP));
-                fData.X8_BP_ReflectivityBS(1:MaxNumberOfBeams,iP)               = cell2mat(ALLdata.EM_XYZ88.ReflectivityBS(iP));
+                N=numel(cell2mat(ALLdata.EM_XYZ88.DepthZ(iP)));
+                fData.X8_BP_DepthZ(1:N,iP)                       = cell2mat(ALLdata.EM_XYZ88.DepthZ(iP));
+                fData.X8_BP_AcrosstrackDistanceY(1:N,iP)         = cell2mat(ALLdata.EM_XYZ88.AcrosstrackDistanceY(iP));
+                fData.X8_BP_AlongtrackDistanceX(1:N,iP)          = cell2mat(ALLdata.EM_XYZ88.AlongtrackDistanceX(iP));
+                fData.X8_BP_DetectionWindowLength(1:N,iP)        = cell2mat(ALLdata.EM_XYZ88.DetectionWindowLength(iP));
+                fData.X8_BP_QualityFactor(1:N,iP)                = cell2mat(ALLdata.EM_XYZ88.QualityFactor(iP));
+                fData.X8_BP_BeamIncidenceAngleAdjustment(1:N,iP) = cell2mat(ALLdata.EM_XYZ88.BeamIncidenceAngleAdjustment(iP));
+                fData.X8_BP_DetectionInformation(1:N,iP)         = cell2mat(ALLdata.EM_XYZ88.DetectionInformation(iP));
+                fData.X8_BP_RealTimeCleaningInformation(1:N,iP)  = cell2mat(ALLdata.EM_XYZ88.RealTimeCleaningInformation(iP));
+                fData.X8_BP_ReflectivityBS(1:N,iP)               = cell2mat(ALLdata.EM_XYZ88.ReflectivityBS(iP));
                 
             end
             

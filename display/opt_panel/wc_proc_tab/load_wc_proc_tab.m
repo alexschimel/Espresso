@@ -741,8 +741,8 @@ for itt = idx_fData(:)'
     u = u+1;
     
     
-    dr_sub = 3;
-    db_sub = 1;
+    dr_sub = 4;
+    db_sub = 2;
     
     
     % disp

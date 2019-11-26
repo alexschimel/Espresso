@@ -91,7 +91,7 @@ end
 %profile on;
 % update all lines on main map without changing zoom
 
-force_up=strcmpi(src.Name,'StackPingWidth');
+force_up=strcmpi(src.Name,'StackPingWidth')||strcmpi(src.Name,'StackAngularWidth');
 up_wc=update_map_tab(main_figure,0,0,0,[],force_up);
 if up_wc>0
     % update wc and stacked views
