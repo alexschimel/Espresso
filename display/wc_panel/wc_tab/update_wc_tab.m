@@ -108,14 +108,15 @@ across_dist = disp_config.AcrossDist;
 
 % get data type to be grabbed
 wc_tab_comp  = getappdata(main_figure,'wc_tab');
-wc_str = wc_tab_comp.data_disp.String;
-str_disp = wc_str{wc_tab_comp.data_disp.Value};
+display_tab_comp = getappdata(main_figure,'display_tab');
+wc_str = display_tab_comp.data_disp.String;
+str_disp = wc_str{display_tab_comp.data_disp.Value};
 
 % if "Processed" was selected but there is no Processed data, or if "Phase"
 % was selected and there is no Phase data, switch back to original
 if strcmp(str_disp,'Processed') && ~isfield(fData,'X_SBP_WaterColumnProcessed') || ...
         strcmp(str_disp,'Phase') && ~isfield(fData,'AP_SBP_SamplePhase')
-    set(wc_tab_comp.data_disp,'Value',find(contains(wc_str,'Original')));
+    set(display_tab_comp.data_disp,'Value',find(contains(wc_str,'Original')));
     str_disp = 'Original';
 end
 

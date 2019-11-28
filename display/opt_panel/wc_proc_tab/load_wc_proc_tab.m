@@ -51,10 +51,17 @@ disp_config = getappdata(main_figure,'disp_config');
 
 dh=0.12;
 
-h=(1-(1:10)*dh-dh/2);
+h=(1-(1:10)*dh-dh);
 
 %% processing section
-proc_gr=uibuttongroup(wc_proc_tab_comp.wc_proc_tab,'Units','Norm','Position',[0.02 0.51 0.96 0.48],'BackgroundColor','White','Title','Processing');
+proc_gr=uibuttongroup(wc_proc_tab_comp.wc_proc_tab,'Units','Norm','Position',[0.02 0.51 0.96 0.47],'BackgroundColor','White','Title','');
+wc_proc_tab_comp.proc_bool=uicontrol(wc_proc_tab_comp.wc_proc_tab,'Style','checkbox','String','Gridding',...
+    'BackgroundColor','white',...
+    'HorizontalAlignment','left',...
+    'units','normalized',...
+    'Fontsize',8,...
+    'pos',[0.03 0.50+0.47-0.03 0.15 0.05],...
+    'Value',1);
 % filter bottom push button
 wc_proc_tab_comp.bot_filtering=uicontrol(proc_gr,'Style','checkbox','String','Filter bottom of selected lines',...
     'BackgroundColor','White',...
@@ -129,7 +136,7 @@ wc_proc_tab_comp.sidelobe = uicontrol(proc_gr,'style','checkbox','String','Filte
 %% gridding section
 dh=0.18;
 
-h=(1-(1:10)*dh-dh/4);
+h=(1-(1:10)*dh-dh/2);
 
 grid_gr=uibuttongroup(wc_proc_tab_comp.wc_proc_tab,'Units','Norm','Position',[0.02 0.11 0.96 0.38],'BackgroundColor','White','Title','');
 wc_proc_tab_comp.grid_bool=uicontrol(wc_proc_tab_comp.wc_proc_tab,'Style','checkbox','String','Gridding',...
@@ -143,7 +150,7 @@ wc_proc_tab_comp.grid_bool=uicontrol(wc_proc_tab_comp.wc_proc_tab,'Style','check
 uicontrol(grid_gr,'style','text','String','Horiz. res. (m):',...
     'BackgroundColor','White',...
     'units','normalized',...
-    'position',[0.15 h(1) 0.25 dh]); 
+    'position',[0.05 h(1) 0.25 dh]); 
 
 wc_proc_tab_comp.grid_val = uicontrol(grid_gr,'style','edit',...
     'BackgroundColor','White',...
@@ -153,24 +160,41 @@ wc_proc_tab_comp.grid_val = uicontrol(grid_gr,'style','edit',...
     'Callback',{@check_fmt_box,0.1,100,1,'%.2f'});
 
 
-uicontrol(grid_gr,'style','text','String','Reference: ',...
+uicontrol(grid_gr,'style','text','String','Reference: ','tooltipstring','reference for gridding',....
     'BackgroundColor','White',...
     'units','normalized',...
     'position',[0.5 h(1) 0.25 dh]);
 
 wc_proc_tab_comp.grdlim_var = uicontrol(grid_gr,'style','popup','String',{'Sonar' 'Bottom'},...'depth below sonar' 'height above bottom'
     'Units','normalized',...
-    'position',[0.7 h(1) 0.25 dh],...
+    'position',[0.75 h(1) 0.2 dh],...
     'Value',1);
 
-uicontrol(grid_gr,'style','text','String','Data: ',...
+uicontrol(grid_gr,'style','text','String','Sub-sampling: ','tooltipstring','in samples/beams',...
     'BackgroundColor','White',...
     'units','normalized',...
-    'position',[0.5 h(2) 0.25 dh]);
+    'position',[0.05 h(2) 0.25 dh]);
 
-wc_proc_tab_comp.data_type = uicontrol(grid_gr,'style','popup','String',{'Processed' 'Original'},...
+wc_proc_tab_comp.dr=uicontrol(grid_gr,'style','edit','String','2','tooltipstring','in samples',...
+    'BackgroundColor','White',...
+    'units','normalized',...
+    'position',[0.3 h(2) 0.1 dh],...
+    'Callback',{@check_fmt_box,1,10,4,'%.0f'});
+
+wc_proc_tab_comp.db=uicontrol(grid_gr,'style','edit','String','2','tooltipstring','in beams',...
+    'BackgroundColor','White',...
+    'units','normalized',...
+    'position',[0.4 h(2) 0.1 dh],...
+    'Callback',{@check_fmt_box,1,10,2,'%.0f'});
+
+uicontrol(grid_gr,'style','text','String','Data to grid:',...
+    'BackgroundColor','White',...
+    'units','normalized',...
+    'position',[0.55 h(2) 0.2 dh]);
+
+wc_proc_tab_comp.data_type = uicontrol(grid_gr,'style','popup','String',{'Processed' 'Original'},'tooltipstring','data to grid',...
     'Units','normalized',...
-    'position',[0.7 h(2) 0.25 dh],...
+    'position',[0.75 h(2) 0.2 dh],...
     'Value',1);
 
 
@@ -262,17 +286,17 @@ if isempty(idx_fData)
     return;
 end
 
-
 wc_proc_tab_comp=getappdata(main_figure,'wc_proc_tab');
 f_stack=0;
-if wc_proc_tab_comp.bot_filtering.Value>0
-    filter_bottom_cback([],[],main_figure);
+if wc_proc_tab_comp.grid_bool.Value>0
+    if wc_proc_tab_comp.bot_filtering.Value>0
+        filter_bottom_cback([],[],main_figure);
+    end
+    if wc_proc_tab_comp.masking.Value>0||wc_proc_tab_comp.sidelobe.Value>0||str2num(wc_proc_tab_comp.mask_badpings.String)<100
+        process_wc_cback([],[],main_figure);
+        f_stack=1;
+    end
 end
-if wc_proc_tab_comp.masking.Value>0||wc_proc_tab_comp.sidelobe.Value>0||str2num(wc_proc_tab_comp.mask_badpings.String)<100
-    process_wc_cback([],[],main_figure);
-    f_stack=1;
-end
-
 if wc_proc_tab_comp.grid_bool.Value>0
     grid_cback([],[],main_figure);
 end
@@ -427,7 +451,6 @@ for itt = idx_fData(:)'
         for uig=1:numel(fData_tot{itt}.X_SBP_WaterColumnProcessed)
             fData_tot{itt}.X_SBP_WaterColumnProcessed{uig}=[];
         end
-        
         fData_tot{itt} = rmfield(fData_tot{itt},'X_SBP_WaterColumnProcessed');
     end
     ping_gr_start=fData_tot{itt}.(sprintf('%s_n_start',dg_source));
@@ -628,9 +651,10 @@ disp_config.Fdata_ID = fData_tot{idx_fData(end)}.ID;
 
 % update the WC view to "Processed"
 wc_tab_comp = getappdata(main_figure,'wc_tab');
-wc_tab_strings = wc_tab_comp.data_disp.String;
+display_tab_comp = getappdata(main_figure,'display_tab');
+wc_tab_strings = display_tab_comp.data_disp.String;
 [~,idx] = ismember('Processed',wc_tab_strings);
-wc_tab_comp.data_disp.Value = idx;
+display_tab_comp.data_disp.Value = idx;
 
 switch disp_config.StackAngularMode
     case 'range'
@@ -728,7 +752,8 @@ end
 grdlim_mindist = str2double(get(wc_proc_tab_comp.grdlim_mindist,'String'));
 grdlim_maxdist = str2double(get(wc_proc_tab_comp.grdlim_maxdist,'String'));
 
-
+dr_sub = str2double(wc_proc_tab_comp.dr);
+db_sub = str2double(wc_proc_tab_comp.db);
 
 % init counter
 u = 0;
@@ -739,10 +764,6 @@ timer_start = now;
 for itt = idx_fData(:)'
     
     u = u+1;
-    
-    
-    dr_sub = 4;
-    db_sub = 2;
     
     
     % disp

@@ -1,6 +1,7 @@
 function datagramSource = CFF_get_datagramSource(fData,varargin)
 
 datagramSource=[];
+
 if ~isempty(varargin)&&~isempty(varargin{1})
     datagramSource=varargin{1};
     % datagramSource was not specified, check fData for it
@@ -13,11 +14,11 @@ if ~isfield(fData,sprintf('%s_1P_Date',datagramSource))
 end
 
 if isempty(datagramSource)
-    if isfield(fData, 'WC_1P_Date')
-        datagramSource = 'WC';
-        fprintf(['...datagramSource not specified for ping processing. Using ''' datagramSource '''...\n']);
-    elseif isfield(fData, 'AP_1P_Date')
+    if isfield(fData, 'AP_1P_Date')
         datagramSource = 'AP';
+        fprintf(['...datagramSource not specified for ping processing. Using ''' datagramSource '''...\n']);
+    elseif isfield(fData, 'WC_1P_Date')
+        datagramSource = 'WC';
         fprintf(['...datagramSource not specified for ping processing. Using ''' datagramSource '''...\n']);
     elseif isfield(fData, 'De_1P_Date')
         datagramSource = 'De';

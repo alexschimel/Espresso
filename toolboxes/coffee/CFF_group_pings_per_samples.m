@@ -12,13 +12,14 @@ nb_min_win=50;
 %div_factor=nanmax(nanmin(maxNSamples_1P)/4,nb_min_s);
 %div_factor=mode(ceil(maxNSamples_1P/nb_min_s)*nb_min_s);
 perc_inc=10/100;
-X_fact=max(maxNSamples_1P)/min(maxNSamples_1P);
+X_fact=prctile(ceil(maxNSamples_1P/nb_min_s)*nb_min_s,90)/prctile(floor(maxNSamples_1P/nb_min_s)*nb_min_s,10);
 div_factor=(perc_inc/(X_fact-1))*min(maxNSamples_1P);
 div_factor=ceil(div_factor/nb_min_s)*nb_min_s;
 
 
 group_by_nb_s=ceil(filter2(ones(1,nb_min_win),(maxNSamples_1P/div_factor),'same')./...
     filter2(ones(1,nb_min_win),ones(size(pingCounters)),'same'));
+
 idx_change=find(diff(group_by_nb_s)~=0);
 
 

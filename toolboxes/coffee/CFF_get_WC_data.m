@@ -112,12 +112,18 @@ iRange = p.Results.iRange;
 if isempty(iPing)
     iPing = 1:cellfun(@(x) nansum(size(x.Data.val,3)),fData.(fieldN));
 end
-if isfield(fData,'WC_n_start')
-    ping_group_start=fData.WC_n_start;
-    ping_group_end=fData.WC_n_end;
-else
-    ping_group_start=fData.AP_n_start;
-    ping_group_end=fData.AP_n_end;
+
+dg=CFF_get_datagramSource(fData);
+switch dg
+    case 'WC'  
+        ping_group_start=fData.WC_n_start;
+        ping_group_end=fData.WC_n_end;
+    case 'AP'
+        ping_group_start=fData.AP_n_start;
+        ping_group_end=fData.AP_n_end;
+    otherwise
+        data_tot=[];
+return;
 end
 %maxNSamples_groups=fData.([fieldN(1:2) '_n_maxNSamples']);
 

@@ -449,9 +449,10 @@ fData = fData_tot{disp_config.Fdata_ID==IDs};
 
 % save info in usrdata as an ID
 usrdata.ID = fData.ID;
-wc_tab_comp  = getappdata(main_figure,'wc_tab');
-wc_str = wc_tab_comp.data_disp.String;
-str_disp = wc_str{wc_tab_comp.data_disp.Value};
+%wc_tab_comp  = getappdata(main_figure,'wc_tab');
+display_tab_comp = getappdata(main_figure,'display_tab');
+wc_str = display_tab_comp.data_disp.String;
+str_disp = wc_str{display_tab_comp.data_disp.Value};
 usrdata.str_disp = str_disp;
 
 

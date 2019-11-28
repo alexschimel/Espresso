@@ -68,7 +68,7 @@
 % Yoann Ladroit, Alexandre Schimel, NIWA. XXX
 
 %% Function
-function load_wc_tab(main_figure,parent_tab_group,str_disp)
+function load_wc_tab(main_figure,parent_tab_group)
 
 disp_config = getappdata(main_figure,'disp_config');
 
@@ -82,75 +82,14 @@ switch parent_tab_group.Type
         wc_tab_comp.wc_tab = parent_tab_group;
 end
 
-% str_disp empty at start
-if isempty(str_disp)
-    str_disp = 'Processed';
-end
-
-
 
 %
 %% create the tab components
 %
-
-% data displayed
-str_disp_list = {'Original' 'Phase' 'Processed'};
-uicontrol(wc_tab_comp.wc_tab,'style','text','String','Data',...
-    'BackgroundColor','White',...
-    'units','pixels',...
-    'position',[10 30 80 20]);
-wc_tab_comp.data_disp = uicontrol(wc_tab_comp.wc_tab,...
-    'style','popup',...
-    'Units','pixels',...
-    'position',[10 10 80 20],...
-    'String',str_disp_list,...
-    'Value',find(strcmpi(str_disp,str_disp_list)),...
-    'Callback',{@change_wc_disp_cback,main_figure});
-
-% stack view settings
-uicontrol(wc_tab_comp.wc_tab,'style','text','String','Stack',...
-    'BackgroundColor','White',...
-    'units','pixels',...
-    'position',[100 30 80 20]);
-wc_tab_comp.data_disp_stack = uicontrol(wc_tab_comp.wc_tab,...
-    'style','popup',...
-    'Units','pixels',...
-    'position',[100 10 80 20],...
-    'String',{'Range' 'Depth'},...
-    'Value',find(strcmpi(disp_config.StackAngularMode,{'Range' 'Depth'})),...
-    'Callback',{@change_StackAngularMode_cback,main_figure});
-
-% angular limits
-uicontrol(wc_tab_comp.wc_tab,'style','text','String',['Angular lim. (' char(hex2dec('00B0')) ')'],...
-    'BackgroundColor','White',...
-    'units','pixels',...
-    'position',[190 30 100 20]);
-wc_tab_comp.alim_min = uicontrol(wc_tab_comp.wc_tab,'style','edit','String',num2str(disp_config.StackAngularWidth(1)),...
-    'BackgroundColor','White',...
-    'units','pixels',...
-    'position',[190 10 40 20],...
-    'Callback',{@change_alim_cback,main_figure});
-wc_tab_comp.alim_max = uicontrol(wc_tab_comp.wc_tab,'style','edit','String',num2str(disp_config.StackAngularWidth(2)),...
-    'BackgroundColor','White',...
-    'units','pixels',...
-    'position',[240 10 40 20],...
-    'Callback',{@change_alim_cback,main_figure});
-
-% number of pings
-uicontrol(wc_tab_comp.wc_tab,'style','text','String','Pings',...
-    'BackgroundColor','White',...
-    'units','pixels',...
-    'position',[290 30 40 20]);
-wc_tab_comp.StackPingWidth = uicontrol(wc_tab_comp.wc_tab,'style','edit','String',num2str(disp_config.StackPingWidth*2),...
-    'BackgroundColor','White',...
-    'units','pixels',...
-    'position',[290 10 40 20],...
-    'Callback',{@change_StackPingWidth_cback,main_figure});
-
 % axes and contents
 wc_tab_comp.wc_axes = axes(wc_tab_comp.wc_tab,...
     'Units','normalized',...
-    'outerposition',[0 0 1 0.9],...
+    'outerposition',[0 0 1 0.95],...
     'nextplot','add',...
     'YDir','normal',...
     'Tag','wc');
@@ -177,7 +116,7 @@ wc_tab_comp.bot_gh = plot(wc_tab_comp.wc_axes,nan,nan,'.k','Tag','ac','markersiz
 wc_tab_comp.wc_axes_tt = uicontrol(wc_tab_comp.wc_tab,...
     'Units','normalized',...
     'Style','Text',...
-    'position',[0 0.9 1 0.1],'BackgroundColor',[1 1 1]);
+    'position',[0 0.95 1 0.05],'BackgroundColor',[1 1 1]);
 
 % save the tab to appdata
 setappdata(main_figure,'wc_tab',wc_tab_comp);
@@ -190,69 +129,3 @@ end
 update_wc_tab(main_figure);
 
 end
-
-function change_StackAngularMode_cback(src,~,main_figure)
-disp_config = getappdata(main_figure,'disp_config');
-
-if ~strcmpi(disp_config.StackAngularMode,src.String{src.Value})
-    disp_config.StackAngularMode=lower(src.String{src.Value});
-end
-
-end
-
-function change_wc_disp_cback(~,~,main_figure)
-
-update_wc_tab(main_figure);
-update_stacked_wc_tab(main_figure);
-src.Name='Cax_wc';
-listenCax(src,[],main_figure);
-
-end
-
-function change_StackPingWidth_cback(~,~,main_figure)
-
-% get current cax in disp_config
-disp_config = getappdata(main_figure,'disp_config');
-spw=disp_config.StackPingWidth;
-
-% check that modified values in the box are OK or change them back
-wc_tab_comp = getappdata(main_figure,'wc_tab');
-check_fmt_box(wc_tab_comp.StackPingWidth,[],1,Inf,spw*2,'%.0f');
-% grab those values from the boxes
-spw_box = str2double(wc_tab_comp.StackPingWidth.String);
-
-if (disp_config.StackPingWidth~=ceil(spw_box/2))
-    disp_config.StackPingWidth=ceil(spw_box/2);
-end
-
-end
-
-%%
-% Callback when changing current map colour scale
-%
-function change_alim_cback(~,~,main_figure)
-
-% get current cax in disp_config
-disp_config = getappdata(main_figure,'disp_config');
-saw=disp_config.StackAngularWidth;
-
-% check that modified values in the box are OK or change them back
-wc_tab_comp = getappdata(main_figure,'wc_tab');
-check_fmt_box(wc_tab_comp.alim_min,[],-90,90,saw(1),'%.0f');
-check_fmt_box(wc_tab_comp.alim_max,[],-90,90,saw(2),'%.0f');
-
-% grab those values from the boxes
-a_min = str2double(wc_tab_comp.alim_min.String);
-a_max = str2double(wc_tab_comp.alim_max.String);
-
-% if the min is more than max, don't accept change and reset current values
-if a_min > a_max
-    wc_tab_comp.alim_min.String = num2str(saw(1));
-    wc_tab_comp.alim_max.String = num2str(saw(2));
-else
-    % if all OK, update cax
-    disp_config.StackAngularWidth=[a_min a_max];
-end
-
-end
-

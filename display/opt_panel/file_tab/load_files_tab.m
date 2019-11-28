@@ -319,25 +319,30 @@ for nF = 1:numel(files_to_convert)
         case {'.all' '.wcd'}
             
             % set datagram source
-            datagramSource = 'WC'; % 'AP', 'De', 'X8'
-            
-            switch datagramSource
-                case 'WC'
-                    wc_d = 107;
-                case 'AP'
-                    wc_d = 114;
-                case 'De'
-                    wc_d = 68;
-
-            end
+%             datagramSource = 'WC'; % 'AP', 'De', 'X8'
+%             
+%             switch datagramSource
+%                 case 'WC'
+%                     wc_d = 107;
+%                 case 'AP'
+%                     wc_d = 114;
+%                 case 'De'
+%                     wc_d = 68;
+%             end
             
             % We also need installation parameters (73), position (80), and runtime
             % parameters (82) datagrams. List datagrams required
-            dg_wc = [73 80 82 88 wc_d];
+            dg_wc = [73 80 82 88 107 114];
             
             % conversion to ALLdata format
             [EMdata,datags_parsed_idx] = CFF_read_all(file_to_convert, dg_wc);
             textprogressbar(50);
+            
+            if datags_parsed_idx(end)
+                datagramSource='AP';
+            else
+                datagramSource='WC';
+            end
             
             % if not all datagrams were found at this point, message and abort
             if ~all(datags_parsed_idx)
@@ -366,6 +371,7 @@ for nF = 1:numel(files_to_convert)
                     continue;
                 end
             end
+            
             if datags_parsed_idx(4)
                 datagramSource='WC';
             else
