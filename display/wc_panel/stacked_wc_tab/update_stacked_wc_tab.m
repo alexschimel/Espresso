@@ -202,7 +202,8 @@ if up_stacked_wc_bool
             idx_r=1:nanmax(ceil(-bot(:)./dr_samples(ip)));
             n_res=2;
         case'range'
-            bot=fData.X_BP_bottomSample(idx_angle_keep,idx_pings);
+            bot=CFF_get_bottom_sample(fData);
+            bot=bot(idx_angle_keep,idx_pings);
             idx_r=1:nanmax(bot(:));
             n_res=1;
     end

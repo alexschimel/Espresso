@@ -129,7 +129,8 @@ clear p
 %% PRE-PROCESSING
 
 % extract needed data
-b0 = fData.X_BP_bottomSample; % this calculated field is recorded after "CFF_georeference_WC_bottom_detect", and overwritten every time we filter, to allow extra filtering.
+b0 = CFF_get_bottom_sample(fData);
+%b0 = fData.X_BP_bottomSample; % this calculated field is recorded after "CFF_georeference_WC_bottom_detect", and overwritten every time we filter, to allow extra filtering.
 bE = fData.X_BP_bottomEasting;
 bN = fData.X_BP_bottomNorthing;
 bH = fData.X_BP_bottomHeight;
@@ -282,7 +283,8 @@ end
 % subplot(223); imagesc(b1-b0); colorbar; Fdata_ID('filtered minus raw')
 
 %% SAVING RESULTS
-fData.X_BP_bottomSample = b1;
+
+fData = CFF_set_bottom_sample(fData,b1);
 
 % and parameters
 fData.X_1_bottomFilterParameters.method             = method;

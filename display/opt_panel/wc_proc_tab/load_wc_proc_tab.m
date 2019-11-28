@@ -282,17 +282,17 @@ fdata_tab_comp = getappdata(main_figure,'fdata_tab');
 idx_fData = find(cell2mat(fdata_tab_comp.table.Data(:,end-1)));
 
 if isempty(idx_fData)
-    fprintf('No lines are selected. Gridding aborted.\n');
+    fprintf('No lines are selected. Process aborted.\n');
     return;
 end
 
 wc_proc_tab_comp=getappdata(main_figure,'wc_proc_tab');
 f_stack=0;
-if wc_proc_tab_comp.grid_bool.Value>0
+if wc_proc_tab_comp.proc_bool.Value>0
     if wc_proc_tab_comp.bot_filtering.Value>0
         filter_bottom_cback([],[],main_figure);
     end
-    if wc_proc_tab_comp.masking.Value>0||wc_proc_tab_comp.sidelobe.Value>0||str2num(wc_proc_tab_comp.mask_badpings.String)<100
+    if wc_proc_tab_comp.masking.Value>0||wc_proc_tab_comp.sidelobe.Value>0||str2double(wc_proc_tab_comp.mask_badpings.String)<100
         process_wc_cback([],[],main_figure);
         f_stack=1;
     end
@@ -446,13 +446,19 @@ for itt = idx_fData(:)'
     file_X_SBP_WaterColumnProcessed=cell(1,numel(nSamples));
     
     fid=-ones(1,numel(nSamples));
-    
+    f_to_del={};
     if isfield(fData_tot{itt},'X_SBP_WaterColumnProcessed')
         for uig=1:numel(fData_tot{itt}.X_SBP_WaterColumnProcessed)
+            f_to_del=[f_to_del fData_tot{itt}.X_SBP_WaterColumnProcessed{uig}.Filename];
             fData_tot{itt}.X_SBP_WaterColumnProcessed{uig}=[];
         end
         fData_tot{itt} = rmfield(fData_tot{itt},'X_SBP_WaterColumnProcessed');
     end
+    
+    for uif=1:numel(f_to_del)
+        delete(f_to_del{uif});
+    end
+    
     ping_gr_start=fData_tot{itt}.(sprintf('%s_n_start',dg_source));
     ping_gr_end=fData_tot{itt}.(sprintf('%s_n_end',dg_source));
     for uig=1:numel(ping_gr_start)
@@ -752,8 +758,8 @@ end
 grdlim_mindist = str2double(get(wc_proc_tab_comp.grdlim_mindist,'String'));
 grdlim_maxdist = str2double(get(wc_proc_tab_comp.grdlim_maxdist,'String'));
 
-dr_sub = str2double(wc_proc_tab_comp.dr);
-db_sub = str2double(wc_proc_tab_comp.db);
+dr_sub = str2double(wc_proc_tab_comp.dr.String);
+db_sub = str2double(wc_proc_tab_comp.db.String);
 
 % init counter
 u = 0;

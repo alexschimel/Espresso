@@ -345,8 +345,8 @@ for nF = 1:numel(files_to_convert)
             end
             
             % if not all datagrams were found at this point, message and abort
-            if ~all(datags_parsed_idx)
-                if ismember(wc_d,dg_wc(~datags_parsed_idx))
+            if nansum(datags_parsed_idx)<5
+                if ~any(datags_parsed_idx(5:6))
                     textprogressbar(' error. File does not contain required water-column datagrams. Check file contents. Conversion aborted.');
                 else
                     textprogressbar(' error. File does not contain all necessary datagrams. Check file contents. Conversion aborted.');

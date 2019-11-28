@@ -70,6 +70,7 @@ function [fData] = CFF_georeference_WC_bottom_detect(fData)
 
 % Extract needed ping info
 datagramSource = CFF_get_datagramSource(fData);
+
 X_1P_sonarHeight          = fData.X_1P_pingH; %m
 X_1P_sonarEasting         = fData.X_1P_pingE; %m
 X_1P_sonarNorthing        = fData.X_1P_pingN; %m
@@ -82,18 +83,9 @@ X_1_sonarHeadingOffsetDeg = fData.IP_ASCIIparameters.S1H; %deg
 X_BP_beamPointingAngleDeg   = fData.(sprintf('%s_BP_BeamPointingAngle',datagramSource)); %deg
 X_BP_beamPointingAngleRad   = deg2rad(X_BP_beamPointingAngleDeg);
 
-% Grab sample corresponding to bottom:
-if isfield(fData, 'X_BP_bottomSample')
-    % if fData contains a '   X_BP_bottomSample' field already, it means we
-    % are requesting all other bottom values to be recalculated from this
-    % (probably filtered) value.  
-    X_BP_bottomSample = fData.X_BP_bottomSample;
-else
-    % If the field doesn't exist, then this is the first calculation
-    % requested on the original bottom detect. 
-    X_BP_bottomSample = fData.(sprintf('%s_BP_DetectedRangeInSamples',datagramSource)); %in sample number
-    X_BP_bottomSample(X_BP_bottomSample==0) = NaN;
-end
+
+X_BP_bottomSample=CFF_get_bottom_sample(fData);
+
 
 % in any case, permute dimensions to 1BP format
  X_1BP_bottomSample = permute(X_BP_bottomSample,[3,1,2]);

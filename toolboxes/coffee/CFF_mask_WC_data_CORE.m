@@ -214,7 +214,8 @@ if mask_ping<100
     % faulty
     
     % extract needed data
-    bottomdetect = fData.(sprintf('%s_BP_DetectedRangeInSamples',datagramSource))(:,blockPings);
+    bottomdetect = CFF_get_bottom_sample(fData);
+    bottomdetect = bottomdetect(:,blockPings);
     proportion_faulty_detect = 100.*sum(bottomdetect==0)./nBeams;
     
     % build mask: 1: to conserve, 0: to remove
