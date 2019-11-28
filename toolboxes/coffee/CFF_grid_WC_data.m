@@ -184,6 +184,7 @@ switch grid_type
 end
 %d_max=nanmax(fData.X_BP_bottomHeight(:));
 % find grid limits for each block
+
 for iB = 1:nBlocks
     
     % list of pings in this block

@@ -87,47 +87,11 @@ s7k_files = list_data(folder_init,'*.s7k');
 %% manage all/wcd pais
 % take pairs of files, or at default wcd files, or at default all files
 files_pair = intersect(all_files,wcd_files);
-if ~isempty(files_pair)
-    files_full = files_pair;
-else
-    if ~isempty(wcd_files)
-        files_full = wcd_files;
-    else
-        if ~isempty(all_files)
-            files_full = all_files;
-        else
-            files_full = {};
-        end
-    end
-end
+all_only = setdiff(all_files,wcd_files);
+wcd_only = setdiff(wcd_files,all_files);
 
-
-
-
-%% warnings
-switch warning_flag
-    case 'warning_on'
-        if isempty(s7k_files)
-            if isempty(all_files) && ~isempty(wcd_files)
-                warning('There are no ''.all'' files in this folder or its subfolders.. Listing ''.wcd'' files only.');
-            elseif ~isempty(all_files) && isempty(wcd_files)
-                warning('There are no ''.wcd'' files in this folder or its subfolders.. Listing ''.all'' files only.');
-            elseif ~isempty(all_files) && ~isempty(wcd_files)
-                if isempty(files_pair)
-                    warning('There are no pairs of ''.all'' and ''.wcd'' files in this folder or its subfolders.. Listing ''.wcd'' files only.');
-                else
-                    if length(files_pair)~=length(all_files)
-                        warning('Listing pairs of ''.all'' and ''.wcd'' files in this folder or its subfolders, but note there are also ''.all'' files without a corresponding ''.wcd'' file.');
-                    end
-                    if length(files_pair)~=length(wcd_files)
-                        warning('Listing pairs of ''.all'' and ''.wcd'' files in this folder or its subfolders, but note there are also ''.wcd'' files without a corresponding ''.all'' file.');
-                    end
-                end
-            elseif isempty(all_files) && isempty(wcd_files)
-                warning('There are no ''.all'' nor ''.wcd'' files in this folder or its subfolders.');
-            end
-        end
-end
+files_full=union(files_pair,wcd_only);
+files_full=union(files_full,all_only);
 
 
 s7k_files=cellfun(@(x) [x '.s7k'],s7k_files,'un',0);

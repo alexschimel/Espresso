@@ -76,7 +76,7 @@
 % Yoann Ladroit, Alexandre Schimel, NIWA. XXX
 
 %% Function
-function output = function_name(input, varargin)
-
+function output = new_function_head_template(input, varargin)
+output=input;
 
 

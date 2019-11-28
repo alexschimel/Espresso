@@ -95,7 +95,7 @@ wc_tab_comp.wc_axes = axes(wc_tab_comp.wc_tab,...
     'Tag','wc');
 
 axis(wc_tab_comp.wc_axes,'equal');
-[cmap,col_ax,col_lab,col_grid,col_bot,col_txt] = init_cmap(disp_config.Cmap);
+[cmap,~,~,~,~,~] = init_cmap(disp_config.Cmap);
 colorbar(wc_tab_comp.wc_axes,'southoutside');
 colormap(wc_tab_comp.wc_axes,cmap);
 caxis(wc_tab_comp.wc_axes,disp_config.Cax_wc);

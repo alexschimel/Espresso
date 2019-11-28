@@ -16,16 +16,12 @@ end
 if isempty(datagramSource)
     if isfield(fData, 'AP_1P_Date')
         datagramSource = 'AP';
-        fprintf(['...datagramSource not specified for ping processing. Using ''' datagramSource '''...\n']);
     elseif isfield(fData, 'WC_1P_Date')
         datagramSource = 'WC';
-        fprintf(['...datagramSource not specified for ping processing. Using ''' datagramSource '''...\n']);
     elseif isfield(fData, 'De_1P_Date')
         datagramSource = 'De';
-        fprintf(['...datagramSource not specified for ping processing. Using ''' datagramSource '''...\n']);
     elseif isfield(fData, 'X8_1P_Date')
         datagramSource = 'X8';
-        fprintf(['...datagramSource not specified for ping processing. Using ''' datagramSource '''...\n']);
     else
         error('can''t find a suitable datagramSource')
     end

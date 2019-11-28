@@ -1,6 +1,6 @@
 
 %% Function
-function grab_vert_lim_cback(src,evt,main_figure,ref)
+function grab_vert_lim_cback(src,~,main_figure,ref)
 
 fData_tot = getappdata(main_figure,'fData');
 

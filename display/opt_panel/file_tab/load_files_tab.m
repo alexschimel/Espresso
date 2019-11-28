@@ -346,36 +346,36 @@ for nF = 1:numel(files_to_convert)
             
             % if not all datagrams were found at this point, message and abort
             if nansum(datags_parsed_idx)<5
-                if ~any(datags_parsed_idx(5:6))
-                    textprogressbar(' error. File does not contain required water-column datagrams. Check file contents. Conversion aborted.');
-                else
-                    textprogressbar(' error. File does not contain all necessary datagrams. Check file contents. Conversion aborted.');
+                if ~any(datags_parsed_idx(5:6))&&any(datags_parsed_idx(4:6))
+                    textprogressbar('File does not contain water-column datagrams. Conversion aborted.');
+                    continue;
+                elseif  ~all(datags_parsed_idx(1:3))||~any(datags_parsed_idx(4:6))
+                    textprogressbar('File does not contain all necessary datagrams. Check file contents. Conversion aborted.');
+                    continue;
                 end
-                continue
             end
             
         case '.s7k'
             
-            wc_d=7042;
-            %dg={'R1015_Navigation' 'R1003_Position' 'R7042_CompressedWaterColumn' 'R7018' 'R7000_SonarSettings' 'R7001_7kConfiguration' 'R7004_7kBeamGeometry' 'R7027_RAWdetection'};
-            dg_wc = [1015 1003 7042 7018 7000 7001 7004 7027];
+            %dg={'R1015_Navigation' 'R1003_Position'  'R7000_SonarSettings' 'R7001_7kConfiguration' 'R7004_7kBeamGeometry' 'R7027_RAWdetection' 'R7018_Water_column' 'R7042_CompressedWaterColumn'};
+            dg_wc = [1015 1003 7000 7001 7004 7027 7018 7042];
             
             [RESONdata,datags_parsed_idx] = CFF_read_s7k(file_to_convert,dg_wc);
             % if not all datagrams were found at this point, message and abort
             if ~all(datags_parsed_idx)
-                if ismember(wc_d,dg_wc(~datags_parsed_idx))
-                    textprogressbar(' Error. File does not contain required water-column datagrams. Check file contents. Conversion aborted.');
+                if ~any((datags_parsed_idx(7:8)))
+                    textprogressbar('File does not contain water-column datagrams. Check file contents. Conversion aborted.');
                     continue;
-                elseif nansum(datags_parsed_idx(1:2))==0||nansum(datags_parsed_idx(3:4))==0
-                    textprogressbar(' Error. File does not contain all necessary datagrams. Check file contents. Conversion aborted.');
+                elseif nansum(datags_parsed_idx(1:6))==0
+                    textprogressbar('File does not contain all necessary datagrams. Check file contents. Conversion aborted.');
                     continue;
                 end
             end
             
-            if datags_parsed_idx(4)
-                datagramSource='WC';
-            else
+            if datags_parsed_idx(end)
                 datagramSource='AP';
+            else
+                datagramSource='WC';
             end
             
         otherwise
@@ -601,7 +601,7 @@ for nF = 1:numel(files_to_load)
         end
         
         %% Processing bottom detect
-        if ismember(CFF_get_datagramSource(fData_temp),{'WC' 'AP'})
+        if ismember(CFF_get_datagramSource(fData_temp),{'WC' 'AP' 'X8'})
             fprintf('...Processing bottom detect...\n');
             fData_temp = CFF_georeference_WC_bottom_detect(fData_temp);
         end
