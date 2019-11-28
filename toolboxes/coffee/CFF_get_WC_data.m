@@ -115,7 +115,7 @@ end
 
 dg=CFF_get_datagramSource(fData);
 switch dg
-    case 'WC'  
+    case 'WC'
         ping_group_start=fData.WC_n_start;
         ping_group_end=fData.WC_n_end;
     case 'AP'
@@ -123,7 +123,7 @@ switch dg
         ping_group_end=fData.AP_n_end;
     otherwise
         data_tot=[];
-return;
+        return;
 end
 %maxNSamples_groups=fData.([fieldN(1:2) '_n_maxNSamples']);
 
@@ -188,5 +188,7 @@ for ig=istart:iend
     data_tot(1:size(data,1),1:(size(data,2)),ip+(1:(size(data,3))))=data;
     ip=ip+(size(data,3));
 end
+
+
 
 

@@ -240,6 +240,11 @@ if up_stacked_wc_bool
         blockPings  = (blocks(iB,1):blocks(iB,2));
         angleData=fData.(sprintf('%s_BP_BeamPointingAngle',datagramSource))(idx_angle_keep,idx_pings(blockPings))/180*pi;
         wc_data = CFF_get_WC_data(fData,dtg_to_load,'iPing',idx_pings(blockPings),'iBeam',idx_angle_keep,'iRange',idx_r);
+        switch str_disp
+            case 'Original'
+                [wc_data, warning_text] = CFF_WC_radiometric_corrections_CORE(wc_data,fData);
+        end
+        
         if isempty(wc_data)
             continue;
         end

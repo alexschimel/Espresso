@@ -454,7 +454,7 @@ a_min = str2double(display_tab_comp.alim_min.String);
 a_max = str2double(display_tab_comp.alim_max.String);
 
 % if the min is more than max, don't accept change and reset current values
-if a_min > a_max
+if a_min >= a_max
     display_tab_comp.alim_min.String = num2str(saw(1));
     display_tab_comp.alim_max.String = num2str(saw(2));
 else

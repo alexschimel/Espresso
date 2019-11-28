@@ -130,6 +130,7 @@ cax = [cax_min cax_max];
 switch str_disp
     case 'Original'
         amp = CFF_get_WC_data(fData,sprintf('%s_SBP_SampleAmplitudes',datagramSource),'iPing',ip);
+        [amp, warning_text] = CFF_WC_radiometric_corrections_CORE(amp,fData);
         idx_keep = amp >= cax(1);
     case 'Processed'
         amp = CFF_get_WC_data(fData,'X_SBP_WaterColumnProcessed','iPing',ip);

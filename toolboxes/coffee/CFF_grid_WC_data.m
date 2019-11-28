@@ -285,7 +285,11 @@ for iB = 1:nBlocks
     % number and in beams
     
         % get data to grid
-    blockL = CFF_get_WC_data(fData,field_to_grid,'iPing',blockPings,'dr_sub',dr_sub,'db_sub',db_sub,'output_format','true');
+        blockL = CFF_get_WC_data(fData,field_to_grid,'iPing',blockPings,'dr_sub',dr_sub,'db_sub',db_sub,'output_format','true');
+        switch data_type
+            case 'Original'
+                [blockL, warning_text] = CFF_WC_radiometric_corrections_CORE(blockL,fData);
+        end
     nSamples_temp=size(blockL,1);
     
     idxSamples = (1:dr_sub:nSamples_temp*dr_sub)';
