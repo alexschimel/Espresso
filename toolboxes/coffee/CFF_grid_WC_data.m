@@ -594,7 +594,7 @@ if isfield(fData,'X8_BP_ReflectivityBS')
     BSinterpolant = scatteredInterpolant(fData.X_BP_bottomNorthing(idx_val),fData.X_BP_bottomEasting(idx_val),fData.X8_BP_ReflectivityBS(idx_val),'natural','none');
     fData.X_NE_bs = BSinterpolant(N,E);
 else
-    fData.X_NE_bs=nan(numel(N),numel(E));
+    fData.X_NE_bs=nan(size(E),'single');
 end
 
 ff=filter2(ones(5,5),nansum(gridTotalWeight,3));

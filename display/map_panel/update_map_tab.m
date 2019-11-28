@@ -253,20 +253,28 @@ for i = update_line_index(:)'
                             d_min=nanmin(fData.X_BP_bottomHeight(:));
                             d_line_max=nanmin(sscanf(display_tab_comp.d_line_max.Label,'%fm'),d_max);
                             d_line_min=nanmax(sscanf(display_tab_comp.d_line_min.Label,'%fm'),d_min);
-                            idx_rem=(squeeze(fData.X_11H_gridHeight)-fData.X_1_gridVerticalResolution/2<d_line_min)|(squeeze(fData.X_11H_gridHeight)+fData.X_1_gridVerticalResolution/2>d_line_max);
+                            idx_rem=(squeeze(fData.X_11H_gridHeight)+fData.X_1_gridVerticalResolution/2<d_line_min)|(squeeze(fData.X_11H_gridHeight)-fData.X_1_gridVerticalResolution/2>d_line_max);
                         case {'height above bottom' 'Bottom'}
                             d_max=nanmax(abs(nanmin(fData.X_BP_bottomHeight(:))));
                             d_min=0;
                             d_line_max=nanmin(sscanf(display_tab_comp.d_line_bot_max.Label,'%fm'),d_max);
                             d_line_min=nanmax(sscanf(display_tab_comp.d_line_bot_min.Label,'%fm'),d_min);
-                            idx_rem=(squeeze(fData.X_11H_gridHeight)-fData.X_1_gridVerticalResolution/2<d_line_min)|(squeeze(fData.X_11H_gridHeight)+fData.X_1_gridVerticalResolution/2>d_line_max);
+                            
+                            idx_rem=(squeeze(fData.X_11H_gridHeight)+fData.X_1_gridVerticalResolution/2<d_line_min)|(squeeze(fData.X_11H_gridHeight)-fData.X_1_gridVerticalResolution/2>d_line_max);
                     end
-                            
-                            
-                    %nansum(idx_rem)/size(L,3)
-                    L(:,:,idx_rem)=nan;
                     
-                    data = 20*log10(nanmean(10.^(L(:,:,:)/20),3));
+                         if ~all(idx_rem)
+                             L(:,:,idx_rem)=nan;
+                             data = 20*log10(nanmean(10.^(L(:,:,:)/20),3));
+                         else
+                            [~,id_keep]=nanmin(abs(squeeze(fData.X_11H_gridHeight)-d_line_min));
+                            data = L(:,:,id_keep);
+                        end
+                            
+                    
+                    
+                    
+                    
                 else
                     data = L;
                 end
