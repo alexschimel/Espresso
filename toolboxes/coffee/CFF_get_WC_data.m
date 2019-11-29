@@ -107,6 +107,10 @@ iPing = round(p.Results.iPing);
 iBeam = p.Results.iBeam;
 iRange = p.Results.iRange;
 
+if ~isfield(fData,fieldN)
+   data_tot=[];
+   return;
+end
 
 %% get raw data
 if isempty(iPing)

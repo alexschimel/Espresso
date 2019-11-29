@@ -2,12 +2,16 @@ D:\Docs\MATLAB\Espresso\/Espresso.png
 D:\Docs\MATLAB\Espresso\config\classes.xml
 D:\Docs\MATLAB\Espresso\private\ek60_cmap.mat
 D:\Docs\MATLAB\Espresso\icons\tool_pointer.png
+D:\Docs\MATLAB\Espresso\icons\greenarrowicon_d.png
 D:\Docs\MATLAB\Espresso\icons\foldericon.gif
 D:\Docs\MATLAB\Espresso\private\AZFPColormap.mat
 D:\Docs\MATLAB\Espresso\icons\Espresso.png
 D:\Docs\MATLAB\Espresso\icons\folder_small.png
 D:\Docs\MATLAB\Espresso\icons\get_icons_cdata.m
 D:\Docs\MATLAB\Espresso\icons\edit_bot.png
+D:\Docs\MATLAB\Espresso\icons\greenarrowicon.gif
 D:\Docs\MATLAB\Espresso\icons\espresso.ico
+D:\Docs\MATLAB\Espresso\icons\greenarrowicon.png
 D:\Docs\MATLAB\Espresso\icons\iconRead.m
+D:\Docs\MATLAB\Espresso\icons\help_gs.png
 D:\Docs\MATLAB\Espresso\/Espresso.exe

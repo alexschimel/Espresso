@@ -137,10 +137,9 @@ switch str_disp
         idx_keep = amp >= cax(1);
     case 'Phase'
         amp = CFF_get_WC_data(fData,sprintf('%s_SBP_SamplePhase',datagramSource),'iPing',ip);
-        idx_keep = amp ~= 0;
-        caxis(wc_tab_comp.wc_axes,[-180 180]);
-        stacked_wc_tab_comp = getappdata(main_figure,'stacked_wc_tab');
-        caxis(stacked_wc_tab_comp.wc_axes,[-180 180]);
+        if isempty(amp)
+            display_tab_comp.data_disp.Value=find(strcmpi(display_tab_comp.data_disp.String,'Original'));
+        end
 end
 
 if isempty(amp)

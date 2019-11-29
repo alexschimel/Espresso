@@ -20,6 +20,18 @@
             <Component Id="cmp15034E84E012893BA6575B8CA8619044" Guid="*">
                 <File Id="fil8125DEAB14856A682F8771C61928CFA0" KeyPath="yes" Source="$(var.IconDir)\get_icons_cdata.m" />
             </Component>
+            <Component Id="cmp65C981663409E1A16B8A9151E7FA4EB4" Guid="*">
+                <File Id="filB2E1CF0AE46B3BC6EAF4F9ADDE1ADB0D" KeyPath="yes" Source="$(var.IconDir)\greenarrowicon.gif" />
+            </Component>
+            <Component Id="cmpD585017764840C443DE68F5E3C718FE4" Guid="*">
+                <File Id="filC61F9F4221FF0C0A6A716D0660C40890" KeyPath="yes" Source="$(var.IconDir)\greenarrowicon.png" />
+            </Component>
+            <Component Id="cmpB1922FBF1DF451EC9805DCD2FA4BF117" Guid="*">
+                <File Id="fil2D19327FAB236A308A020314B04A1171" KeyPath="yes" Source="$(var.IconDir)\greenarrowicon_d.png" />
+            </Component>
+            <Component Id="cmp36C6EA9B0C285C8F9678166DE570FF33" Guid="*">
+                <File Id="filF7B4BE751EB504439F121373B7B9AF38" KeyPath="yes" Source="$(var.IconDir)\help_gs.png" />
+            </Component>
             <Component Id="cmp17113548E886FC5CDEE1A0FFFEBB8FA1" Guid="*">
                 <File Id="filCBE7DE2253F66F3FAEFC76D8D146FBD3" KeyPath="yes" Source="$(var.IconDir)\iconRead.m" />
             </Component>
@@ -36,6 +48,10 @@
             <ComponentRef Id="cmp9B8688E8568E74580A1468610D970E55" />
             <ComponentRef Id="cmp8D8B3F38F9C6700B7D98376E9833E1C7" />
             <ComponentRef Id="cmp15034E84E012893BA6575B8CA8619044" />
+            <ComponentRef Id="cmp65C981663409E1A16B8A9151E7FA4EB4" />
+            <ComponentRef Id="cmpD585017764840C443DE68F5E3C718FE4" />
+            <ComponentRef Id="cmpB1922FBF1DF451EC9805DCD2FA4BF117" />
+            <ComponentRef Id="cmp36C6EA9B0C285C8F9678166DE570FF33" />
             <ComponentRef Id="cmp17113548E886FC5CDEE1A0FFFEBB8FA1" />
             <ComponentRef Id="cmp71920192B34B333B87EC510D22315598" />
         </ComponentGroup>

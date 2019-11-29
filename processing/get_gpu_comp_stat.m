@@ -2,7 +2,6 @@ function [gpu_comp,g] = get_gpu_comp_stat()
 
 % initialize negative results
 g = [];
-gpu_comp = 0;
 
 try
     
@@ -17,9 +16,9 @@ try
         % and test its compatibility for the work ahead
         if str2double(g.ComputeCapability) >= 3 && ... % Computational capability of the CUDA device. Must meet required specification.
                 g.SupportsDouble && ...                % Indicates if this device can support double precision operations.
-                g.DriverVersion > 7 && ...             % The CUDA device driver version currently in use. Must meet required specification.
+                g.DriverVersion > 10 && ...             % The CUDA device driver version currently in use. Must meet required specification.
                 g.DeviceSupported > 0 && ...           % Indicates if toolbox can use this device. Not all devices are supported; for example, if their ComputeCapability is insufficient, the toolbox cannot use them.
-                g.ToolkitVersion >= 8.0                % Version of the CUDA toolkit used by the current release of MATLAB: R2017b is 8.0, R2018b is 9.1, R2019a is 10.0 etc.
+                g.ToolkitVersion >= 10.0                % Version of the CUDA toolkit used by the current release of MATLAB: R2017b is 8.0, R2018b is 9.1, R2019a is 10.0 etc.
             
             % all good
             gpu_comp = g.DeviceSupported;

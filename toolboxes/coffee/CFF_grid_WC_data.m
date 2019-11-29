@@ -177,11 +177,10 @@ minBlockE = nan(1,nBlocks);
 minBlockN = nan(1,nBlocks);
 maxBlockE = nan(1,nBlocks);
 maxBlockN = nan(1,nBlocks);
-switch grid_type
-    case '3D'
-        minBlockH = nan(1,nBlocks);
-        maxBlockH = nan(1,nBlocks);
-end
+
+minBlockH = nan(1,nBlocks);
+maxBlockH = nan(1,nBlocks);
+
 %d_max=nanmax(fData.X_BP_bottomHeight(:));
 % find grid limits for each block
 
@@ -209,11 +208,9 @@ for iB = 1:nBlocks
     minBlockN(iB) = min(blockN(:));
     maxBlockN(iB) = max(blockN(:));
     
-    switch grid_type
-        case '3D'
-            minBlockH(iB) = min(blockH(:));
-            maxBlockH(iB) = max(blockH(:));
-    end
+    minBlockH(iB) = min(blockH(:));
+    maxBlockH(iB) = max(blockH(:));
+
     
 end
 
@@ -225,12 +222,10 @@ minGridN = floor(min(minBlockN));
 maxGridN = ceil(max(maxBlockN));
 numElemGridN = ceil((maxGridN-minGridN)./grid_horz_res)+1;
 
-switch grid_type
-    case '3D'
-        minGridH = floor(min(minBlockH));
-        maxGridH = ceil(max(maxBlockH));
-        numElemGridH = ceil((maxGridH-minGridH)./grid_vert_res)+1;
-end
+minGridH = floor(min(minBlockH));
+maxGridH = ceil(max(maxBlockH));
+numElemGridH = ceil((maxGridH-minGridH)./grid_vert_res)+1;
+
 
 
 %% initalize the grids:
@@ -284,12 +279,12 @@ for iB = 1:nBlocks
     % to speed up processing, we will only grid data decimated in samples
     % number and in beams
     
-        % get data to grid
-        blockL = CFF_get_WC_data(fData,field_to_grid,'iPing',blockPings,'dr_sub',dr_sub,'db_sub',db_sub,'output_format','true');
-        switch data_type
-            case 'Original'
-                [blockL, warning_text] = CFF_WC_radiometric_corrections_CORE(blockL,fData);
-        end
+    % get data to grid
+    blockL = CFF_get_WC_data(fData,field_to_grid,'iPing',blockPings,'dr_sub',dr_sub,'db_sub',db_sub,'output_format','true');
+    switch data_type
+        case 'Original'
+            [blockL, warning_text] = CFF_WC_radiometric_corrections_CORE(blockL,fData);
+    end
     nSamples_temp=size(blockL,1);
     
     idxSamples = (1:dr_sub:nSamples_temp*dr_sub)';
@@ -302,7 +297,7 @@ for iB = 1:nBlocks
         sonarEasting(blockPings), sonarNorthing(blockPings), sonarHeight(blockPings), sonarHeading(blockPings));
     blockAccD = single(blockAccD);
     
-
+    
     % define weights here
     weighting_mode = 'none'; % 'SIAfilter' or 'none'
     switch weighting_mode
@@ -368,10 +363,11 @@ for iB = 1:nBlocks
                     case 'outside of'
                         idx_keep = blockH>=-grdlim_mindist | blockH<=-grdlim_maxdist;
                 end
+                idx_keep=idx_keep&~isnan(blockH)&blockH>=minGridH&blockH<=maxGridH;
             else
-               idx_keep=~isnan(blockH)&blockH>=minGridH&blockH<=maxGridH;
+                idx_keep=~isnan(blockH)&blockH>=minGridH&blockH<=maxGridH;
             end
-            
+            %idx_keep=idx_keep&blockH<=0;
         case 'Bottom'
             
             block_bottomHeight = HeightInterpolant(blockN,blockE);
@@ -384,6 +380,7 @@ for iB = 1:nBlocks
                     case 'outside of'
                         idx_keep = block_sampleHeightAboveSeafloor<=grdlim_mindist | block_sampleHeightAboveSeafloor>=grdlim_maxdist;
                 end
+                idx_keep=idx_keep&blockH>=0;
             else
                 idx_keep=~isnan(blockH)&blockH>=0;
             end

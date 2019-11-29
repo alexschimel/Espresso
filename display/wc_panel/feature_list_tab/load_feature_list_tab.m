@@ -285,6 +285,9 @@ end
 file_tab_comp = getappdata(main_figure,'file_tab');
 path_ori = get(file_tab_comp.path_box,'string');
 folder_name = uigetdir(path_ori,'Select folder for features to export');
+if folder_name==0
+    return;
+end
 
 % features to export
 features_id = {features(:).Unique_ID};
@@ -295,7 +298,7 @@ fData_tot = getappdata(main_figure,'fData');
 table_out=[];
 for ii = 1:numel(idx_exp)
     
-    output_file = fullfile(folder_name,[sprintf('%s_%i_%s',features(idx_exp(ii)).Class,features(idx_exp(ii)).ID,features(idx_exp(ii)).Description) '.shp']);
+    output_file = [sprintf('%s_%i_%s',features(idx_exp(ii)).Class,features(idx_exp(ii)).ID,features(idx_exp(ii)).Description) '.shp'];
 
     geostruct=features(idx_exp(ii)).feature_to_geostruct();  
     
@@ -345,7 +348,9 @@ for ii = 1:numel(idx_exp)
     geostruct.DateTimeStart=strjoin(geostruct.DateTimeStart,';');
     geostruct.DateTimeEnd=strjoin(geostruct.DateTimeEnd,';');
     
-
+    output_file=generate_valid_filename(output_file);
+    output_file=fullfile(folder_name,output_file);
+    %output_file='D:\test.shp';
     shapewrite(geostruct,output_file);
     
     geostruct=rmfield(geostruct,'BoundingBox');
