@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi" xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
   <?define MajorVersion="0" ?>
-  <?define MinorVersion="15" ?>
+  <?define MinorVersion="16" ?>
   <?define BuildVersion="0" ?>
   <!-- Revision is NOT used by WiX in the upgrade procedure -->
   <?define Revision="0" ?>

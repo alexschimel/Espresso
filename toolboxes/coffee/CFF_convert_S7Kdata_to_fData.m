@@ -175,11 +175,11 @@ for iF = 1:nStruct
                 fData.Po_1D_HeadingOfVessel =[head(1) head'];
                 
             else
-                warning('Po_1D_Date:Could not find position data in the file');
+                warning('Po_1D_Date: Could not find position data in the file');
             end
             
         else
-            warning('Po_1D_Date:Could not find position data in the file');
+            warning('Po_1D_Date: Could not find position data in the file');
         end
         
         %% EM_XYZ88
@@ -193,13 +193,14 @@ for iF = 1:nStruct
                     update_flag = 1;
                 end
                 
-                nPings    = numel(S7Kdata.R7042_CompressedWaterColumn.BeamNumber); % total number of pings in file
-                maxNBeams=nanmax(cellfun(@numel,S7Kdata.R7042_CompressedWaterColumn.BeamNumber));
+                nPings    = numel(S7Kdata.R7027_RAWdetection.PingNumber); % total number of pings in file
+                maxNBeams=nanmax(cellfun(@nanmax,S7Kdata.R7027_RAWdetection.BeamDescriptor));
+                maxNBeams = maxNBeams+1;
                 
                 fData.X8_1P_Date                            = S7Kdata.R7027_RAWdetection.Date;
                 fData.X8_1P_TimeSinceMidnightInMilliseconds = S7Kdata.R7027_RAWdetection.TimeSinceMidnightInMilliseconds;
                 fData.X8_1P_PingCounter                     = 1:nPings;
-                fData.X8_1P_HeadingOfVessel                 = nan(size(fData.X8_1P_Date));
+                fData.X8_1P_HeadingOfVessel                 = S7Kdata.R7027_RAWdetection.Heading;
                 fData.X8_1P_SoundSpeedAtTransducer          = nan(size(fData.X8_1P_Date));
                 fData.X8_1P_TransmitTransducerDepth         = nan(size(fData.X8_1P_Date));
                 fData.X8_1P_NumberOfBeamsInDatagram         = S7Kdata.R7027_RAWdetection.N;
@@ -264,7 +265,7 @@ for iF = 1:nStruct
                 end
                 % get indices of first datagram for each ping
                 pingNumber=1:numel(S7Kdata.R7018_7kBeamformedData.SonarId);
-                maxNBeams=nanmax(numel,S7Kdata.R7018_7kBeamformedData.N);
+                maxNBeams=nanmax(S7Kdata.R7018_7kBeamformedData.N);
                 nPings=numel(S7Kdata.R7018_7kBeamformedData.N);
                 maxNSamples=nanmax(S7Kdata.R7018_7kBeamformedData.S);
                 maxNTransmitSectors = 1;
@@ -298,7 +299,7 @@ for iF = 1:nStruct
                 fData.WC_BP_BeamNumber             = nan(maxNBeams,nPings);
                 
                 
-                [maxNSamples_groups,ping_group_start,ping_group_end]=CFF_group_pings_per_samples(S7Kdata.R7042_CompressedWaterColumn.NumberOfSamples,pingNumber,pingNumber);
+                [maxNSamples_groups,ping_group_start,ping_group_end]=CFF_group_pings_per_samples(S7Kdata.R7018_7kBeamformedData.S,pingNumber,pingNumber);
                 
                 
                 % path to binary file for WC data
@@ -343,14 +344,19 @@ for iF = 1:nStruct
                     end
                     
                     fseek(fid_all,S7Kdata.R7018_7kBeamformedData.BeamformedDataPos(iP),'bof');
-                    Mag_tmp=(fread(fid_all,[S7Kdata.R7018_7kBeamformedData.N(iP) S7Kdata.R7018_7kBeamformedData.S(iP)],mag_fmt,1))';
-                    fseek(fid_all,S7Kdata.R7018_7kBeamformedData.BeamformedDataPos(iP)+1,'bof');
-                    Ph_tmp=(fread(fid_all,[S7Kdata.R7018_7kBeamformedData.N(iP) S7Kdata.R7018_7kBeamformedData.S(iP)],phase_fmt,1))';
+                    Mag_tmp=(fread(fid_all,[S7Kdata.R7018_7kBeamformedData.N(iP) S7Kdata.R7018_7kBeamformedData.S(iP)],mag_fmt,2))';
+                    fseek(fid_all,S7Kdata.R7018_7kBeamformedData.BeamformedDataPos(iP)+2,'bof');
+                    Ph_tmp=(fread(fid_all,[S7Kdata.R7018_7kBeamformedData.N(iP) S7Kdata.R7018_7kBeamformedData.S(iP)],phase_fmt,2))';
                     
                     Ph_tmp=Ph_tmp/10430/pi*180;
                     
                     Mag_tmp(Mag_tmp==eval([mag_fmt '(-inf)']))=eval([mag_fmt '(-inf)']);
                     Mag_tmp=20*log10(Mag_tmp/double(intmax('uint16')))*200;
+%                     
+%                     figure();
+%                     imagesc(Mag_tmp/200)
+%                     figure();
+%                     imagesc(Ph_tmp)
                     % store amp data on binary file
                     if file_amp_id(ig) >= 0
                         fwrite(file_amp_id(ig),Mag_tmp,mag_fmt);

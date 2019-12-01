@@ -366,7 +366,7 @@ for nF = 1:numel(files_to_convert)
                 if ~any((datags_parsed_idx(7:8)))
                     textprogressbar('File does not contain water-column datagrams. Check file contents. Conversion aborted.');
                     continue;
-                elseif nansum(datags_parsed_idx(1:6))==0
+                elseif ~all(datags_parsed_idx(1:6))
                     textprogressbar('File does not contain all necessary datagrams. Check file contents. Conversion aborted.');
                     continue;
                 end

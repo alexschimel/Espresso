@@ -1,10 +1,13 @@
 function[maxNSamples_groups,ping_group_start,ping_group_end]=CFF_group_pings_per_samples(numberOfSamples,pingCounters,EM_PingCounters)
 
-
+if iscell(numberOfSamples)
 maxNSamples_1P=nan(1,numel(pingCounters));
 for ii=1:numel(pingCounters)
     ix=EM_PingCounters==pingCounters(ii);
     maxNSamples_1P(ii)=max(cellfun(@(x) max(x),numberOfSamples(ix)));
+end
+else
+    maxNSamples_1P=numberOfSamples;
 end
 
 nb_min_s=50;
@@ -30,7 +33,11 @@ ping_group_end=pingCounters([idx_new_group(2:end)-1 numel(pingCounters)]);
 maxNSamples_groups=nan(1,numel(idx_new_group));
 for uig=1:numel(idx_new_group)
     ix=ismember(EM_PingCounters,ping_group_start(uig):ping_group_end(uig));
-    maxNSamples_groups(uig)=max(cellfun(@(x) max(x),numberOfSamples(ix)));
+    if iscell(numberOfSamples)
+        maxNSamples_groups(uig)=max(cellfun(@(x) max(x),numberOfSamples(ix)));
+    else
+        maxNSamples_groups(uig)=max(numberOfSamples(ix));
+    end
 end
 
 ping_group_start=ping_group_start-pingCounters(1)+1;
