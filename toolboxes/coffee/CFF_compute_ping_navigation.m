@@ -125,18 +125,22 @@ end
 % in the future, offer possibility to import position/orientation from
 % other files, say SBET
 
+% test if there are several sources of GPS data
 if isfield(fData,'Po_1D_PositionSystemDescriptor')
     [ID,idx_sys] = unique(fData.Po_1D_PositionSystemDescriptor);
-    if numel(idx_sys)>1
+    if numel(idx_sys) > 1
+        % several sources, keep the one with best accuracy
         [~,idx_keep] = nanmin(fData.Po_1D_MeasureOfPositionFixQuality(idx_sys));
-        pos_idx=fData.Po_1D_PositionSystemDescriptor==ID(idx_keep);
-        fprintf('Using GPS source ID: %d\n',ID(idx_keep));
+        pos_idx = fData.Po_1D_PositionSystemDescriptor==ID(idx_keep);
+        fprintf('Several sources of GPS data avaialble. Using source with ID: %d\n',ID(idx_keep));
     else
-        pos_idx=1:numel(fData.Po_1D_Latitude);
+        % single source. Use all datagrams.
+        pos_idx = 1:numel(fData.Po_1D_Latitude);
     end
 else
-   warning('No PositionSystemDescriptor field in navigation data, you should reconvert those files if you see any strange pattern in the navigation and/or if two GPS sources have been logged in the file.'); 
-   pos_idx=1:numel(fData.Po_1D_Latitude);
+    % using older version of converted data, throw warning and continue
+   warning('Navigation information in your converted data indicates it is not up to date with this version of Espresso. Consider reconverting this file, particularly if you see strange patterns in the navigation, or if two GPS sources have been logged in the file.'); 
+   pos_idx = 1:numel(fData.Po_1D_Latitude);
 end
 
 posLatitude  = fData.Po_1D_Latitude(pos_idx); 
@@ -144,8 +148,6 @@ posLongitude = fData.Po_1D_Longitude(pos_idx);
 posHeading   = fData.Po_1D_HeadingOfVessel(pos_idx);
 posSpeed     = fData.Po_1D_SpeedOfVesselOverGround(pos_idx);
 posTSMIM     = fData.Po_1D_TimeSinceMidnightInMilliseconds(pos_idx);
-
-
 posDate      = datenum(cellfun(@num2str,num2cell(fData.Po_1D_Date(pos_idx)),'un',0),'yyyymmdd');
 posSDN       = posDate(:)'+ posTSMIM/(24*60*60*1000);
 
@@ -163,8 +165,8 @@ if isfield(fData,'He_1D_Height')
     heiDate   = datenum(cellfun(@num2str,num2cell(fData.He_1D_Date),'un',0),'yyyymmdd');
     heiSDN    = heiDate(:)' + fData.He_1D_TimeSinceMidnightInMilliseconds/(24*60*60*1000);
 else
-    heiHeight=zeros(size(pingTSMIM));
-    heiSDN =pingSDN;
+    heiHeight = zeros(size(pingTSMIM));
+    heiSDN    = pingSDN;
 end
 
 %% 4. PROCESS NAVIGATION AND HEADING:

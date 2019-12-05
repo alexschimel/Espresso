@@ -169,14 +169,14 @@ for iDatag = datagToParse'
             S7Kdata.R1003_Position.Latency(i1003)  = fread(fid,1,'float32');
             
             if S7Kdata.R1003_Position.Datum_id(i1003)==0
-                S7Kdata.R1003_Position.Latitude(i1003)  = fread(fid,1,'float64')/pi*180;
-                S7Kdata.R1003_Position.Longitude(i1003) = fread(fid,1,'float64')/pi*180;
+                S7Kdata.R1003_Position.Latitude(i1003)  = fread(fid,1,'float64')/pi*180; % in radians if latitude (now degrees), or in meters if northing
+                S7Kdata.R1003_Position.Longitude(i1003) = fread(fid,1,'float64')/pi*180; % in radians if longitude (now degrees), or in meters if easting
             else
                 S7Kdata.R1003_Position.LatitudeRadOrNorthing(i1003) = fread(fid,1,'float64');
                 S7Kdata.R1003_Position.LongitudeRadOrEasting(i1003) = fread(fid,1,'float64');
             end
             
-            S7Kdata.R1003_Position.Height(i1003)   = fread(fid,1,'float64');
+            S7Kdata.R1003_Position.Height(i1003)             = fread(fid,1,'float64'); % in m
             S7Kdata.R1003_Position.PositionTypeFlag(i1003)   = fread(fid,1,'uint8');
             S7Kdata.R1003_Position.UTMZone(i1003)            = fread(fid,1,'uint8');
             S7Kdata.R1003_Position.QualityFlag(i1003)        = fread(fid,1,'uint8');
@@ -210,14 +210,14 @@ for iDatag = datagToParse'
             icurr_field = i1015;
             
             S7Kdata.R1015_Navigation.VerticalReference(i1015)          = fread(fid,1,'uint8');
-            S7Kdata.R1015_Navigation.Latitude(i1015)                   = fread(fid,1,'float64')/pi*180;
-            S7Kdata.R1015_Navigation.Longitude(i1015)                  = fread(fid,1,'float64')/pi*180;
+            S7Kdata.R1015_Navigation.Latitude(i1015)                   = fread(fid,1,'float64')/pi*180; % originally in rad, now in deg
+            S7Kdata.R1015_Navigation.Longitude(i1015)                  = fread(fid,1,'float64')/pi*180; % originally in rad, now in deg
             S7Kdata.R1015_Navigation.HorizontalPositionAccuracy(i1015) = fread(fid,1,'float32');
             S7Kdata.R1015_Navigation.VesselHeight(i1015)               = fread(fid,1,'float32');
-            S7Kdata.R1015_Navigation.HeightAccuracy(i1015)             = fread(fid,1,'float32');
-            S7Kdata.R1015_Navigation.SpeedOverGround(i1015)             = fread(fid,1,'float32');
-            S7Kdata.R1015_Navigation.CourseOverGround(i1015)           = fread(fid,1,'float32');
-            S7Kdata.R1015_Navigation.Heading(i1015)                    = fread(fid,1,'float32')/pi*180;
+            S7Kdata.R1015_Navigation.HeightAccuracy(i1015)             = fread(fid,1,'float32'); % in m
+            S7Kdata.R1015_Navigation.SpeedOverGround(i1015)            = fread(fid,1,'float32'); % in m/s
+            S7Kdata.R1015_Navigation.CourseOverGround(i1015)           = fread(fid,1,'float32'); % in rad
+            S7Kdata.R1015_Navigation.Heading(i1015)                    = fread(fid,1,'float32')/pi*180; % originally in rad, now in deg
             
             parsed = 1;
             
@@ -230,47 +230,55 @@ for iDatag = datagToParse'
             try i7000 = i7000+1; catch, i7000 = 1; end
             icurr_field = i7000;
             
-            S7Kdata.R7000_SonarSettings.SonarID(i7000) = fread(fid,1,'uint64');
-            S7Kdata.R7000_SonarSettings.PingNumber(i7000) = fread(fid,1,'uint32');
+            S7Kdata.R7000_SonarSettings.SonarID(i7000)           = fread(fid,1,'uint64');
+            S7Kdata.R7000_SonarSettings.PingNumber(i7000)        = fread(fid,1,'uint32');
             S7Kdata.R7000_SonarSettings.MultiPingSequence(i7000) = fread(fid,1,'uint16');
-            S7Kdata.R7000_SonarSettings.Frequency(i7000) = fread(fid,1,'float32');
-            S7Kdata.R7000_SonarSettings.SampleRate(i7000) = fread(fid,1,'float32');
+            S7Kdata.R7000_SonarSettings.Frequency(i7000)         = fread(fid,1,'float32');
+            S7Kdata.R7000_SonarSettings.SampleRate(i7000)        = fread(fid,1,'float32');
             S7Kdata.R7000_SonarSettings.ReceiverBandwidth(i7000) = fread(fid,1,'float32');
             S7Kdata.R7000_SonarSettings.TxPulseWidth(i7000)      = fread(fid,1,'float32');
-            S7Kdata.R7000_SonarSettings.TXPulseIdentifier(i7000) = fread(fid,1,'uint32');%0=CW, 1=FM
+            S7Kdata.R7000_SonarSettings.TXPulseIdentifier(i7000) = fread(fid,1,'uint32'); %0=CW, 1=FM
+            
             t_temp = fread(fid,1,'uint32');
-            S7Kdata.R7000_SonarSettings.TXPulseEnvelopeIdentifier{i7000} = get_param_val(tx_pulse_env_id,t_temp); %0=Tapered Rect, 1=Tukey, 2= Hamming, 3=Han, 4= Rectangular
-            S7Kdata.R7000_SonarSettings.TXPulseEnvelopeParameter(i7000) = fread(fid,1,'float32');
+            S7Kdata.R7000_SonarSettings.TXPulseEnvelopeIdentifier{i7000} = get_param_val(tx_pulse_env_id,t_temp); % 0=Tapered Rect, 1=Tukey, 2= Hamming, 3=Han, 4= Rectangular
+            
+            S7Kdata.R7000_SonarSettings.TXPulseEnvelopeParameter(i7000)  = fread(fid,1,'float32');
+            
             t_temp = fread(fid,1,'uint16');
-            S7Kdata.R7000_SonarSettings.TXPulseMode{i7000} = get_param_val(tx_pulse_modes,t_temp);%1=Single Ping, 2= Multi-ping 2, 3=Multi-ping 3, 4= Multi-ping 4
-            S7Kdata.R7000_SonarSettings.TXPulseReserved(i7000) = fread(fid,1,'uint16');
-            S7Kdata.R7000_SonarSettings.MaxPingRate(i7000) = fread(fid,1,'float32');%in pings per seconds
-            S7Kdata.R7000_SonarSettings.PingPeriod(i7000) = fread(fid,1,'float32');%in pings per seconds
-            S7Kdata.R7000_SonarSettings.RangeSelection(i7000) = fread(fid,1,'float32');
-            S7Kdata.R7000_SonarSettings.PowerSelection(i7000) = fread(fid,1,'float32');
-            S7Kdata.R7000_SonarSettings.GainSelection(i7000) = fread(fid,1,'float32');
-            S7Kdata.R7000_SonarSettings.ControlFlags(i7000) = fread(fid,1,'uint32');
-            S7Kdata.R7000_SonarSettings.ProjectIdentifier(i7000) = fread(fid,1,'uint32');
-            S7Kdata.R7000_SonarSettings.ProjectorBeamSteeringAngleVerticalRad(i7000) = fread(fid,1,'float32');
+            S7Kdata.R7000_SonarSettings.TXPulseMode{i7000} = get_param_val(tx_pulse_modes,t_temp); % 1=Single Ping, 2= Multi-ping 2, 3=Multi-ping 3, 4= Multi-ping 4
+            
+            S7Kdata.R7000_SonarSettings.TXPulseReserved(i7000)                         = fread(fid,1,'uint16');
+            S7Kdata.R7000_SonarSettings.MaxPingRate(i7000)                             = fread(fid,1,'float32'); % in pings per seconds
+            S7Kdata.R7000_SonarSettings.PingPeriod(i7000)                              = fread(fid,1,'float32'); % in pings per seconds
+            S7Kdata.R7000_SonarSettings.RangeSelection(i7000)                          = fread(fid,1,'float32');
+            S7Kdata.R7000_SonarSettings.PowerSelection(i7000)                          = fread(fid,1,'float32');
+            S7Kdata.R7000_SonarSettings.GainSelection(i7000)                           = fread(fid,1,'float32');
+            S7Kdata.R7000_SonarSettings.ControlFlags(i7000)                            = fread(fid,1,'uint32');
+            S7Kdata.R7000_SonarSettings.ProjectIdentifier(i7000)                       = fread(fid,1,'uint32');
+            S7Kdata.R7000_SonarSettings.ProjectorBeamSteeringAngleVerticalRad(i7000)   = fread(fid,1,'float32');
             S7Kdata.R7000_SonarSettings.ProjectorBeamSteeringAngleHorizontalRad(i7000) = fread(fid,1,'float32');
-            S7Kdata.R7000_SonarSettings.ProjectorBeam3dBWidthVerticalRad(i7000) = fread(fid,1,'float32');
-            S7Kdata.R7000_SonarSettings.ProjectorBeam3dBWidthHorizontalRad(i7000) = fread(fid,1,'float32');
-            S7Kdata.R7000_SonarSettings.ProjectorBeamFocalPoint(i7000) = fread(fid,1,'float32');
+            S7Kdata.R7000_SonarSettings.ProjectorBeam3dBWidthVerticalRad(i7000)        = fread(fid,1,'float32');
+            S7Kdata.R7000_SonarSettings.ProjectorBeam3dBWidthHorizontalRad(i7000)      = fread(fid,1,'float32');
+            S7Kdata.R7000_SonarSettings.ProjectorBeamFocalPoint(i7000)                 = fread(fid,1,'float32');
+            
             t_temp = fread(fid,1,'uint32');
             S7Kdata.R7000_SonarSettings.ProjectorBeamWeightingWindowType{i7000} = get_param_val(proj_beam_types,t_temp);
+            
             S7Kdata.R7000_SonarSettings.ProjectorBeamWeightingWindowParameter(i7000) = fread(fid,1,'float32');
-            S7Kdata.R7000_SonarSettings.TransmitFlags(i7000) = fread(fid,1,'uint32');
-            S7Kdata.R7000_SonarSettings.HydrophoneIdentifier(i7000) = fread(fid,1,'uint32');
+            S7Kdata.R7000_SonarSettings.TransmitFlags(i7000)                         = fread(fid,1,'uint32');
+            S7Kdata.R7000_SonarSettings.HydrophoneIdentifier(i7000)                  = fread(fid,1,'uint32');
+            
             t_temp = fread(fid,1,'uint32');
             S7Kdata.R7000_SonarSettings.ReceiveBeamWeightingWindowType{i7000} = get_param_val(rx_beam_win,t_temp);
+            
             S7Kdata.R7000_SonarSettings.ReceiveBeamWeightingWindowParameter = fread(fid,1,'float32');
-            S7Kdata.R7000_SonarSettings.ReceiveFlags(i7000) = fread(fid,1,'uint32');
-            S7Kdata.R7000_SonarSettings.ReceiveBeamWidthRad(i7000) = fread(fid,1,'float32');
-            S7Kdata.R7000_SonarSettings.BottomDetectFilter{i7000} = fread(fid,4,'float32'); %[min_range max_range min_depth max_depth]
-            S7Kdata.R7000_SonarSettings.Absorption(i7000) = fread(fid,1,'float32');
-            S7Kdata.R7000_SonarSettings.SoundVelocity(i7000) = fread(fid,1,'float32');
-            S7Kdata.R7000_SonarSettings.Spreading(i7000) = fread(fid,1,'float32');
-            S7Kdata.R7000_SonarSettings.Reserved(i7000) = fread(fid,1,'uint16');
+            S7Kdata.R7000_SonarSettings.ReceiveFlags(i7000)                 = fread(fid,1,'uint32');
+            S7Kdata.R7000_SonarSettings.ReceiveBeamWidthRad(i7000)          = fread(fid,1,'float32');
+            S7Kdata.R7000_SonarSettings.BottomDetectFilter{i7000}           = fread(fid,4,'float32'); % [min_range max_range min_depth max_depth]
+            S7Kdata.R7000_SonarSettings.Absorption(i7000)                   = fread(fid,1,'float32');
+            S7Kdata.R7000_SonarSettings.SoundVelocity(i7000)                = fread(fid,1,'float32');
+            S7Kdata.R7000_SonarSettings.Spreading(i7000)                    = fread(fid,1,'float32');
+            S7Kdata.R7000_SonarSettings.Reserved(i7000)                     = fread(fid,1,'uint16');
             
             parsed = 1;
             
@@ -281,25 +289,29 @@ for iDatag = datagToParse'
                 continue;
             end
             try i7001=i7001+1; catch, i7001=1; end
-            icurr_field=i7001;
+            icurr_field = i7001;
             
             S7Kdata.R7001_7kConfiguration.SonarId(i7001) = fread(fid,1,'uint64');
-            N_info                                       = fread(fid,1,'uint32');
-            S7Kdata.R7001_7kConfiguration.N(i7001)       = N_info;
             
-            S7Kdata.R7001_7kConfiguration.DeviceID{i7001} = nan(1,N_info);
-            S7Kdata.R7001_7kConfiguration.DeviceDescription{i7001} = cell(1,N_info);
+            N_info = fread(fid,1,'uint32');
+            S7Kdata.R7001_7kConfiguration.N(i7001) = N_info;
+            
+            S7Kdata.R7001_7kConfiguration.DeviceID{i7001}            = nan(1,N_info);
+            S7Kdata.R7001_7kConfiguration.DeviceDescription{i7001}   = cell(1,N_info);
             S7Kdata.R7001_7kConfiguration.DeviceAlphaDataCard{i7001} = nan(1,N_info);
-            S7Kdata.R7001_7kConfiguration.DeviceSerialNumber{i7001} = nan(1,N_info);
-            S7Kdata.R7001_7kConfiguration.DeviceInfo{i7001} = cell(1,N_info);
+            S7Kdata.R7001_7kConfiguration.DeviceSerialNumber{i7001}  = nan(1,N_info);
+            S7Kdata.R7001_7kConfiguration.DeviceInfo{i7001}          = cell(1,N_info);
             
             for i_inf = 1:N_info
-                S7Kdata.R7001_7kConfiguration.DeviceID{i7001}(i_inf) = fread(fid,1,'uint32');
-                S7Kdata.R7001_7kConfiguration.DeviceDescription{i7001}{i_inf} = fread(fid,60,'*char')';
+                
+                S7Kdata.R7001_7kConfiguration.DeviceID{i7001}(i_inf)            = fread(fid,1,'uint32');
+                S7Kdata.R7001_7kConfiguration.DeviceDescription{i7001}{i_inf}   = fread(fid,60,'*char')';
                 S7Kdata.R7001_7kConfiguration.DeviceAlphaDataCard{i7001}(i_inf) = fread(fid,1,'uint32');
-                S7Kdata.R7001_7kConfiguration.DeviceSerialNumber{i7001}(i_inf) = fread(fid,1,'uint32');
+                S7Kdata.R7001_7kConfiguration.DeviceSerialNumber{i7001}(i_inf)  = fread(fid,1,'uint32');
+                
                 l_tmp = fread(fid,1,'uint32');
                 S7Kdata.R7001_7kConfiguration.DeviceInfo{i7001}{i_inf} = fread(fid,l_tmp,'*char')';
+                
             end
             
             parsed = 1;
@@ -328,10 +340,10 @@ for iDatag = datagToParse'
             S7Kdata.R7004_7kBeamGeometry.N(i7004) = fread(fid,1,'uint32');
             
             N = S7Kdata.R7004_7kBeamGeometry.N(i7004);
-            S7Kdata.R7004_7kBeamGeometry.BeamVerticalDirectionAngleRad{i7004} = fread(fid,N,'float32');
+            S7Kdata.R7004_7kBeamGeometry.BeamVerticalDirectionAngleRad{i7004}   = fread(fid,N,'float32');
             S7Kdata.R7004_7kBeamGeometry.BeamHorizontalDirectionAngleRad{i7004} = fread(fid,N,'float32');
-            S7Kdata.R7004_7kBeamGeometry.BeamWidth3dBAlongTrackRad{i7004} = fread(fid,N,'float32');
-            S7Kdata.R7004_7kBeamGeometry.BeamWidth3dBAcrossTrackRad{i7004} = fread(fid,N,'float32');
+            S7Kdata.R7004_7kBeamGeometry.BeamWidth3dBAlongTrackRad{i7004}       = fread(fid,N,'float32');
+            S7Kdata.R7004_7kBeamGeometry.BeamWidth3dBAcrossTrackRad{i7004}      = fread(fid,N,'float32');
             
             parsed = 1;
             
@@ -355,32 +367,31 @@ for iDatag = datagToParse'
             try i7012 = i7012+1; catch, i7012 = 1; end
             icurr_field = i7012;
             
-            S7Kdata.R7012_7kPingMotionData.SonarID(i7012) = fread(fid,1,'uint64');
-            S7Kdata.R7012_7kPingMotionData.PingNumber(i7012) = fread(fid,1,'uint32');
-            S7Kdata.R7012_7kPingMotionData.PingNumber(i7012) = fread(fid,1,'uint32');
+            S7Kdata.R7012_7kPingMotionData.SonarID(i7012)           = fread(fid,1,'uint64');
+            S7Kdata.R7012_7kPingMotionData.PingNumber(i7012)        = fread(fid,1,'uint32');
+            S7Kdata.R7012_7kPingMotionData.PingNumber(i7012)        = fread(fid,1,'uint32');
             S7Kdata.R7012_7kPingMotionData.MultiPingSequence(i7012) = fread(fid,1,'uint16');
-            S7Kdata.R7012_7kPingMotionData.NumberOfSamples(i7012) = fread(fid,1,'uint32');
-            S7Kdata.R7012_7kPingMotionData.Flags(i7012) = fread(fid,1,'uint16');
-            S7Kdata.R7012_7kPingMotionData.ErrorFlags(i7012) = fread(fid,1,'uint32');
-            S7Kdata.R7012_7kPingMotionData.SamplingRate(i7012) = fread(fid,1,'float32');
-            S7Kdata.R7012_7kPingMotionData.Pitch(i7012) = fread(fid,1,'float32');
+            S7Kdata.R7012_7kPingMotionData.NumberOfSamples(i7012)   = fread(fid,1,'uint32');
+            S7Kdata.R7012_7kPingMotionData.Flags(i7012)             = fread(fid,1,'uint16');
+            S7Kdata.R7012_7kPingMotionData.ErrorFlags(i7012)        = fread(fid,1,'uint32');
+            S7Kdata.R7012_7kPingMotionData.SamplingRate(i7012)      = fread(fid,1,'float32');
+            S7Kdata.R7012_7kPingMotionData.Pitch(i7012)             = fread(fid,1,'float32');
+            
             N = S7Kdata.R7012_7kPingMotionData.NumberOfSamples(i7012);
             
+            % read and parse flags
             flags = CFF_get_R7012_flags(S7Kdata.R7012_7kPingMotionData.Flags(i7012));
-            
-            if flags.pitchStab>0
-                S7Kdata.R7012_7kPingMotionData.Pitch{i7012} = fread(fid,N,'float32');
+            if flags.pitchStab > 0
+                S7Kdata.R7012_7kPingMotionData.Pitch{i7012}   = fread(fid,N,'float32');
             end
-            
-            if flags.rollStab>0
-                S7Kdata.R7012_7kPingMotionData.Roll{i7012} = fread(fid,N,'float32');
+            if flags.rollStab > 0
+                S7Kdata.R7012_7kPingMotionData.Roll{i7012}    = fread(fid,N,'float32');
             end
-            if flags.yawStab>0
+            if flags.yawStab > 0
                 S7Kdata.R7012_7kPingMotionData.Heading{i7012} = fread(fid,N,'float32');
             end
-            
-            if flags.heaveStab>0
-                S7Kdata.R7012_7kPingMotionData.Heave{i7012} = fread(fid,N,'float32');
+            if flags.heaveStab > 0
+                S7Kdata.R7012_7kPingMotionData.Heave{i7012}   = fread(fid,N,'float32');
             end
             
             parsed = 1;
@@ -475,24 +486,26 @@ for iDatag = datagToParse'
             fseek(fid,4-S,'cof'); % we need to come back after last jump
             
             if OD_size~=0
-                tmp_pos=ftell(fid);
+                tmp_pos = ftell(fid);
+                
                 % parsing OD
                 fread(fid,OD_offset-(tmp_pos-pif_recordstart),'uint8');
                 
-                S7Kdata.R7027_RAWdetection.Frequency(i7027)       = fread(fid,1,'float32');
-                S7Kdata.R7027_RAWdetection.Latitude(i7027)        = fread(fid,1,'float64')/pi*180;
-                S7Kdata.R7027_RAWdetection.Longitude(i7027)       = fread(fid,1,'float64')/pi*180;
-                S7Kdata.R7027_RAWdetection.Heading(i7027)         = fread(fid,1,'float32')/pi*180;
-                t_temp                                            = fread(fid,1,'uint8');
+                S7Kdata.R7027_RAWdetection.Frequency(i7027) = fread(fid,1,'float32');
+                S7Kdata.R7027_RAWdetection.Latitude(i7027)  = fread(fid,1,'float64')/pi*180;
+                S7Kdata.R7027_RAWdetection.Longitude(i7027) = fread(fid,1,'float64')/pi*180;
+                S7Kdata.R7027_RAWdetection.Heading(i7027)   = fread(fid,1,'float32')/pi*180;
+                
+                t_temp = fread(fid,1,'uint8');
                 S7Kdata.R7027_RAWdetection.HeightSource{i7027} = get_param_val(height_source,t_temp);
-                S7Kdata.R7027_RAWdetection.Tide(i7027)            = fread(fid,1,'float32');
-                S7Kdata.R7027_RAWdetection.Roll(i7027)            = fread(fid,1,'float32')/pi*180;
-                S7Kdata.R7027_RAWdetection.Pitch(i7027)            = fread(fid,1,'float32')/pi*180;
-                S7Kdata.R7027_RAWdetection.Heave(i7027)            = fread(fid,1,'float32');
-                S7Kdata.R7027_RAWdetection.VehicleDepth(i7027)     = fread(fid,1,'float32');
+                
+                S7Kdata.R7027_RAWdetection.Tide(i7027)         = fread(fid,1,'float32');
+                S7Kdata.R7027_RAWdetection.Roll(i7027)         = fread(fid,1,'float32')/pi*180;
+                S7Kdata.R7027_RAWdetection.Pitch(i7027)        = fread(fid,1,'float32')/pi*180;
+                S7Kdata.R7027_RAWdetection.Heave(i7027)        = fread(fid,1,'float32');
+                S7Kdata.R7027_RAWdetection.VehicleDepth(i7027) = fread(fid,1,'float32');
                 
                 tmp_beam_data = fread(fid,[5 N],'float32');
-                
                 S7Kdata.R7027_RAWdetection.Depth{i7027}               = tmp_beam_data(1,:);
                 S7Kdata.R7027_RAWdetection.AlongTrackDistance{i7027}  = tmp_beam_data(2,:);
                 S7Kdata.R7027_RAWdetection.AcrossTrackDistance{i7027} = tmp_beam_data(3,:);
@@ -500,18 +513,17 @@ for iDatag = datagToParse'
                 S7Kdata.R7027_RAWdetection.AzimuthAngle{i7027}        = tmp_beam_data(5,:);
                 
             else
-                S7Kdata.R7027_RAWdetection.Frequency(i7027)       = nan;
-                S7Kdata.R7027_RAWdetection.Latitude(i7027)        = nan;
-                S7Kdata.R7027_RAWdetection.Longitude(i7027)       = nan;
-                S7Kdata.R7027_RAWdetection.Heading(i7027)         = nan;
                 
-                S7Kdata.R7027_RAWdetection.HeightSource{i7027 }    = '';
-                S7Kdata.R7027_RAWdetection.Tide(i7027)            = nan;
-                S7Kdata.R7027_RAWdetection.Roll(i7027)            = nan;
-                S7Kdata.R7027_RAWdetection.Pitch(i7027)            = nan;
-                S7Kdata.R7027_RAWdetection.Heave(i7027)            = nan;
-                S7Kdata.R7027_RAWdetection.VehicleDepth(i7027)     = nan;
-                
+                S7Kdata.R7027_RAWdetection.Frequency(i7027)           = nan;
+                S7Kdata.R7027_RAWdetection.Latitude(i7027)            = nan;
+                S7Kdata.R7027_RAWdetection.Longitude(i7027)           = nan;
+                S7Kdata.R7027_RAWdetection.Heading(i7027)             = nan;
+                S7Kdata.R7027_RAWdetection.HeightSource{i7027}        = '';
+                S7Kdata.R7027_RAWdetection.Tide(i7027)                = nan;
+                S7Kdata.R7027_RAWdetection.Roll(i7027)                = nan;
+                S7Kdata.R7027_RAWdetection.Pitch(i7027)               = nan;
+                S7Kdata.R7027_RAWdetection.Heave(i7027)               = nan;
+                S7Kdata.R7027_RAWdetection.VehicleDepth(i7027)        = nan;
                 S7Kdata.R7027_RAWdetection.Depth{i7027}               = nan(1,N);
                 S7Kdata.R7027_RAWdetection.AlongTrackDistance{i7027}  = nan(1,N);
                 S7Kdata.R7027_RAWdetection.AcrossTrackDistance{i7027} = nan(1,N);
@@ -570,8 +582,8 @@ for iDatag = datagToParse'
             S7Kdata.R7042_CompressedWaterColumn.Reserved(i7042)          = fread(fid,1,'uint32');
             
             % flag processing
-            [flags,sample_size,~,~]=CFF_get_R7042_flags(S7Kdata.R7042_CompressedWaterColumn.Flags(i7042));
-            if sample_size==0
+            [flags,sample_size,~,~] = CFF_get_R7042_flags(S7Kdata.R7042_CompressedWaterColumn.Flags(i7042));
+            if sample_size == 0
                 warning('%s: WC flag combination non taken into account',fieldname);
                 fields_wc = fieldnames(S7Kdata.R7042_CompressedWaterColumn);
                 

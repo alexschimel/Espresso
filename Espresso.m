@@ -19,7 +19,6 @@ warning('off','MATLAB:polyshape:repairedBySimplify');
 warning('off','MATLAB:polyshape:boundaryLessThan2Points');
 warning('off','MATLAB:polyshape:boundary3Points');
 warning('off','MATLAB:chckxy:IgnoreNaN');
-set(0,'DefaultAxesLooseInset',[0,0,0,0]);
 
 %% Checking and parsing input variables
 p = inputParser;
@@ -95,6 +94,7 @@ set_icon_espresso(main_figure);
 %% Default font size for Controls and Panels
 set(0,'DefaultUicontrolFontSize',10);
 set(0,'DefaultUipanelFontSize',12);
+set(0,'DefaultAxesLooseInset',[0,0,0,0]);
 
 disp_config = display_config_cl();
 setappdata(main_figure,'disp_config',disp_config);

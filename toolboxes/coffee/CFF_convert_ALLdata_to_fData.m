@@ -448,8 +448,8 @@ for iF = 1:nStruct
             fData.Po_1D_Longitude                       = ALLdata.EM_Position.Longitude./10000000; % now in decimal degrees
             fData.Po_1D_SpeedOfVesselOverGround         = ALLdata.EM_Position.SpeedOfVesselOverGround./100;  % now in m/s
             fData.Po_1D_HeadingOfVessel                 = ALLdata.EM_Position.HeadingOfVessel./100;  % now in degrees relative to north
-            fData.Po_1D_MeasureOfPositionFixQuality     = ALLdata.EM_Position.MeasureOfPositionFixQuality./100;  %in meter
-            fData.Po_1D_PositionSystemDescriptor        = ALLdata.EM_Position.PositionSystemDescriptor;  % in case there is several
+            fData.Po_1D_MeasureOfPositionFixQuality     = ALLdata.EM_Position.MeasureOfPositionFixQuality./100;  % in meters
+            fData.Po_1D_PositionSystemDescriptor        = ALLdata.EM_Position.PositionSystemDescriptor;  % indicator if there are several GPS sources
             
         end
         
@@ -751,11 +751,16 @@ for iF = 1:nStruct
                 % head 
                 for iH = 1:length(headNumber)
 
-                    iFirstDatagram(:,iH) = arrayfun(@(x) find(ALLdata.EM_WaterColumn.SystemSerialNumber == headNumber(iH) &ALLdata.EM_WaterColumn.PingCounter==x,1),pingCounters);
+                    iFirstDatagram(:,iH) = arrayfun(@(x) find(ALLdata.EM_WaterColumn.SystemSerialNumber==headNumber(iH) & ALLdata.EM_WaterColumn.PingCounter==x, 1),pingCounters);
                     
-%                     iFirstDatagram(:,iH) = find( ALLdata.EM_WaterColumn.SystemSerialNumber == headNumber(iH) & ...
-%                         ismember(ALLdata.EM_WaterColumn.PingCounter,pingCounters) & ...
-%                         ALLdata.EM_WaterColumn.DatagramNumbers == 1);
+                    % % originally we would require datagram number 1, but
+                    % % it turns out it doesn't always exist. Keep this
+                    % % code here for now, but the replacement above to
+                    % % just find the first datagram for each ping seems to 
+                    % % work fine.
+                    % iFirstDatagram(:,iH) = find( ALLdata.EM_WaterColumn.SystemSerialNumber == headNumber(iH) & ...
+                    %     ismember(ALLdata.EM_WaterColumn.PingCounter,pingCounters) & ...
+                    %     ALLdata.EM_WaterColumn.DatagramNumbers == 1);
                 end
             end
             
