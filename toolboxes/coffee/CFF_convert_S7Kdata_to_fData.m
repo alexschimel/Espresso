@@ -131,10 +131,6 @@ for iF = 1:nStruct
         
         if isfield(S7Kdata,'R1015_Navigation')
             
-            % only convert these datagrams if this type doesn't already exist in output
-            
-            % NumberOfDatagrams = length(S7Kdata.EM_Position.TypeOfDatagram);
-            
             fData.Po_1D_Date                            = S7Kdata.R1015_Navigation.Date;
             fData.Po_1D_TimeSinceMidnightInMilliseconds = S7Kdata.R1015_Navigation.TimeSinceMidnightInMilliseconds;
             fData.Po_1D_PositionCounter                 = S7Kdata.R1015_Navigation.PositionCounter;
@@ -142,37 +138,31 @@ for iF = 1:nStruct
             fData.Po_1D_Longitude                       = S7Kdata.R1015_Navigation.Longitude;
             fData.Po_1D_SpeedOfVesselOverGround         = S7Kdata.R1015_Navigation.SpeedOfVesselOverGround;
             fData.Po_1D_HeadingOfVessel                 = S7Kdata.R1015_Navigation.Heading;
-            nb_pt=numel(fData.Po_1D_Latitude);
-            [dist_in_deg,~]=distance([fData.Po_1D_Latitude(1:nb_pt-1) fData.Po_1D_Longitude(1:nb_pt-1)],[fData.Po_1D_Latitude(2:nb_pt) fData.Po_1D_Longitude(2:nb_pt)]);
-            d_dist=[0 deg2km(dist_in_deg)];
-            t=cellfun(@(x) datenum(x,'yyyymmdd'),fData.Po_1D_Date)*24*60*60+fData.Po_1D_TimeSinceMidnightInMilliseconds/1e3;
-            s=d_dist*1000/diff(t);
-            fData.Po_1D_SpeedOfVesselOverGround =[s(1) s];
-            
+            fData.Po_1D_MeasureOfPositionFixQuality     = S7Kdata.R1015_Navigation.HorizontalPositionAccuracy;
+            fData.Po_1D_PositionSystemDescriptor        = ones(size(S7Kdata.R1015_Navigation.Date)); % dummy values to match needed field for Kongsberg
             
         elseif isfield(S7Kdata,'R1003_Position')
             
-            
-            if update_mode
-                update_flag = 1;
-            end
-            
-            % NumberOfDatagrams = length(S7Kdata.EM_Position.TypeOfDatagram);
-            
             fData.Po_1D_Date                            = S7Kdata.R1003_Position.Date;
             fData.Po_1D_TimeSinceMidnightInMilliseconds = S7Kdata.R1003_Position.TimeSinceMidnightInMilliseconds;
-            fData.Po_1D_PositionCounter                 = 1:numel(S7Kdata.R1003_Position.Date);
+            fData.Po_1D_PositionCounter                 = 1:numel(S7Kdata.R1003_Position.Date);    % dummy values 
+            fData.Po_1D_MeasureOfPositionFixQuality     = ones(size(S7Kdata.R1003_Position.Date)); % dummy values 
+            fData.Po_1D_PositionSystemDescriptor        = S7Kdata.R1003_Position.PositioningMethod;
             
-            if  S7Kdata.R1003_Position.Datum_id(1)==0
-                fData.Po_1D_Latitude                        = S7Kdata.R1003_Position.Latitude;
-                fData.Po_1D_Longitude                       = S7Kdata.R1003_Position.Longitude;
-                nb_pt=numel(fData.Po_1D_Latitude);
-                [dist_in_deg,head]=distance([fData.Po_1D_Latitude(1:nb_pt-1)' fData.Po_1D_Longitude(1:nb_pt-1)'],[fData.Po_1D_Latitude(2:nb_pt)' fData.Po_1D_Longitude(2:nb_pt)']);
-                d_dist=deg2km(dist_in_deg');
-                t=datenum(cellfun(@num2str,num2cell(fData.Po_1D_Date),'un',0),'yyyymmdd')'*24*60*60+fData.Po_1D_TimeSinceMidnightInMilliseconds/1e3;
-                s=d_dist*1000./diff(t);
-                fData.Po_1D_SpeedOfVesselOverGround =[s(1) s];
-                fData.Po_1D_HeadingOfVessel =[head(1) head'];
+            if  S7Kdata.R1003_Position.Datum_id(1) == 0
+                
+                % lat and long
+                fData.Po_1D_Latitude  = S7Kdata.R1003_Position.Latitude;
+                fData.Po_1D_Longitude = S7Kdata.R1003_Position.Longitude;
+                
+                % calculating speed of vessel, and heading based on lat/long
+                nb_pt = numel(fData.Po_1D_Latitude);
+                [dist_in_deg,head] = distance([fData.Po_1D_Latitude(1:nb_pt-1)' fData.Po_1D_Longitude(1:nb_pt-1)'],[fData.Po_1D_Latitude(2:nb_pt)' fData.Po_1D_Longitude(2:nb_pt)']);
+                d_dist = deg2km(dist_in_deg');
+                t = datenum(cellfun(@num2str,num2cell(fData.Po_1D_Date),'un',0),'yyyymmdd')'*24*60*60+fData.Po_1D_TimeSinceMidnightInMilliseconds/1e3;
+                s = d_dist*1000./diff(t);
+                fData.Po_1D_SpeedOfVesselOverGround = [s(1) s];
+                fData.Po_1D_HeadingOfVessel         = [head(1) head'];
                 
             else
                 warning('Po_1D_Date: Could not find position data in the file');

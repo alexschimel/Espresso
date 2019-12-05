@@ -448,6 +448,8 @@ for iF = 1:nStruct
             fData.Po_1D_Longitude                       = ALLdata.EM_Position.Longitude./10000000; % now in decimal degrees
             fData.Po_1D_SpeedOfVesselOverGround         = ALLdata.EM_Position.SpeedOfVesselOverGround./100;  % now in m/s
             fData.Po_1D_HeadingOfVessel                 = ALLdata.EM_Position.HeadingOfVessel./100;  % now in degrees relative to north
+            fData.Po_1D_MeasureOfPositionFixQuality     = ALLdata.EM_Position.MeasureOfPositionFixQuality./100;  % in meters
+            fData.Po_1D_PositionSystemDescriptor        = ALLdata.EM_Position.PositionSystemDescriptor;  % indicator if there are several GPS sources
             
         end
         
@@ -748,9 +750,17 @@ for iF = 1:nStruct
                 % get the index of first datagram for each ping and each
                 % head 
                 for iH = 1:length(headNumber)
-                    iFirstDatagram(:,iH) = find( ALLdata.EM_WaterColumn.SystemSerialNumber == headNumber(iH) & ...
-                        ismember(ALLdata.EM_WaterColumn.PingCounter,pingCounters) & ...
-                        ALLdata.EM_WaterColumn.DatagramNumbers == 1);
+
+                    iFirstDatagram(:,iH) = arrayfun(@(x) find(ALLdata.EM_WaterColumn.SystemSerialNumber==headNumber(iH) & ALLdata.EM_WaterColumn.PingCounter==x, 1),pingCounters);
+                    
+                    % % originally we would require datagram number 1, but
+                    % % it turns out it doesn't always exist. Keep this
+                    % % code here for now, but the replacement above to
+                    % % just find the first datagram for each ping seems to 
+                    % % work fine.
+                    % iFirstDatagram(:,iH) = find( ALLdata.EM_WaterColumn.SystemSerialNumber == headNumber(iH) & ...
+                    %     ismember(ALLdata.EM_WaterColumn.PingCounter,pingCounters) & ...
+                    %     ALLdata.EM_WaterColumn.DatagramNumbers == 1);
                 end
             end
             
@@ -772,7 +782,7 @@ for iF = 1:nStruct
             % test for inconsistencies between heads and raise a warning if
             % one is detected
             if length(headNumber) > 1
-                fields = {'Date','TimeSinceMidnightInMilliseconds','SoundSpeed','SamplingFrequency','TXTimeHeave','TVGFunctionApplied','TVGOffset','ScanningInfo'};
+                fields = {'SoundSpeed','SamplingFrequency','TXTimeHeave','TVGFunctionApplied','TVGOffset','ScanningInfo'};
                 for iFi = 1:length(fields)                    
                     if any(any(ALLdata.EM_WaterColumn.(fields{iFi})(iFirstDatagram(:,1))'.*ones(1,length(headNumber))~=ALLdata.EM_WaterColumn.(fields{iFi})(iFirstDatagram)))
                         warning('System has more than one head and "%s" data are inconsistent between heads for at least one ping. Using information from first head anyway.',fields{iFi});
