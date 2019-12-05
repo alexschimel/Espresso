@@ -1058,6 +1058,10 @@ for iDatag = datagToParse'
                 
             end
             
+            if numel(tmp)<=id+3
+                 wc_parsing_error = 1;
+            end
+            
             if wc_parsing_error == 0
                 % HERE if data parsing all went well
                 
