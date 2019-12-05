@@ -176,6 +176,7 @@ for iDatag = datagToParse'
                 S7Kdata.R1003_Position.LongitudeRadOrEasting(i1003) = fread(fid,1,'float64');
             end
             
+            S7Kdata.R1003_Position.Height(i1003)   = fread(fid,1,'float64');
             S7Kdata.R1003_Position.PositionTypeFlag(i1003)   = fread(fid,1,'uint8');
             S7Kdata.R1003_Position.UTMZone(i1003)            = fread(fid,1,'uint8');
             S7Kdata.R1003_Position.QualityFlag(i1003)        = fread(fid,1,'uint8');
@@ -214,8 +215,9 @@ for iDatag = datagToParse'
             S7Kdata.R1015_Navigation.HorizontalPositionAccuracy(i1015) = fread(fid,1,'float32');
             S7Kdata.R1015_Navigation.VesselHeight(i1015)               = fread(fid,1,'float32');
             S7Kdata.R1015_Navigation.HeightAccuracy(i1015)             = fread(fid,1,'float32');
+            S7Kdata.R1015_Navigation.SpeedOverGround(i1015)             = fread(fid,1,'float32');
             S7Kdata.R1015_Navigation.CourseOverGround(i1015)           = fread(fid,1,'float32');
-            S7Kdata.R1015_Navigation.Heading(i1015)                    = fread(fid,1,'float32');
+            S7Kdata.R1015_Navigation.Heading(i1015)                    = fread(fid,1,'float32')/pi*180;
             
             parsed = 1;
             

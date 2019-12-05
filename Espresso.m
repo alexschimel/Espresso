@@ -19,7 +19,7 @@ warning('off','MATLAB:polyshape:repairedBySimplify');
 warning('off','MATLAB:polyshape:boundaryLessThan2Points');
 warning('off','MATLAB:polyshape:boundary3Points');
 warning('off','MATLAB:chckxy:IgnoreNaN');
-
+set(0,'DefaultAxesLooseInset',[0,0,0,0]);
 
 %% Checking and parsing input variables
 p = inputParser;

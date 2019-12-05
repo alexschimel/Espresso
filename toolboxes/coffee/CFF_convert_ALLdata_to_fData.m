@@ -448,6 +448,8 @@ for iF = 1:nStruct
             fData.Po_1D_Longitude                       = ALLdata.EM_Position.Longitude./10000000; % now in decimal degrees
             fData.Po_1D_SpeedOfVesselOverGround         = ALLdata.EM_Position.SpeedOfVesselOverGround./100;  % now in m/s
             fData.Po_1D_HeadingOfVessel                 = ALLdata.EM_Position.HeadingOfVessel./100;  % now in degrees relative to north
+            fData.Po_1D_MeasureOfPositionFixQuality     = ALLdata.EM_Position.MeasureOfPositionFixQuality./100;  %in meter
+            fData.Po_1D_PositionSystemDescriptor        = ALLdata.EM_Position.PositionSystemDescriptor;  % in case there is several
             
         end
         
@@ -748,9 +750,12 @@ for iF = 1:nStruct
                 % get the index of first datagram for each ping and each
                 % head 
                 for iH = 1:length(headNumber)
-                    iFirstDatagram(:,iH) = find( ALLdata.EM_WaterColumn.SystemSerialNumber == headNumber(iH) & ...
-                        ismember(ALLdata.EM_WaterColumn.PingCounter,pingCounters) & ...
-                        ALLdata.EM_WaterColumn.DatagramNumbers == 1);
+
+                    iFirstDatagram(:,iH) = arrayfun(@(x) find(ALLdata.EM_WaterColumn.SystemSerialNumber == headNumber(iH) &ALLdata.EM_WaterColumn.PingCounter==x,1),pingCounters);
+                    
+%                     iFirstDatagram(:,iH) = find( ALLdata.EM_WaterColumn.SystemSerialNumber == headNumber(iH) & ...
+%                         ismember(ALLdata.EM_WaterColumn.PingCounter,pingCounters) & ...
+%                         ALLdata.EM_WaterColumn.DatagramNumbers == 1);
                 end
             end
             

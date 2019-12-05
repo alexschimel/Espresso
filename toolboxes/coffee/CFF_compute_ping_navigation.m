@@ -125,13 +125,28 @@ end
 % in the future, offer possibility to import position/orientation from
 % other files, say SBET
 
-posLatitude  = fData.Po_1D_Latitude; 
-posLongitude = fData.Po_1D_Longitude;
-posHeading   = fData.Po_1D_HeadingOfVessel;
-posSpeed     = fData.Po_1D_SpeedOfVesselOverGround;
-posTSMIM     = fData.Po_1D_TimeSinceMidnightInMilliseconds;
+if isfield(fData,'Po_1D_PositionSystemDescriptor')
+    [ID,idx_sys] = unique(fData.Po_1D_PositionSystemDescriptor);
+    if numel(idx_sys)>1
+        [~,idx_keep] = nanmin(fData.Po_1D_MeasureOfPositionFixQuality(idx_sys));
+        pos_idx=fData.Po_1D_PositionSystemDescriptor==ID(idx_keep);
+        fprintf('Using GPS source ID: %d\n',ID(idx_keep));
+    else
+        pos_idx=1:numel(fData.Po_1D_Latitude);
+    end
+else
+   warning('No PositionSystemDescriptor field in navigation data, you should reconvert those files if you see any strange pattern in the navigation and/or if two GPS sources have been logged in the file.'); 
+   pos_idx=1:numel(fData.Po_1D_Latitude);
+end
 
-posDate      = datenum(cellfun(@num2str,num2cell(fData.Po_1D_Date),'un',0),'yyyymmdd');
+posLatitude  = fData.Po_1D_Latitude(pos_idx); 
+posLongitude = fData.Po_1D_Longitude(pos_idx);
+posHeading   = fData.Po_1D_HeadingOfVessel(pos_idx);
+posSpeed     = fData.Po_1D_SpeedOfVesselOverGround(pos_idx);
+posTSMIM     = fData.Po_1D_TimeSinceMidnightInMilliseconds(pos_idx);
+
+
+posDate      = datenum(cellfun(@num2str,num2cell(fData.Po_1D_Date(pos_idx)),'un',0),'yyyymmdd');
 posSDN       = posDate(:)'+ posTSMIM/(24*60*60*1000);
 
 
