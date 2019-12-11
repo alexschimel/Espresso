@@ -612,9 +612,7 @@ for iF = 1:nStruct
                             fwrite(file_phase_id(ig),Ph_tmp,phase_fmt);
                         end
                         
-
-                        
-                        
+       
                     end
                     
                 end

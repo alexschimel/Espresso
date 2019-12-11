@@ -513,7 +513,7 @@ for nF = 1:numel(files_to_load)
         % checking path to water-column data binary file
         
         fields={'WC_SBP_SampleAmplitudes' 'AP_SBP_SampleAmplitudes' 'AP_SBP_SamplePhase' 'X_SBP_WaterColumnProcessed'};
-        [fData_temp.dirchange_flag]=CFF_check_memmap_location(fData_temp,fields,folder_for_converted_data);
+        [fData_temp,dirchange_flag]=CFF_check_memmap_location(fData_temp,fields,folder_for_converted_data);
         
         % saving on disk if changes have been made
         if dirchange_flag
