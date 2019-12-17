@@ -73,14 +73,26 @@ switch class
         nb=8;
 end
 
+if isfield(fData,field)
+    for uig=1:numel(ping_group_start)
+        fData.(field){uig}=[];
+    end
+    fData=rmfield(fData,field) ;
+end
 
 for uig=1:numel(ping_group_start)
     
+    if isfile(file_binary{uig})
+        delete(file_binary{uig});
+    end
+    
     fileID(uig) = fopen(file_binary{uig},'w+');
     
-    fwrite(fileID(uig),Nanval*ones/Factor,class,...
-        nb*(maxNSamples_groups(uig)*maxNBeams_sub*(ping_group_end(uig)-ping_group_start(uig)+1)-1));
-    fclose(fileID(uig));
+    if fileID(uig)>-1
+        fwrite(fileID(uig),Nanval*ones/Factor,class,...
+            nb*(maxNSamples_groups(uig)*maxNBeams_sub*(ping_group_end(uig)-ping_group_start(uig)+1)-1));
+        fclose(fileID(uig));
+    end
     % if we're not here, it means the file already exists and
     % already contain the data at the proper sampling. So we
     % just need to store the metadata and link to it as
