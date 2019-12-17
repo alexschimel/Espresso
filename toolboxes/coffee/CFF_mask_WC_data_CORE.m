@@ -152,22 +152,57 @@ if ~isinf(mask_bottomrange)
     % beam pointing angle
     theta = deg2rad(fData.(sprintf('%s_BP_BeamPointingAngle',datagramSource))(:,blockPings));
     
-    % beamwidth (nominal and with steering)
-    psi = deg2rad(fData.Ru_1D_ReceiveBeamwidth(1)./10);
-    psi = psi./cos(abs(theta)).^2/2;
+    % beamwidth
+    beamwidth = deg2rad(fData.Ru_1D_ReceiveBeamwidth(1));
     
+    %% original version starts
+    
+    % beamwidth including beam steering
+    psi = beamwidth./cos(abs(theta)).^2/2;
+
     % transition between normal and grazing incidence
     %         theta_lim = psi/2;
     %         idx_normal = abs(theta) < theta_lim;
     %         idx_grazing = ~idx_normal;
     %
     % length of bottom echo? XXX
-    %    M = zeros(size(theta),'single');
-    %         M(idx_normal)  = ( 1./cos(theta(idx_normal)+psi(idx_normal)/2)   - 1./cos(theta(idx_normal)) ) .* fData.X_BP_bottomRange(idx_normal,blockPings);
-    %         M(idx_grazing) = 2*( sin(theta(idx_grazing)+psi(idx_grazing)/2) - sin(theta(idx_grazing)-psi(idx_grazing)/2) ) .* fData.X_BP_bottomRange(idx_grazing,blockPings);
-    M =2* (sin(abs(theta)+psi/2) - sin(abs(theta)-psi/2) ) .* fData.X_BP_bottomRange(:,blockPings);
+    % M = zeros(size(theta),'single');
+    % M(idx_normal)  = ( 1./cos(theta(idx_normal)+psi(idx_normal)/2)   - 1./cos(theta(idx_normal)) ) .* fData.X_BP_bottomRange(idx_normal,blockPings);
+    % M(idx_grazing) = 2*( sin(theta(idx_grazing)+psi(idx_grazing)/2) - sin(theta(idx_grazing)-psi(idx_grazing)/2) ) .* fData.X_BP_bottomRange(idx_grazing,blockPings);
+    
+    % Original equation looks like calculating horizontal distance of the
+    % beam footprint assuming flat seafloor. But why the 2x?
+    M_1 = abs( 2* (sin(abs(theta)+psi/2) - sin(abs(theta)-psi/2) ) ) .* fData.X_BP_bottomRange(:,blockPings);
+    
+    %% new version starts
+    
+    % actual beamwidth including beam steering
+    psi = beamwidth./cos(abs(theta));
+    
+    % assuming flat seafloor, actual horizontal distance between start of
+    % the beam footprint, and bottom.
+    M_2 = ( sin(abs(theta)) - sin(abs(theta)-psi/2) ) .* fData.X_BP_bottomRange(:,blockPings);
+    
+    %% let's try another approach. 
+    % Let's approximate the range at which the beam footprint starts as the
+    % minimum range within +-X beams around beam of interest    
+    M_3 = nan(size(fData.X_BP_bottomRange(:,blockPings)));
+    for ip = 1:length(blockPings)
+        
+        bottomranges = fData.X_BP_bottomRange(:,blockPings(ip));
+        nbeams = size(theta,1);
+        X = 5;
+        
+        minrangefunc = @(ibeam) nanmin(bottomranges(max(1,ibeam-X):min(nbeams,ibeam+X)));
+        M_3(:,ip) = bottomranges - arrayfun(minrangefunc,[1:nbeams]');
+        
+    end
+    
+    %% select method here for now
+    M = M_3;
+    
     % calculate max sample beyond which mask is to be applied
-    X_BP_maxRange  = fData.X_BP_bottomRange(:,blockPings) + mask_bottomrange - abs(M);
+    X_BP_maxRange  = fData.X_BP_bottomRange(:,blockPings) + mask_bottomrange - M;
     X_BP_maxSample = bsxfun(@rdivide,X_BP_maxRange,interSamplesDistance);
     X_BP_maxSample = round(X_BP_maxSample);
     X_BP_maxSample(X_BP_maxSample>nSamples|isnan(X_BP_maxSample)) = nSamples;

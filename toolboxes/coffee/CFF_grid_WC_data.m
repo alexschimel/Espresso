@@ -143,26 +143,28 @@ end
 % size
 [nSamples, nBeams, nPings] = CFF_get_WC_size(fData);
 
+
 %% Prepare needed 1xP data for computations
 
 % Source datagram
 datagramSource = CFF_get_datagramSource(fData);
 
 % inter-sample distance
-interSamplesDistance = CFF_inter_sample_distance(fData); % in m
+interSamplesDistance = CFF_inter_sample_distance(fData); % m
 
 % sonar location
-sonarEasting  = fData.X_1P_pingE; %m
-sonarNorthing = fData.X_1P_pingN; %m
-sonarHeight   = fData.X_1P_pingH; %m
+sonarEasting  = fData.X_1P_pingE; % m
+sonarNorthing = fData.X_1P_pingN; % m
+sonarHeight   = fData.X_1P_pingH; % m
 
 % sonar heading
-gridConvergence    = fData.X_1P_pingGridConv; %deg
-vesselHeading      = fData.X_1P_pingHeading; %deg
-sonarHeadingOffset = fData.IP_ASCIIparameters.S1H; %deg
-sonarHeading       = deg2rad(-mod(gridConvergence + vesselHeading + sonarHeadingOffset,360));
+gridConvergence    = fData.X_1P_pingGridConv; % deg
+vesselHeading      = fData.X_1P_pingHeading; % deg
+sonarHeadingOffset = fData.IP_ASCIIparameters.S1H; % deg
+sonarHeading       = deg2rad(-mod(gridConvergence + vesselHeading + sonarHeadingOffset,360)); % rad
 
-% block processing setup
+
+%% Block processing setup
 mem_struct = memory;
 blockLength = ceil(mem_struct.MemAvailableAllArrays/(nSamples*nBeams*8)/20);
 nBlocks = ceil(nPings./blockLength);
@@ -170,20 +172,24 @@ blocks = [ 1+(0:nBlocks-1)'.*blockLength , (1:nBlocks)'.*blockLength ];
 blocks(end,2) = nPings;
 
 
+%% Prepare the Height interpolant
+% needed to calculate height above seafloor for each sample in case of
+% gridding in height above bottom, as well as final gridded bathymetry.
+idx_valid_bottom = ~isnan(fData.X_BP_bottomHeight) & ~isinf(fData.X_BP_bottomHeight);
+HeightInterpolant = scatteredInterpolant(fData.X_BP_bottomNorthing(idx_valid_bottom),fData.X_BP_bottomEasting(idx_valid_bottom),fData.X_BP_bottomHeight(idx_valid_bottom),'natural','none');
+
+
 %% find grid limits
 
 % initialize vectors
 minBlockE = nan(1,nBlocks);
 minBlockN = nan(1,nBlocks);
+minBlockH = nan(1,nBlocks);
 maxBlockE = nan(1,nBlocks);
 maxBlockN = nan(1,nBlocks);
-
-minBlockH = nan(1,nBlocks);
 maxBlockH = nan(1,nBlocks);
 
-%d_max=nanmax(fData.X_BP_bottomHeight(:));
 % find grid limits for each block
-
 for iB = 1:nBlocks
     
     % list of pings in this block
@@ -200,18 +206,15 @@ for iB = 1:nBlocks
     [blockE, blockN, blockH] = CFF_georeference_sample(idxSamples, startSampleNumber, interSamplesDistance(blockPings), beamPointingAngle, ...
         sonarEasting(blockPings), sonarNorthing(blockPings), sonarHeight(blockPings), sonarHeading(blockPings));
     
-    %id_keep=blockH<d_max;
-    
-    % these subset of all samples should be enough to find the bounds for the entire block
+    % these subset of all samples should be enough to find the bounds for
+    % the entire block 
     minBlockE(iB) = min(blockE(:));
-    maxBlockE(iB) = max(blockE(:));
+    maxBlockE(iB) = max(blockE(:)); 
     minBlockN(iB) = min(blockN(:));
     maxBlockN(iB) = max(blockN(:));
-    
     minBlockH(iB) = min(blockH(:));
     maxBlockH(iB) = max(blockH(:));
 
-    
 end
 
 % Get grid boundaries from the min and max of those blocks
@@ -221,11 +224,22 @@ numElemGridE = ceil((maxGridE-minGridE)./grid_horz_res)+1;
 minGridN = floor(min(minBlockN));
 maxGridN = ceil(max(maxBlockN));
 numElemGridN = ceil((maxGridN-minGridN)./grid_horz_res)+1;
-
 minGridH = floor(min(minBlockH));
 maxGridH = ceil(max(maxBlockH));
 numElemGridH = ceil((maxGridH-minGridH)./grid_vert_res)+1;
 
+% the grid defined above in height is referenced to sonar height. It needs
+% modified if we request heights reference to seafloor
+switch grdlim_var
+    case 'Bottom'
+        lowestHeight = nanmin(fData.X_BP_bottomHeight(:));
+        % by default, defining grid as extending from 0 (the bottom) to the
+        % largest height, adding a buffer of a tenth of that largest height
+        % on each side
+        minGridH = floor( 0 - abs(lowestHeight./10) );
+        maxGridH = ceil( abs(lowestHeight) + abs(lowestHeight./10) );
+        numElemGridH = ceil((maxGridH-minGridH)./grid_vert_res)+1;
+end
 
 
 %% initalize the grids:
@@ -242,32 +256,23 @@ switch grid_type
     case '3D'
         gridWeightedSum  = zeros(numElemGridN,numElemGridE,numElemGridH,'single');
         gridTotalWeight  = zeros(numElemGridN,numElemGridE,numElemGridH,'single');
-        gridMaxHorizDist =   nan(numElemGridN,numElemGridE,numElemGridH,'single');
-        
+        gridMaxHorizDist =   nan(numElemGridN,numElemGridE,numElemGridH,'single');        
 end
 
 
-
-% if GPU is avaialble for computation, setup for it
+%% GPU computation setup
 gpu_comp = get_gpu_comp_stat();
-
 if gpu_comp > 0
-    gpud=gpuDevice;
-    if gpud.AvailableMemory>numel(gridMaxHorizDist)*32*3
+    gpud = gpuDevice;
+    if gpud.AvailableMemory > numel(gridMaxHorizDist)*32*3
+        % all good, turn grids into gpuArrays
         gridWeightedSum  = gpuArray(gridWeightedSum);
         gridTotalWeight  = gpuArray(gridTotalWeight);
         gridMaxHorizDist = gpuArray(gridMaxHorizDist);
     else
-        gpu_comp=0;
+        gpu_comp = 0;
     end
 end
-
-
-%% if gridding is in height above bottom, prepare the interpolant
-% needed to calculate height above seafloor for each sample
-idx_val = ~isnan(fData.X_BP_bottomHeight) & ~isinf(fData.X_BP_bottomHeight);
-HeightInterpolant = scatteredInterpolant(fData.X_BP_bottomNorthing(idx_val),fData.X_BP_bottomEasting(idx_val),fData.X_BP_bottomHeight(idx_val),'natural','none');
-
 
 
 %% fill the grids with block processing
@@ -276,27 +281,40 @@ for iB = 1:nBlocks
     % list of pings in this block
     blockPings  = blocks(iB,1):blocks(iB,2);
     
-    % to speed up processing, we will only grid data decimated in samples
-    % number and in beams
-    
-    % get data to grid
+    % get data to grid (possibly decimated in beams and samples
     blockL = CFF_get_WC_data(fData,field_to_grid,'iPing',blockPings,'dr_sub',dr_sub,'db_sub',db_sub,'output_format','true');
+    
+    % if requesting to grid the "original" data (that is, not processed),
+    % still apply the radiometric correction
     switch data_type
         case 'Original'
             [blockL, warning_text] = CFF_WC_radiometric_corrections_CORE(blockL,fData);
     end
-    nSamples_temp=size(blockL,1);
     
+    % retrieve the index of samples given the decimation
+    nSamples_temp = size(blockL,1);
     idxSamples = (1:dr_sub:nSamples_temp*dr_sub)';
     
     startSampleNumber = fData.(sprintf('%s_BP_StartRangeSampleNumber',datagramSource))(1:db_sub:end,blockPings);
     beamPointingAngle = deg2rad(fData.(sprintf('%s_BP_BeamPointingAngle',datagramSource))(1:db_sub:end,blockPings));
-    
-    % Get easting, northing, height and across distance from the samples
+        
+    % get easting, northing, height and across distance from the samples
     [blockE, blockN, blockH, blockAccD] = CFF_georeference_sample(idxSamples, startSampleNumber, interSamplesDistance(blockPings), beamPointingAngle, ...
         sonarEasting(blockPings), sonarNorthing(blockPings), sonarHeight(blockPings), sonarHeading(blockPings));
+    
+    % blockE and blockN needs to stay double for the interpolant, but
+    % blockAdd needs to be single for the following calculations
     blockAccD = single(blockAccD);
     
+    % if needed, turn height above sonar into height above bottom, which
+    % depends on height of sonar above bottom. We use the interpolant here,
+    % which takes a while....
+    switch grdlim_var
+        case 'Bottom'
+            block_bottomHeight = HeightInterpolant(blockN,blockE);
+            blockH = blockH - block_bottomHeight;
+            clear block_bottomHeight
+    end
     
     % define weights here
     weighting_mode = 'none'; % 'SIAfilter' or 'none'
@@ -337,8 +355,8 @@ for iB = 1:nBlocks
             end
     end
     
-    % start with removing all data where level is NaN
-    indNan = isnan(blockL) | isnan(blockW);
+    % start with removing all data where anything is missing
+    indNan = isnan(blockL) | isnan(blockW) | isnan(blockE) | isnan(blockN) | isnan(blockH) | isnan(blockAccD);
     blockL(indNan) = [];
     if isempty(blockL)
         continue;
@@ -350,55 +368,45 @@ for iB = 1:nBlocks
     blockAccD(indNan) = [];
     clear indNan
     
-    % get indices of samples we want to keep in the calculation
-    switch grdlim_var
-        
-        case 'Sonar'
-            
-            % H is already as depth below sonar so it's pretty easy
-            if  strcmp(grid_type,'2D')
-                switch grdlim_mode
-                    case 'between'
-                        idx_keep = blockH<=-grdlim_mindist & blockH>=-grdlim_maxdist;
-                    case 'outside of'
-                        idx_keep = blockH>=-grdlim_mindist | blockH<=-grdlim_maxdist;
-                end
-                idx_keep=idx_keep&~isnan(blockH)&blockH>=minGridH&blockH<=maxGridH;
-            else
-                idx_keep=~isnan(blockH)&blockH>=minGridH&blockH<=maxGridH;
+    % next, in case of 2D gridding, removing samples outside of desired
+    % layer
+    switch grid_type
+        case '2D'
+
+            switch grdlim_var
+                case 'Sonar'
+                    % heights are referenced to sonar and min/max distances
+                    % are in depth (below sonar)
+                    switch grdlim_mode
+                        case 'between'
+                            idx_keep = blockH<=-grdlim_mindist & blockH>=-grdlim_maxdist;
+                        case 'outside of'
+                            idx_keep = blockH>=-grdlim_mindist | blockH<=-grdlim_maxdist;
+                    end
+                case 'Bottom'
+                    % heights are referenced to bottom and min/max distances
+                    % are in height (above bottom)
+                    switch grdlim_mode
+                        case 'between'
+                            idx_keep = blockH>=grdlim_mindist & blockH<=grdlim_maxdist;
+                        case 'outside of'
+                            idx_keep = blockH<=grdlim_mindist | blockH>=grdlim_maxdist;
+                    end
             end
-            %idx_keep=idx_keep&blockH<=0;
-        case 'Bottom'
             
-            block_bottomHeight = HeightInterpolant(blockN,blockE);
-            blockH = blockH - block_bottomHeight;
-            minGridH=0;
-            if  strcmp(grid_type,'2D')
-                switch grdlim_mode
-                    case 'between'
-                        idx_keep = block_sampleHeightAboveSeafloor>=grdlim_mindist & block_sampleHeightAboveSeafloor<=grdlim_maxdist;
-                    case 'outside of'
-                        idx_keep = block_sampleHeightAboveSeafloor<=grdlim_mindist | block_sampleHeightAboveSeafloor>=grdlim_maxdist;
-                end
-                idx_keep=idx_keep&blockH>=0;
-            else
-                idx_keep=~isnan(blockH)&blockH>=0;
+            % remove all other indices
+            blockL(~idx_keep) = [];
+            if isempty(blockL)
+                continue;
             end
-            clear block_bottomHeight block_sampleHeightAboveSeafloor
+            blockW(~idx_keep)    = [];
+            blockE(~idx_keep)    = [];
+            blockN(~idx_keep)    = [];
+            blockH(~idx_keep)    = [];
+            blockAccD(~idx_keep) = [];
+            clear idx_keep
             
     end
-    
-    % and remove data that we don't want to grid
-    blockL(~idx_keep) = [];
-    if isempty(blockL)
-        continue;
-    end
-    blockW(~idx_keep)    = [];
-    blockE(~idx_keep)    = [];
-    blockN(~idx_keep)    = [];
-    blockH(~idx_keep)    = [];
-    blockAccD(~idx_keep) = [];
-    clear idx_keep
     
     % at this stage, pass blockL and blockW as GPU arrays if using GPUs
     if gpu_comp > 0
@@ -437,6 +445,7 @@ for iB = 1:nBlocks
         
         case '2D'
             
+            % no need for blcokH any more
             clear blockH
             
             % we use the accumarray function to sum all values in both the
@@ -450,7 +459,6 @@ for iB = 1:nBlocks
             % grid cell
             gridTotalWeight_forBlock = accumarray(subs,blockW',sz,@sum,single(0));
             gridWeightedSum_forBlock = accumarray(subs,blockW'.*blockL',sz,@sum,single(0));
-            
             
             clear blockL blockW
             
@@ -518,7 +526,9 @@ for iB = 1:nBlocks
 end
 
 
-%% crop the edges of the grids (they were built based on original data size)
+%% crop the edges of the grids
+% they were built based on the size of the full dataset and so may be much
+% bigger than actual data contained
 switch grid_type
     
     case '2D'
@@ -576,47 +586,66 @@ switch grid_type
         
 end
 
-% final calculations: average and back in dB
+%% final calculation: average and back in dB
 gridLevel = 10.*log10(gridWeightedSum./gridTotalWeight);
 clear gridWeightedSum
 
-% revert gpuArrays back to regular arrays before storing so that data can
-% be used even without the parallel computing toolbox and so that loading
-% data don't overload the limited GPU memory
+
+%% bathymetry and backscatter grids
+
+% using hight interpolant to create bathy grid
+[N,E] = ndgrid(gridNorthing,gridEasting);
+gridBathymetry = HeightInterpolant(N,E);
+
+% creating a backscatter interpolant for BS grid
+if isfield(fData,'X8_BP_ReflectivityBS')
+    BackscatterInterpolant = scatteredInterpolant(fData.X_BP_bottomNorthing(idx_valid_bottom),fData.X_BP_bottomEasting(idx_valid_bottom),fData.X8_BP_ReflectivityBS(idx_valid_bottom),'natural','none');
+    gridBackscatter = BackscatterInterpolant(N,E);
+else
+    gridBackscatter = nan(size(E),'single');
+end
+
+% remove the extrapolation
+ff = filter2(ones(5,5),nansum(gridTotalWeight,3));
+gridBathymetry(ff==0) = NaN;
+gridBackscatter(ff==0) = NaN;
+
+
+%% revert gpuArrays back to regular arrays before storing
+% so that data can be used even without the parallel computing toolbox and
+% so that loading data don't overload the limited GPU memory
 if gpu_comp > 0
     gridLevel        = gather(gridLevel);
     gridTotalWeight  = gather(gridTotalWeight);
     gridMaxHorizDist = gather(gridMaxHorizDist);
 end
 
-[N,E] = ndgrid(gridNorthing,gridEasting);
-fData.X_NE_bathy = HeightInterpolant(N,E);
-
-if isfield(fData,'X8_BP_ReflectivityBS')
-    BSinterpolant = scatteredInterpolant(fData.X_BP_bottomNorthing(idx_val),fData.X_BP_bottomEasting(idx_val),fData.X8_BP_ReflectivityBS(idx_val),'natural','none');
-    fData.X_NE_bs = BSinterpolant(N,E);
-else
-    fData.X_NE_bs=nan(size(E),'single');
-end
-
-ff=filter2(ones(5,5),nansum(gridTotalWeight,3));
-fData.X_NE_bs(ff==0)=nan;
-fData.X_NE_bathy(ff==0)=nan;
-fData.X_grid_reference=grdlim_var;
 
 %% saving results:
 
-fData.X_NEH_gridLevel        = gridLevel;
-fData.X_NEH_gridDensity      = gridTotalWeight;
-fData.X_NEH_gridMaxHorizDist = gridMaxHorizDist;
-
-fData.X_1E_gridEasting  = gridEasting;
-fData.X_N1_gridNorthing = gridNorthing;
-
+% metadata
+fData.X_1_gridHeightReference = grdlim_var;
 fData.X_1_gridHorizontalResolution = grid_horz_res;
 
 switch grid_type
     case '3D'
-        fData.X_11H_gridHeight = gridHeight;
         fData.X_1_gridVerticalResolution = grid_vert_res;
 end
+
+% grid axes
+fData.X_1E_gridEasting  = gridEasting;
+fData.X_N1_gridNorthing = gridNorthing;
+
+switch grid_type
+    case '3D'
+        fData.X_11H_gridHeight = gridHeight;
+end
+
+% actual grids
+fData.X_NEH_gridLevel        = gridLevel;
+fData.X_NEH_gridDensity      = gridTotalWeight;
+fData.X_NEH_gridMaxHorizDist = gridMaxHorizDist;
+
+% bathymetry and backscatter
+fData.X_NE_bathymetry  = gridBathymetry;
+fData.X_NE_backscatter = gridBackscatter;
