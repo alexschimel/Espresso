@@ -316,7 +316,7 @@ for iF = 1:nStruct
             fData.Ru_1D_PingCounter                     = ALLdata.EM_Runtime.PingCounter;
             % the rest to code... XXX
             fData.Ru_1D_TransmitPowerReMaximum          = ALLdata.EM_Runtime.TransmitPowerReMaximum;
-            fData.Ru_1D_ReceiveBeamwidth                = ALLdata.EM_Runtime.ReceiveBeamwidth;
+            fData.Ru_1D_ReceiveBeamwidth                = ALLdata.EM_Runtime.ReceiveBeamwidth./10; % now in degrees
             % the rest to code... XXX
             
         end

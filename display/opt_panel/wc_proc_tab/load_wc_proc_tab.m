@@ -286,8 +286,9 @@ if isempty(idx_fData)
     return;
 end
 
-wc_proc_tab_comp=getappdata(main_figure,'wc_proc_tab');
-f_stack=0;
+wc_proc_tab_comp = getappdata(main_figure,'wc_proc_tab');
+
+f_stack = 0;
 if wc_proc_tab_comp.proc_bool.Value>0
     if wc_proc_tab_comp.bot_filtering.Value>0
         filter_bottom_cback([],[],main_figure);
