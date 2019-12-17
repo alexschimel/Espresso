@@ -291,36 +291,36 @@ for iF = 1:nStruct
                 
                 [maxNSamples_groups,ping_group_start,ping_group_end]=CFF_group_pings_per_samples(S7Kdata.R7018_7kBeamformedData.S,pingNumber,pingNumber);
                 
+                                % save info about data format for later access
+                fData.WC_1_SampleAmplitudes_Class  = 'int16';
+                fData.WC_1_SampleAmplitudes_Nanval = intmin('int16');
+                fData.WC_1_SampleAmplitudes_Factor = 1/200;
+                fData.WC_1_SamplePhase_Class  = 'int16';
+                fData.WC_1_SamplePhase_Nanval = 200;
+                fData.WC_1_SamplePhase_Factor = 1;
                 
-                % path to binary file for WC data
-                file_amp_binary=cell(1,numel(maxNSamples_groups));
-                file_phase_binary=cell(1,numel(maxNSamples_groups));
-                file_amp_id=-ones(1,numel(maxNSamples_groups));
-                file_phase_id=-ones(1,numel(maxNSamples_groups));
-                
-                for uig=1:numel(ping_group_start)
-                    file_amp_binary{uig} = fullfile(wc_dir,sprintf('WC_SBP_SampleAmplitudes_%.0f_%.0f.dat',ping_group_start(uig),ping_group_end(uig)));
-                    file_phase_binary{uig} = fullfile(wc_dir,sprintf('WC_SBP_SamplePhase_%.0f_%.0f.dat',ping_group_start(uig),ping_group_end(uig)));
-                    % if file does not exist or we're re-sampling it, create a new
-                    % one ready for writing
-                    if exist(file_amp_binary{uig},'file')==0
-                        file_amp_id(uig) = fopen(file_amp_binary{uig},'w+');
-                    else
-                        % if we're here, it means the file already exists and
-                        % already contain the data at the proper sampling. So we
-                        % just need to store the metadata and link to it as
-                        % memmapfile.
-                        file_amp_id(uig) = -1;
-                    end
-                    
-                    % repeat for phase file
-                    if exist(file_phase_binary{uig},'file')==0
-                        file_phase_id(uig) = fopen(file_phase_binary{uig},'w+');
-                    else
-                        file_phase_id(uig) = -1;
-                    end
-                end
-                
+                 fData=CFF_init_memmapfiles(fData,...
+                'wc_dir',wc_dir,...
+                'field','WC_SBP_SampleAmplitudes',...
+                'Class','int16',...
+                'Factor',1/200,...
+                'Nanval',intmin('int16'),...
+                'MaxSamples',maxNSamples_groups,...
+                'MaxBeams',maxNBeams,...
+                'ping_group_start',ping_group_start,...
+                'ping_group_end',ping_group_end);
+            
+                fData=CFF_init_memmapfiles(fData,...
+                'wc_dir',wc_dir,...
+                'field','WC_SBP_SamplePhase',...
+                'Class','int16',...
+                'Factor',1/10430/pi*180,...
+                'Nanval',200,...
+                'MaxSamples',maxNSamples_groups,...
+                'MaxBeams',maxNBeams,...
+                'ping_group_start',ping_group_start,...
+                'ping_group_end',ping_group_end);
+                   
                 ig=1;
                 % now get data for each ping
                 
@@ -334,58 +334,22 @@ for iF = 1:nStruct
                     end
                     
                     fseek(fid_all,S7Kdata.R7018_7kBeamformedData.BeamformedDataPos(iP),'bof');
-                    Mag_tmp=(fread(fid_all,[S7Kdata.R7018_7kBeamformedData.N(iP) S7Kdata.R7018_7kBeamformedData.S(iP)],mag_fmt,2))';
+                    Mag_tmp=(fread(fid_all,[S7Kdata.R7018_7kBeamformedData.N(iP) S7Kdata.R7018_7kBeamformedData.S(iP)],'uint16',2))';
                     fseek(fid_all,S7Kdata.R7018_7kBeamformedData.BeamformedDataPos(iP)+2,'bof');
-                    Ph_tmp=(fread(fid_all,[S7Kdata.R7018_7kBeamformedData.N(iP) S7Kdata.R7018_7kBeamformedData.S(iP)],phase_fmt,2))';
-                    
-                    Ph_tmp=Ph_tmp/10430/pi*180;
+                    Ph_tmp=(fread(fid_all,[S7Kdata.R7018_7kBeamformedData.N(iP) S7Kdata.R7018_7kBeamformedData.S(iP)],'int16=>int16',2))';
                     
                     Mag_tmp(Mag_tmp==eval([mag_fmt '(-inf)']))=eval([mag_fmt '(-inf)']);
-                    Mag_tmp=20*log10(Mag_tmp/double(intmax('uint16')))*200;
-%                     
-%                     figure();
-%                     imagesc(Mag_tmp/200)
-%                     figure();
-%                     imagesc(Ph_tmp)
-                    % store amp data on binary file
-                    if file_amp_id(ig) >= 0
-                        fwrite(file_amp_id(ig),Mag_tmp,mag_fmt);
-                    end
+                    Mag_tmp=20*log10(Mag_tmp/double(intmax('uint16')))/fData.WC_1_SampleAmplitudes_Factor;
+
+                    fData.WC_SBP_SampleAmplitudes{ig}.Data.val(:,:,iP-ping_group_start(ig)+1)=int16(Mag_tmp);
+                    fData.WC_SBP_SamplePhase{ig}.Data.val(:,:,iP-ping_group_start(ig)+1)=Ph_temp;
                     
-                    % store phase data on binary file
-                    if file_phase_id(ig)>=0
-                        fwrite(file_phase_id(ig),Ph_tmp,phase_fmt);
-                    end
                 end
                 
-                fData.WC_SBP_SampleAmplitudes=cell(1,numel(maxNSamples_groups));
-                fData.WC_SBP_SamplePhase=cell(1,numel(maxNSamples_groups));
-                
-                fData.WC_n_start=ping_group_start;
-                fData.WC_n_end=ping_group_end;
-                fData.WC_n_maxNSamples=maxNSamples_groups;
-                
-                for ig=1:numel(maxNSamples_groups)
-                    % close binary data file
-                    if file_amp_id(ig) >= 0
-                        fclose(file_amp_id(ig));
-                    end
-                    
-                    % close binary data file
-                    if file_phase_id(ig) >= 0
-                        fclose(file_phase_id(ig));
-                    end
-                    
-                    fData.WC_SBP_SampleAmplitudes{ig} = memmapfile(file_amp_binary{ig},'Format',{mag_fmt [maxNSamples_groups(ig) maxNBeams fData.WC_n_end(ig)-fData.WC_n_start(ig)+1] 'val'},'repeat',1,'writable',true);
-                    fData.WC_SBP_SamplePhase{ig}      = memmapfile(file_phase_binary{ig},'Format',{phase_fmt [maxNSamples_groups(ig) maxNBeams fData.WC_n_end(ig)-fData.WC_n_start(ig)+1] 'val'},'repeat',1,'writable',true);
-                end
-                % save info about data format for later access
-                fData.WC_1_SampleAmplitudes_Class  = 'int16';
-                fData.WC_1_SampleAmplitudes_Nanval = intmin('int16');
-                fData.WC_1_SampleAmplitudes_Factor = 1/200;
-                fData.WC_1_SamplePhase_Class  = 'int16';
-                fData.WC_1_SamplePhase_Nanval = 200;
-                fData.WC_1_SamplePhase_Factor = 1;
+
+  
+
+
                 
                 
             end
@@ -439,37 +403,46 @@ for iF = 1:nStruct
                 fData.AP_BP_BeamNumber             = nan(maxNBeams,nPings);
                 
                 [maxNSamples_groups,ping_group_start,ping_group_end]=CFF_group_pings_per_samples(S7Kdata.R7042_CompressedWaterColumn.NumberOfSamples,pingNumber,pingNumber);
+                [flags,sample_size,mag_fmt,phase_fmt]=CFF_get_R7042_flags(S7Kdata.R7042_CompressedWaterColumn.Flags(1));
                 
-                
-                % path to binary file for WC data
-                file_amp_binary=cell(1,numel(maxNSamples_groups));
-                file_phase_binary=cell(1,numel(maxNSamples_groups));
-                file_amp_id=-ones(1,numel(maxNSamples_groups));
-                file_phase_id=-ones(1,numel(maxNSamples_groups));
-                
-                for uig=1:numel(ping_group_start)
-                    file_amp_binary{uig} = fullfile(wc_dir,sprintf('AP_SBP_SampleAmplitudes_%.0f_%.0f.dat',ping_group_start(uig),ping_group_end(uig)));
-                    file_phase_binary{uig} = fullfile(wc_dir,sprintf('AP_SBP_SamplePhase_%.0f_%.0f.dat',ping_group_start(uig),ping_group_end(uig)));
-                    % if file does not exist or we're re-sampling it, create a new
-                    % one ready for writing
-                    if exist(file_amp_binary{uig},'file')==0
-                        file_amp_id(uig) = fopen(file_amp_binary{uig},'w+');
-                    else
-                        % if we're here, it means the file already exists and
-                        % already contain the data at the proper sampling. So we
-                        % just need to store the metadata and link to it as
-                        % memmapfile.
-                        file_amp_id(uig) = -1;
-                    end
-                    
-                    % repeat for phase file
-                    if exist(file_phase_binary{uig},'file')==0
-                        file_phase_id(uig) = fopen(file_phase_binary{uig},'w+');
-                    else
-                        file_phase_id(uig) = -1;
-                    end
+                switch phase_fmt
+                    case 'int8'
+                        phase_fact=360/256;
+                    case 'int16'
+                        phase_fact=180/pi/10430;
                 end
                 
+                switch mag_fmt
+                    case 'int8'
+                        mag_fact=1;
+                        mag_file_fmt='int8';
+                    case {'uint16' 'float32'}
+                        mag_fact=1/200;
+                        mag_file_fmt='int16';
+                end
+                
+                 fData=CFF_init_memmapfiles(fData,...
+                'wc_dir',wc_dir,...
+                'field','AP_SBP_SampleAmplitudes',...
+                'Class',mag_file_fmt,...
+                'Factor',mag_fact,...
+                'Nanval',intmin(mag_file_fmt),...
+                'MaxSamples',maxNSamples_groups,...
+                'MaxBeams',maxNBeams,...
+                'ping_group_start',ping_group_start,...
+                'ping_group_end',ping_group_end);
+            
+                fData=CFF_init_memmapfiles(fData,...
+                'wc_dir',wc_dir,...
+                'field','AP_SBP_SamplePhase',...
+                'Class',phase_fmt,...
+                'Factor',phase_fact,...
+                'Nanval',200,...
+                'MaxSamples',maxNSamples_groups,...
+                'MaxBeams',maxNBeams,...
+                'ping_group_start',ping_group_start,...
+                'ping_group_end',ping_group_end);
+
                 ig=1;
                 % now get data for each ping
                 disp_wc=0;
@@ -487,7 +460,7 @@ for iF = 1:nStruct
                     % find datagrams composing this ping
                     %pingCounter = fData.AP_1P_PingCounter(1,iP); % ping number (ex: 50455)
                     iBeam=S7Kdata.R7042_CompressedWaterColumn.BeamNumber{iP}+1;
-                    [flags,sample_size,mag_fmt,phase_fmt]=CFF_get_R7042_flags(S7Kdata.R7042_CompressedWaterColumn.Flags(iP));
+                    
                     if flags.downsamplingType>0
                         fData.AP_1P_SamplingFrequencyHz(iP)=fData.AP_1P_SamplingFrequencyHz(iP)/flags.downsamplingDivisor;
                     end
@@ -505,24 +478,11 @@ for iF = 1:nStruct
                     fData.AP_BP_TransmitSectorNumber(iBeam,iP)   = 1;
                     fData.AP_BP_BeamNumber(iBeam,iP)             = S7Kdata.R7004_7kBeamGeometry.N(iP);
                     
-                    switch phase_fmt
-                        case 'int8'
-                            phase_fact=360/256;
-                        case 'int16'
-                            phase_fact=180/pi/10430;
-                    end
                     
-                    switch mag_fmt
-                        case 'int8'
-                            mag_fact=1;
-                        case 'uint16'
-                            mag_fact=1/200;
-                    end
                 
                     
                     % now getting watercolumn data (beams x samples)
-                    if file_amp_id(ig) >= 0 || file_phase_id(ig) >= 0
-                        
+                          
                         if flags.magnitudeOnly
                             Mag_tmp=ones(maxNSamples_groups(ig),maxNBeams,mag_fmt)*eval([mag_fmt '(-inf)']);
                         else
@@ -531,19 +491,28 @@ for iF = 1:nStruct
                         end
                         start_sample=S7Kdata.R7042_CompressedWaterColumn.FirstSample(iP)+1;
                         Ns=S7Kdata.R7042_CompressedWaterColumn.NumberOfSamples{iP};
+                        pos=ftell(fid_all);
+                        fseek(fid_all,S7Kdata.R7042_CompressedWaterColumn.SampleStartPositionInFile{iP}(1)-pos,'cof');
+                        
+                        pos_start_ping=S7Kdata.R7042_CompressedWaterColumn.SampleStartPositionInFile{iP}(1);
+                        pos_end_ping=S7Kdata.R7042_CompressedWaterColumn.SampleStartPositionInFile{iP}(end)+Ns(end)*sample_size;
+                        
+                        DataSamples_tot=fread(fid_all,pos_end_ping-pos_start_ping+1,'int8=>int8');
+                        
+                        
                         for jj=1:S7Kdata.R7004_7kBeamGeometry.N(iP)
-                            pos=ftell(fid_all);
-                            fseek(fid_all,S7Kdata.R7042_CompressedWaterColumn.SampleStartPositionInFile{iP}(jj)-pos,'cof');
-                            DataSamples_tmp=int8(fread(fid_all,Ns(jj)*sample_size,'int8'));
+                            idx_pp = S7Kdata.R7042_CompressedWaterColumn.SampleStartPositionInFile{iP}(jj):(S7Kdata.R7042_CompressedWaterColumn.SampleStartPositionInFile{iP}(jj)+Ns(jj)*sample_size-1);
+                            idx_pp = idx_pp-pos_start_ping+1;
+                            DataSamples_tmp=DataSamples_tot(idx_pp);
                             
                             if flags.magnitudeOnly
                                 switch mag_fmt
                                     case 'float32'
-                                        Mag_tmp((start_sample:start_sample+Ns(jj)-1),jj)=20*log10(typecast(DataSamples_tmp,mag_fmt));
+                                        Mag_tmp((start_sample:start_sample+Ns(jj)-1),jj)=10*log10(typecast(DataSamples_tmp,mag_fmt));
                                     case 'int8'
-                                        Mag_tmp((start_sample:start_sample+Ns(jj)-1),jj)=typecast(DataSamples_tmp,mag_fmt);   
+                                        Mag_tmp((start_sample:start_sample+Ns(jj)-1),jj)=DataSamples;
                                     case 'uint16'
-                                        Mag_tmp((start_sample:start_sample+Ns(jj)-1),jj)=DataSamples_tmp;
+                                        Mag_tmp((start_sample:start_sample+Ns(jj)-1),jj)=typecast(DataSamples_tmp,mag_fmt); 
                                     otherwise
                                         warning('WC compression flag issue');
                                 end
@@ -580,7 +549,7 @@ for iF = 1:nStruct
                                 case 'int8'
                                     imagesc(ax_mag,double(Mag_tmp)-128);
                                 case 'uint16'
-                                    imagesc(20*log10(double(Mag_tmp)/double(intmax('int16'))));
+                                    imagesc(10*log10(double(Mag_tmp)/double(intmax('int16'))));
                             end
                             caxis(ax_mag,[-100 -20]);
 
@@ -592,58 +561,24 @@ for iF = 1:nStruct
                         % store amp data on binary file
                         switch mag_fmt
                             case 'int8'
-                                Mag_tmp=(double(Mag_tmp)-128);
+                                Mag_tmp=Mag_tmp-int8(128);
                             case 'uint16'
-                                idx0=Mag_tmp==0;                              
-                                Mag_tmp=(20*log10(double(Mag_tmp)/double(intmax('uint16')))/mag_fact);
+                                idx0=Mag_tmp==0;
+                                Mag_tmp=(10*log10(double(Mag_tmp)/double(intmax('uint16')))/mag_fact);
                                 Mag_tmp(idx0)=-inf;
-                                mag_fmt='int16';
+                                mag_fmt=int16(Mag_tmp);
+                            case 'float32'
+                                mag_fmt=int16(Mag_tmp/mag_fact);
                         end
                         
-                        
+                        fData.AP_SBP_SampleAmplitudes{ig}.Data.val(:,:,iP-ping_group_start(ig)+1)=Mag_tmp;
+                        if ~flags.magnitudeOnly
+                            fData.AP_SBP_SamplePhase{ig}.Data.val(:,:,iP-ping_group_start(ig)+1)=Ph_tmp;
+                        end
 
-                        
-                        if file_amp_id(ig) >= 0
-                            fwrite(file_amp_id(ig),Mag_tmp,mag_fmt);
-                        end
-                        
-                        % store phase data on binary file
-                        if file_phase_id(ig)>=0
-                            fwrite(file_phase_id(ig),Ph_tmp,phase_fmt);
-                        end
-                        
-       
-                    end
-                    
                 end
                 
 
-                fData.AP_SBP_SampleAmplitudes=cell(1,numel(maxNSamples_groups));
-                fData.AP_SBP_SamplePhase=cell(1,numel(maxNSamples_groups));
-                fData.AP_n_start=ping_group_start;
-                fData.AP_n_end=ping_group_end;
-                fData.AP_n_maxNSamples=maxNSamples_groups;
-                for ig=1:numel(maxNSamples_groups)
-                    % close binary data file
-                    if file_amp_id(ig) >= 0
-                        fclose(file_amp_id(ig));
-                    end
-                    
-                    % close binary data file
-                    if file_phase_id(ig) >= 0
-                        fclose(file_phase_id(ig));
-                    end
-                    
-                    fData.AP_SBP_SampleAmplitudes{ig} = memmapfile(file_amp_binary{ig},'Format',{mag_fmt [maxNSamples_groups(ig) maxNBeams fData.AP_n_end(ig)-fData.AP_n_start(ig)+1] 'val'},'repeat',1,'writable',true);
-                    fData.AP_SBP_SamplePhase{ig}      = memmapfile(file_phase_binary{ig},'Format',{phase_fmt [maxNSamples_groups(ig) maxNBeams fData.AP_n_end(ig)-fData.AP_n_start(ig)+1] 'val'},'repeat',1,'writable',true);
-                end
-                % save info about data format for later access
-                fData.AP_1_SampleAmplitudes_Class  = mag_fmt;
-                fData.AP_1_SampleAmplitudes_Nanval = eval([mag_fmt '(-inf)']);
-                fData.AP_1_SampleAmplitudes_Factor = mag_fact;
-                fData.AP_1_SamplePhase_Class  = phase_fmt;
-                fData.AP_1_SamplePhase_Nanval = 200;
-                fData.AP_1_SamplePhase_Factor = phase_fact;
                 
             end
             

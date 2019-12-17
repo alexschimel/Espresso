@@ -36,14 +36,14 @@
 function closefcn_clean_espresso(main_figure,~)
 
 fprintf('Closing Espresso...\n');
-
+logfile=main_figure.UserData.logfile;
 % fData = getappdata(main_figure,'fData');
 ext_figs = getappdata(main_figure,'ext_figs');
 delete(ext_figs);
 delete(main_figure);
 clear fData
 
-fprintf('...Done. Find a log of this output at %s. \n',Espresso_diary_file);
+fprintf('...Done. Find a log of this output at %s. \n',logfile);
 diary off
 
 if isdeployed()

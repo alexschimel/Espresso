@@ -442,35 +442,10 @@ for itt = idx_fData(:)'
     
     % processed data filename
     
-    file_X_SBP_WaterColumnRaw=cell(1,numel(nSamples));
-    file_X_SBP_WaterColumnProcessed=cell(1,numel(nSamples));
-    
-    fid=-ones(1,numel(nSamples));
-    f_to_del={};
-    if isfield(fData_tot{itt},'X_SBP_WaterColumnProcessed')
-        for uig=1:numel(fData_tot{itt}.X_SBP_WaterColumnProcessed)
-            f_to_del=[f_to_del fData_tot{itt}.X_SBP_WaterColumnProcessed{uig}.Filename];
-            fData_tot{itt}.X_SBP_WaterColumnProcessed{uig}=[];
-        end
-        fData_tot{itt} = rmfield(fData_tot{itt},'X_SBP_WaterColumnProcessed');
-    end
-    
-    for uif=1:numel(f_to_del)
-        delete(f_to_del{uif});
-    end
-    
     ping_gr_start=fData_tot{itt}.(sprintf('%s_n_start',dg_source));
     ping_gr_end=fData_tot{itt}.(sprintf('%s_n_end',dg_source));
-    for uig=1:numel(ping_gr_start)
-        file_X_SBP_WaterColumnRaw{uig} = fullfile(wc_dir,sprintf('%s_SBP_SampleAmplitudes_%.0f_%.0f.dat',dg_source,...
-            ping_gr_start(uig),ping_gr_end(uig)));
-        
-        file_X_SBP_WaterColumnProcessed{uig} = fullfile(wc_dir,sprintf('X_SBP_WaterColumnProcessed_%.0f_%.0f.dat',...
-            ping_gr_start(uig),ping_gr_end(uig)));
-        
-    end
-    
-    
+   
+       
     for ig=1:numel(nSamples)
         % processed data format
         saving_method = 'low_precision'; % 'low_precision' or 'high_precision'
@@ -491,64 +466,20 @@ for itt = idx_fData(:)'
                 wcdataproc_nanval  = NaN;
         end
         
-        % memmap if possible
-        if isfile(file_X_SBP_WaterColumnProcessed{ig}) && ...
-                isfield(fData_tot{itt},'X_SBP_WaterColumnProcessed') && ...
-                numel(fData_tot{itt}.X_SBP_WaterColumnProcessed)>=ig && ...
-                isa(fData_tot{itt}.X_SBP_WaterColumnProcessed{ig},'memmapfile') &&...
-                strcmpi(fData_tot{itt}.X_SBP_WaterColumnProcessed{ig}.Filename,file_X_SBP_WaterColumnProcessed{ig}) && ...
-                all(fData_tot{itt}.X_SBP_WaterColumnProcessed{ig}.Format{2}==[nSamples(ig),nBeams(ig),nPings(ig)]) && ...
-                strcmp(fData_tot{itt}.X_1_WaterColumnProcessed_Class,wcdataproc_class) && ...
-                fData_tot{itt}.X_1_WaterColumnProcessed_Factor == wcdataproc_factor && ...
-                (isnan(fData_tot{itt}.X_1_WaterColumnProcessed_Nanval) || ...
-                fData_tot{itt}.X_1_WaterColumnProcessed_Nanval == wcdataproc_nanval)
-            
-            % Processed data file exists, is memmapped to fData, and the
-            % dimensions and format as recorded in fData correspond to what we
-            % want, it's ready for saving processed data through memmap.
-            % Nothing else to do.
-            flag_memmap = 1;
-            
-        else
-            
-            % Processed data file doesn't exist yet or isn't mapped, or
-            % recorded dimensions or file format don't correspond to what we
-            % want... then redo from scratch.
-            
-            if exist(file_X_SBP_WaterColumnProcessed{ig},'file')
-                delete(file_X_SBP_WaterColumnProcessed{ig});
-            end
-            
-            % Then, re-initialize
-            if strcmp(saving_method,'low_precision')
-                % copy original data file as processed data file
-                if ~isfile(file_X_SBP_WaterColumnProcessed{ig})
-                    copyfile(file_X_SBP_WaterColumnRaw{ig},file_X_SBP_WaterColumnProcessed{ig});
-                end
-                
-            end
-            
-            if isfile(file_X_SBP_WaterColumnProcessed{ig})
-                % add to fData as a memmapfile
-                fData_tot{itt}.X_SBP_WaterColumnProcessed{ig} = memmapfile(file_X_SBP_WaterColumnProcessed{ig}, 'Format',{wcdataproc_class [nSamples(ig) nBeams(ig) nPings(ig)] 'val'},'repeat',1,'writable',true);
-                % and record same info as original
-                fData_tot{itt}.X_1_WaterColumnProcessed_Class  = wcdataproc_class;
-                fData_tot{itt}.X_1_WaterColumnProcessed_Factor = wcdataproc_factor;
-                fData_tot{itt}.X_1_WaterColumnProcessed_Nanval = wcdataproc_nanval;
-                
-                % ready for data saving through memmap
-                flag_memmap = 1;
-                
-            else
-
-                % can't memmap something that don't exist yet, open the file
-                % as binary and set the flag to write in it
-                fid(uig) = fopen(file_X_SBP_WaterColumnProcessed{uig},'w+');
-                flag_memmap = 0;
-                
-            end
-            
-        end
+        
+        
+        fData_tot{itt}=CFF_init_memmapfiles(fData_tot{itt},...
+                'wc_dir',wc_dir,...
+                'field','X_SBP_WaterColumnProcessed',...
+                'Class',wcdata_class,...
+                'Factor',wcdata_factor,...
+                'Nanval',wcdata_nanval,...
+                'MaxSamples',nSamples(ig),...
+                'MaxBeams',nanmax(nBeams),...
+                'ping_group_start',ping_gr_start,...
+                'ping_group_end',ping_gr_end);
+        
+      
         
         % block processing setup
         mem_struct = memory;
@@ -589,41 +520,20 @@ for itt = idx_fData(:)'
             if ~isnan(wcdataproc_nanval)
                 data(isnan(data)) = wcdataproc_nanval;
             end
-            % saving
-            if flag_memmap          
-                % convert result back to raw format and store through memmap
-                if strcmp(class(data),wcdataproc_class)
-                    fData_tot{itt}.X_SBP_WaterColumnProcessed{ig}.Data.val(:,:,blockPings) = data;
-                else
-                    fData_tot{itt}.X_SBP_WaterColumnProcessed{ig}.Data.val(:,:,blockPings) = cast(data,wcdataproc_class);
-                end
-                
-            else
-                
-                % write data to binary file
-                fwrite(fid(ig),data,wcdataproc_class);
-                
-            end
             
+            % convert result back to raw format and store through memmap
+            if strcmp(class(data),wcdataproc_class)
+                fData_tot{itt}.X_SBP_WaterColumnProcessed{ig}.Data.val(:,:,blockPings) = data;
+            else
+                fData_tot{itt}.X_SBP_WaterColumnProcessed{ig}.Data.val(:,:,blockPings) = cast(data,wcdataproc_class);
+            end
+                
             % disp block processing progress
             textprogressbar(round(iB.*100./nBlocks)-1);
             
         end
         
-        if ~flag_memmap
-            
-            % close
-            fclose(fid(ig));
-            
-            % add to fData as memmapfile
-            fData_tot{itt}.X_SBP_WaterColumnProcessed{ig} = memmapfile(file_X_SBP_WaterColumnProcessed{ig}, 'Format',{wcdataproc_class [nSamples(ig) nBeams(ig) nPings(ig)] 'val'},'repeat',1,'writable',true);
-            
-            % and record info
-            fData_tot{itt}.X_1_WaterColumnProcessed_Class  = wcdataproc_class;
-            fData_tot{itt}.X_1_WaterColumnProcessed_Factor = wcdataproc_factor;
-            fData_tot{itt}.X_1_WaterColumnProcessed_Nanval = wcdataproc_nanval;
-            
-        end
+     
     end
     % get folder for converted data and converted filename
     folder_for_converted_data = CFF_converted_data_folder(fData_tot{itt}.ALLfilename{1});

@@ -40,12 +40,13 @@ end
 if ~isfolder(Espresso_user_folder)
     mkdir(Espresso_user_folder);
 end
-
-if isfile(Espresso_diary_file)
-    delete(Espresso_diary_file);
+logfile=Espresso_diary_file;
+if isfile(logfile)
+    delete(logfile);
 end
 
-diary(Espresso_diary_file);
+diary(logfile);
+EspressoUserdata.logfile=logfile;
 
 %% Starting messages
 fprintf('Starting Espresso at %s... \n',datestr(now));
@@ -81,8 +82,11 @@ main_figure = figure('Units','pixels',...
     'Toolbar','none',...
     'visible','on',...
     'WindowStyle','normal',...
+    'UserData',EspressoUserdata,...
     'CloseRequestFcn',@closefcn_clean_espresso,...
     'ResizeFcn',@resize_espresso);
+
+
 
 %% Install mouse pointer manager in figure
 iptPointerManager(main_figure);

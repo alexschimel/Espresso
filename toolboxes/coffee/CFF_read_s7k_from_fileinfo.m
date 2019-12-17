@@ -606,7 +606,7 @@ for iDatag = datagToParse'
             pos_2 = ftell(fid); % position at start of data
             RTH_size = 44;
             RD_size = RTHandRD_size - RTH_size;
-            blocktmp = int8(fread(fid,RD_size,'int8'))'; % read all that data block
+            blocktmp = fread(fid,RD_size,'int8=>int8')'; % read all that data block
             
             wc_parsing_error = 0; % initialize flag
             

@@ -392,7 +392,8 @@ for nF = 1:numel(files_to_convert)
         switch f_ext
             case {'.all' '.wcd'}
                 % if output file does not exist OR if forcing reconversion, simply convert
-                fData = CFF_convert_ALLdata_to_fData(EMdata,dr_sub,db_sub,fData_old);
+                      fData = CFF_convert_ALLdata_to_fData(EMdata,dr_sub,db_sub,fData_old);
+                
                 textprogressbar(90);
 
             case '.s7k'

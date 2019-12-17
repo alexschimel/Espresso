@@ -140,10 +140,12 @@ switch str_disp
         if isempty(amp)
             display_tab_comp.data_disp.Value=find(strcmpi(display_tab_comp.data_disp.String,'Original'));
         end
+        idx_keep = true(size(amp));
 end
 
 if isempty(amp)
     amp = CFF_get_WC_data(fData,sprintf('%s_SBP_SampleAmplitudes',datagramSource),'iPing',ip);
+    [amp, warning_text] = CFF_WC_radiometric_corrections_CORE(amp,fData);
     idx_keep = amp >= cax(1);
 end
 

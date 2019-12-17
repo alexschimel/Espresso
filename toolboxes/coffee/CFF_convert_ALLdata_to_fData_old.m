@@ -817,16 +817,20 @@ for iF = 1:nStruct
             [maxNSamples_groups,ping_group_start,ping_group_end]=CFF_group_pings_per_samples(ALLdata.EM_WaterColumn.NumberOfSamples,pingCounters,ALLdata.EM_WaterColumn.PingCounter);
             maxNSamples_groups=maxNSamples_groups/dr_sub;
             
-            fData=CFF_init_memmapfiles(fData,...
-                'wc_dir',wc_dir,...
-                'field','WC_SBP_SampleAmplitudes',...
-                'Class','int8',...
-                'Factor',1/2,...
-                'Nanval',-128,...
-                'MaxSamples',maxNSamples_groups,...
-                'MaxBeams',maxNBeams_sub,...
-                'ping_group_start',ping_group_start,...
-                'ping_group_end',ping_group_end);
+            % path to binary file for WC data
+            file_binary=cell(1,numel(maxNSamples_groups));
+            fileID=-ones(1,numel(maxNSamples_groups));
+            
+            for uig=1:numel(ping_group_start)
+                file_binary{uig} = fullfile(wc_dir,sprintf('WC_SBP_SampleAmplitudes_%.0f_%.0f.dat',ping_group_start(uig),ping_group_end(uig)));
+                if ~exist(file_binary{uig},'file') || fData.dr_sub~=dr_sub || fData.db_sub~=db_sub
+                    fileID(uig) = fopen(file_binary{uig},'w+');
+                    % if we're not here, it means the file already exists and
+                    % already contain the data at the proper sampling. So we
+                    % just need to store the metadata and link to it as
+                    % memmapfile.
+                end
+            end
             
             % initialize data per transmit sector and ping
             fData.WC_TP_TiltAngle            = nan(maxNTransmitSectors,nPings);
@@ -858,9 +862,9 @@ for iF = 1:nStruct
                 % initialize the water column data matrix for that ping.
                 % Original data are in "int8" format, the NaN equivalent
                 % will be -128
-                
-                SB_temp = zeros(maxNSamples_groups(ig),maxNBeams_sub,'int8') - 128;
-                
+                if fileID(ig) >= 0
+                    SB_temp = zeros(maxNSamples_groups(ig),maxNBeams_sub,'int8') - 128;
+                end
                 
                 % intialize number of sectors and beams recorded so far for
                 % that ping (needed for multiple heads)
@@ -930,27 +934,32 @@ for iF = 1:nStruct
                         fData.WC_BP_BeamNumber(iBeamDest,iP)             = ALLdata.EM_WaterColumn.BeamNumber{iDatagrams(iD)}(iBeamSource);
                         fData.WC_BP_SystemSerialNumber(iBeamDest,iP)     = headSSN;
                         
-                        for iB = 1:nBeam
+                        % now getting watercolumn data (beams x samples)
+                        if fileID(ig) >= 0
                             
-                            % actual number of samples in that beam
-                            nSamp = ALLdata.EM_WaterColumn.NumberOfSamples{iDatagrams(iD)}(iBeamSource(iB));
+                            for iB = 1:nBeam
+                                
+                                % actual number of samples in that beam
+                                nSamp = ALLdata.EM_WaterColumn.NumberOfSamples{iDatagrams(iD)}(iBeamSource(iB));
+                                
+                                % number of samples we're going to record
+                                nSamp_sub = ceil(nSamp/dr_sub);
+                                
+                                % read the data in original file and record
+                                % water column data are recorded in "int8
+                                % (-128 to 127) with -128 being the NaN
+                                % value, and with a resolution of 0.5dB,
+                                % aka it needs to be multiplied by a factor
+                                % of 1/2 to retrieve the appropriate value,
+                                % aka an int8 record of -41 is actually
+                                % -20.5dB
+                                pos = ALLdata.EM_WaterColumn.SampleAmplitudePosition{iDatagrams(iD)}(iBeamSource(iB));
+                                fseek(fid_all,pos,'bof');
+                                SB_temp(1:nSamp_sub,nBeamTot+iB) = fread(fid_all,nSamp_sub,'int8',dr_sub-1);
+                                
+                            end
                             
-                            % number of samples we're going to record
-                            nSamp_sub = ceil(nSamp/dr_sub);
-                            
-                            % read the data in original file and record
-                            % water column data are recorded in "int8
-                            % (-128 to 127) with -128 being the NaN
-                            % value, and with a resolution of 0.5dB,
-                            % aka it needs to be multiplied by a factor
-                            % of 1/2 to retrieve the appropriate value,
-                            % aka an int8 record of -41 is actually
-                            % -20.5dB
-                            pos = ALLdata.EM_WaterColumn.SampleAmplitudePosition{iDatagrams(iD)}(iBeamSource(iB));
-                            fseek(fid_all,pos,'bof');
-                            SB_temp(1:nSamp_sub,nBeamTot+iB) = fread(fid_all,nSamp_sub,'int8=>int8',dr_sub-1);
                         end
-                        
                         
                         % updating total number of beams recorded so far
                         nBeamTot = nBeamTot + nBeam;
@@ -959,9 +968,36 @@ for iF = 1:nStruct
                     
                 end
                 
-                fData.WC_SBP_SampleAmplitudes{ig}.Data.val(:,:,iP-ping_group_start(ig)+1)=SB_temp;
+                % store data on binary file
+                if fileID(ig) >= 0
+                    fwrite(fileID(ig),SB_temp,'int8');
+                    %                     imagesc(ax,SB_temp);
+                    %                     drawnow;
+                end
                 
             end
+            
+            fData.WC_n_start=ping_group_start;
+            fData.WC_n_end=ping_group_end;
+            fData.WC_n_maxNSamples=maxNSamples_groups;
+            
+            % close binary data file
+            fData.WC_SBP_SampleAmplitudes=cell(1,numel(fileID));
+            for ig =1:numel(fileID)
+                if fileID(ig) >= 0
+                    fclose(fileID(ig));
+                end
+                % and link to it through memmapfile
+                % remember data is in int8 format
+                
+                fData.WC_SBP_SampleAmplitudes{ig} = memmapfile(file_binary{ig},'Format',{'int8' [maxNSamples_groups(ig) maxNBeams_sub fData.WC_n_end(ig)-fData.WC_n_start(ig)+1] 'val'},'repeat',1,'writable',true);
+            end
+            
+            % save info about data format for later access and conversion
+            % to dB
+            fData.WC_1_SampleAmplitudes_Class = 'int8';
+            fData.WC_1_SampleAmplitudes_Nanval = -128;
+            fData.WC_1_SampleAmplitudes_Factor = 1/2;
             
         end
     end
@@ -1022,27 +1058,29 @@ for iF = 1:nStruct
             [maxNSamples_groups,ping_group_start,ping_group_end]=CFF_group_pings_per_samples(ALLdata.EM_AmpPhase.NumberOfSamples,pingCounters,ALLdata.EM_AmpPhase.PingCounter);
             
             
-            fData=CFF_init_memmapfiles(fData,...
-                'wc_dir',wc_dir,...
-                'field','AP_SBP_SampleAmplitudes',...
-                'Class','int16',...
-                'Factor',1/200,...
-                'Nanval',intmin('int16'),...
-                'MaxSamples',maxNSamples_groups,...
-                'MaxBeams',maxNBeams_sub,...
-                'ping_group_start',ping_group_start,...
-                'ping_group_end',ping_group_end);
+            % path to binary file for WC data
+            file_amp_binary=cell(1,numel(maxNSamples_groups));
+            file_phase_binary=cell(1,numel(maxNSamples_groups));
+            file_amp_id=-ones(1,numel(maxNSamples_groups));
+            file_phase_id=-ones(1,numel(maxNSamples_groups));
             
-            fData=CFF_init_memmapfiles(fData,...
-                'wc_dir',wc_dir,...
-                'field','AP_SBP_SamplePhase',...
-                'Class','int16',...
-                'Factor',1/30,...
-                'Nanval',200,...
-                'MaxSamples',maxNSamples_groups,...
-                'MaxBeams',maxNBeams_sub,...
-                'ping_group_start',ping_group_start,...
-                'ping_group_end',ping_group_end);
+            for uig=1:numel(ping_group_start)
+                file_amp_binary{uig} = fullfile(wc_dir,sprintf('AP_SBP_SampleAmplitudes_%.0f_%.0f.dat',ping_group_start(uig),ping_group_end(uig)));
+                file_phase_binary{uig} = fullfile(wc_dir,sprintf('AP_SBP_SamplePhase_%.0f_%.0f.dat',ping_group_start(uig),ping_group_end(uig)));
+                
+                if exist(file_amp_binary{uig},'file')==0 || fData.dr_sub~=dr_sub || fData.db_sub~=db_sub
+                    file_amp_id(uig) = fopen(file_amp_binary{uig},'w+');
+                else
+                    file_amp_id(uig) = -1;
+                end
+                
+                % repeat for phase file
+                if exist(file_phase_binary{uig},'file')==0 || fData.dr_sub~=dr_sub || fData.db_sub~=db_sub
+                    file_phase_id(uig) = fopen(file_phase_binary{uig},'w+');
+                else
+                    file_phase_id(uig) = -1;
+                end
+            end
             
             
             ig=1;
@@ -1079,10 +1117,10 @@ for iF = 1:nStruct
                 
                 % initialize the water column data matrix for that ping.
                 
-                
-                SB2_temp = zeros(maxNSamples_groups(ig),maxNBeams_sub,'int16')-intmin('int16');
-                Ph_temp = zeros(maxNSamples_groups(ig),maxNBeams_sub,'int16');
-                
+                if file_amp_id(ig) >= 0 || file_phase_id(ig) >= 0
+                    SB2_temp = zeros(maxNSamples_groups(ig),maxNBeams_sub,'int16')-intmin('int16');
+                    Ph_temp = zeros(maxNSamples_groups(ig),maxNBeams_sub,'int16');
+                end
                 
                 % and then read the data in each datagram
                 for iD = 1:nDatagrams
@@ -1101,33 +1139,42 @@ for iF = 1:nStruct
                     fData.AP_BP_TransmitSectorNumber(iBeams,iP)   = ALLdata.EM_AmpPhase.TransmitSectorNumber2{iDatagrams(iD)}(idx_beams);
                     fData.AP_BP_BeamNumber(iBeams,iP)             = ALLdata.EM_AmpPhase.BeamNumber{iDatagrams(iD)}(idx_beams);
                     
-                    for iB = 1:numel(iBeams)
+                    % now getting watercolumn data (beams x samples)
+                    if file_amp_id(ig) >= 0 || file_phase_id(ig) >= 0
                         
-                        % actual number of samples in that beam
-                        Ns = ALLdata.EM_AmpPhase.NumberOfSamples{iDatagrams(iD)}(idx_beams(iB));
-                        
-                        % number of samples we're going to record:
-                        Ns_sub = ceil(Ns/dr_sub);
-                        
-                        % get the data:
-                        if Ns_sub > 0
+                        for iB = 1:numel(iBeams)
                             
-                            fseek(fid_all,ALLdata.EM_AmpPhase.SamplePhaseAmplitudePosition{iDatagrams(iD)}(idx_beams(iB)),'bof');
-                            tmp = fread(fid_all,Ns_sub,'uint16',2);
-                            SB2_temp((1:(Ns_sub)),iBeams(iB)) = int16(20*log10(single(tmp)*0.0001)*200); % what is this transformation? XXX
+                            % actual number of samples in that beam
+                            Ns = ALLdata.EM_AmpPhase.NumberOfSamples{iDatagrams(iD)}(idx_beams(iB));
                             
-                            fseek(fid_all,ALLdata.EM_AmpPhase.SamplePhaseAmplitudePosition{iDatagrams(iD)}(idx_beams(iB))+2,'bof');
-                            tmp = fread(fid_all,Ns_sub,'int16',2);
-                            Ph_temp((1:(Ns_sub)),iBeams(iB)) = int16(-0.0001*single(tmp)*30/pi*180); % what is this transformation? XXX
+                            % number of samples we're going to record:
+                            Ns_sub = ceil(Ns/dr_sub);
                             
+                            % get the data:
+                            if Ns_sub > 0
+                                
+                                fseek(fid_all,ALLdata.EM_AmpPhase.SamplePhaseAmplitudePosition{iDatagrams(iD)}(idx_beams(iB)),'bof');
+                                tmp = fread(fid_all,Ns_sub,'uint16',2);
+                                SB2_temp((1:(Ns_sub)),iBeams(iB)) = int16(20*log10(single(tmp)*0.0001)*200); % what is this transformation? XXX
+                                
+                                fseek(fid_all,ALLdata.EM_AmpPhase.SamplePhaseAmplitudePosition{iDatagrams(iD)}(idx_beams(iB))+2,'bof');
+                                tmp = fread(fid_all,Ns_sub,'int16',2);
+                                Ph_temp((1:(Ns_sub)),iBeams(iB)) = int16(-0.0001*single(tmp)*30/pi*180); % what is this transformation? XXX
+                                
+                            end
                         end
                     end
                 end
                 
+                % store amp data on binary file
+                if file_amp_id(ig) >= 0
+                    fwrite(file_amp_id(ig),SB2_temp,'int16');
+                end
                 
-                fData.AP_SBP_SampleAmplitudes{ig}.Data.val(:,:,iP-ping_group_start(ig)+1)=SB2_temp;
-                fData.AP_SBP_SamplePhase{ig}.Data.val(:,:,iP-ping_group_start(ig)+1)=Ph_temp;   
-                
+                % store phase data on binary file
+                if file_phase_id(ig)>=0
+                    fwrite(file_phase_id(ig),Ph_temp,'int16');
+                end
                 if disp_wc
                     imagesc(ax_mag,single(SB2_temp)/200);
                     hold(ax_mag,'on');plot(ax_mag,fData.AP_BP_DetectedRangeInSamples(:,iP));
@@ -1141,7 +1188,35 @@ for iF = 1:nStruct
                 
             end
             
+            fData.AP_SBP_SampleAmplitudes=cell(1,numel(maxNSamples_groups));
+            fData.AP_SBP_SamplePhase=cell(1,numel(maxNSamples_groups));
             
+            fData.AP_n_start=ping_group_start;
+            fData.AP_n_end=ping_group_end;
+            fData.AP_n_maxNSamples=maxNSamples_groups;
+            
+            for ig=1:numel(maxNSamples_groups)
+                % close binary data file
+                if file_amp_id(ig) >= 0
+                    fclose(file_amp_id(ig));
+                end
+                
+                % close binary data file
+                if file_phase_id(ig) >= 0
+                    fclose(file_phase_id(ig));
+                end
+                
+                % and link to them through memmapfile
+                fData.AP_SBP_SampleAmplitudes{ig} = memmapfile(file_amp_binary{ig},'Format',{'int16' [maxNSamples_groups(ig) maxNBeams fData.AP_n_end(ig)-fData.AP_n_start(ig)+1] 'val'},'repeat',1,'writable',true);
+                fData.AP_SBP_SamplePhase{ig}      = memmapfile(file_phase_binary{ig},'Format',{'int16' [maxNSamples_groups(ig) maxNBeams fData.AP_n_end(ig)-fData.AP_n_start(ig)+1] 'val'},'repeat',1,'writable',true);
+            end
+            % save info about data format for later access
+            fData.AP_1_SampleAmplitudes_Class  = 'int16';
+            fData.AP_1_SampleAmplitudes_Nanval = intmin('int16');
+            fData.AP_1_SampleAmplitudes_Factor = 1/200;
+            fData.AP_1_SamplePhase_Class  = 'int16';
+            fData.AP_1_SamplePhase_Nanval = 200;
+            fData.AP_1_SamplePhase_Factor = 1/30;
             
         end
         
