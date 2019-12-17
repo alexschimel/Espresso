@@ -947,7 +947,8 @@ for iF = 1:nStruct
                             % aka an int8 record of -41 is actually
                             % -20.5dB
                             pos = ALLdata.EM_WaterColumn.SampleAmplitudePosition{iDatagrams(iD)}(iBeamSource(iB));
-                            fseek(fid_all,pos,'bof');
+                            curr_pos=ftell(fid_all);
+                            fseek(fid_all,pos-curr_pos,'cof');
                             SB_temp(1:nSamp_sub,nBeamTot+iB) = fread(fid_all,nSamp_sub,'int8=>int8',dr_sub-1);
                         end
                         

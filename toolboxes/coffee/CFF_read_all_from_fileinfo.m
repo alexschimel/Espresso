@@ -1008,10 +1008,10 @@ for iDatag = datagToParse'
             % the data in it
             Nrx = ALLdata.EM_WaterColumn.NumberOfBeamsInThisDatagram(i107);
             
-            pos_2 = ftell(fid); % position at start of data
-            tmp = fread(fid,nbDatag-(pos_2-pos_1+1)-15,'int8'); % read all that data block
-            tmp = int8(tmp');
-            id  = 0; % offset for start of each Nrx block
+            pos_init = ftell(fid); % position at start of data
+
+            
+            id_tot = 0;
             wc_parsing_error = 0; % initialize flag
             
             % initialize outputs
@@ -1029,23 +1029,24 @@ for iDatag = datagToParse'
                 
                 try
                     
-                    ALLdata.EM_WaterColumn.BeamPointingAngle{i107}(jj)       = typecast(tmp(1+id:2+id),'int16');
-                    ALLdata.EM_WaterColumn.StartRangeSampleNumber{i107}(jj)  = typecast(tmp(3+id:4+id),'uint16');
-                    ALLdata.EM_WaterColumn.NumberOfSamples{i107}(jj)         = typecast(tmp(5+id:6+id),'uint16');
-                    ALLdata.EM_WaterColumn.DetectedRangeInSamples{i107}(jj)  = typecast(tmp(7+id:8+id),'uint16');
-                    ALLdata.EM_WaterColumn.TransmitSectorNumber2{i107}(jj)   = typecast(tmp(9+id),'uint8');
-                    ALLdata.EM_WaterColumn.BeamNumber{i107}(jj)          	 = typecast(tmp(10+id),'uint8');
+                    ALLdata.EM_WaterColumn.BeamPointingAngle{i107}(jj)       = fread(fid,1,'int16');
+                    ttt = fread(fid,3,'uint16');
+                    ALLdata.EM_WaterColumn.StartRangeSampleNumber{i107}(jj)  = ttt(1);
+                    ALLdata.EM_WaterColumn.NumberOfSamples{i107}(jj)         = ttt(2);
+                    ALLdata.EM_WaterColumn.DetectedRangeInSamples{i107}(jj)  = ttt(3);
+                    ALLdata.EM_WaterColumn.TransmitSectorNumber2{i107}(jj)   = fread(fid,1,'uint8');
+                    ALLdata.EM_WaterColumn.BeamNumber{i107}(jj)          	 = fread(fid,1,'uint8');
                     
                     % recording data position instead of data themselves
-                    ALLdata.EM_WaterColumn.SampleAmplitudePosition{i107}(jj) = pos_2 + id + 10; 
+                    ALLdata.EM_WaterColumn.SampleAmplitudePosition{i107}(jj) = pos_init + id_tot + 10; 
                     % actual data recording would be:
                     % ALLdata.EM_WaterColumn.SampleAmplitude{i107}{jj} = tmp((11+id):(11+id+Ns(jj)-1));
                     
                     Ns(jj) = ALLdata.EM_WaterColumn.NumberOfSamples{i107}(jj);
                     
                     % offset to next jj block
-                    id = 10*jj + sum(Ns);
-                    
+                    id_tot = 10*jj + sum(Ns);
+                    fseek(fid,Ns(jj),'cof');
                 catch
                     
                     % issue in the recording, flag and exit the loop
@@ -1058,26 +1059,29 @@ for iDatag = datagToParse'
                 
             end
             
-            if numel(tmp)<=id+3
+            pos_end = ftell(fid);
+            tmp_end = fread(fid,nbDatag-(pos_end-pos_1+1)-15,'int8=>int8'); 
+            
+            if numel(tmp_end)<=3
                  wc_parsing_error = 1;
             end
             
             if wc_parsing_error == 0
                 % HERE if data parsing all went well
-                
+                us = 0;
                 % "spare byte if required to get even length (always 0 if used)"
                 if floor((Nrx*10+sum(Ns))/2) == (Nrx*10+sum(Ns))/2
                     % even so far, since ETX is 1 byte, add a spare here
-                    ALLdata.EM_WaterColumn.Spare4(i107) = double(typecast(tmp(1+id),'uint8'));
-                    id = id+1;
+                    ALLdata.EM_WaterColumn.Spare4(i107) = double(typecast(tmp_end(1),'uint8'));
+                    us = us+1;
                 else
                     % odd so far, since ETX is 1 bytes, no spare
                     ALLdata.EM_WaterColumn.Spare4(i107) = NaN;
                 end
                 
                 % end of datagram
-                ALLdata.EM_WaterColumn.ETX(i107)      = typecast(tmp(id+1),'uint8');
-                ALLdata.EM_WaterColumn.CheckSum(i107) = typecast(tmp(2+id:3+id),'uint16');
+                ALLdata.EM_WaterColumn.ETX(i107)      = typecast(tmp_end(us+1),'uint8');
+                ALLdata.EM_WaterColumn.CheckSum(i107) = typecast(tmp_end(2+us:3+us),'uint16');
                 
                 % ETX check
                 if ALLdata.EM_WaterColumn.ETX(i107)~=3
