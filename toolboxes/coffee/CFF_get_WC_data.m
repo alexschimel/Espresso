@@ -118,21 +118,18 @@ if isempty(iPing)
 end
 
 dg=CFF_get_datagramSource(fData);
-switch dg
-    case 'WC'
-        ping_group_start=fData.WC_n_start;
-        ping_group_end=fData.WC_n_end;
-    case 'AP'
-        ping_group_start=fData.AP_n_start;
-        ping_group_end=fData.AP_n_end;
-    otherwise
-        data_tot=[];
+if ~ismember(dg,{'WC','AP'})
+            data_tot=[];
         return;
 end
-%maxNSamples_groups=fData.([fieldN(1:2) '_n_maxNSamples']);
 
-istart=find(ping_group_start<=nanmin(iPing),1,'last');
-iend=find(ping_group_end>=nanmax(iPing),1,'first');
+ping_group_start=fData.(sprintf('%s_n_start',dg));
+ping_group_end=fData.(sprintf('%s_n_end',dg));
+
+%maxNSamples_groups=fData.([fieldN(1:2) '_n_maxNSamples']);
+pingCounter=fData.(sprintf('%s_1P_PingCounter',dg));
+istart=find(ping_group_start<=nanmin(pingCounter(iPing)),1,'last');
+iend=find(ping_group_end>=nanmax(pingCounter(iPing)),1,'first');
 
 if isempty(iBeam)
     iBeam = 1:cellfun(@(x) nanmax(size(x.Data.val,2)),fData.(fieldN));
@@ -149,8 +146,10 @@ ip=0;
 for ig=istart:iend
     iRange_tmp=iRange;
     iBeam_tmp=iBeam;
-    iPing_tmp=iPing;
+    iPing_tmp=pingCounter(iPing);
+    
     iPing_tmp_gr=intersect(iPing_tmp,ping_group_start(ig):ping_group_end(ig));
+    
     iPing_tmp=iPing_tmp_gr-ping_group_start(ig)+1;
     iRange_tmp(iRange_tmp>size(fData.(fieldN){ig}.Data.val,1)) = [];
     iBeam_tmp(iBeam_tmp>size(fData.(fieldN){ig}.Data.val,2))   = [];

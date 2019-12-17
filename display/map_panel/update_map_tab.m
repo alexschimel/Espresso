@@ -216,7 +216,7 @@ for i = update_line_index(:)'
     
     
     %% Processed water column grid
-    tag_id_wc = num2str(fData.ID,'%.0f_wc');
+    tag_id_wc = sprintf('%.0f_%s',fData.ID,disp_config.Var_disp);
     obj_wc = findobj(ax,'Tag',tag_id_wc);
     
     % if new grid was computed delete existing image object before
@@ -227,16 +227,14 @@ for i = update_line_index(:)'
     end
     
     if isempty(obj_wc) && ...
-            isfield(fData,'X_1E_gridEasting')
-        % grid to be drawn for the first time
-        % get vertical mean whether data is in 2D already or in 3D
-        E = fData.X_1E_gridEasting;
-        N = fData.X_N1_gridNorthing;
-        
+            ((isfield(fData,'X_1E_gridEasting')&&strcmpi(disp_config.Var_disp,'wc_int'))||...
+            ((isfield(fData,'X_1E_2DgridEasting')&&strcmpi(disp_config.Var_disp,'bs')))||...
+            ((isfield(fData,'X_1E_2DgridEasting')&&strcmpi(disp_config.Var_disp,'bathy'))))
         switch disp_config.Var_disp
             case 'wc_int'
                 % grab data
-                
+                E = fData.X_1E_gridEasting;
+                N = fData.X_N1_gridNorthing;
                 L = fData.X_NEH_gridLevel;
                 
                 if isa(L,'gpuArray')
@@ -245,8 +243,7 @@ for i = update_line_index(:)'
                 
                 if size(L,3)>1
                     display_tab_comp=getappdata(main_figure,'display_tab');
-                    
-                    
+
                     switch fData.X_grid_reference
                         case {'depth below sonar' 'Sonar'}
                             d_max=0;
@@ -263,18 +260,14 @@ for i = update_line_index(:)'
                             idx_rem=(squeeze(fData.X_11H_gridHeight)+fData.X_1_gridVerticalResolution/2<d_line_min)|(squeeze(fData.X_11H_gridHeight)-fData.X_1_gridVerticalResolution/2>d_line_max);
                     end
                     
-                         if ~all(idx_rem)
-                             L(:,:,idx_rem)=nan;
-                             data = 20*log10(nanmean(10.^(L(:,:,:)/20),3));
-                         else
-                            [~,id_keep]=nanmin(abs(squeeze(fData.X_11H_gridHeight)-d_line_min));
-                            data = L(:,:,id_keep);
-                        end
-                            
-                    
-                    
-                    
-                    
+                    if ~all(idx_rem)
+                        L(:,:,idx_rem)=nan;
+                        data = 20*log10(nanmean(10.^(L(:,:,:)/20),3));
+                    else
+                        [~,id_keep]=nanmin(abs(squeeze(fData.X_11H_gridHeight)-d_line_min));
+                        data = L(:,:,id_keep);
+                    end
+
                 else
                     data = L;
                 end
@@ -282,9 +275,15 @@ for i = update_line_index(:)'
                 % other cases perhaps for later devpt
             case 'bathy'
                 data = fData.X_NE_bathy;
+                E = fData.X_1E_2DgridEasting;
+                N = fData.X_N1_2DgridNorthing;
             case 'bs'
                 data = fData.X_NE_bs;
+                E = fData.X_1E_2DgridEasting;
+                N = fData.X_N1_2DgridNorthing;
             otherwise
+                E = fData.X_1E_2DgridEasting;
+                N = fData.X_N1_2DgridNorthing;
                 data=nan(numel(N),numel(E));
         end
         

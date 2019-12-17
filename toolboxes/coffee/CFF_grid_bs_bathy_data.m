@@ -1,109 +1,27 @@
-%% CFF_grid_WC_data.m
-%
-% _This section contains a very short description of the function, for the
-% user to know this function is part of the software and what it does for
-% it. Example below to replace. Delete these lines XXX._
-%
-% Template of ESP3 function header. XXX
-%
-%% Help
-%
-% *USE*
-%
-% _This section contains a more detailed description of what the function
-% does and how to use it, for the interested user to have an overall
-% understanding of its function. Example below to replace. Delete these
-% lines XXX._
-%
-% This is a text file containing the basic comment template to add at the
-% start of any new ESP3 function to serve as function help. XXX
-%
-% *INPUT VARIABLES*
-%
-% _This section contains bullet points of input variables with description
-% and information. Put input variable and other valid entries or defaults
-% between | symbols so it shows as monospace. Information section to
-% contain, in order: requirement (i.e. Required/Optional/Paramter), valid
-% type (e.g. Num, Positive num, char, 1xN cell array, etc.) and default
-% value if there is one (e.g. Default: '10'). Example below to replace.
-% Delete these lines XXX._
-%
-% * |fData|: Required. Structure for the storage of kongsberg EM series
-% multibeam data in a format more convenient for processing. The data is
-% recorded as fields coded "a_b_c" where "a" is a code indicating data
-% origing, "b" is a code indicating data dimensions, and "c" is the data
-% name. See the help of function CFF_convert_ALLdata_to_fData.m for
-% description of codes.
-% * |grid_horz_res|: Description (Information). Default: 1 XXX
-% * |grid_vert_res|: Description (Information). Default: 1 XXX
-% * |grid_type|: Description (Information). '2D' or '3D' (default) XXX
-% * |dr_sub|: Description (Information). Default: 4 XXX
-% * |db_sub|: Description (Information). Default: 2 XXX
-% * |e_lim|: Description (Information). Default: [] XXX
-% * |n_lim|: Description (Information). Default: [] XXX
-%
-% *OUTPUT VARIABLES*
-%
-% * |fData|: fData structure updated with fields for gridded data
-%
-% *DEVELOPMENT NOTES*
-%
-% * function formerly named CFF_grid_watercolumn.m
-%
-% *NEW FEATURES*
-%
-% _This section contains dates and descriptions of major updates. Example
-% below to replace. Delete these lines XXX._
-%
-% * 2018-10-11: Updated header before adding to Coffee v3
-% * YYYY-MM-DD: first version. XXX
-%
-% *EXAMPLE*
-%
-% _This section contains examples of valid function calls. Note that
-% example lines start with 3 white spaces so that the publish function
-% shows them correctly as matlab code. Example below to replace. Delete
-% these lines XXX._
-%
-%   example_use_1; % comment on what this does. XXX
-%   example_use_2: % comment on what this line does. XXX
-%
-% *AUTHOR, AFFILIATION & COPYRIGHT*
-%
-% Alexandre Schimel, Deakin University, NIWA.
-% Yoann Ladroit, NIWA.
 
 
 %% Function
-function fData = CFF_grid_WC_data(fData,varargin)
+function fData = CFF_grid_2D_fields_data(fData,varargin)
 
 %% input parsing
 
 % init
 p = inputParser;
 
-% grid mode (2D map or 3D) and resolution (horizontal and vertical)
-addParameter(p,'grid_type','3D',@(x) ismember(x,{'2D' '3D'}));
 addParameter(p,'grid_horz_res',1,@(x) isnumeric(x)&&x>0);
 addParameter(p,'grid_vert_res',1,@(x) isnumeric(x)&&x>0);
 
-% decimation factors
-addParameter(p,'dr_sub',4,@(x) isnumeric(x)&&x>0);
-addParameter(p,'db_sub',2,@(x) isnumeric(x)&&x>0);
-
-% grid limitation parameters
-addParameter(p,'grdlim_mode','between',@(x) ismember(x,{'between', 'outside of'}));
-addParameter(p,'grdlim_var','Sonar',@(x) ismember(x,{'Sonar', 'Bottom'}));
-addParameter(p,'data_type','Processed',@(x) ismember(x,{'Processed', 'Original'}));
 addParameter(p,'grdlim_mindist',0,@isnumeric);
 addParameter(p,'grdlim_maxdist',inf,@isnumeric);
+
 addParameter(p,'grdlim_east',[],@isnumeric);
 addParameter(p,'grdlim_north',[],@isnumeric);
-%addParameter(p,'fields_to_grid',{'bathy' 'bs' 'wc'},@iscell);
 
-% grid other things...
-addParameter(p,'grid_bs',false,@islogical);
-addParameter(p,'grid_bathy',false,@islogical);
+addParameter(p,'grid_north',[],@isnumeric);
+addParameter(p,'grid_east',[],@isnumeric);
+
+addParameter(p,'fields_to_grid',{'bs' 'wc'},@iscell);
+
 
 % parse
 parse(p,varargin{:})
@@ -120,28 +38,9 @@ grdlim_mindist = p.Results.grdlim_mindist;
 grdlim_maxdist = p.Results.grdlim_maxdist;
 grdlim_east    = p.Results.grdlim_east;
 grdlim_north   = p.Results.grdlim_north;
-data_type   = p.Results.data_type;
+fields_to_grid = p.Results.fields_to_grid;
 
 
-%% Extract info about WCD
-switch data_type
-    case 'Original'
-        if isfield(fData,'WC_SBP_SampleAmplitudes')
-            field_to_grid = 'WC_SBP_SampleAmplitudes';
-        else
-            field_to_grid = 'AP_SBP_SampleAmplitudes';
-        end
-    otherwise
-        if isfield(fData,'X_SBP_WaterColumnProcessed')
-            field_to_grid = 'X_SBP_WaterColumnProcessed';
-        elseif isfield(fData,'WC_SBP_SampleAmplitudes')
-            field_to_grid = 'WC_SBP_SampleAmplitudes';
-        else
-            field_to_grid = 'AP_SBP_SampleAmplitudes';
-        end
-end
-% size
-[nSamples, nBeams, nPings] = CFF_get_WC_size(fData);
 
 %% Prepare needed 1xP data for computations
 
@@ -184,14 +83,16 @@ maxBlockH = nan(1,nBlocks);
 %d_max=nanmax(fData.X_BP_bottomHeight(:));
 % find grid limits for each block
 
+
+[gridE,gridN,gridNan]=CFF_compute_grid(fData)
+
+
 for iB = 1:nBlocks
     
     % list of pings in this block
     blockPings = blocks(iB,1):blocks(iB,2);
     
-    % to define the limits of the grid for each block, we'll only consider
-    % the easting and northing of the first and last sample for the central
-    % beam and two outer beams, for all pings.
+
     idxSamples = [1 nSamples]';
     startSampleNumber = fData.(sprintf('%s_BP_StartRangeSampleNumber',datagramSource))([1 round(nBeams./2) nBeams],blockPings);
     beamPointingAngle = deg2rad(fData.(sprintf('%s_BP_BeamPointingAngle',datagramSource))([1 round(nBeams./2) nBeams],blockPings));
@@ -600,8 +501,6 @@ else
 end
 
 ff=filter2(ones(5,5),nansum(gridTotalWeight,3));
-
-
 fData.X_NE_bs(ff==0)=nan;
 fData.X_NE_bathy(ff==0)=nan;
 fData.X_grid_reference=grdlim_var;

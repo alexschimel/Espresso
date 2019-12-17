@@ -24,7 +24,9 @@ group_by_nb_s=ceil(filter2(ones(1,nb_min_win),ceil(maxNSamples_1P/div_factor),'s
     filter2(ones(1,nb_min_win),ones(size(pingCounters)),'same'));
 
 idx_change=find(diff(group_by_nb_s)~=0);
+idx_change_2=find(diff(pingCounters)>1)+1;
 
+idx_change=union(idx_change,idx_change_2);
 
 idx_new_group=unique([1 idx_change]);
 
@@ -43,7 +45,14 @@ end
 ping_group_start=ping_group_start-pingCounters(1)+1;
 ping_group_end=ping_group_end-pingCounters(1)+1;
 
+idx_rem=[];
+for ui=1:numel(ping_group_end)
+    if isempty(intersect(ping_group_start(ui):ping_group_end(ui),pingCounters-pingCounters(1)+1))
+        idx_rem=union(idx_rem,ui);
+    end
+end
 
+% 
 % figure();
 % plot(pingCounters,ceil(maxNSamples_1P/div_factor));hold on;plot(pingCounters,group_by_nb_s);hold on;plot(pingCounters,maxNSamples_1P/div_factor);
 % for uil=1:numel(idx_change)

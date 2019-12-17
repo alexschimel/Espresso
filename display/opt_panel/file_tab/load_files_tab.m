@@ -414,6 +414,9 @@ for nF = 1:numel(files_to_convert)
         err_str = sprintf('Error in file %s, line %d',[f_temp e_temp],err.stack(1).line);
         fprintf('%s: ERROR converting file %s \n%s\n',datestr(now,'HH:MM:SS'),file_to_convert,err_str);
         fprintf('%s\n\n',err.message);
+        if ~isdeployed
+            rethrow(err);
+        end
     end
     
 end

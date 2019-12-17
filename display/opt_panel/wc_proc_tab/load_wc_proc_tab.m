@@ -77,7 +77,7 @@ wc_proc_tab_comp.masking = uicontrol(proc_gr,'style','checkbox','String','Mask s
     'position',[0.05 h(2) 0.5 dh],...
     'Value',1);
 
- uicontrol(proc_gr,'style','text','String',['Outer Beams (' char(hex2dec('00B0')) ')'],...
+uicontrol(proc_gr,'style','text','String',['Outer Beams (' char(hex2dec('00B0')) ')'],...
     'BackgroundColor','White',...
     'units','normalized',...
     'HorizontalAlignment','left',...
@@ -88,7 +88,7 @@ wc_proc_tab_comp.angle_mask = uicontrol(proc_gr,'style','edit','String','Inf',..
     'units','normalized',...
     'position',[0.35 h(3) 0.1 dh],...
     'Callback',{@check_fmt_box,5,Inf,90,'%.0f'});
- uicontrol(proc_gr,'style','text','String','Close Range (m)',...
+uicontrol(proc_gr,'style','text','String','Close Range (m)',...
     'BackgroundColor','White',...
     'units','normalized',...
     'HorizontalAlignment','left',...
@@ -100,7 +100,7 @@ wc_proc_tab_comp.r_min = uicontrol(proc_gr,'style','edit','String','1',...
     'units','normalized',...
     'position',[0.35 h(4) 0.1 dh],...
     'Callback',{@check_fmt_box,0,Inf,1,'%.1f'});
- uicontrol(proc_gr,'style','text','String','Above Bottom (m)',...
+uicontrol(proc_gr,'style','text','String','Above Bottom (m)',...
     'BackgroundColor','White',...
     'units','normalized',...
     'HorizontalAlignment','left',...
@@ -420,143 +420,150 @@ timer_start = now;
 
 % processing per file
 for itt = idx_fData(:)'
-    
-    u = u+1;
-    
-    % disp
-    fprintf('Processing file "%s" (%i/%i)...\n',fData_tot{itt}.ALLfilename{1},u,numel(idx_fData));
-    textprogressbar(sprintf('...Started at %s. Progress:',datestr(now)));
-    textprogressbar(0);
-    tic
-    
-    % original data filename and format info
-    wc_dir = CFF_converted_data_folder(fData_tot{itt}.ALLfilename{1});
-    
-    dg_source = CFF_get_datagramSource(fData_tot{itt});
-    
-    [nSamples, nBeams, nPings] = cellfun(@(x) size(x.Data.val),fData_tot{itt}.(sprintf('%s_SBP_SampleAmplitudes',dg_source)));
-    
-    wcdata_class  = fData_tot{itt}.(sprintf('%s_1_SampleAmplitudes_Class',CFF_get_datagramSource(fData_tot{itt}))); % int8 or int16
-    wcdata_factor = fData_tot{itt}.(sprintf('%s_1_SampleAmplitudes_Factor',CFF_get_datagramSource(fData_tot{itt})));
-    wcdata_nanval = fData_tot{itt}.(sprintf('%s_1_SampleAmplitudes_Nanval',CFF_get_datagramSource(fData_tot{itt})));
-    
-    % processed data filename
-    
-    ping_gr_start=fData_tot{itt}.(sprintf('%s_n_start',dg_source));
-    ping_gr_end=fData_tot{itt}.(sprintf('%s_n_end',dg_source));
-    
-    
-    fData_tot{itt}=CFF_init_memmapfiles(fData_tot{itt},...
-        'wc_dir',wc_dir,...
-        'field','X_SBP_WaterColumnProcessed',...
-        'Class',wcdata_class,...
-        'Factor',wcdata_factor,...
-        'Nanval',wcdata_nanval,...
-        'MaxSamples',nSamples,...
-        'MaxBeams',nanmax(nBeams),...
-        'ping_group_start',ping_gr_start,...
-        'ping_group_end',ping_gr_end);
-    
-    
-   
-    saving_method = 'low_precision'; % 'low_precision' or 'high_precision'
-    
-    switch saving_method
-        case 'low_precision'
-            % processed data will be saved in the same format as original
-            % raw data, aka in its possibly quite low resolution, but it
-            % saves space on the disk
-            wcdataproc_class   = wcdata_class;
-            wcdataproc_factor  = wcdata_factor;
-            wcdataproc_nanval  = wcdata_nanval;
-        case 'high_precision'
-            % processed data will be saved in "single" format to retain the
-            % precision of computations, but it will take a bit more space
-            % on the disk
-            wcdataproc_class   = 'single';
-            wcdataproc_factor  = 1;
-            wcdataproc_nanval  = NaN;
-    end
-    
-    
-    
-    
-    for ig=1:numel(nSamples)
-        % processed data format
+    try
+        u = u+1;
         
-        % block processing setup
-        mem_struct = memory;
-        blockLength = ceil(mem_struct.MemAvailableAllArrays/(nSamples(ig)*nBeams(ig)*8)/20);
-        nBlocks = ceil(nPings(ig)./blockLength);
-        blocks = [ 1+(0:nBlocks-1)'.*blockLength , (1:nBlocks)'.*blockLength ];
-        blocks(end,2) = nPings(ig);
-        iPings=ping_gr_start(ig):ping_gr_end(ig);
-        % processing per block of pings in file
-        for iB = 1:nBlocks
-            
-            % list of pings in this block
-            blockPings_f  = iPings(blocks(iB,1):blocks(iB,2));
-            blockPings  = (blocks(iB,1):blocks(iB,2));
-            % grab original data in dB
-            data = CFF_get_WC_data(fData_tot{itt},sprintf('%s_SBP_SampleAmplitudes',CFF_get_datagramSource(fData_tot{itt})),'iPing',blockPings_f,'iRange',1:nSamples(ig),'output_format','true');
-            
-            % radiometric corrections
-            % add a radio button to possibly turn this off too? TO DO XXX
-            [data, warning_text] = CFF_WC_radiometric_corrections_CORE(data,fData_tot{itt});
-            
-            % filtering sidelobe artefact
-            if wc_proc_tab_comp.sidelobe.Value
-                [data, correction] = CFF_filter_WC_sidelobe_artifact_CORE(data, fData_tot{itt}, blockPings_f);
-                % uncomment this for weighted gridding based on sidelobe
-                % correction
-                % fData_tot{itt}.X_S1P_sidelobeArtifactCorrection(:,:,blockPings) = correction;
-            end
-            
-            % masking data
-            if wc_proc_tab_comp.masking.Value
-                data = CFF_mask_WC_data_CORE(data, fData_tot{itt}, blockPings_f, mask_angle, mask_closerange, mask_bottomrange, [], mask_ping);
-            end
-            if wcdataproc_factor ~= 1
-                data = data./wcdataproc_factor;
-            end
-            
-            if ~isnan(wcdataproc_nanval)
-                data(isnan(data)) = wcdataproc_nanval;
-            end
-            
-            % convert result back to raw format and store through memmap
-            if strcmp(class(data),wcdataproc_class)
-                fData_tot{itt}.X_SBP_WaterColumnProcessed{ig}.Data.val(:,:,blockPings) = data;
-            else
-                fData_tot{itt}.X_SBP_WaterColumnProcessed{ig}.Data.val(:,:,blockPings) = cast(data,wcdataproc_class);
-            end
-            
-            % disp block processing progress
-            textprogressbar(round(iB.*100./nBlocks)-1);
-            
+        % disp
+        fprintf('Processing file "%s" (%i/%i)...\n',fData_tot{itt}.ALLfilename{1},u,numel(idx_fData));
+        textprogressbar(sprintf('...Started at %s. Progress:',datestr(now)));
+        textprogressbar(0);
+        tic
+        
+        % original data filename and format info
+        wc_dir = CFF_converted_data_folder(fData_tot{itt}.ALLfilename{1});
+        
+        dg_source = CFF_get_datagramSource(fData_tot{itt});
+        
+        [nSamples, nBeams, nPings] = cellfun(@(x) size(x.Data.val),fData_tot{itt}.(sprintf('%s_SBP_SampleAmplitudes',dg_source)));
+        
+        wcdata_class  = fData_tot{itt}.(sprintf('%s_1_SampleAmplitudes_Class',CFF_get_datagramSource(fData_tot{itt}))); % int8 or int16
+        wcdata_factor = fData_tot{itt}.(sprintf('%s_1_SampleAmplitudes_Factor',CFF_get_datagramSource(fData_tot{itt})));
+        wcdata_nanval = fData_tot{itt}.(sprintf('%s_1_SampleAmplitudes_Nanval',CFF_get_datagramSource(fData_tot{itt})));
+        
+        % processed data filename
+        
+        ping_gr_start=fData_tot{itt}.(sprintf('%s_n_start',dg_source));
+        ping_gr_end=fData_tot{itt}.(sprintf('%s_n_end',dg_source));
+        
+        
+        fData_tot{itt}=CFF_init_memmapfiles(fData_tot{itt},...
+            'wc_dir',wc_dir,...
+            'field','X_SBP_WaterColumnProcessed',...
+            'Class',wcdata_class,...
+            'Factor',wcdata_factor,...
+            'Nanval',wcdata_nanval,...
+            'MaxSamples',nSamples,...
+            'MaxBeams',nanmax(nBeams),...
+            'ping_group_start',ping_gr_start,...
+            'ping_group_end',ping_gr_end);
+        
+        
+        
+        saving_method = 'low_precision'; % 'low_precision' or 'high_precision'
+        
+        switch saving_method
+            case 'low_precision'
+                % processed data will be saved in the same format as original
+                % raw data, aka in its possibly quite low resolution, but it
+                % saves space on the disk
+                wcdataproc_class   = wcdata_class;
+                wcdataproc_factor  = wcdata_factor;
+                wcdataproc_nanval  = wcdata_nanval;
+            case 'high_precision'
+                % processed data will be saved in "single" format to retain the
+                % precision of computations, but it will take a bit more space
+                % on the disk
+                wcdataproc_class   = 'single';
+                wcdataproc_factor  = 1;
+                wcdataproc_nanval  = NaN;
         end
         
         
+        
+        
+        for ig=1:numel(nSamples)
+            % processed data format
+            
+            % block processing setup
+            mem_struct = memory;
+            blockLength = ceil(mem_struct.MemAvailableAllArrays/(nSamples(ig)*nBeams(ig)*8)/20);
+            nBlocks = ceil(nPings(ig)./blockLength);
+            blocks = [ 1+(0:nBlocks-1)'.*blockLength , (1:nBlocks)'.*blockLength ];
+            blocks(end,2) = nPings(ig);
+            iPings=ping_gr_start(ig):ping_gr_end(ig);
+            % processing per block of pings in file
+            for iB = 1:nBlocks
+                
+                % list of pings in this block
+                blockPings_f  = iPings(blocks(iB,1):blocks(iB,2));
+                blockPings  = (blocks(iB,1):blocks(iB,2));
+                % grab original data in dB
+                data = CFF_get_WC_data(fData_tot{itt},sprintf('%s_SBP_SampleAmplitudes',CFF_get_datagramSource(fData_tot{itt})),'iPing',blockPings_f,'iRange',1:nSamples(ig),'output_format','true');
+                
+                % radiometric corrections
+                % add a radio button to possibly turn this off too? TO DO XXX
+                [data, warning_text] = CFF_WC_radiometric_corrections_CORE(data,fData_tot{itt});
+                
+                % filtering sidelobe artefact
+                if wc_proc_tab_comp.sidelobe.Value
+                    [data, correction] = CFF_filter_WC_sidelobe_artifact_CORE(data, fData_tot{itt}, blockPings_f);
+                    % uncomment this for weighted gridding based on sidelobe
+                    % correction
+                    % fData_tot{itt}.X_S1P_sidelobeArtifactCorrection(:,:,blockPings) = correction;
+                end
+                
+                % masking data
+                if wc_proc_tab_comp.masking.Value
+                    data = CFF_mask_WC_data_CORE(data, fData_tot{itt}, blockPings_f, mask_angle, mask_closerange, mask_bottomrange, [], mask_ping);
+                end
+                if wcdataproc_factor ~= 1
+                    data = data./wcdataproc_factor;
+                end
+                
+                if ~isnan(wcdataproc_nanval)
+                    data(isnan(data)) = wcdataproc_nanval;
+                end
+                
+                % convert result back to raw format and store through memmap
+                if strcmp(class(data),wcdataproc_class)
+                    fData_tot{itt}.X_SBP_WaterColumnProcessed{ig}.Data.val(:,:,blockPings) = data;
+                else
+                    fData_tot{itt}.X_SBP_WaterColumnProcessed{ig}.Data.val(:,:,blockPings) = cast(data,wcdataproc_class);
+                end
+                
+                % disp block processing progress
+                textprogressbar(round(iB.*100./nBlocks)-1);
+                
+            end
+            
+            
+        end
+        % get folder for converted data and converted filename
+        folder_for_converted_data = CFF_converted_data_folder(fData_tot{itt}.ALLfilename{1});
+        mat_fdata_file = fullfile(folder_for_converted_data,'fData.mat');
+        
+        % save
+        fData = fData_tot{itt};
+        save(mat_fdata_file,'-struct','fData','-v7.3');
+        clear fData;
+        
+        % disp
+        textprogressbar(100)
+        textprogressbar(sprintf(' done. Elapsed time: %f seconds.\n',toc));
+        
+        % throw warning
+        if ~isempty(warning_text)
+            warning(warning_text);
+        end
+        
+    catch err
+        [~,f_temp,e_temp] = fileparts(err.stack(1).file);
+        err_str = sprintf('Error in file %s, line %d',[f_temp e_temp],err.stack(1).line);
+        fprintf('%s: ERROR processing file %s \n%s\n',datestr(now,'HH:MM:SS'),fData_tot{itt}.ALLfilename{1},err_str);
+        fprintf('%s\n\n',err.message);
     end
-    % get folder for converted data and converted filename
-    folder_for_converted_data = CFF_converted_data_folder(fData_tot{itt}.ALLfilename{1});
-    mat_fdata_file = fullfile(folder_for_converted_data,'fData.mat');
-    
-    % save
-    fData = fData_tot{itt};
-    save(mat_fdata_file,'-struct','fData','-v7.3');
-    clear fData;
-    
-    % disp
-    textprogressbar(100)
-    textprogressbar(sprintf(' done. Elapsed time: %f seconds.\n',toc));
-    
-    % throw warning
-    if ~isempty(warning_text)
-        warning(warning_text);
-    end
-    
 end
+
 
 % general timer
 timer_end = now;
@@ -684,37 +691,44 @@ timer_start = now;
 for itt = idx_fData(:)'
     
     u = u+1;
-    
-    % disp
-    fprintf('Gridding file "%s" (%i/%i)...\n',fData_tot{itt}.ALLfilename{1},u,numel(idx_fData));
-    fprintf('...Started at %s...\n',datestr(now));
-    tic
-    
-    % gridding
-    fData_tot{itt} = CFF_grid_WC_data(fData_tot{itt},...
-        'grid_horz_res',grid_horz_res,...
-        'grid_vert_res',grid_vert_res,...
-        'grid_type',grid_type,...
-        'dr_sub',dr_sub,...
-        'db_sub',db_sub,...
-        'grdlim_mode',grdlim_mode,...
-        'grdlim_var',grdlim_var,...
-        'grdlim_mindist',grdlim_mindist,...
-        'grdlim_maxdist',grdlim_maxdist,...
-        'data_type',data_type);
-    
-    % disp
-    fprintf('...Done. Elapsed time: %f seconds.\n',toc);
-    
-    % get folder for converted data
-    folder_for_converted_data = CFF_converted_data_folder(fData_tot{itt}.ALLfilename{1});
-    
-    fData = fData_tot{itt};
-    
-    % converted filename fData
-    mat_fdata_file = fullfile(folder_for_converted_data,'fdata.mat');
-    save(mat_fdata_file,'-struct','fData','-v7.3');
-    clear fData;
+    try
+        % disp
+        fprintf('Gridding file "%s" (%i/%i)...\n',fData_tot{itt}.ALLfilename{1},u,numel(idx_fData));
+        fprintf('...Started at %s...\n',datestr(now));
+        tic
+        
+        % gridding
+        fData_tot{itt} = CFF_grid_WC_data(fData_tot{itt},...
+            'grid_horz_res',grid_horz_res,...
+            'grid_vert_res',grid_vert_res,...
+            'grid_type',grid_type,...
+            'dr_sub',dr_sub,...
+            'db_sub',db_sub,...
+            'grdlim_mode',grdlim_mode,...
+            'grdlim_var',grdlim_var,...
+            'grdlim_mindist',grdlim_mindist,...
+            'grdlim_maxdist',grdlim_maxdist,...
+            'data_type',data_type);
+        
+        % disp
+        fprintf('...Done. Elapsed time: %f seconds.\n',toc);
+        
+        % get folder for converted data
+        folder_for_converted_data = CFF_converted_data_folder(fData_tot{itt}.ALLfilename{1});
+        
+        fData = fData_tot{itt};
+        
+        % converted filename fData
+        mat_fdata_file = fullfile(folder_for_converted_data,'fdata.mat');
+        save(mat_fdata_file,'-struct','fData','-v7.3');
+        clear fData;
+        
+    catch err
+        [~,f_temp,e_temp] = fileparts(err.stack(1).file);
+        err_str = sprintf('Error in file %s, line %d',[f_temp e_temp],err.stack(1).line);
+        fprintf('%s: ERROR gridding file %s \n%s\n',datestr(now,'HH:MM:SS'),fData_tot{itt}.ALLfilename{1},err_str);
+        fprintf('%s\n\n',err.message);
+    end
     
 end
 
