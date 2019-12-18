@@ -320,14 +320,27 @@ if wc_proc_tab_comp.proc_bool.Value>0
         
         idx_fData = find(cell2mat(fdata_tab_comp.table.Data(:,end-1)));
         
-        
+        % general timer
+        timer_start = now;
+        u=0;
         for itt = idx_fData(:)'
+            % disp
+            u=u+1;
+            fprintf('Gridding BS and Bathy in file "%s" (%i/%i)...\n',fData_tot{itt}.ALLfilename{1},u,numel(idx_fData));
+            fprintf('...Started at %s...\n',datestr(now));
+            tic
             fData_tot{itt} = CFF_grid_2D_fields_data(fData_tot{itt},...
-                'grid_horz_res',str2double(get(wc_proc_tab_comp.bs_grid_res,'String')));    
+                'grid_horz_res',str2double(get(wc_proc_tab_comp.bs_grid_res,'String')));
+            % disp
+            fprintf('...Done. Elapsed time: %f seconds.\n',toc);
+            setappdata(main_figure,'fData',fData_tot);
         end
-        setappdata(main_figure,'fData',fData_tot);
+        % general timer
+        timer_end = now;
+        fprintf('\nTotal time for gridding bathy and BS: %f seconds (~%.2f minutes).\n',(timer_end-timer_start)*24*60*60,(timer_end-timer_start)*24*60);
     end
-            
+    
+    
 end
 if wc_proc_tab_comp.grid_bool.Value>0
     grid_cback([],[],main_figure);
@@ -389,7 +402,7 @@ timer_start = now;
 for itt = idx_fData(:)'
     
     u = u+1;
-    tic
+    
     % disp
     fprintf('Filtering bottom in file "%s" (%i/%i)...\n',fData_tot{itt}.ALLfilename{1},u,numel(idx_fData));
     fprintf('...Started at %s...\n',datestr(now));

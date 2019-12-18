@@ -621,6 +621,3 @@ fData.X_NEH_gridLevel        = gridLevel;
 fData.X_NEH_gridDensity      = gridTotalWeight;
 fData.X_NEH_gridMaxHorizDist = gridMaxHorizDist;
 
-% bathymetry and backscatter
-fData.X_NE_bathymetry  = gridBathymetry;
-fData.X_NE_backscatter = gridBackscatter;

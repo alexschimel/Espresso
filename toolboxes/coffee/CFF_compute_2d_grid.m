@@ -12,53 +12,19 @@ addParameter(p,'grdlim_north',[],@isnumeric);
 parse(p,varargin{:})
 E=fData.X_BP_bottomEasting;
 N=fData.X_BP_bottomNorthing;
-Pings=unique(fData.X_1P_pingCounter);
+idx_keep=~isnan(E(:))&~isnan(N(:));
 
-nPings=numel(Pings);
+gridE=min(E(idx_keep)):p.Results.grid_horz_res:max(E(idx_keep));
+gridN=min(N(idx_keep)):p.Results.grid_horz_res:max(N(idx_keep));
 
-% block processing setup
-mem_struct = memory;
-blockLength = ceil(mem_struct.MemAvailableAllArrays/(numel(N)*8)/10);
-nBlocks = ceil(nPings./blockLength);
-blocks = [ 1+(0:nBlocks-1)'.*blockLength , (1:nBlocks)'.*blockLength ];
-blocks(end,2) = nPings;
-
-
-% initialize vectors
-minBlockE = nan(1,nBlocks);
-minBlockN = nan(1,nBlocks);
-maxBlockE = nan(1,nBlocks);
-maxBlockN = nan(1,nBlocks);
-
-for iB = 1:nBlocks
-    
-    % list of pings in this block
-    blockPings = blocks(iB,1):blocks(iB,2);
-    
-    blockN=N(:,blockPings);
-    blockE=E(:,blockPings);
-    
-    %id_keep=blockH<d_max;
-    
-    % these subset of all samples should be enough to find the bounds for the entire block
-    minBlockE(iB) = min(blockE(:));
-    maxBlockE(iB) = max(blockE(:));
-    minBlockN(iB) = min(blockN(:));
-    maxBlockN(iB) = max(blockN(:));
-    
-end
-
-gridE=min(minBlockE):p.Results.grid_horz_res:max(maxBlockE);
-gridN=min(minBlockN):p.Results.grid_horz_res:max(maxBlockN);
-
-E_idx=floor((E(:)-gridE(1))/p.Results.grid_horz_res)+1;
-N_idx=floor((N(:)-gridN(1))/p.Results.grid_horz_res)+1;
+E_idx=floor((E(idx_keep)-gridE(1))/p.Results.grid_horz_res)+1;
+N_idx=floor((N(idx_keep)-gridN(1))/p.Results.grid_horz_res)+1;
 
 
 subs    = single([N_idx E_idx]); 
 sz      = single([numel(gridN) numel(gridE)]);      
 
-gridNan = accumarray(subs,ones(numel(E),1),sz,@(x) sum(x),0);
+gridNan = accumarray(subs,ones(numel(E(idx_keep)),1),sz,@(x) sum(x),0);
 gridNan=gridNan==0;
 
 

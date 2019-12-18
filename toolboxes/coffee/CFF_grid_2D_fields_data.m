@@ -21,14 +21,14 @@ grid_horz_res = p.Results.grid_horz_res;
 
 
 if isfield(fData,'X8_BP_ReflectivityBS')
-    idx_val = ~isnan(fData.X8_BP_ReflectivityBS);
+    idx_val = ~isnan(fData.X8_BP_ReflectivityBS(:))&~isinf(fData.X8_BP_ReflectivityBS(:))&~isnan(fData.X_BP_bottomNorthing(:))&~isnan(fData.X_BP_bottomEasting(:));
     BSinterpolant = scatteredInterpolant(fData.X_BP_bottomNorthing(idx_val),fData.X_BP_bottomEasting(idx_val),fData.X8_BP_ReflectivityBS(idx_val),'natural','none');
     fData.X_NE_bs = BSinterpolant(N,E);
 else
     fData.X_NE_bs=nan(size(E),'single');
 end
 
-idx_val = ~isnan(fData.X_BP_bottomHeight) & ~isinf(fData.X_BP_bottomHeight);
+idx_val = ~isnan(fData.X_BP_bottomHeight) & ~isinf(fData.X_BP_bottomHeight)&~isnan(fData.X_BP_bottomNorthing)&~isnan(fData.X_BP_bottomEasting);
 
 HeightInterpolant = scatteredInterpolant(fData.X_BP_bottomNorthing(idx_val),fData.X_BP_bottomEasting(idx_val),fData.X_BP_bottomHeight(idx_val),'natural','none');
 fData.X_NE_bathy = HeightInterpolant(N,E);

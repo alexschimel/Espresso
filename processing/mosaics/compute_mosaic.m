@@ -98,7 +98,7 @@ mosaicWeightedSum  = zeros(numElemGridN,numElemGridE,'single');
 mosaicTotalWeight  = zeros(numElemGridN,numElemGridE,'single');
 mosaicMaxHorizDist =   nan(numElemGridN,numElemGridE,'single');
 
-% Test if GPU is avaialble for computation and setup for it
+% Test if GPU is available for computation and setup for it
 gpu_comp = get_gpu_comp_stat();
 if gpu_comp > 0
     mosaicWeightedSum  = gpuArray(mosaicWeightedSum);

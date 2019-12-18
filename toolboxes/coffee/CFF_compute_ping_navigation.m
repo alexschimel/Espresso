@@ -132,7 +132,7 @@ if isfield(fData,'Po_1D_PositionSystemDescriptor')
         % several sources, keep the one with best accuracy
         [~,idx_keep] = nanmin(fData.Po_1D_MeasureOfPositionFixQuality(idx_sys));
         pos_idx = fData.Po_1D_PositionSystemDescriptor==ID(idx_keep);
-        fprintf('Several sources of GPS data avaialble. Using source with ID: %d\n',ID(idx_keep));
+        fprintf('Several sources of GPS data available. Using source with ID: %d\n',ID(idx_keep));
     else
         % single source. Use all datagrams.
         pos_idx = 1:numel(fData.Po_1D_Latitude);
