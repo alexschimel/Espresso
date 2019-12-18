@@ -169,7 +169,7 @@ cax_max = str2double(display_tab_comp.clim_max_wc.String);
 cax = [cax_min cax_max];
 
 datagramSource = CFF_get_datagramSource(fData);
-
+PingCounter=fData.(sprintf('%s_1P_PingCounter',datagramSource));
 %% Stacked view display
 if up_stacked_wc_bool
     % stacked data is "amp_al". Its columns are idx_pings and its rows
@@ -304,7 +304,7 @@ if up_stacked_wc_bool
     end
     
     usrdata.str_disp=str_disp;
-    
+
     % display stacked view itself
     set(stacked_wc_tab_comp.wc_gh,...
         'XData',fData.(sprintf('%s_1P_PingCounter',datagramSource))(idx_pings),...
@@ -338,7 +338,7 @@ end
 
 % Current ping vertical line
 set(stacked_wc_tab_comp.ping_gh,...
-    'XData',ones(1,2)*idx_pings(ip_sub),...
+    'XData',ones(1,2)*PingCounter(idx_pings(ip_sub)),...
     'YData',get(stacked_wc_tab_comp.wc_axes,'Ylim'));
 
 

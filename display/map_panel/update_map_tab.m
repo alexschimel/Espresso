@@ -245,7 +245,7 @@ for i = update_line_index(:)'
                 if size(L,3)>1
                     display_tab_comp=getappdata(main_figure,'display_tab');
 
-                    switch fData.X_grid_reference
+                    switch fData.X_1_gridHeightReference
                         case {'depth below sonar' 'Sonar'}
                             d_max=0;
                             d_min=nanmin(fData.X_BP_bottomHeight(:));

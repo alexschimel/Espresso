@@ -124,9 +124,14 @@ if ~ismember(dg,{'WC','AP'})
 end
 %maxNSamples_groups=fData.([fieldN(1:2) '_n_maxNSamples']);
 pingCounter=fData.(sprintf('%s_1P_PingCounter',dg));
+p_end   =  fData.(sprintf('%s_n_end',dg));
+p_start =  fData.(sprintf('%s_n_start',dg));
 
-ping_group_start=pingCounter(fData.(sprintf('%s_n_start',dg)));
-ping_group_end=pingCounter(fData.(sprintf('%s_n_end',dg)));
+p_end(p_end>numel(pingCounter))=numel(pingCounter);
+p_start(p_start>numel(pingCounter))=numel(pingCounter);
+
+ping_group_start=pingCounter(p_start);
+ping_group_end=pingCounter(p_end);
 
 istart=find(ping_group_start<=nanmin(pingCounter(iPing)),1,'last');
 iend=find(ping_group_end>=nanmax(pingCounter(iPing)),1,'first');
