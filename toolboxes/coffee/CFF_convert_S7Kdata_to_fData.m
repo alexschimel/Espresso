@@ -221,7 +221,7 @@ for iF = 1:nStruct
                     fData.X8_BP_RealTimeCleaningInformation(iBeam,iP)  = nan;
                     fData.X8_BP_ReflectivityBS(iBeam,iP)               = S7Kdata.R7027_RAWdetection.SignalStrength{iP};
                 end
-                
+                fData.X8_BP_ReflectivityBS=20*log10(fData.X8_BP_ReflectivityBS/65535);
             end
             
         end

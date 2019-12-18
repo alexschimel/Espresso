@@ -95,14 +95,10 @@ switch datagramSource
         X_BP_beamPointingAngleDeg   = fData.(sprintf('%s_BP_BeamPointingAngle',datagramSource)); %deg
         X_BP_beamPointingAngleRad   = deg2rad(X_BP_beamPointingAngleDeg);
         
-        
         X_BP_bottomSample=CFF_get_bottom_sample(fData);
-        
-        
+
         % in any case, permute dimensions to 1BP format
         X_1BP_bottomSample = permute(X_BP_bottomSample,[3,1,2]);
-        
-        
         
         %% Computations
         
@@ -117,14 +113,12 @@ switch datagramSource
         fData.X_BP_bottomRange          = permute(X_1BP_bottomRange,[2,3,1]);
         fData.X_BP_bottomUpDist         = permute(X_1BP_bottomUpDist,[2,3,1]);
         
-    case 'X8'
-        
+    case 'X8'   
         [X_1BP_bottomEasting, X_1BP_bottomNorthing, X_1BP_bottomHeight] = CFF_get_samples_ENH(X_1P_sonarEasting,X_1P_sonarNorthing,X_1P_sonarHeight,X_1P_thetaRad,fData.X8_BP_AcrosstrackDistanceY,fData.X8_BP_DepthZ);
         X_1BP_bottomAcrossDist=fData.X8_BP_AcrosstrackDistanceY;
 end
+
 %% saving
-
-
 
 fData.X_BP_bottomAcrossDist     = permute(X_1BP_bottomAcrossDist,[2,3,1]);
 fData.X_BP_bottomEasting        = permute(X_1BP_bottomEasting,[2,3,1]);

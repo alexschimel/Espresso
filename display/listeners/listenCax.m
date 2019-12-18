@@ -108,9 +108,10 @@ switch src.Name
             % column, bathmyetry, or backscatter.
             %% Processed water column grid
             tag_id_wc = num2str(fData_tot_tmp.ID,'%.0f_wc');
+            
+            %tag_id_wc = sprintf('%.0f_%s',fData_tot_tmp.ID,disp_config.Var_disp);
             obj_wc = findobj(ax,'Tag',tag_id_wc);
-            
-            
+                        
             % grid transparency
             data = get(obj_wc,'CData');
 

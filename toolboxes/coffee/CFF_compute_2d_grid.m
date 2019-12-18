@@ -1,4 +1,4 @@
-function [gridN,gridE,gridNan]=CFF_compute_2d_grid(fData,varargin)
+function [gridN,gridE,gridNan]=CFF_compute_2D_grid(fData,varargin)
 
 % init
 p = inputParser;
@@ -11,14 +11,14 @@ addParameter(p,'grdlim_north',[],@isnumeric);
 % parse
 parse(p,varargin{:})
 E=fData.X_BP_bottomEasting;
-N=fData.X_BP_bottomENorthing;
-Pings=uniques(fData.X_1P_PingCounter);
+N=fData.X_BP_bottomNorthing;
+Pings=unique(fData.X_1P_pingCounter);
 
 nPings=numel(Pings);
 
 % block processing setup
 mem_struct = memory;
-blockLength = ceil(mem_struct.MemAvailableAllArrays/(nSamples*nBeams*8)/20);
+blockLength = ceil(mem_struct.MemAvailableAllArrays/(numel(N)*8)/10);
 nBlocks = ceil(nPings./blockLength);
 blocks = [ 1+(0:nBlocks-1)'.*blockLength , (1:nBlocks)'.*blockLength ];
 blocks(end,2) = nPings;
@@ -49,16 +49,17 @@ for iB = 1:nBlocks
 end
 
 gridE=min(minBlockE):p.Results.grid_horz_res:max(maxBlockE);
-gridN=min(minBlockE):p.Results.grid_horz_res:max(maxBlockE);
+gridN=min(minBlockN):p.Results.grid_horz_res:max(maxBlockN);
 
-E_idx=ceil((E(:)-gridE(1))/p.Results.grid_horz_res);
-N_idx=ceil((N(:)-gridN(1))/p.Results.grid_horz_res);
+E_idx=floor((E(:)-gridE(1))/p.Results.grid_horz_res)+1;
+N_idx=floor((N(:)-gridN(1))/p.Results.grid_horz_res)+1;
 
 
-subs    = single([N_idx' E_idx']); 
-sz      = single([N_N N_E]);      
+subs    = single([N_idx E_idx]); 
+sz      = single([numel(gridN) numel(gridE)]);      
 
-gridNan = accumarray(subs,ones(numel(E)),sz,@(x) sum(x)>0,false);
+gridNan = accumarray(subs,ones(numel(E),1),sz,@(x) sum(x),0);
+gridNan=gridNan==0;
 
 
 

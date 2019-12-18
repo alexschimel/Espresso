@@ -216,7 +216,8 @@ for i = update_line_index(:)'
     
     
     %% Processed water column grid
-    tag_id_wc = sprintf('%.0f_%s',fData.ID,disp_config.Var_disp);
+    %tag_id_wc = sprintf('%.0f_%s',fData.ID,disp_config.Var_disp);
+    tag_id_wc = num2str(fData.ID,'%.0f_wc');
     obj_wc = findobj(ax,'Tag',tag_id_wc);
     
     % if new grid was computed delete existing image object before
@@ -344,7 +345,7 @@ if update_cax >0
                 for uii=1:numel(obj_wc_img)
                     if contains(obj_wc_img(uii).Tag,'_wc')&&strcmpi(obj_wc_img(uii).Visible,'On')
                         data=obj_wc_img(uii).CData;
-                        cax= [nanmin(prctile(data(:),5),cax(1)) nanmax(prctile(data(:),95),cax(2))];
+                        cax= [nanmin(prctile(data(:),2),cax(1)) nanmax(prctile(data(:),95),cax(2))];
                     end
                 end
                 

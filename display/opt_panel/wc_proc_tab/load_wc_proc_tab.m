@@ -128,8 +128,19 @@ wc_proc_tab_comp.mask_badpings = uicontrol(proc_gr,'style','edit','String','100'
 wc_proc_tab_comp.sidelobe = uicontrol(proc_gr,'style','checkbox','String','Filter sidelobe artefacts',...
     'BackgroundColor','White',...
     'units','normalized',...
-    'position',[0.05 h(6) 0.5 dh],...
+    'position',[0.05 h(6) 0.45 dh],...
     'Value',1);
+
+wc_proc_tab_comp.bs_grid_bool = uicontrol(proc_gr,'style','checkbox','String','Grid bathy/BS: res(m)',...
+    'BackgroundColor','White',...
+    'units','normalized',...
+    'position',[0.5 h(6) 0.35 dh],...
+    'Value',1);
+wc_proc_tab_comp.bs_grid_res = uicontrol(proc_gr,'style','edit','String','5',...
+    'BackgroundColor','White',...
+    'units','normalized',...
+    'position',[0.85 h(6) 0.1 dh],...
+    'Callback',{@check_fmt_box,0.1,500,5,'%.1f'});
 
 %process_wc_cback
 
@@ -297,6 +308,26 @@ if wc_proc_tab_comp.proc_bool.Value>0
         process_wc_cback([],[],main_figure);
         f_stack=1;
     end
+    
+    if wc_proc_tab_comp.bs_grid_bool.Value>0
+        fData_tot = getappdata(main_figure,'fData');
+        
+        if isempty(fData_tot)
+            return;
+        end
+        
+        fdata_tab_comp = getappdata(main_figure,'fdata_tab');
+        
+        idx_fData = find(cell2mat(fdata_tab_comp.table.Data(:,end-1)));
+        
+        
+        for itt = idx_fData(:)'
+            fData_tot{itt} = CFF_grid_2D_fields_data(fData_tot{itt},...
+                'grid_horz_res',str2double(get(wc_proc_tab_comp.bs_grid_res,'String')));    
+        end
+        setappdata(main_figure,'fData',fData_tot);
+    end
+            
 end
 if wc_proc_tab_comp.grid_bool.Value>0
     grid_cback([],[],main_figure);
@@ -699,6 +730,9 @@ for itt = idx_fData(:)'
         tic
         
         % gridding
+        
+       
+        
         fData_tot{itt} = CFF_grid_WC_data(fData_tot{itt},...
             'grid_horz_res',grid_horz_res,...
             'grid_vert_res',grid_vert_res,...

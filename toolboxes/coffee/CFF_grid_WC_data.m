@@ -99,11 +99,6 @@ addParameter(p,'grdlim_mindist',0,@isnumeric);
 addParameter(p,'grdlim_maxdist',inf,@isnumeric);
 addParameter(p,'grdlim_east',[],@isnumeric);
 addParameter(p,'grdlim_north',[],@isnumeric);
-%addParameter(p,'fields_to_grid',{'bathy' 'bs' 'wc'},@iscell);
-
-% grid other things...
-addParameter(p,'grid_bs',false,@islogical);
-addParameter(p,'grid_bathy',false,@islogical);
 
 % parse
 parse(p,varargin{:})
@@ -589,26 +584,6 @@ end
 %% final calculation: average and back in dB
 gridLevel = 10.*log10(gridWeightedSum./gridTotalWeight);
 clear gridWeightedSum
-
-
-%% bathymetry and backscatter grids
-
-% using hight interpolant to create bathy grid
-[N,E] = ndgrid(gridNorthing,gridEasting);
-gridBathymetry = HeightInterpolant(N,E);
-
-% creating a backscatter interpolant for BS grid
-if isfield(fData,'X8_BP_ReflectivityBS')
-    BackscatterInterpolant = scatteredInterpolant(fData.X_BP_bottomNorthing(idx_valid_bottom),fData.X_BP_bottomEasting(idx_valid_bottom),fData.X8_BP_ReflectivityBS(idx_valid_bottom),'natural','none');
-    gridBackscatter = BackscatterInterpolant(N,E);
-else
-    gridBackscatter = nan(size(E),'single');
-end
-
-% remove the extrapolation
-ff = filter2(ones(5,5),nansum(gridTotalWeight,3));
-gridBathymetry(ff==0) = NaN;
-gridBackscatter(ff==0) = NaN;
 
 
 %% revert gpuArrays back to regular arrays before storing
