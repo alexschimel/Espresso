@@ -42,8 +42,7 @@ for uig=1:numel(idx_new_group)
     end
 end
 
-ping_group_start=ping_group_start-pingCounters(1)+1;
-ping_group_end=ping_group_end-pingCounters(1)+1;
+
 
 %idx_rem=[];
 for ui=1:numel(ping_group_end)

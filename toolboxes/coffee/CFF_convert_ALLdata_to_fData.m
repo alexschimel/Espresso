@@ -959,8 +959,7 @@ for iF = 1:nStruct
                     end
                     
                 end
-                uiP=pingCounters(iP)-pingCounters(1)+1;
-                fData.WC_SBP_SampleAmplitudes{ig}.Data.val(:,:,uiP-ping_group_start(ig)+1)=SB_temp;
+                fData.WC_SBP_SampleAmplitudes{ig}.Data.val(:,:,iP-ping_group_start(ig)+1)=SB_temp;
                 
             end
             
