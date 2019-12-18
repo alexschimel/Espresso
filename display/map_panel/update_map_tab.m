@@ -187,9 +187,13 @@ for i = update_line_index(:)'
         handle_plot_1 = plot(ax,fData.X_1P_pingE,fData.X_1P_pingN,'Tag',tag_id_nav,...
             'Visible','on','Color',nav_col,'ButtonDownFcn',{@disp_wc_ping_cback,main_figure},'UserData',user_data);
         
+        dt= 120;%in seconds
         % draw dots as subsampled navigation
-        df = 50;
-        handle_plot_2 = plot(ax,[fData.X_1P_pingE(1:df:end),fData.X_1P_pingE(end)],[fData.X_1P_pingN(1:df:end),fData.X_1P_pingN(end)],'.','Tag',tag_id_nav,...
+        tt=nanmean(diff(fData.X_1P_pingTSMIM/1e3));
+        idx_f=mod(floor(fData.X_1P_pingTSMIM/1e2)/10,dt)==0;
+        idx_f(end)=1;idx_f(1)=1;%draw a marker put a point every 20 minutes one at the start and one at the end
+        
+        handle_plot_2 = plot(ax,fData.X_1P_pingE(idx_f),fData.X_1P_pingN(idx_f),'.','Tag',tag_id_nav,...
             'Visible','on','Color',nav_col,'ButtonDownFcn',{@disp_wc_ping_cback,main_figure},'UserData',user_data);
         
         handle_plot = [handle_plot_1 handle_plot_2];
@@ -204,7 +208,7 @@ for i = update_line_index(:)'
         plot(ax,fData.X_1P_pingE(1),fData.X_1P_pingN(1),'o','Tag',tag_id_nav,'Visible','on','Color',nav_col);
         
         % draw end of line
-        % plot(ax,fData.X_1P_pingE(end),fData.X_1P_pingN(end),'s','Tag',tag_id_nav,'Visible','on','Color',nav_col);
+        plot(ax,fData.X_1P_pingE(end),fData.X_1P_pingN(end),'s','Tag',tag_id_nav,'Visible','on','Color',nav_col);
         
     else
         % line already exists, just set to proper color

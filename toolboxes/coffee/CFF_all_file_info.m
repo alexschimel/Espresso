@@ -213,6 +213,11 @@ while 1
     number                          = fread(fid,1,'uint16'); % datagram or ping number
     systemSerialNumber              = fread(fid,1,'uint16'); % EM system serial number
     
+    if feof(fid)
+        % file finished, leave the loop
+        break;
+    end
+    
     % test for synchronization
     % to pass, first data reading must show that:
     % - the number of bytes in following datagram doesn't overshoot file
@@ -424,6 +429,7 @@ while 1
     fseek(fid,pif+4+nbDatag,-1);
     
 end
+
 
 
 %% closing file

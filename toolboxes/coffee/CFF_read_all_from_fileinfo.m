@@ -1082,14 +1082,30 @@ for iDatag = datagToParse'
                 % end of datagram
                 ALLdata.EM_WaterColumn.ETX(i107)      = typecast(tmp_end(us+1),'uint8');
                 ALLdata.EM_WaterColumn.CheckSum(i107) = typecast(tmp_end(2+us:3+us),'uint16');
+                % confirm parsing
+                parsed = 1;
                 
                 % ETX check
                 if ALLdata.EM_WaterColumn.ETX(i107)~=3
-                    error('wrong ETX value (ALLdata.EM_WaterColumn)');
+                    warning('wrong ETX value (ALLdata.EM_WaterColumn)');
+                    % HERE if data parsing failed, add a blank datagram in
+                    % output
+                    
+                    % copy field names of previous entries
+                    fields_wc = fieldnames(ALLdata.EM_WaterColumn);
+                    
+                    % add blanks fields for those missing
+                    for ifi = 1:numel(fields_wc)
+                        if numel(ALLdata.EM_WaterColumn.(fields_wc{ifi})) >= i107
+                            ALLdata.EM_WaterColumn.(fields_wc{ifi})(i107) = [];
+                        end
+                    end
+                    
+                    i107 = i107-1; % XXX if we do that, then we'll rewrite over the blank record we just entered??
+                    parsed = 0;
                 end
                 
-                % confirm parsing
-                parsed = 1;
+
                 
             else
                 % HERE if data parsing failed, add a blank datagram in
@@ -1341,6 +1357,23 @@ end
 %% close fid
 fclose(fid);
 
+All_fields=fieldnames(ALLdata);
+
+%modify the ping numbers in case they have gone over intmax('uint16')
+for ifif=1:numel(All_fields)
+    if isfield(ALLdata.(All_fields{ifif}),'PingCounter')
+        number_pings=ALLdata.(All_fields{ifif}).PingCounter;
+        idx_high=find(-diff(number_pings)==intmax('uint16'));
+        idx_high=[idx_high+1 numel(number_pings)];
+        
+        for iu =1:numel(idx_high)-1
+            number_pings(idx_high(iu):idx_high(iu+1)) = number_pings(idx_high(iu):idx_high(iu+1))+iu*double(intmax('uint16'))+1;
+        end
+        
+        ALLdata.(All_fields{ifif}).PingCounter=number_pings;
+    end
+    
+end
 
 %% add info to parsed data
 ALLdata.info = ALLfileinfo;

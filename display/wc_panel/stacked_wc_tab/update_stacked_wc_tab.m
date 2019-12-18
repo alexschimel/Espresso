@@ -129,7 +129,7 @@ ip_sub = ip - idx_pings(1) + 1;
 ip_sub=nanmax(ip_sub,1);
 
 % get data type to be grabbed
-wc_tab_comp  = getappdata(main_figure,'wc_tab');
+%wc_tab_comp  = getappdata(main_figure,'wc_tab');
 display_tab_comp = getappdata(main_figure,'display_tab');
 wc_str = display_tab_comp.data_disp.String;
 str_disp = wc_str{display_tab_comp.data_disp.Value};
@@ -169,7 +169,7 @@ cax_max = str2double(display_tab_comp.clim_max_wc.String);
 cax = [cax_min cax_max];
 
 datagramSource = CFF_get_datagramSource(fData);
-PingCounter=fData.(sprintf('%s_1P_PingCounter',datagramSource));
+%PingCounter=fData.(sprintf('%s_1P_PingCounter',datagramSource));
 %% Stacked view display
 if up_stacked_wc_bool
     % stacked data is "amp_al". Its columns are idx_pings and its rows
@@ -307,7 +307,7 @@ if up_stacked_wc_bool
 
     % display stacked view itself
     set(stacked_wc_tab_comp.wc_gh,...
-        'XData',fData.(sprintf('%s_1P_PingCounter',datagramSource))(idx_pings),...
+        'XData',idx_pings,...
         'YData',sampleUpDistAl,...
         'ZData',zeros(size(amp_al)),...
         'CData',amp_al,...
@@ -315,7 +315,7 @@ if up_stacked_wc_bool
         'Userdata',usrdata);
     
     % Xlim and Ylim. Cropping the nans at top and bottom
-    xlim_stacked = fData.(sprintf('%s_1P_PingCounter',datagramSource))([idx_pings(1) idx_pings(end)]);
+    xlim_stacked = ([idx_pings(1) idx_pings(end)]);
     if xlim_stacked(1) == xlim_stacked(2)
         % in case only one ping in this view (file with 1 ping)
         xlim_stacked(2) = xlim_stacked(1)+1;
@@ -338,7 +338,7 @@ end
 
 % Current ping vertical line
 set(stacked_wc_tab_comp.ping_gh,...
-    'XData',ones(1,2)*PingCounter(idx_pings(ip_sub)),...
+    'XData',ones(1,2)*(idx_pings(ip_sub)),...
     'YData',get(stacked_wc_tab_comp.wc_axes,'Ylim'));
 
 

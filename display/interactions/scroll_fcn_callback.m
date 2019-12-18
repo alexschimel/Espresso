@@ -108,6 +108,15 @@ center_y = y_lim(1) + dy./2;
 % the bigger the step)
 zoom_ratio = 0.2;
 
+pos_p=getpixelposition(ah);
+
+r=pos_p(3)/pos_p(4);
+
+dz=nanmax(dx,dy);
+
+dy=1/r*dz;
+dx=dz;
+
 if callbackdata.VerticalScrollCount<0
     % zoom in
     
@@ -131,6 +140,7 @@ else
     % zoom out
     
     % expanded range
+    
     dx_new = dx*(1+zoom_ratio);
     dy_new = dy*(1+zoom_ratio);
     
