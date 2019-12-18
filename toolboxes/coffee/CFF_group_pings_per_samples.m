@@ -45,12 +45,15 @@ end
 ping_group_start=ping_group_start-pingCounters(1)+1;
 ping_group_end=ping_group_end-pingCounters(1)+1;
 
-idx_rem=[];
+%idx_rem=[];
 for ui=1:numel(ping_group_end)
-    if isempty(intersect(ping_group_start(ui):ping_group_end(ui),pingCounters-pingCounters(1)+1))
-        idx_rem=union(idx_rem,ui);
-    end
+%     if isempty(intersect(ping_group_start(ui):ping_group_end(ui),pingCounters-pingCounters(1)+1))
+%         idx_rem=union(idx_rem,ui);
+%     end
+    ping_group_start(ui)=find(pingCounters==ping_group_start(ui),1);
+    ping_group_end(ui)=find(pingCounters==ping_group_end(ui),1);
 end
+%ping_group_start(idx_rem)=[];
 
 % 
 % figure();
