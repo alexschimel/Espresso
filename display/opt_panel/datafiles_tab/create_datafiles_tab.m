@@ -222,7 +222,7 @@ files_to_convert = files(selected_idx);
 files_converted = file_tab_comp.converted;
 files_already_converted = files_converted(selected_idx);
 
-% convert files
+% CORE PART: convert files
 convert_files(files_to_convert, files_already_converted, reconvert_flag)
 
 % update display
@@ -255,7 +255,7 @@ files_not_converted = list_of_files_not_converted(selected_idx);
 loaded_files = get_loaded_files(main_figure);
 files_already_loaded = ismember(files_to_load,loaded_files);
 
-% load files
+% CORE PART: load files
 [fData, disp_config] = load_files(fData, files_to_load, files_not_converted, files_already_loaded, disp_config);
 
 % add fData to appdata
@@ -287,14 +287,24 @@ end
 %% Callback when pressing the "Convert, Load & Process" button
 function callback_press_convertloadprocess_button(src,evt,main_figure)
 
-% run conversion
-callback_press_convert_button(src,evt,main_figure,0);
-
-% load
-callback_press_load_button(src,evt,main_figure);
-
-% process
+% Write a pop-up window asking to confirm
 % to do
+dlg_title = 'Processing ahead';
+dlg_text = 'After conversion and loading, selected files will be processed using parameters as currently set in the "Data Processing" tab. Proceed?';
+answer = question_dialog_fig(main_figure,dlg_title,dlg_text);
+
+switch answer
+    case 'Yes'
+        % run conversion
+        callback_press_convert_button(src,evt,main_figure,0);
+        
+        % load
+        callback_press_load_button(src,evt,main_figure);
+        
+        % process
+        % note this callback is not part of this tab but we can call it anyway
+        callback_press_process_button(src,evt,main_figure);
+end
     
 end
 

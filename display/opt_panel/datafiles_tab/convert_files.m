@@ -201,4 +201,4 @@ end
 
 % general timer
 timer_end = now;
-fprintf('\nTotal time for conversion: %f seconds (~%.2f minutes).\n',(timer_end-timer_start)*24*60*60,(timer_end-timer_start)*24*60);
+fprintf('Total time for conversion: %f seconds (~%.2f minutes).\n\n',(timer_end-timer_start)*24*60*60,(timer_end-timer_start)*24*60);
