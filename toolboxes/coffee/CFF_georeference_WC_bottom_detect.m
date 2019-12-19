@@ -69,8 +69,6 @@ function [fData] = CFF_georeference_WC_bottom_detect(fData)
 %% info extraction
 
 % Extract needed ping info
-datagramSource = CFF_get_datagramSource(fData);
-
 X_1P_sonarHeight          = fData.X_1P_pingH; %m
 X_1P_sonarEasting         = fData.X_1P_pingE; %m
 X_1P_sonarNorthing        = fData.X_1P_pingN; %m
@@ -80,6 +78,7 @@ X_1_sonarHeadingOffsetDeg = fData.IP_ASCIIparameters.S1H; %deg
 
 % Compute the horizontal rotation angle between the swath frame (Ys forward
 % and Yp northing)
+%
 % In THEORY, real-time compensation of roll and pitch means the Z for the
 % swath frame is exactly the same as Z for elevation, so that we only need
 % to rotate in the horizontal frame. In effect, we may want to recompute
@@ -87,43 +86,50 @@ X_1_sonarHeadingOffsetDeg = fData.IP_ASCIIparameters.S1H; %deg
 X_1P_thetaDeg = - mod( X_1P_gridConvergenceDeg + X_1P_vesselHeadingDeg + X_1_sonarHeadingOffsetDeg, 360 );
 X_1P_thetaRad = deg2rad(X_1P_thetaDeg);
 
+datagramSource = CFF_get_datagramSource(fData);
 switch datagramSource
     
     case {'WC' 'AP'}
-        % Extract needed beam info
+        
         % X_BP_startRangeSampleNumber = fData.WC_BP_StartRangeSampleNumber; % not needed for bottom detect (I think)
-        X_BP_beamPointingAngleDeg   = fData.(sprintf('%s_BP_BeamPointingAngle',datagramSource)); %deg
-        X_BP_beamPointingAngleRad   = deg2rad(X_BP_beamPointingAngleDeg);
-        
-        X_BP_bottomSample=CFF_get_bottom_sample(fData);
-
-        % in any case, permute dimensions to 1BP format
+        X_BP_beamPointingAngleDeg = fData.(sprintf('%s_BP_BeamPointingAngle',datagramSource));
+        X_BP_beamPointingAngleRad = deg2rad(X_BP_beamPointingAngleDeg);
+        X_BP_bottomSample = CFF_get_bottom_sample(fData);
         X_1BP_bottomSample = permute(X_BP_bottomSample,[3,1,2]);
-        
-        %% Computations
-        
+
         % OWTT distance traveled in one sample
         X_1P_oneSampleDistance = CFF_inter_sample_distance(fData);
         
-        % Now we have all we need to georeference those bottom detect samples
+        % Georeference those samples
         [X_1BP_bottomEasting, X_1BP_bottomNorthing, X_1BP_bottomHeight, X_1BP_bottomAcrossDist, X_1BP_bottomUpDist, X_1BP_bottomRange] = CFF_georeference_sample(X_1BP_bottomSample, 0, X_1P_oneSampleDistance, X_BP_beamPointingAngleRad, X_1P_sonarEasting, X_1P_sonarNorthing, X_1P_sonarHeight, X_1P_thetaRad);
         
-        fData.X_BP_bottomSample         = X_BP_bottomSample; 
+        % save info
+        fData.X_BP_bottomSample         = X_BP_bottomSample;
         fData.X_PB_beamPointingAngleRad = X_BP_beamPointingAngleRad;
         fData.X_BP_bottomRange          = permute(X_1BP_bottomRange,[2,3,1]);
-        fData.X_BP_bottomUpDist         = permute(X_1BP_bottomUpDist,[2,3,1]);
         
-    case 'X8'   
+        % save data in the swath frame
+        fData.X_BP_bottomUpDist     = permute(X_1BP_bottomUpDist,[2,3,1]);
+        fData.X_BP_bottomAcrossDist = permute(X_1BP_bottomAcrossDist,[2,3,1]);
+        
+        % save data in the projected frame
+        fData.X_BP_bottomEasting   = permute(X_1BP_bottomEasting,[2,3,1]);
+        fData.X_BP_bottomNorthing  = permute(X_1BP_bottomNorthing,[2,3,1]);
+        fData.X_BP_bottomHeight    = permute(X_1BP_bottomHeight,[2,3,1]);
+        
+    case 'X8'
+        
         [X_1BP_bottomEasting, X_1BP_bottomNorthing, X_1BP_bottomHeight] = CFF_get_samples_ENH(X_1P_sonarEasting,X_1P_sonarNorthing,X_1P_sonarHeight,X_1P_thetaRad,fData.X8_BP_AcrosstrackDistanceY,fData.X8_BP_DepthZ);
-        X_1BP_bottomAcrossDist=fData.X8_BP_AcrosstrackDistanceY;
+        
+        X_1BP_bottomAcrossDist = fData.X8_BP_AcrosstrackDistanceY;
+        
+        % save data in the swath frame
+        fData.X_BP_bottomAcrossDist = permute(X_1BP_bottomAcrossDist,[2,3,1]);
+        
+        % save data in the projected frame
+        fData.X_BP_bottomEasting    = permute(X_1BP_bottomEasting,[2,3,1]);
+        fData.X_BP_bottomNorthing   = permute(X_1BP_bottomNorthing,[2,3,1]);
+        fData.X_BP_bottomHeight     = permute(X_1BP_bottomHeight,[2,3,1]);
+        
 end
-
-%% saving
-
-fData.X_BP_bottomAcrossDist     = permute(X_1BP_bottomAcrossDist,[2,3,1]);
-fData.X_BP_bottomEasting        = permute(X_1BP_bottomEasting,[2,3,1]);
-fData.X_BP_bottomNorthing       = permute(X_1BP_bottomNorthing,[2,3,1]);
-fData.X_BP_bottomHeight         = permute(X_1BP_bottomHeight,[2,3,1]);
-
-
 

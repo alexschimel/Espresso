@@ -83,58 +83,48 @@
 %% Function
 function data_tot = CFF_get_WC_data(fData,fieldN,varargin)
 
-
-%% input parsing
-
-% init
+% input parsing
 p = inputParser;
-
-
 addRequired(p,'fieldN',@ischar);
-
-% optional
 addOptional(p,'iPing',[],@(x) isnumeric(x) ||isempty(x));
 addOptional(p,'dr_sub',1,@(x) isnumeric(x) && x>0);
 addOptional(p,'db_sub',1,@(x) isnumeric(x) && x>0);
 addOptional(p,'output_format','true',@(x) ischar(x) && ismember(x,{'raw' 'true'}));
 addParameter(p,'iBeam',[],@(x) isnumeric(x) ||isempty(x));
 addParameter(p,'iRange',[],@(x) isnumeric(x) ||isempty(x));
-% parse
 parse(p,fieldN,varargin{:})
-
-% get results
-iPing = round(p.Results.iPing);
-iBeam = p.Results.iBeam;
+iPing  = round(p.Results.iPing);
+iBeam  = p.Results.iBeam;
 iRange = p.Results.iRange;
 
-if ~isfield(fData,fieldN)
-   data_tot=[];
-   return;
-end
+dg = CFF_get_datagramSource(fData);
 
-%% get raw data
 if isempty(iPing)
     iPing = 1:cellfun(@(x) nansum(size(x.Data.val,3)),fData.(fieldN));
 end
 
-dg=CFF_get_datagramSource(fData);
-if ~ismember(dg,{'WC','AP'})
-            data_tot=[];
-        return;
+% exit clauses
+if ~isfield(fData,fieldN)
+    data_tot = [];
+    return;
 end
-%maxNSamples_groups=fData.([fieldN(1:2) '_n_maxNSamples']);
-pingCounter=fData.(sprintf('%s_1P_PingCounter',dg));
+if ~ismember(dg,{'WC','AP'})
+    data_tot = [];
+    return;
+end
+
 p_end   =  fData.(sprintf('%s_n_end',dg));
 p_start =  fData.(sprintf('%s_n_start',dg));
 
-p_end(p_end>numel(pingCounter))=numel(pingCounter);
-p_start(p_start>numel(pingCounter))=numel(pingCounter);
+pingCounter = fData.(sprintf('%s_1P_PingCounter',dg));
+p_end(p_end>numel(pingCounter))     = numel(pingCounter);
+p_start(p_start>numel(pingCounter)) = numel(pingCounter);
 
-ping_group_start=pingCounter(p_start);
-ping_group_end=pingCounter(p_end);
+ping_group_start = pingCounter(p_start);
+ping_group_end = pingCounter(p_end);
 
-istart=find(ping_group_start<=nanmin(pingCounter(iPing)),1,'last');
-iend=find(ping_group_end>=nanmax(pingCounter(iPing)),1,'first');
+istart = find( ping_group_start<=nanmin(pingCounter(iPing)), 1, 'last' );
+iend   = find( ping_group_end>=nanmax(pingCounter(iPing)), 1, 'first' );
 
 if isempty(iBeam)
     iBeam = 1:cellfun(@(x) nanmax(size(x.Data.val,2)),fData.(fieldN));
@@ -144,18 +134,19 @@ if isempty(iRange)
     iRange = 1:cellfun(@(x) nanmax(size(x.Data.val,1)),fData.(fieldN));
 end
 
-data_tot=nan(ceil(numel(iRange)/p.Results.dr_sub),ceil(numel(iBeam)/p.Results.db_sub),numel(iPing),'single');
-ip=0;
-% f=figure();
-% ax=axes(f);
-for ig=istart:iend
-    iRange_tmp=iRange;
-    iBeam_tmp=iBeam;
-    iPing_tmp=pingCounter(iPing);
+data_tot = nan(ceil(numel(iRange)/p.Results.dr_sub),ceil(numel(iBeam)/p.Results.db_sub),numel(iPing),'single');
+ip = 0;
+% f = figure();
+% ax = axes(f);
+for ig = istart:iend
     
-    iPing_tmp_gr=intersect(iPing_tmp,ping_group_start(ig):ping_group_end(ig));
+    iRange_tmp = iRange;
+    iBeam_tmp = iBeam;
+    iPing_tmp = pingCounter(iPing);
     
-    iPing_tmp=iPing_tmp_gr-ping_group_start(ig)+1;
+    iPing_tmp_gr = intersect(iPing_tmp,ping_group_start(ig):ping_group_end(ig));
+    
+    iPing_tmp = iPing_tmp_gr-ping_group_start(ig)+1;
     iRange_tmp(iRange_tmp>size(fData.(fieldN){ig}.Data.val,1)) = [];
     iBeam_tmp(iBeam_tmp>size(fData.(fieldN){ig}.Data.val,2))   = [];
     iPing_tmp(iPing_tmp>size(fData.(fieldN){ig}.Data.val,3))   = [];
@@ -188,13 +179,13 @@ for ig=istart:iend
             
     end
     
-    %     for i=1:size(data_tot,3)
+    %     for i = 1:size(data_tot,3)
     %         imagesc(ax,squeeze(data(:,:,i)));
     %         drawnow;
     %     end
     
-    data_tot(1:size(data,1),1:(size(data,2)),ip+(1:(size(data,3))))=data;
-    ip=ip+(size(data,3));
+    data_tot(1:size(data,1),1:(size(data,2)),ip+(1:(size(data,3)))) = data;
+    ip = ip + (size(data,3));
 end
 
 

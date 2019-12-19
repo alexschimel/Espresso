@@ -110,18 +110,23 @@ set(file_tab_comp.file_tab,'SizeChangedFcn',{@resize_table,file_tab_comp.table_m
 
 uicontrol(file_tab_comp.file_tab,'Style','pushbutton','String','Convert',...
     'units','normalized',...
-    'pos',[0.35 0.01 0.2 0.08],...
-    'callback',{@convert_files_callback,main_figure,0});
+    'pos',[0.00 0.01 0.2 0.08],...
+    'callback',{@convert_button_cback,main_figure,0});
 
 uicontrol(file_tab_comp.file_tab,'Style','pushbutton','String','Re-Convert',...
     'units','normalized',...
-    'pos',[0.55 0.01 0.2 0.08],...
-    'callback',{@convert_files_callback,main_figure,1});
+    'pos',[0.20 0.01 0.2 0.08],...
+    'callback',{@convert_button_cback,main_figure,1});
 
 uicontrol(file_tab_comp.file_tab,'Style','pushbutton','String','Load',...
     'units','normalized',...
-    'pos',[0.75 0.01 0.15 0.08],...
-    'callback',{@load_files_callback,main_figure});
+    'pos',[0.40 0.01 0.2 0.08],...
+    'callback',{@load_button_cback,main_figure});
+
+uicontrol(file_tab_comp.file_tab,'Style','pushbutton','String','Convert, Load & Process',...
+    'units','normalized',...
+    'pos',[0.60 0.01 0.4 0.08],...
+    'callback',{@convertloadprocess_button_cback,main_figure});
 
 %% finalize
 
@@ -210,11 +215,10 @@ setappdata(main_figure,'file_tab',file_tab_comp);
 end
 
 
-
 %%
 % Callback when pressing the "Convert" button
 %
-function convert_files_callback(~,~,main_figure,reconvert)
+function convert_button_cback(~,~,main_figure,reconvert)
 
 % HARD-CODED PARAMETER:
 % the source datagram that will be used throughout the program for
@@ -431,12 +435,10 @@ fprintf('\nTotal time for conversion: %f seconds (~%.2f minutes).\n',(timer_end-
 end
 
 
-
-
 %%
 % Callback when pressing the "Load" button
 %
-function load_files_callback(~,~,main_figure)
+function load_button_cback(~,~,main_figure)
 
 % get tab data
 file_tab_comp = getappdata(main_figure,'file_tab');
@@ -689,5 +691,21 @@ fprintf('\nTotal time for loading: %f seconds (~%.2f minutes).\n',(timer_end-tim
 end
 
 
+
+%%
+% Callback when pressing the "Convert, Load & Process" button
+%
+function convertloadprocess_button_cback(src,evt,main_figure)
+
+% run conversion
+convert_button_cback(src,evt,main_figure,0)
+
+% load
+load_button_cback(src,evt,main_figure)
+
+% process
+% TO DO
+    
+end
 
 

@@ -210,18 +210,18 @@ for iF = 1:nStruct
                 fData.X8_B1_BeamNumber                   = (1:maxNBeams)';
                 
                 for iP = 1:nPings
-                    iBeam=S7Kdata.R7027_RAWdetection.BeamDescriptor{iP}+1;
+                    iBeam = S7Kdata.R7027_RAWdetection.BeamDescriptor{iP}+1;
                     fData.X8_BP_DepthZ(iBeam,iP)                       = S7Kdata.R7027_RAWdetection.Depth{iP};
                     fData.X8_BP_AcrosstrackDistanceY(iBeam,iP)         = S7Kdata.R7027_RAWdetection.AcrossTrackDistance{iP};
                     fData.X8_BP_AlongtrackDistanceX(iBeam,iP)          = S7Kdata.R7027_RAWdetection.AlongTrackDistance{iP};
-                    fData.X8_BP_DetectionWindowLength(iBeam,iP)        = nan;
+                    fData.X8_BP_DetectionWindowLength(iBeam,iP)        = NaN;
                     fData.X8_BP_QualityFactor(iBeam,iP)                = S7Kdata.R7027_RAWdetection.Quality{iP} ;
                     fData.X8_BP_BeamIncidenceAngleAdjustment(iBeam,iP) = nan;
                     fData.X8_BP_DetectionInformation(iBeam,iP)         = nan;
                     fData.X8_BP_RealTimeCleaningInformation(iBeam,iP)  = nan;
                     fData.X8_BP_ReflectivityBS(iBeam,iP)               = S7Kdata.R7027_RAWdetection.SignalStrength{iP};
                 end
-                fData.X8_BP_ReflectivityBS=20*log10(fData.X8_BP_ReflectivityBS/65535);
+                fData.X8_BP_ReflectivityBS = 20*log10(fData.X8_BP_ReflectivityBS/65535);
             end
             
         end

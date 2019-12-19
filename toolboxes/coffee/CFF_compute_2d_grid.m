@@ -1,31 +1,38 @@
-function [gridN,gridE,gridNan]=CFF_compute_2D_grid(fData,varargin)
+function [gridN, gridE, gridNan] = CFF_compute_2d_grid(fData,varargin)
 
 % init
 p = inputParser;
-
 addParameter(p,'grid_horz_res',1,@(x) isnumeric(x)&&x>0);
-
 addParameter(p,'grdlim_east',[],@isnumeric);
 addParameter(p,'grdlim_north',[],@isnumeric);
-
-% parse
 parse(p,varargin{:})
-E=fData.X_BP_bottomEasting;
-N=fData.X_BP_bottomNorthing;
-idx_keep=~isnan(E(:))&~isnan(N(:));
+res = p.Results.grid_horz_res;
 
-gridE=min(E(idx_keep)):p.Results.grid_horz_res:max(E(idx_keep));
-gridN=min(N(idx_keep)):p.Results.grid_horz_res:max(N(idx_keep));
+% get data
+E = fData.X_BP_bottomEasting;
+N = fData.X_BP_bottomNorthing;
 
-E_idx=floor((E(idx_keep)-gridE(1))/p.Results.grid_horz_res)+1;
-N_idx=floor((N(idx_keep)-gridN(1))/p.Results.grid_horz_res)+1;
+% set grids
+idx_keep = ~isnan(E(:)) & ~isnan(N(:));
+gridE = min(E(idx_keep)):res:max(E(idx_keep));
+gridN = min(N(idx_keep)):res:max(N(idx_keep));
 
+% indices of data in grids
+E_idx = floor((E(idx_keep)-gridE(1))/res)+1;
+N_idx = floor((N(idx_keep)-gridN(1))/res)+1;
 
-subs    = single([N_idx E_idx]); 
-sz      = single([numel(gridN) numel(gridE)]);      
+% we use the accumarray function to sum all values in both the
+% total weight grid, and the weighted sum grid. Prepare the
+% common values here
+subs = single([N_idx E_idx]);               % indices in the temp grid of each data point
+sz   = single([numel(gridN) numel(gridE)]); % size of ouptut
 
+% generate empty grid 
 gridNan = accumarray(subs,ones(numel(E(idx_keep)),1),sz,@(x) sum(x),0);
-gridNan=gridNan==0;
+gridNan = gridNan==0;
+
+
+
 
 
 

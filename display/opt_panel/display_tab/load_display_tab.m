@@ -440,7 +440,7 @@ end
 
 display_tab_comp = getappdata(main_figure,'display_tab');
 
-depth_min = Nan;
+depth_min = NaN;
 for ui = 1:numel(fData_tot)
     depth_min =  nanmin(depth_min,nanmin(fData_tot{ui}.X_BP_bottomHeight(:)));
 end

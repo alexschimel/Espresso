@@ -138,7 +138,7 @@ switch str_disp
     case 'Phase'
         amp = CFF_get_WC_data(fData,sprintf('%s_SBP_SamplePhase',datagramSource),'iPing',ip);
         if isempty(amp)
-            display_tab_comp.data_disp.Value=find(strcmpi(display_tab_comp.data_disp.String,'Original'));
+            display_tab_comp.data_disp.Value = find(strcmpi(display_tab_comp.data_disp.String,'Original'));
         end
         idx_keep = true(size(amp));
 end

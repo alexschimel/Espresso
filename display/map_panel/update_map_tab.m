@@ -78,23 +78,20 @@
 %% Function
 function up_wc = update_map_tab(main_figure,varargin)
 
+%% INIT
 
-%% INTRO
-
-% input parser
 p = inputParser;
 addOptional(p,'new_grid_flag',0);
 addOptional(p,'new_mosaic_flag',0);
 addOptional(p,'auto_zoom_extent_flag',0);
 addOptional(p,'update_line_index',[]); % if empty update all lines
 addOptional(p,'update_poly',0); % if empty update all lines
-
 parse(p,varargin{:});
-new_grid_flag = p.Results.new_grid_flag;
-new_mosaic_flag = p.Results.new_mosaic_flag;
+new_grid_flag         = p.Results.new_grid_flag;
+new_mosaic_flag       = p.Results.new_mosaic_flag;
 auto_zoom_extent_flag = p.Results.auto_zoom_extent_flag;
-update_line_index = p.Results.update_line_index;
-update_poly = p.Results.update_poly;
+update_line_index     = p.Results.update_line_index;
+update_poly           = p.Results.update_poly;
 
 % display on devpt version
 if ~isdeployed()
@@ -132,7 +129,6 @@ if ip > numel(fData.X_1P_pingE)
     return;
 end
 
-
 % get map axes
 map_tab_comp = getappdata(main_figure,'Map_tab');
 ax = map_tab_comp.map_axes;
@@ -140,7 +136,6 @@ ax = map_tab_comp.map_axes;
 % initialize xlim and ylim for zoom extent
 xlim = [nan nan];
 ylim = [nan nan];
-
 
 
 %% DISPLAY LINES' NAVIGATION AND GRIDS
@@ -156,8 +151,10 @@ update_line_index = unique(update_line_index);
 % set of active lines
 fdata_tab_comp = getappdata(main_figure,'fdata_tab');
 idx_active_lines = cell2mat(fdata_tab_comp.table.Data(:,3));
-cax=[nan nan];
-update_cax=0;
+
+cax = [nan nan];
+update_cax = 0;
+
 for i = update_line_index(:)'
     
     % settings for navigation lines
@@ -174,28 +171,40 @@ for i = update_line_index(:)'
     % get data
     fData = fData_tot{i};
     
-    %% Navigation
+    
+    %% Navigation tracks
     tag_id_nav = num2str(fData.ID,'%.0f_nav');
     obj = findobj(ax,'Tag',tag_id_nav);
     
     if isempty(obj)
-        % line to be drawn for the first time
+        % line doesn't exist. To be drawn for the first time
+        
         [~,fname,ext] = fileparts(fData.ALLfilename{1});
         user_data.Filename = [fname ext];
         
         % draw line navigation and ID it
-        handle_plot_1 = plot(ax,fData.X_1P_pingE,fData.X_1P_pingN,'Tag',tag_id_nav,...
-            'Visible','on','Color',nav_col,'ButtonDownFcn',{@disp_wc_ping_cback,main_figure},'UserData',user_data);
+        handle_plot_1 = plot(ax,fData.X_1P_pingE,fData.X_1P_pingN,...
+            'Tag',tag_id_nav,...
+            'Visible','on',...
+            'Color',nav_col,...
+            'ButtonDownFcn',{@disp_wc_ping_cback,main_figure},...
+            'UserData',user_data);
         
-        dt= 120;%in seconds
-        % draw dots as subsampled navigation
-        tt=nanmean(diff(fData.X_1P_pingTSMIM/1e3));
-        idx_f=mod(floor(fData.X_1P_pingTSMIM/1e2)/10,dt)==0;
-        idx_f(end)=1;idx_f(1)=1;%draw a marker put a point every 20 minutes one at the start and one at the end
+        % draw points every dt seconds as subsampled navigation
+        dt = 120; % in seconds
+        % tt = nanmean(diff(fData.X_1P_pingTSMIM/1e3));
+        idx_f = mod(floor(fData.X_1P_pingTSMIM/1e2)/10,dt)==0;
+        idx_f(1) = 1;
+        idx_f(end) = 1;
         
-        handle_plot_2 = plot(ax,fData.X_1P_pingE(idx_f),fData.X_1P_pingN(idx_f),'.','Tag',tag_id_nav,...
-            'Visible','on','Color',nav_col,'ButtonDownFcn',{@disp_wc_ping_cback,main_figure},'UserData',user_data);
+        handle_plot_2 = plot(ax,fData.X_1P_pingE(idx_f),fData.X_1P_pingN(idx_f),'.',...
+            'Tag',tag_id_nav,...
+            'Visible','on',...
+            'Color',nav_col,...
+            'ButtonDownFcn',{@disp_wc_ping_cback,main_figure},...
+            'UserData',user_data);
         
+        % combine the two
         handle_plot = [handle_plot_1 handle_plot_2];
         
         % set hand pointer when on that line
@@ -219,8 +228,7 @@ for i = update_line_index(:)'
     end
     
     
-    %% Processed water column grid
-    %tag_id_wc = sprintf('%.0f_%s',fData.ID,disp_config.Var_disp);
+    %% Data being displayed
     tag_id_wc = num2str(fData.ID,'%.0f_wc');
     obj_wc = findobj(ax,'Tag',tag_id_wc);
     
@@ -235,9 +243,12 @@ for i = update_line_index(:)'
             ((isfield(fData,'X_1E_gridEasting')&&strcmpi(disp_config.Var_disp,'wc_int'))||...
             ((isfield(fData,'X_1E_2DgridEasting')&&strcmpi(disp_config.Var_disp,'bs')))||...
             ((isfield(fData,'X_1E_2DgridEasting')&&strcmpi(disp_config.Var_disp,'bathy'))))
+        
+        % grab and adjust data to be displayed
         switch disp_config.Var_disp
+            
             case 'wc_int'
-                % grab data
+                
                 E = fData.X_1E_gridEasting;
                 N = fData.X_N1_gridNorthing;
                 L = fData.X_NEH_gridLevel;
@@ -246,75 +257,85 @@ for i = update_line_index(:)'
                     L = gather(L);
                 end
                 
+                % in case WC data is in 3D, caculate 2D views depending on
+                % display controls
                 if size(L,3)>1
-                    display_tab_comp=getappdata(main_figure,'display_tab');
-
+                    display_tab_comp = getappdata(main_figure,'display_tab');
+                    
                     switch fData.X_1_gridHeightReference
+                        
                         case {'depth below sonar' 'Sonar'}
-                            d_max=0;
-                            d_min=nanmin(fData.X_BP_bottomHeight(:));
-                            d_line_max=nanmin(sscanf(display_tab_comp.d_line_max.Label,'%fm'),d_max);
-                            d_line_min=nanmax(sscanf(display_tab_comp.d_line_min.Label,'%fm'),d_min);
-                            idx_rem=(squeeze(fData.X_11H_gridHeight)+fData.X_1_gridVerticalResolution/2<d_line_min)|(squeeze(fData.X_11H_gridHeight)-fData.X_1_gridVerticalResolution/2>d_line_max);
-                        case {'height above bottom' 'Bottom'}
-                            d_max=nanmax(abs(nanmin(fData.X_BP_bottomHeight(:))));
-                            d_min=0;
-                            d_line_max=nanmin(sscanf(display_tab_comp.d_line_bot_max.Label,'%fm'),d_max);
-                            d_line_min=nanmax(sscanf(display_tab_comp.d_line_bot_min.Label,'%fm'),d_min);
                             
-                            idx_rem=(squeeze(fData.X_11H_gridHeight)+fData.X_1_gridVerticalResolution/2<d_line_min)|(squeeze(fData.X_11H_gridHeight)-fData.X_1_gridVerticalResolution/2>d_line_max);
+                            d_max = 0;
+                            d_min = nanmin(fData.X_BP_bottomHeight(:));
+                            
+                            d_line_max = nanmin(sscanf(display_tab_comp.d_line_max.Label,'%fm'),d_max);
+                            d_line_min = nanmax(sscanf(display_tab_comp.d_line_min.Label,'%fm'),d_min);
+                            
+                            idx_rem = (squeeze(fData.X_11H_gridHeight)+fData.X_1_gridVerticalResolution/2<d_line_min)|(squeeze(fData.X_11H_gridHeight)-fData.X_1_gridVerticalResolution/2>d_line_max);
+                            
+                        case {'height above bottom' 'Bottom'}
+                            
+                            d_max = nanmax(abs(nanmin(fData.X_BP_bottomHeight(:))));
+                            d_min = 0;
+                            
+                            d_line_max = nanmin(sscanf(display_tab_comp.d_line_bot_max.Label,'%fm'),d_max);
+                            d_line_min = nanmax(sscanf(display_tab_comp.d_line_bot_min.Label,'%fm'),d_min);
+                            
+                            idx_rem = (squeeze(fData.X_11H_gridHeight)+fData.X_1_gridVerticalResolution/2<d_line_min)|(squeeze(fData.X_11H_gridHeight)-fData.X_1_gridVerticalResolution/2>d_line_max);
                     end
                     
                     if ~all(idx_rem)
-                        L(:,:,idx_rem)=nan;
+                        L(:,:,idx_rem) = NaN;
                         data = 20*log10(nanmean(10.^(L(:,:,:)/20),3));
                     else
-                        [~,id_keep]=nanmin(abs(squeeze(fData.X_11H_gridHeight)-d_line_min));
+                        [~,id_keep] = nanmin(abs(squeeze(fData.X_11H_gridHeight)-d_line_min));
                         data = L(:,:,id_keep);
                     end
-
+                    
                 else
                     data = L;
                 end
                 
-                % other cases perhaps for later devpt
+                
             case 'bathy'
+                
+                E = fData.X_1E_2DgridEasting;
+                N = fData.X_N1_2DgridNorthing;
                 data = fData.X_NE_bathy;
-                E = fData.X_1E_2DgridEasting;
-                N = fData.X_N1_2DgridNorthing;
+                
             case 'bs'
+                
+                E = fData.X_1E_2DgridEasting;
+                N = fData.X_N1_2DgridNorthing;
                 data = fData.X_NE_bs;
-                E = fData.X_1E_2DgridEasting;
-                N = fData.X_N1_2DgridNorthing;
+                
             otherwise
+                % other cases perhaps for later devpt
                 E = fData.X_1E_2DgridEasting;
                 N = fData.X_N1_2DgridNorthing;
-                data=nan(numel(N),numel(E));
+                data = nan(numel(N),numel(E));
+                
         end
         
+        % data display
         obj_wc = imagesc(ax,E,N,data,'Visible',wc_vis,'Tag',tag_id_wc);
-        % draw grid as imagesc. Tag appropriately
+        
         % NOTE: used to allow clicking on a grid to select a line/ping for
         % display but this conflicts with panning
         % obj_wc = imagesc(ax,E,N,data,'Visible',wc_vis,'Tag',tag_id_wc,'ButtonDownFcn',{@disp_wc_ping_cback,main_figure});
         
-       update_cax=1;
+        update_cax = 1;
         
     else
-        % grid already exists, just make visible if disp is checked
+        % data already exists, just make visible if disp is checked
         
         set(obj_wc,'Visible',wc_vis);
         
     end
     
-    
-    
-    
     % push grid to the bottom of the display stack so navigation is ontop
     uistack(obj_wc,'bottom');
-    
-    
-    
     
     %% Calculate zoom extents
     if idx_active_lines(i)
@@ -339,32 +360,37 @@ for i = update_line_index(:)'
     
 end
 
-if update_cax >0
+%% update map colour scale
+if update_cax > 0
+    
     switch disp_config.Var_disp
+        
         case 'wc_int'
-            cax= disp_config.get_cax();
+            cax = disp_config.get_cax();
+            
         case {'bathy' 'bs'}
             obj_wc_img = findobj(ax,'Type','image');
             if ~isempty(obj_wc_img)
-                for uii=1:numel(obj_wc_img)
-                    if contains(obj_wc_img(uii).Tag,'_wc')&&strcmpi(obj_wc_img(uii).Visible,'On')
-                        data=obj_wc_img(uii).CData;
-                        cax= [nanmin(prctile(data(:),2),cax(1)) nanmax(prctile(data(:),95),cax(2))];
+                for uii = 1:numel(obj_wc_img)
+                    if contains(obj_wc_img(uii).Tag,'_wc') && strcmpi(obj_wc_img(uii).Visible,'On')
+                        data = obj_wc_img(uii).CData;
+                        cax = [nanmin(prctile(data(:),2),cax(1)) nanmax(prctile(data(:),95),cax(2))];
                     end
                 end
                 
             end
     end
+    
 end
 
 if all(~isnan(cax))
     switch disp_config.Var_disp
         case 'wc_int'
-            disp_config.Cax_wc_int=cax;
+            disp_config.Cax_wc_int = cax;
         case 'bs'
-            disp_config.Cax_bs= cax;
+            disp_config.Cax_bs = cax;
         case 'bathy'
-            disp_config.Cax_bathy= cax;
+            disp_config.Cax_bathy = cax;
     end
 end
 
@@ -467,7 +493,6 @@ wc_str = display_tab_comp.data_disp.String;
 str_disp = wc_str{display_tab_comp.data_disp.Value};
 usrdata.str_disp = str_disp;
 
-
 % if isempty(new_vert)
 %     return;
 % end
@@ -480,7 +505,6 @@ end
 
 if ~any(ip==idx_pings_ori)||disp_config.Fdata_ID~=ID_ori||update_poly
     [new_vert,idx_pings,idx_angles] = poly_vertices_from_fData(fData,disp_config,[]);
-    
     
     % save all of these in usrdata for later retrieval in stacked view
     usrdata.idx_pings  = idx_pings;
@@ -500,9 +524,10 @@ if ~any(ip==idx_pings_ori)||disp_config.Fdata_ID~=ID_ori||update_poly
     ylim(2) = nanmax(ylim(2),nanmax(new_vert(:,2)));
 end
 
-%% CURRENT PING SWATH LINE
-set(map_tab_comp.ping_swathe,'XData',fData.X_BP_bottomEasting(:,ip),'YData',fData.X_BP_bottomNorthing(:,ip));
 
+%% CURRENT PING SWATH LINE
+
+set(map_tab_comp.ping_swathe,'XData',fData.X_BP_bottomEasting(:,ip),'YData',fData.X_BP_bottomNorthing(:,ip));
 
 % update xlim and ylim
 xlim(1) = nanmin(xlim(1),nanmin(fData.X_BP_bottomEasting(:,ip)));
@@ -512,7 +537,6 @@ ylim(2) = nanmax(ylim(2),nanmax(fData.X_BP_bottomNorthing(:,ip)));
 
 % set ping swathe back ontop so it can be grabbed
 uistack(map_tab_comp.ping_swathe,'top');
-
 
 
 %% ZOOM VIEW ADJUST
@@ -562,6 +586,7 @@ end
 
 %% SUBFUNCTIONS
 
+%%
 function traverse_plot_fcn(src,~,hplot)
 set(src, 'Pointer', 'hand');
 ax = ancestor(hplot(1),'axes');
@@ -583,6 +608,7 @@ end
 % end
 end
 
+%%
 function exit_plot_fcn(src,~,hplot)
 set(src, 'Pointer', 'hand');
 ax = ancestor(hplot(1),'axes');
