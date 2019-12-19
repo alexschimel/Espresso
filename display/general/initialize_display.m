@@ -42,7 +42,7 @@ control_panel = uitabgroup(main_figure,'Position',[0 0.525 0.3 .475]);
 setappdata(main_figure,'control_panel',control_panel);
 
 % create tabs in panel
-load_files_tab(main_figure,control_panel);
+create_datafiles_tab(main_figure,control_panel);
 load_fdata_tab(main_figure,control_panel);
 load_wc_proc_tab(main_figure,control_panel);
 load_display_tab(main_figure,control_panel);

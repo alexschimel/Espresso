@@ -44,7 +44,7 @@
 % *DEVELOPMENT NOTES*
 %
 % * alex note. Not sure where else this one is used but its call in
-% load_files_tab.m may be unecessary. To check XXX
+% create_datafiles_tab.m may be unecessary. To check XXX
 %
 % *NEW FEATURES*
 %

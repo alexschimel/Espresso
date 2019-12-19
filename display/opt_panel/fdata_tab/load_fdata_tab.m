@@ -233,7 +233,7 @@ if isempty(fdata)
 end
 
 update_fdata_tab(main_figure);
-update_file_tab(main_figure);
+update_datafiles_tab(main_figure);
 
 % update map with zoom back on all remaining lines
 if ~isempty(fdata)

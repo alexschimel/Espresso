@@ -1,4 +1,4 @@
-%% update_file_tab.m
+%% update_datafiles_tab.m
 %
 % Update the "raw files" tab of Espresso's control panel
 %
@@ -72,7 +72,7 @@
 % Yoann Ladroit, Alexandre Schimel, NIWA. XXX
 
 %% Function
-function update_file_tab(main_figure)
+function update_datafiles_tab(main_figure)
 
 file_tab_comp = getappdata(main_figure,'file_tab');
 

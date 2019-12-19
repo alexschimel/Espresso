@@ -308,6 +308,51 @@ setappdata(main_figure,'wc_proc_tab',wc_proc_tab_comp);
 
 end
 
+
+%%
+% Callbacks when changing min or max gridding limit distances
+%
+function change_grdlim_mindist_cback(~,~,main_figure)
+
+default_mindist = 0;
+
+wc_proc_tab_comp = getappdata(main_figure,'wc_proc_tab');
+
+% check that modified value in the box is ok
+check_fmt_box(wc_proc_tab_comp.grdlim_mindist,[],-inf,inf,0,'%.1f');
+
+% grab the current values from both boxes
+grdlim_mindist = str2double(wc_proc_tab_comp.grdlim_mindist.String);
+grdlim_maxdist = str2double(wc_proc_tab_comp.grdlim_maxdist.String);
+
+% if the min is more than max, don't accept change and reset default value
+if grdlim_mindist > grdlim_maxdist
+    wc_proc_tab_comp.grdlim_mindist.String = default_mindist;
+end
+
+end
+
+function change_grdlim_maxdist_cback(~,~,main_figure)
+
+default_maxdist = inf;
+
+wc_proc_tab_comp = getappdata(main_figure,'wc_proc_tab');
+
+% check that modified value in the box is ok
+check_fmt_box(wc_proc_tab_comp.grdlim_maxdist,[],-inf,inf,default_maxdist,'%.1f');
+
+% grab the current values from both boxes
+grdlim_mindist = str2double(wc_proc_tab_comp.grdlim_mindist.String);
+grdlim_maxdist = str2double(wc_proc_tab_comp.grdlim_maxdist.String);
+
+% if the min is more than max, don't accept change and reset default value
+if grdlim_mindist > grdlim_maxdist
+    wc_proc_tab_comp.grdlim_maxdist.String = default_maxdist;
+end
+
+end
+
+
 %%
 % Callback when pressing the process button
 %
@@ -330,53 +375,65 @@ end
 
 wc_proc_tab_comp = getappdata(main_figure,'wc_proc_tab');
 
+% processing parameters
+procpar.bottomfilter_flag   = wc_proc_tab_comp.bot_filtering.Value;
+procpar.masking_flag        = wc_proc_tab_comp.masking.Value;
+procpar.sidelobefilter_flag = wc_proc_tab_comp.sidelobe.Value;
+procpar.badpings_flag       = str2double(wc_proc_tab_comp.mask_badpings.String)<100;
+procpar.mask_angle          =  str2double(get(wc_proc_tab_comp.angle_mask,'String'));
+procpar.mask_closerange     =  str2double(get(wc_proc_tab_comp.r_min,'String'));
+procpar.mask_bottomrange    = -str2double(get(wc_proc_tab_comp.r_bot,'String')); % NOTE inverting sign here.
+procpar.mask_ping           =  str2double(get(wc_proc_tab_comp.mask_badpings,'String'));
+procpar.gridbathyBS_flag    = wc_proc_tab_comp.bs_grid_bool.Value;
+procpar.gridbathyBS_res     = str2double(get(wc_proc_tab_comp.bs_grid_res,'String'));
+
+
 f_stack = 0;
 
 if wc_proc_tab_comp.proc_bool.Value > 0
     
     % bottom filtering
-    if wc_proc_tab_comp.bot_filtering.Value>0
-        filter_bottomdetect(main_figure);
+    if procpar.bottomfilter_flag
+        fData_tot = filter_bottomdetect(fData_tot, idx_fData);
     end
     
     % data processing
-    if wc_proc_tab_comp.masking.Value>0 || wc_proc_tab_comp.sidelobe.Value>0 || str2double(wc_proc_tab_comp.mask_badpings.String)<100
-        process_watercolumn(main_figure);
+    if procpar.masking_flag || procpar.sidelobefilter_flag || procpar.badpings_flag
+        
+        fData_tot = process_watercolumn(fData_tot, idx_fData, procpar);
+        
         f_stack = 1;
+        
     end
     
     % bathy/BS gridding
-    if wc_proc_tab_comp.bs_grid_bool.Value>0
-        
-        fData_tot = getappdata(main_figure,'fData');
-        
-        if isempty(fData_tot)
-            return;
-        end
-        
-        fdata_tab_comp = getappdata(main_figure,'fdata_tab');
-        
-        idx_fData = find(cell2mat(fdata_tab_comp.table.Data(:,end-1)));
-        
-        % timer
-        timer_start = now;
-        u = 0;
-        for itt = idx_fData(:)'
-            % disp
-            u = u+1;
-            fprintf('Gridding BS and Bathy in file "%s" (%i/%i)...\n',fData_tot{itt}.ALLfilename{1},u,numel(idx_fData));
-            fprintf('...Started at %s...\n',datestr(now));
-            tic
-            fData_tot{itt} = CFF_grid_2D_fields_data(fData_tot{itt},...
-                'grid_horz_res',str2double(get(wc_proc_tab_comp.bs_grid_res,'String')));
-            % disp
-            fprintf('...Done. Elapsed time: %f seconds.\n',toc);
-            setappdata(main_figure,'fData',fData_tot);        
-        end
-        timer_end = now;
-        fprintf('\nTotal time for gridding bathy and BS: %f seconds (~%.2f minutes).\n',(timer_end-timer_start)*24*60*60,(timer_end-timer_start)*24*60);
+    if procpar.gridbathyBS_flag
+        fData_tot = gridbathyBS(fData_tot, idx_fData, procpar);
     end
-
+    
+    % save fData_tot
+    setappdata(main_figure,'fData',fData_tot);
+    disp_config = getappdata(main_figure,'disp_config');
+    disp_config.Fdata_ID = fData_tot{idx_fData(end)}.ID;
+    
+    % update the WC view to "Processed"
+    display_tab_comp = getappdata(main_figure,'display_tab');
+    wc_tab_strings = display_tab_comp.data_disp.String;
+    [~,idx] = ismember('Processed',wc_tab_strings);
+    display_tab_comp.data_disp.Value = idx;
+    
+    % update stacked view
+    switch disp_config.StackAngularMode
+        case 'range'
+            ylab = 'Range(m)';
+        case 'depth'
+            ylab = 'Depth (m)';
+    end
+    stacked_wc_tab_comp = getappdata(main_figure,'stacked_wc_tab');
+    if ~strcmpi(ylab,stacked_wc_tab_comp.wc_axes.YLabel.String)
+        stacked_wc_tab_comp.wc_axes.YLabel.String = ylab;
+    end
+    
 end
 
 % gridding
@@ -398,93 +455,40 @@ end
 
 end
 
-%%
-function filter_bottomdetect(main_figure)
 
-fData_tot = getappdata(main_figure,'fData');
 
-if isempty(fData_tot)
-    return;
-end
+function fData_tot = gridbathyBS(fData_tot, idx_fData, procpar)
 
-fdata_tab_comp = getappdata(main_figure,'fdata_tab');
-
-idx_fData = find(cell2mat(fdata_tab_comp.table.Data(:,end-1)));
-
-if isempty(idx_fData)
-    fprintf('No lines are selected. Bottom-filtering aborted.\n');
-    return;
-end
-
-% hardcoded parameters for filtering
-botfilter.method = 'filter';
-botfilter.pingBeamWindowSize = [3 3];
-botfilter.maxHorizDist = inf;
-botfilter.flagParams.type = 'all';
-botfilter.flagParams.variable = 'slope';
-botfilter.flagParams.threshold = 30;
-botfilter.interpolate = 'yes';
-
-% init counter
-u = 0;
-
-% general timer
+% timer
 timer_start = now;
+u = 0;
 
 for itt = idx_fData(:)'
     
-    u = u+1;
-    
     % disp
-    fprintf('Filtering bottom in file "%s" (%i/%i)...\n',fData_tot{itt}.ALLfilename{1},u,numel(idx_fData));
+    u = u+1;
+    fprintf('Gridding BS and Bathy in file "%s" (%i/%i)...\n',fData_tot{itt}.ALLfilename{1},u,numel(idx_fData));
     fprintf('...Started at %s...\n',datestr(now));
+    
     tic
-
-    % filtering bottom
-    fData_tot{itt} = CFF_filter_WC_bottom_detect(fData_tot{itt},...
-        'method',botfilter.method,...
-        'pingBeamWindowSize',botfilter.pingBeamWindowSize,...
-        'maxHorizDist',botfilter.maxHorizDist,...
-        'flagParams',botfilter.flagParams,...
-        'interpolate',botfilter.interpolate);
+    fData_tot{itt} = CFF_grid_2D_fields_data(fData_tot{itt},...
+        'grid_horz_res',procpar.gridbathyBS_res);
     
     % disp
     fprintf('...Done. Elapsed time: %f seconds.\n',toc);
-    
-end
 
-% general timer
+end
 timer_end = now;
-fprintf('\nTotal time for processing: %f seconds (~%.2f minutes).\n',(timer_end-timer_start)*24*60*60,(timer_end-timer_start)*24*60);
-setappdata(main_figure,'fData',fData_tot);
+fprintf('\nTotal time for gridding bathy and BS: %f seconds (~%.2f minutes).\n',(timer_end-timer_start)*24*60*60,(timer_end-timer_start)*24*60);
+
 
 end
+
 
 
 %%
-function process_watercolumn(main_figure)
+function fData_tot = process_watercolumn(fData_tot, idx_fData, procpar)
 
-fData_tot = getappdata(main_figure,'fData');
-
-if isempty(fData_tot)
-    return;
-end
-
-fdata_tab_comp = getappdata(main_figure,'fdata_tab');
-
-idx_fData = find(cell2mat(fdata_tab_comp.table.Data(:,end-1)));
-
-if isempty(idx_fData)
-    fprintf('No lines are selected. Processing aborted.\n');
-    return;
-end
-
-% get processing parameters
-wc_proc_tab_comp = getappdata(main_figure,'wc_proc_tab');
-mask_angle       =  str2double(get(wc_proc_tab_comp.angle_mask,'String'));
-mask_closerange  =  str2double(get(wc_proc_tab_comp.r_min,'String'));
-mask_bottomrange = -str2double(get(wc_proc_tab_comp.r_bot,'String')); % NOTE inverting sign here.
-mask_ping        =  str2double(get(wc_proc_tab_comp.mask_badpings,'String'));
 
 % init counter
 u = 0;
@@ -574,7 +578,7 @@ for itt = idx_fData(:)'
                 [data, warning_text] = CFF_WC_radiometric_corrections_CORE(data,fData_tot{itt});
                 
                 % filtering sidelobe artefact
-                if wc_proc_tab_comp.sidelobe.Value
+                if procpar.sidelobefilter_flag
                     [data, correction] = CFF_filter_WC_sidelobe_artifact_CORE(data, fData_tot{itt}, blockPings_f);
                     % uncomment this for weighted gridding based on sidelobe
                     % correction
@@ -582,8 +586,8 @@ for itt = idx_fData(:)'
                 end
                 
                 % masking data
-                if wc_proc_tab_comp.masking.Value
-                    data = CFF_mask_WC_data_CORE(data, fData_tot{itt}, blockPings_f, mask_angle, mask_closerange, mask_bottomrange, [], mask_ping);
+                if procpar.masking_flag
+                    data = CFF_mask_WC_data_CORE(data, fData_tot{itt}, blockPings_f, procpar.mask_angle, procpar.mask_closerange, procpar.mask_bottomrange, [], procpar.mask_ping);
                 end
                 if wcdataproc_factor ~= 1
                     data = data./wcdataproc_factor;
@@ -637,76 +641,9 @@ end
 timer_end = now;
 fprintf('\nTotal time for processing: %f seconds (~%.2f minutes).\n',(timer_end-timer_start)*24*60*60,(timer_end-timer_start)*24*60);
 
-setappdata(main_figure,'fData',fData_tot);
-
-disp_config = getappdata(main_figure,'disp_config');
-
-disp_config.Fdata_ID = fData_tot{idx_fData(end)}.ID;
-
-% update the WC view to "Processed"
-wc_tab_comp = getappdata(main_figure,'wc_tab');
-display_tab_comp = getappdata(main_figure,'display_tab');
-wc_tab_strings = display_tab_comp.data_disp.String;
-[~,idx] = ismember('Processed',wc_tab_strings);
-display_tab_comp.data_disp.Value = idx;
-
-switch disp_config.StackAngularMode
-    case 'range'
-        ylab='Range(m)';
-    case 'depth'
-        ylab='Depth (m)';
-end
-stacked_wc_tab_comp=getappdata(main_figure,'stacked_wc_tab');
-if ~strcmpi(ylab,stacked_wc_tab_comp.wc_axes.YLabel.String)
-    stacked_wc_tab_comp.wc_axes.YLabel.String=ylab;
 end
 
 
-end
-
-
-%%
-% Callbacks when changing min or max gridding limit distances
-%
-function change_grdlim_mindist_cback(~,~,main_figure)
-
-default_mindist = 0;
-
-wc_proc_tab_comp = getappdata(main_figure,'wc_proc_tab');
-
-% check that modified value in the box is ok
-check_fmt_box(wc_proc_tab_comp.grdlim_mindist,[],-inf,inf,0,'%.1f');
-
-% grab the current values from both boxes
-grdlim_mindist = str2double(wc_proc_tab_comp.grdlim_mindist.String);
-grdlim_maxdist = str2double(wc_proc_tab_comp.grdlim_maxdist.String);
-
-% if the min is more than max, don't accept change and reset default value
-if grdlim_mindist > grdlim_maxdist
-    wc_proc_tab_comp.grdlim_mindist.String = default_mindist;
-end
-
-end
-
-function change_grdlim_maxdist_cback(~,~,main_figure)
-
-default_maxdist = inf;
-
-wc_proc_tab_comp = getappdata(main_figure,'wc_proc_tab');
-
-% check that modified value in the box is ok
-check_fmt_box(wc_proc_tab_comp.grdlim_maxdist,[],-inf,inf,default_maxdist,'%.1f');
-
-% grab the current values from both boxes
-grdlim_mindist = str2double(wc_proc_tab_comp.grdlim_mindist.String);
-grdlim_maxdist = str2double(wc_proc_tab_comp.grdlim_maxdist.String);
-
-% if the min is more than max, don't accept change and reset default value
-if grdlim_mindist > grdlim_maxdist
-    wc_proc_tab_comp.grdlim_maxdist.String = default_maxdist;
-end
-
-end
 
 
 %%
@@ -806,5 +743,54 @@ setappdata(main_figure,'fData',fData_tot);
 
 
 end
+
+
+%%
+function fData_tot = filter_bottomdetect(fData_tot, idx_fData)
+
+% hardcoded parameters for filtering
+botfilter.method = 'filter';
+botfilter.pingBeamWindowSize = [3 3];
+botfilter.maxHorizDist = inf;
+botfilter.flagParams.type = 'all';
+botfilter.flagParams.variable = 'slope';
+botfilter.flagParams.threshold = 30;
+botfilter.interpolate = 'yes';
+
+% init counter
+u = 0;
+
+% general timer
+timer_start = now;
+
+for itt = idx_fData(:)'
+    
+    u = u+1;
+    
+    % disp
+    fprintf('Filtering bottom in file "%s" (%i/%i)...\n',fData_tot{itt}.ALLfilename{1},u,numel(idx_fData));
+    fprintf('...Started at %s...\n',datestr(now));
+    tic
+
+    % filtering bottom
+    fData_tot{itt} = CFF_filter_WC_bottom_detect(fData_tot{itt},...
+        'method',botfilter.method,...
+        'pingBeamWindowSize',botfilter.pingBeamWindowSize,...
+        'maxHorizDist',botfilter.maxHorizDist,...
+        'flagParams',botfilter.flagParams,...
+        'interpolate',botfilter.interpolate);
+    
+    % disp
+    fprintf('...Done. Elapsed time: %f seconds.\n',toc);
+    
+end
+
+% general timer
+timer_end = now;
+fprintf('\nTotal time for processing: %f seconds (~%.2f minutes).\n',(timer_end-timer_start)*24*60*60,(timer_end-timer_start)*24*60);
+
+end
+
+
 
 
