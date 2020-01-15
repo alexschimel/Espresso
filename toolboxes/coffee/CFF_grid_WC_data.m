@@ -161,18 +161,19 @@ sonarHeading       = deg2rad(-mod(gridConvergence + vesselHeading + sonarHeading
 
 %% Block processing setup
 mem_struct = memory;
-blockLength = ceil(mem_struct.MemAvailableAllArrays/(nSamples*nBeams*8)/20);
+blockLength = ceil(mem_struct.MemAvailableAllArrays/(nSamples*nBeams*8)/30);
 nBlocks = ceil(nPings./blockLength);
 blocks = [ 1+(0:nBlocks-1)'.*blockLength , (1:nBlocks)'.*blockLength ];
 blocks(end,2) = nPings;
 
-
-%% Prepare the Height interpolant
-% needed to calculate height above seafloor for each sample in case of
-% gridding in height above bottom, as well as final gridded bathymetry.
-idx_valid_bottom = ~isnan(fData.X_BP_bottomHeight) & ~isinf(fData.X_BP_bottomHeight);
-HeightInterpolant = scatteredInterpolant(fData.X_BP_bottomNorthing(idx_valid_bottom),fData.X_BP_bottomEasting(idx_valid_bottom),fData.X_BP_bottomHeight(idx_valid_bottom),'natural','none');
-
+switch grdlim_var
+    case 'Bottom'
+        %% Prepare the Height interpolant
+        % needed to calculate height above seafloor for each sample in case of
+        % gridding in height above bottom, as well as final gridded bathymetry.
+        idx_valid_bottom = ~isnan(fData.X_BP_bottomHeight) & ~isinf(fData.X_BP_bottomHeight);
+        HeightInterpolant = scatteredInterpolant(fData.X_BP_bottomNorthing(idx_valid_bottom),fData.X_BP_bottomEasting(idx_valid_bottom),fData.X_BP_bottomHeight(idx_valid_bottom),'natural','none');
+end
 
 %% find grid limits
 
@@ -306,8 +307,10 @@ for iB = 1:nBlocks
     % which takes a while....
     switch grdlim_var
         case 'Bottom'
+            
             block_bottomHeight = HeightInterpolant(blockN,blockE);
             blockH = blockH - block_bottomHeight;
+            
             clear block_bottomHeight
     end
     

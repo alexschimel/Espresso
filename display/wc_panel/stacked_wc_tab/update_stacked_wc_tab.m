@@ -87,6 +87,7 @@ parse(p,varargin{:});
 force_update_flag = p.Results.force_update_flag;
 clear p
 if ~isdeployed()
+    tic;
     disp('Update Stacked WC Tab');
 end
 
@@ -215,12 +216,12 @@ if up_stacked_wc_bool
     
     nSamples = numel(idx_r);
     nBeams = numel(idx_angle_keep);
-    
+    % gpu_comp = 0
     if gpu_comp == 0
         mem_struct = memory;
         blockLength = ceil(mem_struct.MemAvailableAllArrays/(nSamples/n_res*nBeams*8)/10);
     else
-        blockLength = ceil(g.AvailableMemory/(nSamples*nBeams*8)/4);
+        blockLength = ceil(g.AvailableMemory/(nSamples*nBeams*8*4*8));
     end
     % block processing setup
     %blockLength = 200;
@@ -259,17 +260,20 @@ if up_stacked_wc_bool
                 idx_pings_mat=repmat(idx_pings_mat-blockPings(1)+1,size(idx_accum,1),size(idx_accum,2));
                 
                 
-                if gpu_comp>0
+                if gpu_comp>0&&g.AvailableMemory/8<=numel(wc_data)*4
+                    g=gpuDevice(1);
+                end
+                
+                if gpu_comp>0&&g.AvailableMemory/8>=numel(wc_data)*4
                     idx_nan=isnan(wc_data);
                     wc_data(idx_nan)=[];
                     idx_accum(idx_nan)=[];
                     idx_pings_mat(idx_nan)=[];
-                    if g.AvailableMemory/8/4<=numel(wc_data)
-                        gpuDevice(1);
-                    end
+
                     tmp=accumarray(gpuArray([idx_accum(:) idx_pings_mat(:)]),gpuArray(10.^(wc_data(:)/10)),[],@sum,single(0))./...
                         accumarray(gpuArray([idx_accum(:) idx_pings_mat(:)]),gpuArray(1),[],@sum);
                     amp_al(1:size(tmp,1),blockPings)=gather(10*log10(tmp));
+
                 else
                     tmp=accumarray([idx_accum(:) idx_pings_mat(:)],10.^(wc_data(:)/10),[],@nanmean,single(0));
                     amp_al(1:size(tmp,1),blockPings)=10*log10(tmp);
@@ -340,7 +344,10 @@ end
 set(stacked_wc_tab_comp.ping_gh,...
     'XData',ones(1,2)*(idx_pings(ip_sub)),...
     'YData',get(stacked_wc_tab_comp.wc_axes,'Ylim'));
-
+if ~isdeployed()
+    toc;
+    disp('Done...');
+end
 
 
 %% set Fdata_ID

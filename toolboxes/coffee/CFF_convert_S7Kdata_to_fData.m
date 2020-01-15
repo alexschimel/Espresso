@@ -566,9 +566,9 @@ for iF = 1:nStruct
                                 idx0=Mag_tmp==0;
                                 Mag_tmp=(10*log10(double(Mag_tmp)/double(intmax('uint16')))/mag_fact);
                                 Mag_tmp(idx0)=-inf;
-                                mag_fmt=int16(Mag_tmp);
+                                Mag_tmp=int16(Mag_tmp);
                             case 'float32'
-                                mag_fmt=int16(Mag_tmp/mag_fact);
+                                Mag_tmp=int16(Mag_tmp/mag_fact);
                         end
                         
                         fData.AP_SBP_SampleAmplitudes{ig}.Data.val(:,:,iP-ping_group_start(ig)+1)=Mag_tmp;
