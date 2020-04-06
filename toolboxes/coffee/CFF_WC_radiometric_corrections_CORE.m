@@ -76,37 +76,66 @@
 % Yoann Ladroit, Alexandre Schimel, NIWA. XXX
 
 %% Function
-function [data, warning_text] = CFF_WC_radiometric_corrections_CORE(data, fData)
+function data = CFF_WC_radiometric_corrections_CORE(data, fData, pings, radiomcorr_output)
 
-% initialize flag
-warning_text = '';
 
-% get dB offset
-if ~isfield(fData,'Ru_1D_TransmitPowerReMaximum')
-    warning_text = ['This file was converted with an older version of ', ...
-        'Espresso, which used to not convert the dB offset, so this file ', ...
-        'was processed without that correction applied. You ',...
-        'may want to terminate your session, reconvert your files, ',...
-        'reload them, and redo the processing.'];
-    return
-end
-
-dBoffset = fData.Ru_1D_TransmitPowerReMaximum;
-
-if numel(unique(dBoffset)) == 1
-    
-    dBoffset = dBoffset(1);
-    
+%% Transmit Power level reduction
+% This is the "mammal protection" setting, which is recorded in Runtime
+% Parameters datagram
+TPRM = fData.Ru_1D_TransmitPowerReMaximum;
+if numel(unique(TPRM)) == 1
+    % This value does not change in the file
+    TPRM = TPRM(1).*ones(size(data));
 else
-    % dB offset changed within the file. Need to extract and compare the
-    % time of Ru and WC datagrams to find which db offset applies to
-    % which pings.
+    % dB offset changed within the file. 
+    % Would need to check when runtime parameters are being issued. Whether
+    % they are triggered with any change for example. Will likely need to
+    % extract and compare the time of Ru and WC datagrams to find which db
+    % offset applies to which pings.
     % ... TO DO XXX
     % for now we will just take the first value and apply to everything
     % so that processing can continue...
-    dBoffset = dBoffset(1);
-    
+    warning('Transmit Power level reduction not constant within the file. Radiometric correction inappropriate');
+    TPRM = TPRM(1).*ones(size(data));
 end
 
+
+%% TVG applied in reception
+%
+% From Kongsberg datagrams manual:
+% "The TVG function applied to the data is X logR + 2 Alpha R + OFS + C.
+% The parameters X and C is documented in this datagram. OFS is gain offset
+% to compensate for TX Source Level, Receiver sensitivity etc."
+X = fData.WC_1P_TVGFunctionApplied(pings);
+C = fData.WC_1P_TVGOffset(pings);
+
+% Appropriate X in TVG would have been (not taking into account constant
+% factors: 
+% * For backscatter per unit volume (Sv): 20*log(R)
+% * For backscatter per unit surface (Sa/BS): 30*log(R)
+% * For target strength (TS): 40*log(R).
+%
+% So we will apply to data +Xcorr*log(R), with Xcorr:
+switch radiomcorr_output
+    case 'Sv'
+        Xcorr = 20-X;
+    case 'Sa'
+        Xcorr = 30-X;
+    case 'TS'
+        Xcorr = 40-X;
+end
+Xcorr = permute(Xcorr,[3,1,2]);
+
+% get sample range
+nSamples = size(data,1);
+interSamplesDistance = CFF_inter_sample_distance(fData);
+interSamplesDistance = interSamplesDistance(pings);
+datagramSource = fData.MET_datagramSource;
+ranges = CFF_get_samples_range( (1:nSamples)', fData.(sprintf('%s_BP_StartRangeSampleNumber',datagramSource))(:,pings), interSamplesDistance);
+
 % apply to data
-data = data + dBoffset;
+data = data + Xcorr.*log10(ranges) + TPRM;
+
+% TO DO XXX
+% Still need to correct for C, but probably need to do all constant terms
+% then.

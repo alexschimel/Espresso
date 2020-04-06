@@ -16,21 +16,38 @@ if isempty(idx_fData)
 end
 
 % get needed info from data processing tab
+
 wc_proc_tab_comp = getappdata(main_figure,'wc_proc_tab');
-% get processing parameters
+
+% main procession flag
 procpar.processing_flag     = wc_proc_tab_comp.proc_bool.Value;
+
+% bottom filter
 procpar.bottomfilter_flag   = wc_proc_tab_comp.bot_filtering.Value;
+
+% grid bathy/BS
+procpar.gridbathyBS_flag    = wc_proc_tab_comp.bs_grid_bool.Value;
+procpar.gridbathyBS_res     = str2double(get(wc_proc_tab_comp.bs_grid_res,'String'));
+
+% masking parameters
 procpar.masking_flag        = wc_proc_tab_comp.masking.Value;
-procpar.sidelobefilter_flag = wc_proc_tab_comp.sidelobe.Value;
-procpar.badpings_flag       = str2double(wc_proc_tab_comp.mask_badpings.String)<100;
 procpar.mask_angle          = str2double(get(wc_proc_tab_comp.angle_mask,'String'));
 procpar.mask_closerange     = str2double(get(wc_proc_tab_comp.r_min,'String'));
 procpar.mask_bottomrange    = -str2double(get(wc_proc_tab_comp.r_bot,'String')); % NOTE inverting sign here.
 procpar.mask_ping           = str2double(get(wc_proc_tab_comp.mask_badpings,'String'));
-procpar.gridbathyBS_flag    = wc_proc_tab_comp.bs_grid_bool.Value;
-procpar.gridbathyBS_res     = str2double(get(wc_proc_tab_comp.bs_grid_res,'String'));
+
+% radiometric correction parameters
+procpar.radiomcorr_flag     = wc_proc_tab_comp.radiomcorr.Value;
+procpar.radiomcorr_output   = wc_proc_tab_comp.radiomcorr_output.String{wc_proc_tab_comp.radiomcorr_output.Value};
+
+% sidelobe filtering parameters
+procpar.sidelobefilter_flag = wc_proc_tab_comp.sidelobe.Value;
+procpar.badpings_flag       = str2double(wc_proc_tab_comp.mask_badpings.String)<100;
+
+% main water-column gridding flag
 procpar.WCgridding_flag     = wc_proc_tab_comp.grid_bool.Value;
 
+% gridding parameters
 procpar.grid_horz_res = str2double(get(wc_proc_tab_comp.grid_val,'String'));
 procpar.grid_vert_res = str2double(get(wc_proc_tab_comp.vert_grid_val,'String'));
 procpar.data_type     = wc_proc_tab_comp.data_type.String{wc_proc_tab_comp.data_type.Value};
@@ -59,7 +76,7 @@ if procpar.processing_flag
     end
     
     % data processing
-    if procpar.masking_flag || procpar.sidelobefilter_flag || procpar.badpings_flag
+    if procpar.masking_flag || procpar.sidelobefilter_flag || procpar.badpings_flag || procpar.radiomcorr_flag
         
         % this includes saving fDatas on the drive
         fData_tot = process_watercolumn(fData_tot, idx_fData, procpar);
