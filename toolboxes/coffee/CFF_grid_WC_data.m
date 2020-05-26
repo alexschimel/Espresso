@@ -160,8 +160,8 @@ sonarHeading       = deg2rad(-mod(gridConvergence + vesselHeading + sonarHeading
 
 
 %% Block processing setup
-mem_struct = memory;
-blockLength = ceil(mem_struct.MemAvailableAllArrays/(nSamples*nBeams*8)/30);
+mem = CFF_memory_available;
+blockLength = ceil(mem/(nSamples*nBeams*8)/30);
 nBlocks = ceil(nPings./blockLength);
 blocks = [ 1+(0:nBlocks-1)'.*blockLength , (1:nBlocks)'.*blockLength ];
 blocks(end,2) = nPings;

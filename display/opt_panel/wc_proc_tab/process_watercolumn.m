@@ -76,8 +76,8 @@ for itt = idx_fData(:)'
             iPings = ping_gr_start(ig):ping_gr_end(ig);
             
             % block processing setup
-            mem_struct = memory;
-            blockLength = ceil(mem_struct.MemAvailableAllArrays/(nSamples(ig)*nBeams(ig)*8)/20);
+            mem = CFF_memory_available;
+            blockLength = ceil(mem/(nSamples(ig)*nBeams(ig)*8)/20);
             nBlocks = ceil(nPings(ig)./blockLength);
             blocks = [ 1+(0:nBlocks-1)'.*blockLength , (1:nBlocks)'.*blockLength ];
             blocks(end,2) = nPings(ig);

@@ -101,8 +101,8 @@ wcdata_nanval = fData.X_1_WaterColumnProcessed_Nanval;
 [nSamples, nBeams, nPings] = CFF_get_WC_size(fData);
 
 % block processing setup
-mem_struct = memory;
-blockLength = ceil(mem_struct.MemAvailableAllArrays/(nSamples*nBeams*8)/20);
+mem = CFF_memory_available;
+blockLength = ceil(mem/(nSamples*nBeams*8)/20);
 nBlocks = ceil(nPings./blockLength);
 blocks = [ 1+(0:nBlocks-1)'.*blockLength , (1:nBlocks)'.*blockLength ];
 blocks(end,2) = nPings;

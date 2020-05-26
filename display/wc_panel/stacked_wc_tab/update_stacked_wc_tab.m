@@ -218,8 +218,8 @@ if up_stacked_wc_bool
     nBeams = numel(idx_angle_keep);
     % gpu_comp = 0
     if gpu_comp == 0
-        mem_struct = memory;
-        blockLength = ceil(mem_struct.MemAvailableAllArrays/(nSamples/n_res*nBeams*8)/10);
+        mem = CFF_memory_available;
+        blockLength = ceil(mem/(nSamples/n_res*nBeams*8)/10);
     else
         blockLength = ceil(g.AvailableMemory/(nSamples*nBeams*8*4*8));
     end
