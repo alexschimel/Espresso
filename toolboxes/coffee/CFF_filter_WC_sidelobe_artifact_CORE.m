@@ -76,9 +76,156 @@
 % Yoann Ladroit, Alexandre Schimel, NIWA. XXX
 
 %% Function
-function [data, correction] = CFF_filter_WC_sidelobe_artifact_CORE(data, fData, blockPings)
+function [data, correction] = CFF_filter_WC_sidelobe_artifact_CORE(data, fData, block_pings)
+
+
+%% set algorithm parameters here
+
+% mode of calculation of the average value across beams
+params.avg_calc = 'mean'; % 'mean' or 'median'
+
+% reference level type of calculation: constant or from ping data
+params.ref.type = 'from_ping_data'; % 'cst' or 'from_ping_data'
+
+% if constant ref, set the value here (in dB)
+params.ref.cst = -70;
+
+% if reference from ping data, set the reference area here: data from
+% middle beams above bottom (nadirWC), or all data before minimum slant
+% range (cleanWC)
+params.ref.area = 'cleanWC'; % 'nadirWC' or 'cleanWC'
+
+% if reference from ping data, set mode of calculation of the reference
+% value here
+params.ref.val_calc = 'perc25'; % 'mean', 'median', 'mode', 'perc10', 'perc25'
+
+
+%% average value across beams
+switch params.avg_calc
+    case 'mean'
+        avg_across_beams = mean(data,2,'omitnan');
+    case 'median'
+        avg_across_beams = median(data,2,'omitnan');
+end
+    
+
+%% reference level
+switch params.ref.type
+    
+    case 'cst'        
+        
+        % constant reference level, as per parameter
+        ref_level = params.ref.cst .* ones(1,1,numel(block_pings));
+        
+    case 'from_ping_data'
+        
+        switch params.ref.area
+            
+            case 'nadirWC'
+                % using an average noise level from all samples in the
+                % water column of this ping, above the bottom, within the 
+                % beams closest to nadir.
+                
+                % find the 11 beams nearest to nadir
+                [num_samples, num_beams, ~] = size(data);
+                nadir_beams = (floor((num_beams./2)-5):ceil((num_beams./2)+5));
+                
+                % calculate the average bottom detect for those beams for each ping
+                bottom_samples = CFF_get_bottom_sample(fData);
+                bottom_samples = bottom_samples(nadir_beams,block_pings);
+                nadir_bottom = round(inpaint_nans(nanmin(bottom_samples)));
+                nadir_bottom(nadir_bottom>num_samples) = num_samples;
+                
+                % init ref level vector
+                ref_level = nan(1,1,numel(block_pings));
+                
+                % calculate ref level
+                switch params.ref.val_calc
+                    
+                    case 'mean'
+                        for iP = 1:numel(block_pings)
+                            nadirWC = data(1:nadir_bottom(iP),nadir_beams,iP);
+                            ref_level(1,1,iP) = nanmean(nadirWC(:));
+                        end
+                    case 'median'
+                        for iP = 1:numel(block_pings)
+                            nadirWC = data(1:nadir_bottom(iP),nadir_beams,iP);
+                            ref_level(1,1,iP) = nanmedian(nadirWC(:));
+                        end
+                    case 'mode'
+                        for iP = 1:numel(block_pings)
+                            nadirWC = data(1:nadir_bottom(iP),nadir_beams,iP);
+                            ref_level(1,1,iP) = mode(nadirWC(~isnan(nadirWC)));
+                        end
+                    case 'perc10'
+                        for iP = 1:numel(block_pings)
+                            nadirWC = data(1:nadir_bottom(iP),nadir_beams,iP);
+                            ref_level(1,1,iP) = prctile(nadirWC(:),10);
+                        end
+                    case 'perc25'
+                        for iP = 1:numel(block_pings)
+                            nadirWC = data(1:nadir_bottom(iP),nadir_beams,iP);
+                            ref_level(1,1,iP) = prctile(nadirWC(:),25);
+                        end
+                end
+
+                
+            case 'cleanWC'
+                % using an average noise level from all samples in the
+                % water column of this ping, within minimum slant range
+                
+                bottom_samples = CFF_get_bottom_sample(fData);
+                bottom_samples = bottom_samples(:,block_pings);
+                closest_bottom_sample = nanmin(bottom_samples);
+                
+                % init ref level vector
+                ref_level = nan(1,1,numel(block_pings));
+                
+                % calculate ref level
+                switch params.ref.val_calc
+                    
+                    case 'mean'
+                        for iP = 1:numel(block_pings)
+                            cleanWC = data(1:closest_bottom_sample(iP)-1,:,iP);
+                            ref_level(1,1,iP) = nanmean(cleanWC(:));
+                        end
+                    case 'median'
+                        for iP = 1:numel(block_pings)
+                            cleanWC = data(1:closest_bottom_sample(iP)-1,:,iP);
+                            ref_level(1,1,iP) = nanmedian(cleanWC(:));
+                        end
+                    case 'mode'
+                        for iP = 1:numel(block_pings)
+                            cleanWC = data(1:closest_bottom_sample(iP)-1,:,iP);
+                            ref_level(1,1,iP) = mode(cleanWC(~isnan(cleanWC)));
+                        end
+                    case 'perc10'
+                        for iP = 1:numel(block_pings)
+                            cleanWC = data(1:closest_bottom_sample(iP)-1,:,iP);
+                            ref_level(1,1,iP) = prctile(cleanWC(:),10);
+                        end
+                    case 'perc25'
+                        for iP = 1:numel(block_pings)
+                            cleanWC = data(1:closest_bottom_sample(iP)-1,:,iP);
+                            ref_level(1,1,iP) = prctile(cleanWC(:),25);
+                        end
+                end
+                
+        end
+end
+
+
+
+%% compensate data
+data = data - avg_across_beams + ref_level;
+
+% save mean across beams for further use
+correction = avg_across_beams;
+
+
 
 %% DVPT NOTES
+
 % I originally developed several methods to filter the sidelobe artefact.
 % The overall principle is normalization. Just as for seafloor backscatter
 % you normalize the level across all angles by removing the average level
@@ -98,63 +245,13 @@ function [data, correction] = CFF_filter_WC_sidelobe_artifact_CORE(data, fData, 
 % correction "a" in Parnum's thesis.
 
 
-%% define and calculate a reference level
-% for reference level in each ping, we will use the average level of all
-% samples in the water column of this ping, above the bottom, within the
-% beams closest to nadir.
-
-% find the 11 beams nearest to nadir
-
-[~, nBeams, ~] = size(data);
-
-nadirBeams = (floor((nBeams./2)-5):ceil((nBeams./2)+5));
-% calculate the average bottom detect for those beams for each ping
-bottom = CFF_get_bottom_sample(fData);
-bottom = bottom(nadirBeams,blockPings);
-
-% calculate the average level in the WC above the average bottom detect,
-% and within the nadir beams
-refLevel = nan(1,1,numel(blockPings));
-
-process='mode';
-
-switch process
-    
-    case 'mode'%% calculate mean level across all beams for each range (and each ping)
-        meanAcrossBeams = median(data,2,'omitnan');
-        nadirBottom = round(inpaint_nans(nanmin(bottom)));
-        nadirBottom(nadirBottom>size(data,1))=size(data,1);
-        for iP = 1:numel(blockPings)
-            nadir_data = data(1:nadirBottom(iP),:,iP);
-            refLevel(1,1,iP) = mode(nadir_data(~isnan(nadir_data)));
-        end
-        
-    case 'med'
-        %% calculate mean level across all beams for each range (and each ping)
-        meanAcrossBeams = mean(data,2,'omitnan');
-        nadirBottom = round(inpaint_nans(nanmedian(bottom)));
-        nadirBottom(nadirBottom>size(data,1))=size(data,1);
-        for iP = 1:numel(blockPings)
-            nadir_data = data(1:nadirBottom(iP),nadirBeams,iP);
-            refLevel(1,1,iP) = nanmedian(nadir_data(:));
-        end
-end
-
-%% compensate data for mean level and introduce reference level
-data = data - meanAcrossBeams + refLevel;
-
-% save mean across beams for further use
-correction = meanAcrossBeams;
-
-%% MORE DVPT NOTES
-
 % Usually a "normalization" implies also the standard deviation: you
 % remove the mean, then divide by the standard deviation, and only then add
 % a reference level). This is correction "b" in Parnum.
 % You'd need to calculate the std as
 %       stdAcrossBeams = std(data,0,2,'omitnan');
 % and in the final calculation do instead:
-%       data = (data-meanAcrossBeams)./stdAcrossBeams + refLevel;
+%       data = (data-avg_across_beams)./stdAcrossBeams + ref_level;
 
 % Continuing further from Parnum's idea, you could reintroduce a reference
 % standard deviation, just as the reference level is actually a reference
@@ -164,7 +261,7 @@ correction = meanAcrossBeams;
 % reference level as:
 %       refStd(1,1,iP) = nanstd(nadir_data(:));
 % and reintroduced in the final calculation as:
-%       data = refStd.*(data-meanAcrossBeams)./stdAcrossBeams + refLevel;
+%       data = refStd.*(data-avg_across_beams)./stdAcrossBeams + ref_level;
 %
 % Another note worth thinking about: Why normalizing only across ranges?
 % What about the other dimensions? Normalizing across samples would be
@@ -179,7 +276,7 @@ correction = meanAcrossBeams;
 % all ranges, rather than the mean. Also he did not introduce a reference
 % level. It would go as something like this:
 % [nSamples, ~, ~] = size(fData.X_SBP_WaterColumnProcessed.Data.val);
-% for ip = 1:numel(blockPings)
+% for ip = 1:numel(block_pings)
 %     thisPing = data(:,:,ip);
 %     sevenfiveperc = nan(nSamples,1); % calculate 75th percentile across all ranges
 %     for ismp = 1:nSamples

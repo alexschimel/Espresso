@@ -125,9 +125,16 @@ for itt = idx_fData(:)'
                     fData_tot{itt}.X_SBP_WaterColumnProcessed{ig}.Data.val(:,:,blockPings) = cast(data,wcdataproc_class);
                 end
                 
-                % disp block processing progress
-                textprogressbar(round(iB.*100./nBlocks)-1);
+                % disp processing progress
+                if nMemMapFiles == 1
+                    textprogressbar(round(iB.*100./nBlocks)-1);
+                end
                 
+            end
+            
+            % disp processing progress
+            if nMemMapFiles > 1
+                textprogressbar(round(ig.*100./nMemMapFiles)-1);
             end
             
         end
