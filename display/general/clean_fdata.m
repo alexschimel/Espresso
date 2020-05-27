@@ -87,38 +87,48 @@ for i = 1:numel(fData)
     fields = fieldnames(fData{i});
     
     for ifi = 1:numel(fields)
-        rmb=0;
+        
+        rmb = 0;
+        
         if isa(fData{i}.(fields{ifi}),'memmapfile')
+            
             j = j+1;
-            rmb=1;
-            dname{j}= fData{i}.(fields{ifi}).Filename;
-            fData{i}.(fields{ifi})=[];
+            rmb = 1;
+            dname{j} = fData{i}.(fields{ifi}).Filename;
+            fData{i}.(fields{ifi}) = [];
+            
         elseif iscell(fData{i}.(fields{ifi}))
             
-            for ic=1:numel(fData{i}.(fields{ifi}))
+            for ic = 1:numel(fData{i}.(fields{ifi}))
                 if isa(fData{i}.(fields{ifi}){ic},'memmapfile')
-                    rmb=1;
+                    rmb = 1;
                     j = j+1;
                     dname{j} = fData{i}.(fields{ifi}){ic}.Filename;
-                    fData{i}.(fields{ifi}){ic}=[];
+                    fData{i}.(fields{ifi}){ic} = [];
                 end
             end
             
         end
-        if rmb>0
-            fData{i}=rmfield(fData{i},fields{ifi});
+        
+        if rmb > 0
+            fData{i} = rmfield(fData{i},fields{ifi});
         end
     end
     
 end
 
 dname = unique(dname);
+
 fclose all;
-for id=1:numel(dname)
-    [folder,~,~]=fileparts(dname{id});
+
+for id = 1:numel(dname)
+    
+    [folder,~,~] = fileparts(dname{id});
+    
     if isfile(fullfile(folder,'fdata.mat'))
-       delete(fullfile(folder,'fdata.mat'));
+        delete(fullfile(folder,'fdata.mat'));
     end
+    
     if isfile(dname{id})
         try
             fprintf('\nDeleting file %s\n',dname{id});
@@ -126,6 +136,6 @@ for id=1:numel(dname)
         catch
             fprintf('ERROR while deleting file %s\n',dname{id});
         end
-        
     end
+    
 end
