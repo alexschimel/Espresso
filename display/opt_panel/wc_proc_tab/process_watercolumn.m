@@ -41,7 +41,7 @@ for itt = idx_fData(:)'
         wcdata_Class  = fData_tot{itt}.(sprintf('%s_1_SampleAmplitudes_Class',dg_source)); % int8 or int16
         wcdata_Factor = fData_tot{itt}.(sprintf('%s_1_SampleAmplitudes_Factor',dg_source));
         wcdata_Nanval = fData_tot{itt}.(sprintf('%s_1_SampleAmplitudes_Nanval',dg_source));
-        wcdata_Offset = fData_tot{itt}.(sprintf('%s_1_SampleAmplitudes_Offset',dg_source));
+        % wcdata_Offset = fData_tot{itt}.(sprintf('%s_1_SampleAmplitudes_Offset',dg_source));
         
         % processed data storage precision
         switch saving_precision
