@@ -167,7 +167,6 @@ db_sub = p.Results.db_sub;
 fData = p.Results.fData;
 clear p;
 
-
 %% pre-processing
 
 if ~iscell(ALLdataGroup)
@@ -179,7 +178,6 @@ nStruct = length(ALLdataGroup);
 
 % initialize fData if one not given in input
 if isempty(fData)
-    
     
     % initialize FABC structure by writing in the raw data filenames to be
     % added here
@@ -194,8 +192,7 @@ if isempty(fData)
     
 end
 
-
-if ~isfield(fData,'MET_Fmt_version')&&~isempty(fData)
+if ~isfield(fData,'MET_Fmt_version') && ~isempty(fData)
     %added a version for fData
     fData.MET_Fmt_version='0.0';
 end
@@ -713,7 +710,7 @@ for iF = 1:nStruct
         
     end
     
-    
+
     %% EM_WaterColumn (v2 verified)
     
     if isfield(ALLdata,'EM_WaterColumn')
@@ -792,41 +789,28 @@ for iF = 1:nStruct
             
             % for the other fields, sum the numbers from heads
             if length(headNumber) > 1
-                fData.WC_1P_NumberOfDatagrams                  = sum(ALLdata.EM_WaterColumn.NumberOfDatagrams(iFirstDatagram),2)';
-                fData.WC_1P_NumberOfTransmitSectors            = sum(ALLdata.EM_WaterColumn.NumberOfTransmitSectors(iFirstDatagram),2)';
-                fData.WC_1P_OriginalTotalNumberOfReceiveBeams  = sum(ALLdata.EM_WaterColumn.TotalNumberOfReceiveBeams(iFirstDatagram),2)';
-                fData.WC_1P_TotalNumberOfReceiveBeams          = sum(ceil(ALLdata.EM_WaterColumn.TotalNumberOfReceiveBeams(iFirstDatagram)/db_sub),2)'; % each head is decimated in beam individually
+                fData.WC_1P_NumberOfDatagrams         = sum(ALLdata.EM_WaterColumn.NumberOfDatagrams(iFirstDatagram),2)';
+                fData.WC_1P_NumberOfTransmitSectors   = sum(ALLdata.EM_WaterColumn.NumberOfTransmitSectors(iFirstDatagram),2)';
+                fData.WC_1P_TotalNumberOfReceiveBeams = sum(ALLdata.EM_WaterColumn.TotalNumberOfReceiveBeams(iFirstDatagram),2)';
+                fData.WC_1P_NumberOfBeamsToRead       = sum(ceil(ALLdata.EM_WaterColumn.TotalNumberOfReceiveBeams(iFirstDatagram)/db_sub),2)'; % each head is decimated in beam individually
             else
-                fData.WC_1P_NumberOfDatagrams                  = ALLdata.EM_WaterColumn.NumberOfDatagrams(iFirstDatagram);
-                fData.WC_1P_NumberOfTransmitSectors            = ALLdata.EM_WaterColumn.NumberOfTransmitSectors(iFirstDatagram);
-                fData.WC_1P_OriginalTotalNumberOfReceiveBeams  = ALLdata.EM_WaterColumn.TotalNumberOfReceiveBeams(iFirstDatagram);
-                fData.WC_1P_TotalNumberOfReceiveBeams          = ceil(ALLdata.EM_WaterColumn.TotalNumberOfReceiveBeams(iFirstDatagram)/db_sub); % each head is decimated in beam individually
+                fData.WC_1P_NumberOfDatagrams         = ALLdata.EM_WaterColumn.NumberOfDatagrams(iFirstDatagram);
+                fData.WC_1P_NumberOfTransmitSectors   = ALLdata.EM_WaterColumn.NumberOfTransmitSectors(iFirstDatagram);
+                fData.WC_1P_TotalNumberOfReceiveBeams = ALLdata.EM_WaterColumn.TotalNumberOfReceiveBeams(iFirstDatagram);
+                fData.WC_1P_NumberOfBeamsToRead       = ceil(ALLdata.EM_WaterColumn.TotalNumberOfReceiveBeams(iFirstDatagram)/db_sub);
             end
             
-            % get number of pings, maximum number of transmit sectors,
-            % maximum number of receive beams and maximum number of samples
-            % in any given ping to use as the output data dimensions
-            nPings              = length(pingCounters);
-            maxNTransmitSectors = max(fData.WC_1P_NumberOfTransmitSectors);
-            maxNBeams           = max(fData.WC_1P_OriginalTotalNumberOfReceiveBeams);
-            maxNBeams_sub       = max(fData.WC_1P_TotalNumberOfReceiveBeams); % number of beams to extract (decimated)
-            maxNSamples         = max(cellfun(@(x) max(x), ALLdata.EM_WaterColumn.NumberOfSamples(ismember(ALLdata.EM_WaterColumn.PingCounter,pingCounters))));
-            maxNSamples_sub     = ceil(maxNSamples/dr_sub); % number of samples to extract (decimated)
+            % get original data dimensions
+            nPings = length(pingCounters); % total number of pings in file
+            maxNTransmitSectors = max(fData.WC_1P_NumberOfTransmitSectors); % maximum number of transmit sectors in a ping
+            % maxNBeams = max(fData.WC_1P_TotalNumberOfReceiveBeams); % maximum number of receive beams in a ping
+            % maxNSamples = max(cellfun(@(x) max(x), ALLdata.EM_WaterColumn.NumberOfSamples(ismember(ALLdata.EM_WaterColumn.PingCounter,pingCounters)))); % maximum number of samples in a ping
             
-            %Samples=cellfun(@plus,ALLdata.EM_WaterColumn.StartRangeSampleNumber,ALLdata.EM_WaterColumn.NumberOfSamples,'un',0);
-            [maxNSamples_groups,ping_group_start,ping_group_end]=CFF_group_pings_per_samples(ALLdata.EM_WaterColumn.NumberOfSamples,pingCounters,ALLdata.EM_WaterColumn.PingCounter);
-            maxNSamples_groups=maxNSamples_groups/dr_sub;
-            
-            fData=CFF_init_memmapfiles(fData,...
-                'wc_dir',wc_dir,...
-                'field','WC_SBP_SampleAmplitudes',...
-                'Class','int8',...
-                'Factor',1/2,...
-                'Nanval',-128,...
-                'MaxSamples',maxNSamples_groups,...
-                'MaxBeams',maxNBeams_sub,...
-                'ping_group_start',ping_group_start,...
-                'ping_group_end',ping_group_end);
+            % get dimensions of data to red after decimation
+            maxNBeams_sub = max(fData.WC_1P_NumberOfBeamsToRead); % maximum number of receive beams TO READ 
+            % maxNSamples_sub  = ceil(maxNSamples/dr_sub); % maximum number of samples TO READ
+            [maxNSamples_groups, ping_group_start, ping_group_end] = CFF_group_pings(ALLdata.EM_WaterColumn.NumberOfSamples, pingCounters, ALLdata.EM_WaterColumn.PingCounter); % make groups of pings
+            maxNSamples_groups = ceil(maxNSamples_groups/dr_sub); % maximum number of samples TO READ, per group. 
             
             % initialize data per transmit sector and ping
             fData.WC_TP_TiltAngle            = nan(maxNTransmitSectors,nPings);
@@ -835,7 +819,7 @@ for iF = 1:nStruct
             fData.WC_TP_SystemSerialNumber   = nan(maxNTransmitSectors,nPings);
             
             % initialize data per decimated beam and ping
-            fData.WC_BP_BeamPointingAngle      = nan(maxNBeams_sub,nPings)/100;
+            fData.WC_BP_BeamPointingAngle      = nan(maxNBeams_sub,nPings);
             fData.WC_BP_StartRangeSampleNumber = nan(maxNBeams_sub,nPings);
             fData.WC_BP_NumberOfSamples        = nan(maxNBeams_sub,nPings);
             fData.WC_BP_DetectedRangeInSamples = zeros(maxNBeams_sub,nPings);
@@ -843,26 +827,52 @@ for iF = 1:nStruct
             fData.WC_BP_BeamNumber             = nan(maxNBeams_sub,nPings);
             fData.WC_BP_SystemSerialNumber     = nan(maxNBeams_sub,nPings);
             
+            % In Kongsberg's current water-column data format, the raw data
+            % are recorded in "int8" (signed integers from -128 to 127)
+            % with -128 being the NaN value. It needs to be multiplied by a
+            % factor of 1/2 to retrieve the true value, aka an int8 record
+            % of -41 is actually -20.5dB
+            raw_WC_Class = 'int8';
+            raw_WC_Factor = 1./2;
+            raw_WC_Nanval = -128;
+            % we will keep this format to save space.
             
-            ig=1;
+            % precision source and output for fread
+            precision = sprintf('%s=>%s', raw_WC_Class, raw_WC_Class);
+            
+            % initialize data-holding binary files
+            fData = CFF_init_memmapfiles(fData, ...
+                'field', 'WC_SBP_SampleAmplitudes', ...
+                'wc_dir', wc_dir, ...
+                'Class', raw_WC_Class, ...
+                'Factor', raw_WC_Factor, ...
+                'Nanval', raw_WC_Nanval, ...
+                'Offset', 0, ...
+                'MaxSamples', maxNSamples_groups, ...
+                'MaxBeams', maxNBeams_sub, ...
+                'ping_group_start', ping_group_start, ...
+                'ping_group_end', ping_group_end);
+            
+            % initialize ping group counter
+            iG = 1;
+            
             % now get data for each ping
-            %             fp=figure();
-            %             ax=axes(fp);
             for iP = 1:nPings
                 
                 % ping number (ex: 50455)
                 pingCounter = fData.WC_1P_PingCounter(1,iP);
-                if pingCounter>fData.WC_1P_PingCounter(ping_group_end(ig))
-                    ig=ig+1;
+                
+                % update ping group counter
+                if pingCounter > fData.WC_1P_PingCounter(ping_group_end(iG))
+                    iG = iG+1;
                 end
+                
                 % initialize the water column data matrix for that ping.
                 % Original data are in "int8" format, the NaN equivalent
                 % will be -128
+                SB_temp = raw_WC_Nanval.*ones(maxNSamples_groups(iG),maxNBeams_sub,raw_WC_Class);
                 
-                SB_temp = zeros(maxNSamples_groups(ig),maxNBeams_sub,'int8') - 128;
-                
-                
-                % intialize number of sectors and beams recorded so far for
+                % initialize number of sectors and beams recorded so far for
                 % that ping (needed for multiple heads)
                 nTxSectTot = 0;
                 nBeamTot = 0;
@@ -879,8 +889,7 @@ for iF = 1:nStruct
                     nDatagrams  = length(iDatagrams);
                     
                     % some datagrams may be missing. Need to detect and adjust.
-                    % order of the datagrams (ex: 4-3-6-2, the missing one is 1st, 5th and 7th)
-                    datagramOrder     = ALLdata.EM_WaterColumn.DatagramNumbers(iDatagrams);
+                    datagramOrder     = ALLdata.EM_WaterColumn.DatagramNumbers(iDatagrams); % order of the datagrams (ex: 4-3-6-2, the missing one is 1st, 5th and 7th)
                     [~,IX]            = sort(datagramOrder);
                     iDatagrams        = iDatagrams(IX); % index of the datagrams making up this ping in ALLdata.EM_Watercolumn, but in the right order (ex: 64-59-58-61, missing datagrams are still missing)
                     nBeamsPerDatagram = ALLdata.EM_WaterColumn.NumberOfBeamsInThisDatagram(iDatagrams); % number of beams in each datagram making up this ping (ex: 56-61-53-28)
@@ -914,6 +923,8 @@ for iF = 1:nStruct
                             lastRecBeam  = iBeamSource(end);
                             iBeamStart = db_sub - (nBeamsLastDatag-lastRecBeam);
                         end
+                        
+                        % select beams with decimation
                         iBeamSource = iBeamStart:db_sub:nBeamsPerDatagram(iD);
                         
                         % number of beams to record
@@ -922,6 +933,8 @@ for iF = 1:nStruct
                         % indices of those beams in output structure
                         iBeamDest = nBeamTot + (1:nBeam);
                         
+                        % record those beams' data, applying decimation in
+                        % range to the data that are samples numbers.
                         fData.WC_BP_BeamPointingAngle(iBeamDest,iP)      = ALLdata.EM_WaterColumn.BeamPointingAngle{iDatagrams(iD)}(iBeamSource)/100;
                         fData.WC_BP_StartRangeSampleNumber(iBeamDest,iP) = round(ALLdata.EM_WaterColumn.StartRangeSampleNumber{iDatagrams(iD)}(iBeamSource)./dr_sub);
                         fData.WC_BP_NumberOfSamples(iBeamDest,iP)        = round(ALLdata.EM_WaterColumn.NumberOfSamples{iDatagrams(iD)}(iBeamSource)./dr_sub);
@@ -929,29 +942,25 @@ for iF = 1:nStruct
                         fData.WC_BP_TransmitSectorNumber(iBeamDest,iP)   = ALLdata.EM_WaterColumn.TransmitSectorNumber2{iDatagrams(iD)}(iBeamSource);
                         fData.WC_BP_BeamNumber(iBeamDest,iP)             = ALLdata.EM_WaterColumn.BeamNumber{iDatagrams(iD)}(iBeamSource);
                         fData.WC_BP_SystemSerialNumber(iBeamDest,iP)     = headSSN;
-                        
+                         
+                        % and then, in each beam...
                         for iB = 1:nBeam
                             
-                            % actual number of samples in that beam
+                            % get actual number of samples in that beam
                             nSamp = ALLdata.EM_WaterColumn.NumberOfSamples{iDatagrams(iD)}(iBeamSource(iB));
                             
                             % number of samples we're going to record
                             nSamp_sub = ceil(nSamp/dr_sub);
                             
-                            % read the data in original file and record
-                            % water column data are recorded in "int8
-                            % (-128 to 127) with -128 being the NaN
-                            % value, and with a resolution of 0.5dB,
-                            % aka it needs to be multiplied by a factor
-                            % of 1/2 to retrieve the appropriate value,
-                            % aka an int8 record of -41 is actually
-                            % -20.5dB
+                            % get to the start of the data in original file
                             pos = ALLdata.EM_WaterColumn.SampleAmplitudePosition{iDatagrams(iD)}(iBeamSource(iB));
-                            curr_pos=ftell(fid_all);
+                            curr_pos = ftell(fid_all);
                             fseek(fid_all,pos-curr_pos,'cof');
-                            SB_temp(1:nSamp_sub,nBeamTot+iB) = fread(fid_all,nSamp_sub,'int8=>int8',dr_sub-1);
+                            
+                            % read raw data, with decimation in range
+                            SB_temp(1:nSamp_sub,iBeamDest(iB)) = fread(fid_all, nSamp_sub, precision, dr_sub-1);
+                            
                         end
-                        
                         
                         % updating total number of beams recorded so far
                         nBeamTot = nBeamTot + nBeam;
@@ -959,7 +968,11 @@ for iF = 1:nStruct
                     end
                     
                 end
-                fData.WC_SBP_SampleAmplitudes{ig}.Data.val(:,:,iP-ping_group_start(ig)+1)=SB_temp;
+                
+                % finished reading this ping's WC data. Store the data in
+                % the appropriate binary file, at the appropriate ping,
+                % through the memory mapping 
+                fData.WC_SBP_SampleAmplitudes{iG}.Data.val(:,:,iP-ping_group_start(iG)+1) = SB_temp;
                 
             end
             
@@ -978,37 +991,47 @@ for iF = 1:nStruct
                 update_flag = 1;
             end
             
-            % get indices of first datagram for each ping
+            % get the list of pings and the index of first datagram for
+            % each ping
             [pingCounters,iFirstDatagram] = unique(ALLdata.EM_AmpPhase.PingCounter,'stable');
             
-            % get data dimensions
-            nPings              = length(pingCounters); % total number of pings in file
-            maxNBeams           = max(ALLdata.EM_AmpPhase.TotalNumberOfReceiveBeams); % maximum number of beams for a ping in file
-            maxNTransmitSectors = max(ALLdata.EM_AmpPhase.NumberOfTransmitSectors); % maximum number of transmit sectors for a ping in file
-            maxNSamples         = max(cellfun(@(x) max(x),ALLdata.EM_AmpPhase.NumberOfSamples)); % max number of samples for a beam in file
+            % save ping numbers
+            fData.AP_1P_PingCounter = ALLdata.EM_AmpPhase.PingCounter(iFirstDatagram);
             
-            % decimating beams and samples
-            maxNBeams_sub       = ceil(maxNBeams/db_sub); % number of beams to extract
-            maxNSamples_sub     = ceil(maxNSamples/dr_sub); % number of samples to extract
-            
-            % read data per ping from first datagram of each ping
+            % for the following fields, take value from first datagram
             fData.AP_1P_Date                            = ALLdata.EM_AmpPhase.Date(iFirstDatagram);
             fData.AP_1P_TimeSinceMidnightInMilliseconds = ALLdata.EM_AmpPhase.TimeSinceMidnightInMilliseconds(iFirstDatagram);
-            fData.AP_1P_PingCounter                     = ALLdata.EM_AmpPhase.PingCounter(iFirstDatagram);
-            fData.AP_1P_NumberOfDatagrams               = ALLdata.EM_AmpPhase.NumberOfDatagrams(iFirstDatagram);
-            fData.AP_1P_NumberOfTransmitSectors         = ALLdata.EM_AmpPhase.NumberOfTransmitSectors(iFirstDatagram);
-            fData.AP_1P_TotalNumberOfReceiveBeams       = ALLdata.EM_AmpPhase.TotalNumberOfReceiveBeams(iFirstDatagram);
             fData.AP_1P_SoundSpeed                      = ALLdata.EM_AmpPhase.SoundSpeed(iFirstDatagram)*0.1;
+            fData.AP_1P_OriginalSamplingFrequencyHz     = ALLdata.EM_AmpPhase.SamplingFrequency(iFirstDatagram).*0.01; % in Hz
             fData.AP_1P_SamplingFrequencyHz             = (ALLdata.EM_AmpPhase.SamplingFrequency(iFirstDatagram).*0.01)./dr_sub; % in Hz
             fData.AP_1P_TXTimeHeave                     = ALLdata.EM_AmpPhase.TXTimeHeave(iFirstDatagram);
             fData.AP_1P_TVGFunctionApplied              = ALLdata.EM_AmpPhase.TVGFunctionApplied(iFirstDatagram);
             fData.AP_1P_TVGOffset                       = ALLdata.EM_AmpPhase.TVGOffset(iFirstDatagram);
             fData.AP_1P_ScanningInfo                    = ALLdata.EM_AmpPhase.ScanningInfo(iFirstDatagram);
             
+            % other fields
+            fData.AP_1P_NumberOfDatagrams         = ALLdata.EM_AmpPhase.NumberOfDatagrams(iFirstDatagram);
+            fData.AP_1P_NumberOfTransmitSectors   = ALLdata.EM_AmpPhase.NumberOfTransmitSectors(iFirstDatagram);
+            fData.AP_1P_TotalNumberOfReceiveBeams = ALLdata.EM_AmpPhase.TotalNumberOfReceiveBeams(iFirstDatagram);
+            fData.AP_1P_NumberOfBeamsToRead       = ceil(ALLdata.EM_AmpPhase.TotalNumberOfReceiveBeams(iFirstDatagram)/db_sub);
+            
+            % get original data dimensions
+            nPings = length(pingCounters); % total number of pings in file
+            maxNTransmitSectors = max(fData.AP_1P_NumberOfTransmitSectors); % maximum number of transmit sectors in a ping
+            % maxNBeams = max(fData.AP_1P_TotalNumberOfReceiveBeams); % maximum number of receive beams in a ping
+            % maxNSamples = max(cellfun(@(x) max(x), ALLdata.EM_AmpPhase.NumberOfSamples)); % max number of samples for a beam in file
+            
+            % get dimensions of data to red after decimation
+            maxNBeams_sub = max(fData.WC_1P_NumberOfBeamsToRead); % maximum number of receive beams TO READ 
+            % maxNSamples_sub  = ceil(maxNSamples/dr_sub); % maximum number of samples TO READ
+            [maxNSamples_groups, ping_group_start, ping_group_end] = CFF_group_pings(ALLdata.EM_AmpPhase.NumberOfSamples, pingCounters, ALLdata.EM_AmpPhase.PingCounter); % make groups of pings
+            maxNSamples_groups = ceil(maxNSamples_groups/dr_sub); % maximum number of samples TO READ, per group. 
+            
             % initialize data per transmit sector and ping
             fData.AP_TP_TiltAngle            = nan(maxNTransmitSectors,nPings);
             fData.AP_TP_CenterFrequency      = nan(maxNTransmitSectors,nPings);
             fData.AP_TP_TransmitSectorNumber = nan(maxNTransmitSectors,nPings);
+            % fData.AP_TP_SystemSerialNumber   = nan(maxNTransmitSectors,nPings);
             
             % initialize data per decimated beam and ping
             fData.AP_BP_BeamPointingAngle      = nan(maxNBeams_sub,nPings);
@@ -1017,72 +1040,79 @@ for iF = 1:nStruct
             fData.AP_BP_DetectedRangeInSamples = zeros(maxNBeams_sub,nPings);
             fData.AP_BP_TransmitSectorNumber   = nan(maxNBeams_sub,nPings);
             fData.AP_BP_BeamNumber             = nan(maxNBeams_sub,nPings);
+            % fData.AC_BP_SystemSerialNumber     = nan(maxNBeams_sub,nPings);
+  
+            % initialize data-holding binary files
+            fData = CFF_init_memmapfiles(fData, ...
+                'field', 'AP_SBP_SampleAmplitudes', ...
+                'wc_dir', wc_dir, ...
+                'Class', 'int16', ...
+                'Factor', 1/200, ...
+                'Nanval', intmin('int16'), ...
+                'Offset', 0, ...
+                'MaxSamples', maxNSamples_groups, ...
+                'MaxBeams', maxNBeams_sub, ...
+                'ping_group_start', ping_group_start, ...
+                'ping_group_end', ping_group_end);
             
-            %Samples=cellfun(@plus,ALLdata.EM_AmpPhase.StartRangeSampleNumber,ALLdata.EM_AmpPhase.NumberOfSamples,'un',0);
-            [maxNSamples_groups,ping_group_start,ping_group_end]=CFF_group_pings_per_samples(ALLdata.EM_AmpPhase.NumberOfSamples,pingCounters,ALLdata.EM_AmpPhase.PingCounter);
+            fData = CFF_init_memmapfiles(fData, ...
+                'field', 'AP_SBP_SamplePhase', ...
+                'wc_dir', wc_dir, ...
+                'Class', 'int16', ...
+                'Factor', 1/30, ...
+                'Nanval', 200, ...
+                'Offset', 0, ...
+                'MaxSamples', maxNSamples_groups, ...
+                'MaxBeams', maxNBeams_sub, ...
+                'ping_group_start', ping_group_start, ...
+                'ping_group_end', ping_group_end);
             
             
-            fData=CFF_init_memmapfiles(fData,...
-                'wc_dir',wc_dir,...
-                'field','AP_SBP_SampleAmplitudes',...
-                'Class','int16',...
-                'Factor',1/200,...
-                'Nanval',intmin('int16'),...
-                'MaxSamples',maxNSamples_groups,...
-                'MaxBeams',maxNBeams_sub,...
-                'ping_group_start',ping_group_start,...
-                'ping_group_end',ping_group_end);
+            % initialize ping group counter
+            iG = 1;
             
-            fData=CFF_init_memmapfiles(fData,...
-                'wc_dir',wc_dir,...
-                'field','AP_SBP_SamplePhase',...
-                'Class','int16',...
-                'Factor',1/30,...
-                'Nanval',200,...
-                'MaxSamples',maxNSamples_groups,...
-                'MaxBeams',maxNBeams_sub,...
-                'ping_group_start',ping_group_start,...
-                'ping_group_end',ping_group_end);
-            
-            
-            ig=1;
-            disp_wc=0;
+            % debug graph
+            disp_wc = 0;
             if disp_wc
                 f = figure();
                 ax_mag = axes(f,'outerposition',[0 0.5 1 0.5]);
                 ax_phase = axes(f,'outerposition',[0 0 1 0.5]);
             end
+            
             % now get data for each ping
             for iP = 1:nPings
                 
-                if iP>ping_group_end(ig)
-                    ig=ig+1;
+                % ping number (ex: 50455)
+                pingCounter = fData.AP_1P_PingCounter(1,iP);
+                
+                % update ping group counter
+                if pingCounter > fData.AP_1P_PingCounter(ping_group_end(iG))
+                    iG = iG+1;
                 end
+               
+                % initialize the water column data matrix for that ping.
+                SB2_temp = intmin('int16').*ones(maxNSamples_groups(iG),maxNBeams_sub,'int16');
+                Ph_temp = 200.*ones(maxNSamples_groups(iG),maxNBeams_sub,'int16');
                 
-                % find datagrams composing this ping
-                pingCounter = fData.AP_1P_PingCounter(1,iP); % ping number (ex: 50455)
-                % nDatagrams  = fData.AP_1P_NumberOfDatagrams(1,iP); % theoretical number of datagrams for this ping (ex: 7)
-                iDatagrams  = find(ALLdata.EM_AmpPhase.PingCounter==pingCounter); % index of the datagrams making up this ping in ALLdata.EM_AmpPhase (ex: 58-59-61-64)
-                nDatagrams  = length(iDatagrams); % actual number of datagrams available (ex: 4)
+                % index of the datagrams making up this ping/head in ALLdata.EM_Watercolumn (ex: 58-59-61-64)
+                iDatagrams  = find(ALLdata.EM_AmpPhase.PingCounter==pingCounter);
                 
-                % some datagrams may be missing, like in the example. Detect and adjust...
+                % actual number of datagrams available (ex: 4)
+                nDatagrams  = length(iDatagrams);
+                
+                % some datagrams may be missing. Need to detect and adjust.
                 datagramOrder     = ALLdata.EM_AmpPhase.DatagramNumbers(iDatagrams); % order of the datagrams (ex: 4-3-6-2, the missing one is 1st, 5th and 7th)
                 [~,IX]            = sort(datagramOrder);
                 iDatagrams        = iDatagrams(IX); % index of the datagrams making up this ping in ALLdata.EM_AmpPhase, but in the right order (ex: 64-59-58-61, missing datagrams are still missing)
                 nBeamsPerDatagram = ALLdata.EM_AmpPhase.NumberOfBeamsInThisDatagram(iDatagrams); % number of beams in each datagram making up this ping (ex: 56-61-53-28)
                 
-                % assuming transmit sectors data are not split between several datagrams, get that data from the first datagram.
-                nTransmitSectors = fData.AP_1P_NumberOfTransmitSectors(1,iP); % number of transmit sectors in this ping
-                fData.AP_TP_TiltAngle(1:nTransmitSectors,iP)            = ALLdata.EM_AmpPhase.TiltAngle{iDatagrams(1)};
-                fData.AP_TP_CenterFrequency(1:nTransmitSectors,iP)      = ALLdata.EM_AmpPhase.CenterFrequency{iDatagrams(1)};
-                fData.AP_TP_TransmitSectorNumber(1:nTransmitSectors,iP) = ALLdata.EM_AmpPhase.TransmitSectorNumber{iDatagrams(1)};
+                % number of transmit sectors in this ping
+                nTxSect = fData.AP_1P_NumberOfTransmitSectors(1,iP); 
                 
-                % initialize the water column data matrix for that ping.
-                
-                
-                SB2_temp = zeros(maxNSamples_groups(ig),maxNBeams_sub,'int16')-intmin('int16');
-                Ph_temp = zeros(maxNSamples_groups(ig),maxNBeams_sub,'int16');
-                
+                % recording data per transmit sector
+                fData.AP_TP_TiltAngle(1:nTxSect,iP)            = ALLdata.EM_AmpPhase.TiltAngle{iDatagrams(1)};
+                fData.AP_TP_CenterFrequency(1:nTxSect,iP)      = ALLdata.EM_AmpPhase.CenterFrequency{iDatagrams(1)};
+                fData.AP_TP_TransmitSectorNumber(1:nTxSect,iP) = ALLdata.EM_AmpPhase.TransmitSectorNumber{iDatagrams(1)};
                 
                 % and then read the data in each datagram
                 for iD = 1:nDatagrams
@@ -1101,33 +1131,49 @@ for iF = 1:nStruct
                     fData.AP_BP_TransmitSectorNumber(iBeams,iP)   = ALLdata.EM_AmpPhase.TransmitSectorNumber2{iDatagrams(iD)}(idx_beams);
                     fData.AP_BP_BeamNumber(iBeams,iP)             = ALLdata.EM_AmpPhase.BeamNumber{iDatagrams(iD)}(idx_beams);
                     
+                    % and then, in each beam...
                     for iB = 1:numel(iBeams)
                         
-                        % actual number of samples in that beam
-                        Ns = ALLdata.EM_AmpPhase.NumberOfSamples{iDatagrams(iD)}(idx_beams(iB));
+                        % get actual number of samples in that beam
+                        nSamp = ALLdata.EM_AmpPhase.NumberOfSamples{iDatagrams(iD)}(idx_beams(iB));
                         
                         % number of samples we're going to record:
-                        Ns_sub = ceil(Ns/dr_sub);
+                        nSamp_sub = ceil(nSamp/dr_sub);
                         
                         % get the data:
-                        if Ns_sub > 0
+                        if nSamp_sub > 0
                             
-                            fseek(fid_all,ALLdata.EM_AmpPhase.SamplePhaseAmplitudePosition{iDatagrams(iD)}(idx_beams(iB)),'bof');
-                            tmp = fread(fid_all,Ns_sub,'uint16',2);
-                            SB2_temp((1:(Ns_sub)),iBeams(iB)) = int16(20*log10(single(tmp)*0.0001)*200); % what is this transformation? XXX
+                            % get to the start of amplitude data
+                            pos = ALLdata.EM_AmpPhase.SamplePhaseAmplitudePosition{iDatagrams(iD)}(idx_beams(iB));
+                            fseek(fid_all,pos,'bof');
                             
-                            fseek(fid_all,ALLdata.EM_AmpPhase.SamplePhaseAmplitudePosition{iDatagrams(iD)}(idx_beams(iB))+2,'bof');
-                            tmp = fread(fid_all,Ns_sub,'int16',2);
-                            Ph_temp((1:(Ns_sub)),iBeams(iB)) = int16(-0.0001*single(tmp)*30/pi*180); % what is this transformation? XXX
+                            % read amplitude data
+                            tmp = fread(fid_all,nSamp_sub,'uint16',2);
+                            
+                            % transform amplitude data
+                            SB2_temp((1:(nSamp_sub)),iBeams(iB)) = int16(20*log10(single(tmp)*0.0001)*200); % what is this transformation? XXX
+                            
+                            % get to the start of phase data
+                            pos = pos+2;
+                            fseek(fid_all,pos,'bof');
+                            
+                            % read phase data
+                            tmp = fread(fid_all,nSamp_sub,'int16',2);
+                            
+                            % transform phase data
+                            Ph_temp((1:(nSamp_sub)),iBeams(iB)) = int16(-0.0001*single(tmp)*30/pi*180); % what is this transformation? XXX
                             
                         end
                     end
                 end
                 
+                % finished reading this ping's WC data. Store the data in
+                % the appropriate binary file, at the appropriate ping,
+                % through the memory mapping 
+                fData.AP_SBP_SampleAmplitudes{iG}.Data.val(:,:,iP-ping_group_start(iG)+1) = SB2_temp;
+                fData.AP_SBP_SamplePhase{iG}.Data.val(:,:,iP-ping_group_start(iG)+1)      = Ph_temp;   
                 
-                fData.AP_SBP_SampleAmplitudes{ig}.Data.val(:,:,iP-ping_group_start(ig)+1)=SB2_temp;
-                fData.AP_SBP_SamplePhase{ig}.Data.val(:,:,iP-ping_group_start(ig)+1)=Ph_temp;   
-                
+                % debug graph
                 if disp_wc
                     imagesc(ax_mag,single(SB2_temp)/200);
                     hold(ax_mag,'on');plot(ax_mag,fData.AP_BP_DetectedRangeInSamples(:,iP));
@@ -1140,14 +1186,14 @@ for iF = 1:nStruct
                 end
                 
             end
-            
-            
-            
+
         end
         
     end
     
     % close the original raw file
     fclose(fid_all);
-    fData.MET_Fmt_version=CFF_get_current_fData_version();
+    
+    fData.MET_Fmt_version = CFF_get_current_fData_version();
+    
 end

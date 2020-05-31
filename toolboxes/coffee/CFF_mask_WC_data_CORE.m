@@ -244,14 +244,21 @@ end
 if mask_ping<100
 
     % for now we will use the percentage of faulty bottom detects as a
-    % threshold to mask the entire ping. Aka, if mask_ping=10, then we
-    % will mask the entire ping if 10% or more of its bottom detects are
-    % faulty
-    
+    % threshold to mask the ping. Aka, if mask_ping=10, then we
+    % will mask the  ping if 10% or more of its bottom detects are
+    % faulty.
+    % Quick data look up reveal show that good pings still misses up to 6%
+    % of detects on the outer beams. A ping with some missing bottom
+    % detects in the data is around 8-15%, so good rule of thumb would be
+    % to use:
+    % * mask_ping = 7 to remove all but perfect pings
+    % * mask_ping between 10 and 20 to allow pings with a few missing detect
+    % * mask_ping > 20 to remove only the most severly affected pings
+
     % extract needed data
-    bottomdetect = CFF_get_bottom_sample(fData);
-    bottomdetect = bottomdetect(:,blockPings);
-    proportion_faulty_detect = 100.*sum(bottomdetect==0)./nBeams;
+    faulty_bottom = fData.(sprintf('%s_BP_DetectedRangeInSamples',datagramSource))(:,blockPings)==0;
+    
+    proportion_faulty_detect = 100.*sum(faulty_bottom)./nBeams;
     
     % build mask: 1: to conserve, 0: to remove
     X_1P_PingMask = proportion_faulty_detect<mask_ping;

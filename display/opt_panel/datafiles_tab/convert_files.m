@@ -48,6 +48,7 @@ for nF = 1:numel(files_to_convert)
         db_sub_old = 0;
         ver = '0.0';
         
+        % check if converted file exists
         if isfile(mat_fdata_file)
             fData_old = load(mat_fdata_file);
             if isfield(fData_old,'MET_Fmt_version')

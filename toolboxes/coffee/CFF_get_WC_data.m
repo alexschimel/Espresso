@@ -165,18 +165,50 @@ for ig = istart:iend
             
             % get info about data
             idx_undsc = regexp(fieldN,'_');
-            fact    = fData.(sprintf('%s_1_%s_Factor',fieldN(1:idx_undsc(1)-1),fieldN(idx_undsc(2)+1:end)));
-            nan_val = fData.(sprintf('%s_1_%s_Nanval',fieldN(1:idx_undsc(1)-1),fieldN(idx_undsc(2)+1:end)));
+            dg = fieldN(1:idx_undsc(1)-1);
+            fieldname = fieldN(idx_undsc(2)+1:end);
             
-            % convert to single class
-            data = single(data);
+            % get NaN value (should be a single value)
+            Nanval = fData.(sprintf('%s_1_%s_Nanval',dg,fieldname));
             
-            % add nans
-            data(data==single(nan_val)) = single(NaN);
+            % get factor (one per memmap file in the new format)
+            Fact = fData.(sprintf('%s_1_%s_Factor',dg,fieldname));
+            if numel(Fact)>1
+                Fact = Fact(ig);
+            end
+                
+            % get offset (doesn't exist for older format, one per memmap
+            % file in the new format) 
+            offset_fieldname = sprintf('%s_1_%s_Offset',dg,fieldname);
+            if isfield(fData, offset_fieldname)
+                Offset = fData.(offset_fieldname);
+            else
+                Offset = 0;
+            end
             
-            % factor top get true dB values
-            data = data*fact;
+            if numel(Offset)>1
+                Offset = Offset(ig);
+            end
             
+            if ~isa(data,'single')
+                
+                % first, convert to single class
+                data = single(data);
+                
+                % reset NaN value
+                data(data==single(Nanval)) = single(NaN);
+                
+                % decode data, mnimizing calculation time
+                if Fact~=1 && Offset~=0
+                    data = data*Fact+Offset;
+                elseif Fact~=1 && Offset==0
+                    data = data*Fact;
+                elseif Fact==1 && Offset~=0
+                    data = data+Offset;
+                end
+                
+            end
+          
     end
     
     %     for i = 1:size(data_tot,3)
@@ -186,6 +218,7 @@ for ig = istart:iend
     
     data_tot(1:size(data,1),1:(size(data,2)),ip+(1:(size(data,3)))) = data;
     ip = ip + (size(data,3));
+    
 end
 
 

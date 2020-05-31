@@ -59,9 +59,9 @@
 function [fData] = CFF_WC_radiometric_corrections(fData)
 
 % extract info about WCD
-wcdata_class  = fData.X_1_WaterColumnProcessed_Class; % int8 or int16
-wcdata_factor = fData.X_1_WaterColumnProcessed_Factor;
-wcdata_nanval = fData.X_1_WaterColumnProcessed_Nanval;
+wcdata_Class  = fData.X_1_WaterColumnProcessed_Class; % int8 or int16
+wcdata_Factor = fData.X_1_WaterColumnProcessed_Factor;
+wcdata_Nanval = fData.X_1_WaterColumnProcessed_Nanval;
 
 [nSamples, nBeams, nPings] = CFF_get_WC_size(fData);
 % block processing setup
@@ -84,9 +84,9 @@ for iB = 1:nBlocks
     data = CFF_WC_radiometric_corrections_CORE(data,fData);
     
     % convert modified data back to raw format and store
-    data = data./wcdata_factor;
-    data(isnan(data)) = wcdata_nanval;
-    fData.X_SBP_WaterColumnProcessed.Data.val(:,:,blockPings) = cast(data,wcdata_class);
+    data = data./wcdata_Factor;
+    data(isnan(data)) = wcdata_Nanval;
+    fData.X_SBP_WaterColumnProcessed.Data.val(:,:,blockPings) = cast(data,wcdata_Class);
     
 end
 

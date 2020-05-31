@@ -173,10 +173,8 @@ switch src.Style
         path_ori = get(file_tab_comp.path_box,'string');
         new_path = uigetdir(path_ori,'Select folder of raw data files (.wcd) to open');
         
+        % update the field and the entire tab if valid
         if new_path ~= 0
-            % get warnings for this initial load
-            CFF_list_files_in_dir(new_path,'warning_on');
-            % update the tab
             set(file_tab_comp.path_box,'string',new_path);
             update_datafiles_tab(main_figure);
         end

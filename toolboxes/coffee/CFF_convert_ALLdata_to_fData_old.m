@@ -814,7 +814,7 @@ for iF = 1:nStruct
             maxNSamples_sub     = ceil(maxNSamples/dr_sub); % number of samples to extract (decimated)
             
             %Samples=cellfun(@plus,ALLdata.EM_WaterColumn.StartRangeSampleNumber,ALLdata.EM_WaterColumn.NumberOfSamples,'un',0);
-            [maxNSamples_groups,ping_group_start,ping_group_end]=CFF_group_pings_per_samples(ALLdata.EM_WaterColumn.NumberOfSamples,pingCounters,ALLdata.EM_WaterColumn.PingCounter);
+            [maxNSamples_groups,ping_group_start,ping_group_end] = CFF_group_pings(ALLdata.EM_WaterColumn.NumberOfSamples,pingCounters,ALLdata.EM_WaterColumn.PingCounter);
             maxNSamples_groups=maxNSamples_groups/dr_sub;
             
             % path to binary file for WC data
@@ -1055,7 +1055,7 @@ for iF = 1:nStruct
             fData.AP_BP_BeamNumber             = nan(maxNBeams_sub,nPings);
             
             %Samples=cellfun(@plus,ALLdata.EM_AmpPhase.StartRangeSampleNumber,ALLdata.EM_AmpPhase.NumberOfSamples,'un',0);
-            [maxNSamples_groups,ping_group_start,ping_group_end]=CFF_group_pings_per_samples(ALLdata.EM_AmpPhase.NumberOfSamples,pingCounters,ALLdata.EM_AmpPhase.PingCounter);
+            [maxNSamples_groups,ping_group_start,ping_group_end]=CFF_group_pings(ALLdata.EM_AmpPhase.NumberOfSamples,pingCounters,ALLdata.EM_AmpPhase.PingCounter);
             
             
             % path to binary file for WC data

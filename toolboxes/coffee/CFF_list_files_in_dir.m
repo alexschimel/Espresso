@@ -66,21 +66,11 @@
 % Yoann Ladroit, Alexandre Schimel, NIWA.
 
 %% Function
-function [folders,files,converted] = CFF_list_files_in_dir(folder_init, varargin)
-
-%% input parsing
-p = inputParser;
-addRequired(p,'folder_init',@ischar);
-addOptional(p,'warning_flag','warning_off',@(x) ischar(x) && ismember(x,{'warning_on' 'warning_off'}));
-parse(p,folder_init,varargin{:})
-warning_flag = p.Results.warning_flag;
-clear p
-
+function [folders,files,converted] = CFF_list_files_in_dir(folder_init)
 
 %% get file names
 all_files = list_data(folder_init,'*.wcd');
 wcd_files = list_data(folder_init,'*.all');
-
 s7k_files = list_data(folder_init,'*.s7k');
 
 
@@ -128,13 +118,17 @@ end
 %% subfunctions %%
 
 function files = list_data(folder_init,ext)
+
+% look for files with that extension in folder_init
 Filename_list = dir(fullfile(folder_init,ext));
+
 if ~isempty(Filename_list)
     Filename_cell = {Filename_list([Filename_list(:).isdir]==0).name};
     [~,files,~] = cellfun(@fileparts,Filename_cell,'UniformOutput',0);
     folders = {Filename_list([Filename_list(:).isdir]==0).folder};
     files = fullfile(folders,files);
 else
+    % none
     files = {};
 end
 

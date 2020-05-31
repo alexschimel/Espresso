@@ -1,12 +1,15 @@
-%% Function
-function interSamplesDistance = CFF_inter_sample_distance(fData)
+function inter_samples_distance = CFF_inter_sample_distance(fData)
+%INTER_SAMPLES_DISTANCE Distance in meters between two data samples
+%   inter_samples_distance = INTER_SAMPLES_DISTANCE(fData) returns the
+%   distance in meters between two data samples in fData, using the sound
+%   speed and sample frequency as recorded in data. Note that sampling
+%   frequency may have been modified to account for the decimation in
+%   samples
 
-% Source datagram
-datagramSource = CFF_get_datagramSource(fData);
+dtg = CFF_get_datagramSource(fData);
 
-% inter-sample distance
-soundSpeed           = fData.(sprintf('%s_1P_SoundSpeed',datagramSource)); %m/s
-samplingFrequencyHz  = fData.(sprintf('%s_1P_SamplingFrequencyHz',datagramSource)); %Hz
+sound_speed = fData.(sprintf('%s_1P_SoundSpeed',dtg)); % m/s
 
+sampling_freq  = fData.(sprintf('%s_1P_SamplingFrequencyHz',dtg)); % Hz
 
-interSamplesDistance = soundSpeed./(samplingFrequencyHz.*2); % in m
+inter_samples_distance = sound_speed./(sampling_freq.*2); % in m
