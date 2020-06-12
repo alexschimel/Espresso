@@ -318,9 +318,10 @@ for i = update_line_index(:)'
                 
         end
         
-        % data display
-        obj_wc = imagesc(ax,E,N,data,'Visible',wc_vis,'Tag',tag_id_wc);
-        
+        if ~isempty(E)
+            % data display
+            obj_wc = imagesc(ax,E,N,data,'Visible',wc_vis,'Tag',tag_id_wc);
+        end
         % NOTE: used to allow clicking on a grid to select a line/ping for
         % display but this conflicts with panning
         % obj_wc = imagesc(ax,E,N,data,'Visible',wc_vis,'Tag',tag_id_wc,'ButtonDownFcn',{@disp_wc_ping_cback,main_figure});

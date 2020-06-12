@@ -1022,7 +1022,7 @@ for iF = 1:nStruct
             % maxNSamples = max(cellfun(@(x) max(x), ALLdata.EM_AmpPhase.NumberOfSamples)); % max number of samples for a beam in file
             
             % get dimensions of data to red after decimation
-            maxNBeams_sub = max(fData.WC_1P_NumberOfBeamsToRead); % maximum number of receive beams TO READ 
+            maxNBeams_sub = max(fData.AP_1P_NumberOfBeamsToRead); % maximum number of receive beams TO READ 
             % maxNSamples_sub  = ceil(maxNSamples/dr_sub); % maximum number of samples TO READ
             [maxNSamples_groups, ping_group_start, ping_group_end] = CFF_group_pings(ALLdata.EM_AmpPhase.NumberOfSamples, pingCounters, ALLdata.EM_AmpPhase.PingCounter); % make groups of pings
             maxNSamples_groups = ceil(maxNSamples_groups/dr_sub); % maximum number of samples TO READ, per group. 

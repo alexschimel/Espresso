@@ -75,7 +75,7 @@ function ALLfileinfo = CFF_all_file_info(ALLfilename)
 
 %% supported systems:
 % see help for info
-emNumberList = [122; 300; 302; 2040; 2045; 3000; 3002; 3020]; %2045 is 2040c
+emNumberList = [122; 300; 302; 710; 2040; 2045; 3000; 3002; 3020]; %2045 is 2040c
 
 
 %% Input arguments management using inputParser

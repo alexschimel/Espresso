@@ -143,9 +143,7 @@ switch str_disp
 end
 
 if isempty(amp)
-    amp = CFF_get_WC_data(fData,sprintf('%s_SBP_SampleAmplitudes',datagramSource),'iPing',ip);
-    [amp, ~] = CFF_WC_radiometric_corrections_CORE(amp,fData);
-    idx_keep = amp >= cax(1);
+    return;
 end
 
 % get distances across and upwards for all samples

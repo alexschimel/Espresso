@@ -336,8 +336,8 @@ cax = disp_config.get_cax();
 
 % check that modified values in the box are OK or change them back
 display_tab_comp = getappdata(main_figure,'display_tab');
-check_fmt_box(display_tab_comp.clim_min,[],-200,100,cax(1),'%.0f');
-check_fmt_box(display_tab_comp.clim_max,[],-200,100,cax(2),'%.0f');
+check_fmt_box(display_tab_comp.clim_min,[],-2000,1000,cax(1),'%.0f');
+check_fmt_box(display_tab_comp.clim_max,[],-2000,1000,cax(2),'%.0f');
 
 % grab those values from the boxes
 cax_min = str2double(display_tab_comp.clim_min.String);

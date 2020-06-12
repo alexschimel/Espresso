@@ -138,7 +138,6 @@ end
 % size
 [nSamples, nBeams, nPings] = CFF_get_WC_size(fData);
 
-
 %% Prepare needed 1xP data for computations
 
 % Source datagram
@@ -279,13 +278,6 @@ for iB = 1:nBlocks
     
     % get data to grid (possibly decimated in beams and samples
     blockL = CFF_get_WC_data(fData,field_to_grid,'iPing',blockPings,'dr_sub',dr_sub,'db_sub',db_sub,'output_format','true');
-    
-    % if requesting to grid the "original" data (that is, not processed),
-    % still apply the radiometric correction
-    switch data_type
-        case 'Original'
-            [blockL, warning_text] = CFF_WC_radiometric_corrections_CORE(blockL,fData);
-    end
     
     % retrieve the index of samples given the decimation
     nSamples_temp = size(blockL,1);

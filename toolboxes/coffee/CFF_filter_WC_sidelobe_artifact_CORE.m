@@ -177,7 +177,7 @@ switch params.ref.type
                 bottom_samples = CFF_get_bottom_sample(fData);
                 bottom_samples = bottom_samples(:,block_pings);
                 closest_bottom_sample = nanmin(bottom_samples);
-                
+                closest_bottom_sample = nanmin(closest_bottom_sample,size(data,1));
                 % init ref level vector
                 ref_level = nan(1,1,numel(block_pings));
                 
