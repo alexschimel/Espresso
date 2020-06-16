@@ -190,6 +190,12 @@ mosaics         = getappdata(main_figure,'mosaics');
 mosaic_tab_comp = getappdata(main_figure,'mosaic_tab');
 fData_tot       = getappdata(main_figure,'fData');
 
+
+display_tab_comp = getappdata(main_figure,'display_tab');
+d_lim_sonar_ref = [sscanf(display_tab_comp.d_line_min.Label,'%fm') sscanf(display_tab_comp.d_line_max.Label,'%fm')];
+d_lim_bottom_ref = [sscanf(display_tab_comp.d_line_bot_min.Label,'%fm') sscanf(display_tab_comp.d_line_bot_max.Label,'%fm')];
+
+
 if isempty(mosaic_tab_comp.selected_idx)
     % no mosaic to recompute
     return;
@@ -198,7 +204,7 @@ end
 idx_mosaic = find(cell2mat(mosaic_tab_comp.table_main.Data(mosaic_tab_comp.selected_idx(:),4)) == [mosaics(:).ID]);
 
 for i = idx_mosaic(:)'
-    mosaics(idx_mosaic) = compute_mosaic(mosaics(idx_mosaic),fData_tot);
+    mosaics(idx_mosaic) = compute_mosaic(mosaics(idx_mosaic),fData_tot,d_lim_sonar_ref,d_lim_bottom_ref);
 end
 
 setappdata(main_figure,'mosaics',mosaics);
@@ -216,6 +222,10 @@ function edit_mosaic(src,evt,main_figure)
 mosaics = getappdata(main_figure,'mosaics');
 fData_tot = getappdata(main_figure,'fData');
 idx_mosaic = cell2mat(src.Data(evt.Indices(1),4)) == [mosaics(:).ID];
+display_tab_comp = getappdata(main_figure,'display_tab');
+d_lim_sonar_ref = [sscanf(display_tab_comp.d_line_min.Label,'%fm') sscanf(display_tab_comp.d_line_max.Label,'%fm')];
+d_lim_bottom_ref = [sscanf(display_tab_comp.d_line_bot_min.Label,'%fm') sscanf(display_tab_comp.d_line_bot_max.Label,'%fm')];
+
 
 switch evt.Indices(2)
     case 1
@@ -236,7 +246,7 @@ switch evt.Indices(2)
             % recompute mosaic with new resolution, but only with original fData
             fData_tot_IDs = cellfun(@(x) x.ID, fData_tot);
             ind_fData_tot_in_mosaic = ismember( fData_tot_IDs, mosaics(idx_mosaic).Fdata_ID );
-            mosaics(idx_mosaic) = compute_mosaic(mosaics(idx_mosaic),fData_tot(ind_fData_tot_in_mosaic));
+            mosaics(idx_mosaic) = compute_mosaic(mosaics(idx_mosaic),fData_tot(ind_fData_tot_in_mosaic),d_lim_sonar_ref,d_lim_bottom_ref);
             
         elseif ~isnan(evt.NewData) && evt.NewData>0
             % valid new resolution but not possible

@@ -79,12 +79,13 @@
 function grab_ping_line_cback(src,evt,main_figure)
 % profile on;
 fData_tot = getappdata(main_figure,'fData');
+disp_config = getappdata(main_figure,'disp_config');
 
-if isempty(fData_tot)
+if isempty(fData_tot)||~strcmpi(disp_config.Mode,'normal')
     return;
 end
 
-disp_config = getappdata(main_figure,'disp_config');
+
 map_tab_comp = getappdata(main_figure,'Map_tab');
 
 IDs=cellfun(@(c) c.ID,fData_tot);

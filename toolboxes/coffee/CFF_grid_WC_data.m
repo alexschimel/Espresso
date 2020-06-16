@@ -302,7 +302,7 @@ for iB = 1:nBlocks
             
             block_bottomHeight = HeightInterpolant(blockN,blockE);
             blockH = blockH - block_bottomHeight;
-            
+            blockH (blockH<0) = nan;
             clear block_bottomHeight
     end
     
@@ -385,18 +385,23 @@ for iB = 1:nBlocks
             end
             
             % remove all other indices
-            blockL(~idx_keep) = [];
-            if isempty(blockL)
-                continue;
-            end
-            blockW(~idx_keep)    = [];
-            blockE(~idx_keep)    = [];
-            blockN(~idx_keep)    = [];
-            blockH(~idx_keep)    = [];
-            blockAccD(~idx_keep) = [];
-            clear idx_keep
-            
+        otherwise
+            idx_keep = true(size(blockH));  
     end
+    
+    idx_keep = idx_keep&(blockE-minGridE)>=0&(blockE-maxGridE)<=0&(blockN-minGridN)>=0&(blockN-maxGridN)<=0 & (blockH-minGridH)>=0&(blockH-maxGridH)<=0;
+    
+    blockL(~idx_keep) = [];
+    if isempty(blockL)
+        continue;
+    end
+    blockW(~idx_keep)    = [];
+    blockE(~idx_keep)    = [];
+    blockN(~idx_keep)    = [];
+    blockH(~idx_keep)    = [];
+    blockAccD(~idx_keep) = [];
+    clear idx_keep
+    
     
     % at this stage, pass blockL and blockW as GPU arrays if using GPUs
     if gpu_comp > 0
@@ -501,6 +506,7 @@ for iB = 1:nBlocks
             % full one
             gridTotalWeight(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1,idx_H_start:idx_H_start+N_H-1) = ...
                 gridTotalWeight(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1,idx_H_start:idx_H_start+N_H-1) + gridTotalWeight_forBlock;
+            
             gridWeightedSum(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1,idx_H_start:idx_H_start+N_H-1) = ...
                 gridWeightedSum(idx_N_start:idx_N_start+N_N-1,idx_E_start:idx_E_start+N_E-1,idx_H_start:idx_H_start+N_H-1) + gridWeightedSum_forBlock;
             clear gridTotalWeight_forBlock gridWeightedSum_forBlock
