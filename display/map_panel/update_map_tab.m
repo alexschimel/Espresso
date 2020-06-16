@@ -248,16 +248,22 @@ for i = update_line_index(:)'
         switch disp_config.Var_disp
             
             case 'wc_int'
+                
+                E = fData.X_1E_gridEasting;
+                N = fData.X_N1_gridNorthing;
+                
+                % get vertical extent of 3D grid displayed
                 display_tab_comp = getappdata(main_figure,'display_tab');
                 d_lim_sonar_ref = [sscanf(display_tab_comp.d_line_min.Label,'%fm') sscanf(display_tab_comp.d_line_max.Label,'%fm')];
                 d_lim_bottom_ref = [sscanf(display_tab_comp.d_line_bot_min.Label,'%fm') sscanf(display_tab_comp.d_line_bot_max.Label,'%fm')];
-                E = fData.X_1E_gridEasting;
-                N = fData.X_N1_gridNorthing;
+                
+                % get data
                 data = CFF_get_fData_wc_grid(fData,{'gridLevel'},d_lim_sonar_ref,d_lim_bottom_ref);
                 data = data{1};
                 if isa(data,'gpuArray')
-                    data=gather(data);
+                    data = gather(data);
                 end
+                
             case 'bathy'
                 
                 E = fData.X_1E_2DgridEasting;
@@ -278,10 +284,11 @@ for i = update_line_index(:)'
                 
         end
         
+        % data display
         if ~isempty(E)
-            % data display
             obj_wc = imagesc(ax,E,N,data,'Visible',wc_vis,'Tag',tag_id_wc);
         end
+        
         % NOTE: used to allow clicking on a grid to select a line/ping for
         % display but this conflicts with panning
         % obj_wc = imagesc(ax,E,N,data,'Visible',wc_vis,'Tag',tag_id_wc,'ButtonDownFcn',{@disp_wc_ping_cback,main_figure});

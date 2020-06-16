@@ -103,11 +103,13 @@ if mosaic.res == 0
     return;
     
 end
+
+% get vertical extent of 3D grid displayed
 display_tab_comp = getappdata(main_figure,'display_tab');
-d_lim_sonar_ref = [sscanf(display_tab_comp.d_line_min.Label,'%fm') sscanf(display_tab_comp.d_line_max.Label,'%fm')];
+d_lim_sonar_ref  = [sscanf(display_tab_comp.d_line_min.Label,'%fm') sscanf(display_tab_comp.d_line_max.Label,'%fm')];
 d_lim_bottom_ref = [sscanf(display_tab_comp.d_line_bot_min.Label,'%fm') sscanf(display_tab_comp.d_line_bot_max.Label,'%fm')];
 
-% if still here, then go on to computing mosaic
+% compute mosaic
 mosaic = compute_mosaic(mosaic,fData_tot,d_lim_sonar_ref,d_lim_bottom_ref);
 
 mosaics = getappdata(main_figure,'mosaics');

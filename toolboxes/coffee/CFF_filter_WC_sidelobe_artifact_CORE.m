@@ -174,10 +174,13 @@ switch params.ref.type
                 % using an average noise level from all samples in the
                 % water column of this ping, within minimum slant range
                 
+                [num_samples, ~, ~] = size(data);
+                
                 bottom_samples = CFF_get_bottom_sample(fData);
                 bottom_samples = bottom_samples(:,block_pings);
                 closest_bottom_sample = nanmin(bottom_samples);
-                closest_bottom_sample = nanmin(closest_bottom_sample,size(data,1));
+                closest_bottom_sample = nanmin(closest_bottom_sample,num_samples);
+                
                 % init ref level vector
                 ref_level = nan(1,1,numel(block_pings));
                 

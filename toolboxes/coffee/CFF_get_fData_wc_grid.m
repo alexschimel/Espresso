@@ -1,4 +1,6 @@
-function data = CFF_get_fData_wc_grid(fData,field,d_lim_sonar_ref,d_lim_bottom_ref)
+% get gridded data from fData. If 3D grid, option possible to only take
+% data within specified vertical bounds.
+function data = CFF_get_fData_wc_grid(fData, field, d_lim_sonar_ref, d_lim_bottom_ref)
 
 if ~iscell(field)
     field = {field};
@@ -7,11 +9,10 @@ end
 data = cell(1,numel(field));
 L = cell(1,numel(field));
 
-
 gpu_comp = get_gpu_comp_stat();
+
 for ui = 1:numel(field)
     L{ui} = fData.(['X_NEH_' field{ui}]);
-    
     if ~gpu_comp
         if isa(L{ui},'gpuArray')
             L{ui} = gather(L{ui});
@@ -23,10 +24,9 @@ for ui = 1:numel(field)
     end
 end
 
-% in case WC data is in 3D, caculate 2D views depending on
-% display controls
+% in case WC data is in 3D, caculate 2D views depending on display controls
 if size(L{1},3)>1
-     
+    
     switch fData.X_1_gridHeightReference
         
         case {'depth below sonar' 'Sonar'}
@@ -49,6 +49,7 @@ if size(L{1},3)>1
             
             idx_rem = (squeeze(fData.X_11H_gridHeight)+fData.X_1_gridVerticalResolution/2<d_line_min)|(squeeze(fData.X_11H_gridHeight)-fData.X_1_gridVerticalResolution/2>d_line_max);
     end
+    
     for ui = 1:numel(field)
         if ~all(idx_rem)
             L{ui}(:,:,idx_rem) = NaN;
@@ -65,6 +66,7 @@ if size(L{1},3)>1
             data{ui} = (L{ui}(:,:,id_keep));
         end
     end
+    
 else
     data = L;
 end

@@ -76,8 +76,7 @@
 % Yoann Ladroit, Alexandre Schimel, NIWA. XXX
 
 %% Function
-function mosaic = compute_mosaic(mosaic,fData_tot,d_lim_sonar_ref,d_lim_bottom_ref)
-
+function mosaic = compute_mosaic(mosaic, fData_tot, d_lim_sonar_ref, d_lim_bottom_ref)
 
 E_lim = mosaic.E_lim;
 N_lim = mosaic.N_lim;
@@ -114,9 +113,8 @@ for iF = 1:numel(fData_tot)
     fData = fData_tot{iF};
     E = fData.X_1E_gridEasting;
     N = fData.X_N1_gridNorthing;
-
-    data = CFF_get_fData_wc_grid(fData,{'gridLevel' 'gridDensity' 'gridMaxHorizDist'},d_lim_sonar_ref,d_lim_bottom_ref);
-    L =data{1} ;
+    data = CFF_get_fData_wc_grid(fData,{'gridLevel' 'gridDensity' 'gridMaxHorizDist'}, d_lim_sonar_ref, d_lim_bottom_ref);
+    L = data{1};
     W = data{2};
     D = data{3};
         

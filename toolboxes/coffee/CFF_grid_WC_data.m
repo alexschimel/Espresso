@@ -202,14 +202,14 @@ for iB = 1:nBlocks
         sonarEasting(blockPings), sonarNorthing(blockPings), sonarHeight(blockPings), sonarHeading(blockPings));
     
     % these subset of all samples should be enough to find the bounds for
-    % the entire block 
+    % the entire block
     minBlockE(iB) = min(blockE(:));
-    maxBlockE(iB) = max(blockE(:)); 
+    maxBlockE(iB) = max(blockE(:));
     minBlockN(iB) = min(blockN(:));
     maxBlockN(iB) = max(blockN(:));
     minBlockH(iB) = min(blockH(:));
     maxBlockH(iB) = max(blockH(:));
-
+    
 end
 
 % Get grid boundaries from the min and max of those blocks
@@ -251,7 +251,7 @@ switch grid_type
     case '3D'
         gridWeightedSum  = zeros(numElemGridN,numElemGridE,numElemGridH,'single');
         gridTotalWeight  = zeros(numElemGridN,numElemGridE,numElemGridH,'single');
-        gridMaxHorizDist =   nan(numElemGridN,numElemGridE,numElemGridH,'single');        
+        gridMaxHorizDist =   nan(numElemGridN,numElemGridE,numElemGridH,'single');
 end
 
 
@@ -285,7 +285,7 @@ for iB = 1:nBlocks
     
     startSampleNumber = fData.(sprintf('%s_BP_StartRangeSampleNumber',datagramSource))(1:db_sub:end,blockPings);
     beamPointingAngle = deg2rad(fData.(sprintf('%s_BP_BeamPointingAngle',datagramSource))(1:db_sub:end,blockPings));
-        
+    
     % get easting, northing, height and across distance from the samples
     [blockE, blockN, blockH, blockAccD] = CFF_georeference_sample(idxSamples, startSampleNumber, interSamplesDistance(blockPings), beamPointingAngle, ...
         sonarEasting(blockPings), sonarNorthing(blockPings), sonarHeight(blockPings), sonarHeading(blockPings));
@@ -302,7 +302,7 @@ for iB = 1:nBlocks
             
             block_bottomHeight = HeightInterpolant(blockN,blockE);
             blockH = blockH - block_bottomHeight;
-            blockH (blockH<0) = nan;
+            blockH(blockH<0) = NaN;
             clear block_bottomHeight
     end
     
@@ -362,7 +362,6 @@ for iB = 1:nBlocks
     % layer
     switch grid_type
         case '2D'
-
             switch grdlim_var
                 case 'Sonar'
                     % heights are referenced to sonar and min/max distances
@@ -383,13 +382,12 @@ for iB = 1:nBlocks
                             idx_keep = blockH<=grdlim_mindist | blockH>=grdlim_maxdist;
                     end
             end
-            
-            % remove all other indices
         otherwise
-            idx_keep = true(size(blockH));  
+            idx_keep = true(size(blockH));
     end
     
-    idx_keep = idx_keep&(blockE-minGridE)>=0&(blockE-maxGridE)<=0&(blockN-minGridN)>=0&(blockN-maxGridN)<=0 & (blockH-minGridH)>=0&(blockH-maxGridH)<=0;
+    % ?
+    idx_keep = idx_keep & (blockE-minGridE)>=0 & (blockE-maxGridE)<=0 & (blockN-minGridN)>=0 & (blockN-maxGridN)<=0 & (blockH-minGridH)>=0 & (blockH-maxGridH)<=0;
     
     blockL(~idx_keep) = [];
     if isempty(blockL)
@@ -401,7 +399,6 @@ for iB = 1:nBlocks
     blockH(~idx_keep)    = [];
     blockAccD(~idx_keep) = [];
     clear idx_keep
-    
     
     % at this stage, pass blockL and blockW as GPU arrays if using GPUs
     if gpu_comp > 0
