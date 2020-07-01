@@ -185,9 +185,10 @@ switch params.ref.type
                 ref_level = nan(1,1,numel(block_pings));
                 
                 % calculate ref level
-                
-                cleanWC = data(1:nanmax(closest_bottom_sample),:,:);
-                idnan=((1:size(cleanWC,1))'>=closest_bottom_sample);
+                id_start = ceil(nanmin(closest_bottom_sample)/10);%gettimg rid of surface noise. Removes spurious bands...
+                id_end = ceil(nanmax(closest_bottom_sample));
+                cleanWC = data(id_start:id_end,:,:);
+                idnan=(id_start-1+(1:size(cleanWC,1))'>=closest_bottom_sample);
                 idnan=permute(idnan,[1 3 2]);
                 cleanWC(repmat(idnan,1,size(cleanWC,2),1))=nan;
                 
