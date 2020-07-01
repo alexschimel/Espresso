@@ -179,39 +179,31 @@ switch params.ref.type
                 bottom_samples = CFF_get_bottom_sample(fData);
                 bottom_samples = bottom_samples(:,block_pings);
                 closest_bottom_sample = nanmin(bottom_samples);
-                closest_bottom_sample = nanmin(closest_bottom_sample,num_samples);
+                closest_bottom_sample = nanmin(ceil(closest_bottom_sample),num_samples);
                 
                 % init ref level vector
                 ref_level = nan(1,1,numel(block_pings));
                 
                 % calculate ref level
-                switch params.ref.val_calc
-                    
+                
+                cleanWC = data(1:nanmax(closest_bottom_sample),:,:);
+                idnan=((1:size(cleanWC,1))'>=closest_bottom_sample);
+                idnan=permute(idnan,[1 3 2]);
+                cleanWC(repmat(idnan,1,size(cleanWC,2),1))=nan;
+                
+                switch params.ref.val_calc                    
                     case 'mean'
-                        for iP = 1:numel(block_pings)
-                            cleanWC = data(1:closest_bottom_sample(iP)-1,:,iP);
-                            ref_level(1,1,iP) = nanmean(cleanWC(:));
-                        end
+                        ref_level = nanmean(cleanWC,[1 2]);                       
                     case 'median'
-                        for iP = 1:numel(block_pings)
-                            cleanWC = data(1:closest_bottom_sample(iP)-1,:,iP);
-                            ref_level(1,1,iP) = nanmedian(cleanWC(:));
-                        end
+                        ref_level = nanmedian(cleanWC,[1 2]);
                     case 'mode'
-                        for iP = 1:numel(block_pings)
-                            cleanWC = data(1:closest_bottom_sample(iP)-1,:,iP);
-                            ref_level(1,1,iP) = mode(cleanWC(~isnan(cleanWC)));
-                        end
+                        ref_level = mode(cleanWC,[1 2]);
+                   case 'perc5'
+                        ref_level = prctile(cleanWC,5,[1 2]);
                     case 'perc10'
-                        for iP = 1:numel(block_pings)
-                            cleanWC = data(1:closest_bottom_sample(iP)-1,:,iP);
-                            ref_level(1,1,iP) = prctile(cleanWC(:),10);
-                        end
+                        ref_level = prctile(cleanWC,10,[1 2]);
                     case 'perc25'
-                        for iP = 1:numel(block_pings)
-                            cleanWC = data(1:closest_bottom_sample(iP)-1,:,iP);
-                            ref_level(1,1,iP) = prctile(cleanWC(:),25);
-                        end
+                        ref_level = prctile(cleanWC,25,[1 2]);
                 end
                 
         end
@@ -220,7 +212,7 @@ end
 
 
 %% compensate data
-data = data - avg_across_beams + ref_level;
+data = data - avg_across_beams + single(ref_level);
 
 % save mean across beams for further use
 correction = avg_across_beams;

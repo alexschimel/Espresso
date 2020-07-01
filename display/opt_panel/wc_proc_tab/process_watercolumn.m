@@ -88,9 +88,20 @@ for itt = idx_fData(:)'
             nBlocks = ceil(nPings(ig)./blockLength);
             blocks = [ 1+(0:nBlocks-1)'.*blockLength , (1:nBlocks)'.*blockLength ];
             blocks(end,2) = nPings(ig);
+                   
+            minsrc = nan(1,nBlocks);
+            maxsrc = nan(1,nBlocks);
+            
+                             
+            transform_factor = nan(1,nBlocks);
+            transform_offset = nan(1,nBlocks);
+            
+            
+            mindest = single(intmin(wcdataproc_Class)+1); % the min value is reserved for NaN
+            maxdest = single(intmax(wcdataproc_Class));
             
             % processing per block of pings in memmap file
-            for iB = 1:nBlocks
+            for iB = nBlocks:-1:1
                 
                 % list of pings in this block
                 blockPings  = (blocks(iB,1):blocks(iB,2));
@@ -117,42 +128,69 @@ for itt = idx_fData(:)'
                 if procpar.masking_flag
                     data = CFF_mask_WC_data_CORE(data, fData_tot{itt}, blockPings_f, procpar.mask_angle, procpar.mask_closerange, procpar.mask_bottomrange, [], procpar.mask_ping);
                 end
-                
+                               
                 % transform data for storage
-                minsrc = floor(min(data(:)));
-                maxsrc = ceil(max(data(:)));
-                mindest = single(intmin(wcdataproc_Class)+1); % the min value is reserved for NaN
-                maxdest = single(intmax(wcdataproc_Class));
-                transform_factor = (maxdest-mindest)./(maxsrc-minsrc);
-                transform_offset = ((mindest.*maxsrc)-(maxdest.*minsrc))./(maxsrc-minsrc);
+%                 minsrc(iB) = floor(prctile(data,1,[1 2 3]));
+%                 maxsrc(iB) = ceil(prctile(data,99,[1 2 3]));
+%                 
                
-                % test 
-                % transform_factor.*min(data(:)) + transform_offset
-                % transform_factor.*max(data(:)) + transform_offset
+                minsrc(iB) = nanmin(data(:));
+                maxsrc(iB) = nanmax(data(:));
                 
+                minsrc(iB) = nanmin(minsrc);
+                maxsrc(iB) = nanmax(maxsrc);
+                
+                transform_factor(iB) = nanmax(floor((maxdest-mindest)./(maxsrc(iB)-minsrc(iB))),1);
+                transform_offset(iB) = floor((((mindest.*maxsrc(iB))-(maxdest.*minsrc(iB)))./(maxsrc(iB)-minsrc(iB)))/10)*10;
+                  
                 % transform
-                data_cast = cast(data.*transform_factor + transform_offset, wcdataproc_Class);
-                
-                % decode factor/offset
-                wcdataproc_Factor = 1./transform_factor;
-                wcdataproc_Offset = -(transform_offset./transform_factor);
+                data_cast = cast(data.*transform_factor(iB) + transform_offset(iB), wcdataproc_Class);
                 
                 % set nan values
                 data_cast(isnan(data)) = intmin(wcdataproc_Class);
                 
-                % store
                 fData_tot{itt}.X_SBP_WaterColumnProcessed{ig}.Data.val(:,:,blockPings) = data_cast;
-                
-                % update memmap parameters
-                p_field = strrep(newfieldname,'SBP','1');
-                fData_tot{itt}.(sprintf('%s_Factor',p_field))(ig) = wcdataproc_Factor;
-                fData_tot{itt}.(sprintf('%s_Offset',p_field))(ig) = wcdataproc_Offset;
                 
                 % disp processing progress
                 if nMemMapFiles == 1
-                    textprogressbar(round(iB.*100./nBlocks)-1);
+                    textprogressbar(round((nBlocks-iB+1).*100./nBlocks));
                 end
                 
+            end
+            
+            % decode factor/offset
+            maxsrc_final = nanmax(maxsrc);
+            minsrc_final = nanmin(minsrc);
+            
+            transform_factor_final = nanmax(floor((maxdest-mindest)./(maxsrc_final-minsrc_final)),1);
+            transform_offset_final = floor(((mindest.*maxsrc_final)-(maxdest.*minsrc_final))./(maxsrc_final-minsrc_final)/10)*10;
+            
+            wcdataproc_Factor = 1./transform_factor_final;
+            wcdataproc_Offset = -(transform_offset_final./transform_factor_final);
+            
+            % update memmap parameters
+            p_field = strrep(newfieldname,'SBP','1');
+            fData_tot{itt}.(sprintf('%s_Factor',p_field))(ig) = wcdataproc_Factor;
+            fData_tot{itt}.(sprintf('%s_Offset',p_field))(ig) = wcdataproc_Offset;
+            
+            
+            for iB=1:nBlocks
+                if transform_factor_final == transform_factor(iB) && transform_offset_final == transform_offset(iB)
+                    continue;
+                end
+                
+                blockPings  = (blocks(iB,1):blocks(iB,2));
+                data = fData_tot{itt}.X_SBP_WaterColumnProcessed{ig}.Data.val(:,:,blockPings);
+                data_cast = (single(data) - transform_offset(iB))/transform_factor(iB);
+                
+                % transform
+                data_cast = cast(data_cast.*transform_factor_final + transform_offset_final, wcdataproc_Class);
+                
+                % set nan values
+                data_cast(data==intmin(wcdataproc_Class)) = intmin(wcdataproc_Class);
+                
+                % store
+                fData_tot{itt}.X_SBP_WaterColumnProcessed{ig}.Data.val(:,:,blockPings) = data_cast; 
             end
             
             % disp processing progress

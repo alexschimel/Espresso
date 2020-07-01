@@ -272,7 +272,7 @@ for iF = 1:nStruct
                 fData.WC_1P_SamplingFrequencyHz             = S7Kdata.R7000_SonarSettings.SampleRate; % in Hz
                 fData.WC_1P_TXTimeHeave                     = nan(ones(size(pingNumber)));
                 fData.WC_1P_TVGFunctionApplied              = nan(size(pingNumber));
-                fData.WC_1P_TVGOffset                       = nan(size(pingNumber));
+                fData.WC_1P_TVGOffset                       = zeros(size(pingNumber));
                 fData.WC_1P_ScanningInfo                    = nan(size(pingNumber));
                 
                 % initialize data per transmit sector and ping
@@ -348,11 +348,8 @@ for iF = 1:nStruct
                     
                 end
                 
-                
-                
-                
-                
-                
+               
+               
                 
             end
         end
@@ -388,7 +385,7 @@ for iF = 1:nStruct
                 fData.AP_1P_SamplingFrequencyHz             = S7Kdata.R7042_CompressedWaterColumn.SampleRate; % in Hz
                 fData.AP_1P_TXTimeHeave                     = nan(ones(size(pingNumber)));
                 fData.AP_1P_TVGFunctionApplied              = nan(size(pingNumber));
-                fData.AP_1P_TVGOffset                       = nan(size(pingNumber));
+                fData.AP_1P_TVGOffset                       = zeros(size(pingNumber));
                 fData.AP_1P_ScanningInfo                    = nan(size(pingNumber));
                 
                 % initialize data per transmit sector and ping
