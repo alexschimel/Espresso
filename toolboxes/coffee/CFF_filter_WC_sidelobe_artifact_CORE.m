@@ -1,8 +1,10 @@
 %% CFF_filter_WC_sidelobe_artifact_CORE.m
 %
-% _This section contains a very short description of the function, for the
-% user to know this function is part of the software and what it does for
-% it. Example below to replace. Delete these lines XXX._
+% [data, correction] = CFF_filter_WC_sidelobe_artifact_CORE(data, fData,
+% block_pings) filters the sidelobe artifact in water-column data "data",
+% according to one of several methods to be eventually put as controllable
+% parameters. You need to input fData and block_pings here to get
+% information on the bottom samples.
 %
 % Template of ESP3 function header. XXX
 %
@@ -97,7 +99,7 @@ params.ref.area = 'cleanWC'; % 'nadirWC' or 'cleanWC'
 
 % if reference from ping data, set mode of calculation of the reference
 % value here
-params.ref.val_calc = 'perc25'; % 'mean', 'median', 'mode', 'perc10', 'perc25'
+params.ref.val_calc = 'perc25'; % 'mean', 'median', 'mode', 'perc5', 'perc10', 'perc25'
 
 
 %% average value across beams
@@ -119,95 +121,58 @@ switch params.ref.type
         
     case 'from_ping_data'
         
+        % get closest bottom sample (minimum slant range) in each ping
+        [num_samples, ~, ~] = size(data);
+        bottom_samples = CFF_get_bottom_sample(fData);
+        bottom_samples = bottom_samples(:,block_pings);
+        closest_bottom_sample = nanmin(bottom_samples);
+        closest_bottom_sample = nanmin(ceil(closest_bottom_sample),num_samples);
+        
+        % indices for data extraction (getting rid of surface noise)
+        id_start = ceil(nanmin(closest_bottom_sample)/10);
+        id_end   = ceil(nanmax(closest_bottom_sample));
+        
+        % extracting reference data
         switch params.ref.area
             
             case 'nadirWC'
                 % using an average noise level from all samples in the
-                % water column of this ping, above the bottom, within the 
-                % beams closest to nadir.
-                
-                % find the 11 beams nearest to nadir
-                [num_samples, num_beams, ~] = size(data);
+                % water column of this ping, above the bottom, within the
+                % 11 beams closest to nadir.
+                [~, num_beams, ~] = size(data);
                 nadir_beams = (floor((num_beams./2)-5):ceil((num_beams./2)+5));
-                
-                % calculate the average bottom detect for those beams for each ping
-                bottom_samples = CFF_get_bottom_sample(fData);
-                bottom_samples = bottom_samples(nadir_beams,block_pings);
-                nadir_bottom = round(inpaint_nans(nanmin(bottom_samples)));
-                nadir_bottom(nadir_bottom>num_samples) = num_samples;
-                
-                % init ref level vector
-                ref_level = nan(1,1,numel(block_pings));
-                
-                % calculate ref level
-                switch params.ref.val_calc
-                    
-                    case 'mean'
-                        for iP = 1:numel(block_pings)
-                            nadirWC = data(1:nadir_bottom(iP),nadir_beams,iP);
-                            ref_level(1,1,iP) = nanmean(nadirWC(:));
-                        end
-                    case 'median'
-                        for iP = 1:numel(block_pings)
-                            nadirWC = data(1:nadir_bottom(iP),nadir_beams,iP);
-                            ref_level(1,1,iP) = nanmedian(nadirWC(:));
-                        end
-                    case 'mode'
-                        for iP = 1:numel(block_pings)
-                            nadirWC = data(1:nadir_bottom(iP),nadir_beams,iP);
-                            ref_level(1,1,iP) = mode(nadirWC(~isnan(nadirWC)));
-                        end
-                    case 'perc10'
-                        for iP = 1:numel(block_pings)
-                            nadirWC = data(1:nadir_bottom(iP),nadir_beams,iP);
-                            ref_level(1,1,iP) = prctile(nadirWC(:),10);
-                        end
-                    case 'perc25'
-                        for iP = 1:numel(block_pings)
-                            nadirWC = data(1:nadir_bottom(iP),nadir_beams,iP);
-                            ref_level(1,1,iP) = prctile(nadirWC(:),25);
-                        end
-                end
-
+                ref_data = data(id_start:id_end,nadir_beams,:);
                 
             case 'cleanWC'
                 % using an average noise level from all samples in the
-                % water column of this ping, within minimum slant range
-                
-                [num_samples, ~, ~] = size(data);
-                
-                bottom_samples = CFF_get_bottom_sample(fData);
-                bottom_samples = bottom_samples(:,block_pings);
-                closest_bottom_sample = nanmin(bottom_samples);
-                closest_bottom_sample = nanmin(ceil(closest_bottom_sample),num_samples);
-                
-                % init ref level vector
-                ref_level = nan(1,1,numel(block_pings));
-                
-                % calculate ref level
-                id_start = ceil(nanmin(closest_bottom_sample)/10);%gettimg rid of surface noise. Removes spurious bands...
-                id_end = ceil(nanmax(closest_bottom_sample));
-                cleanWC = data(id_start:id_end,:,:);
-                idnan=(id_start-1+(1:size(cleanWC,1))'>=closest_bottom_sample);
-                idnan=permute(idnan,[1 3 2]);
-                cleanWC(repmat(idnan,1,size(cleanWC,2),1))=nan;
-                
-                switch params.ref.val_calc                    
-                    case 'mean'
-                        ref_level = nanmean(cleanWC,[1 2]);                       
-                    case 'median'
-                        ref_level = nanmedian(cleanWC,[1 2]);
-                    case 'mode'
-                        ref_level = mode(cleanWC,[1 2]);
-                   case 'perc5'
-                        ref_level = prctile(cleanWC,5,[1 2]);
-                    case 'perc10'
-                        ref_level = prctile(cleanWC,10,[1 2]);
-                    case 'perc25'
-                        ref_level = prctile(cleanWC,25,[1 2]);
-                end
-                
+                % water column of this ping, within minimum slant range,
+                % aka "clean watercolumn"
+                ref_data = data(id_start:id_end,:,:);
+                              
         end
+        
+        % nan all samples beyond minimum slant range in the extracted data
+        idnan = id_start-1+(1:size(ref_data,1))' >= closest_bottom_sample;
+        idnan = permute(idnan,[1 3 2]);
+        idnan = repmat(idnan,1,size(ref_data,2),1);
+        ref_data(idnan) = NaN;
+        
+        % calculate ref level
+        switch params.ref.val_calc
+            case 'mean'
+                ref_level = nanmean(ref_data,[1 2]);
+            case 'median'
+                ref_level = nanmedian(ref_data,[1 2]);
+            case 'mode'
+                ref_level = mode(ref_data,[1 2]);
+            case 'perc5'
+                ref_level = prctile(ref_data,5,[1 2]);
+            case 'perc10'
+                ref_level = prctile(ref_data,10,[1 2]);
+            case 'perc25'
+                ref_level = prctile(ref_data,25,[1 2]);
+        end
+        
 end
 
 
