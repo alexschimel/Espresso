@@ -111,7 +111,7 @@ dg_source = CFF_get_datagramSource(fData);
 X = fData.(sprintf('%s_1P_TVGFunctionApplied',dg_source))(pings);
 C = fData.(sprintf('%s_1P_TVGOffset',dg_source))(pings);
 
-%assuming 30 log10 f nothing has been specified
+% Assuming 30log R if nothing has been specified
 X(isnan(X)) = 30;
 C(isnan(C)) = 0;
 
