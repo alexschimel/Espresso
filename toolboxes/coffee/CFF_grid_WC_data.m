@@ -170,8 +170,10 @@ switch grdlim_var
         %% Prepare the Height interpolant
         % needed to calculate height above seafloor for each sample in case of
         % gridding in height above bottom, as well as final gridded bathymetry.
-        idx_valid_bottom = ~isnan(fData.X_BP_bottomHeight) & ~isinf(fData.X_BP_bottomHeight);
-        HeightInterpolant = scatteredInterpolant(fData.X_BP_bottomNorthing(idx_valid_bottom),fData.X_BP_bottomEasting(idx_valid_bottom),fData.X_BP_bottomHeight(idx_valid_bottom),'natural','none');
+        idx_valid_bottom = false(size(fData.X_BP_bottomHeight));
+        idx_valid_bottom(1:db_sub:end,:) =true;
+        idx_valid_bottom = idx_valid_bottom &(~isnan(fData.X_BP_bottomHeight) & ~isinf(fData.X_BP_bottomHeight));        
+        HeightInterpolant = scatteredInterpolant(fData.X_BP_bottomNorthing(idx_valid_bottom),fData.X_BP_bottomEasting(idx_valid_bottom),fData.X_BP_bottomHeight(idx_valid_bottom),'linear','none');
 end
 
 %% find grid limits
@@ -300,7 +302,13 @@ for iB = 1:nBlocks
     switch grdlim_var
         case 'Bottom'
             
-            block_bottomHeight = HeightInterpolant(blockN,blockE);
+            %block_bottomHeight = HeightInterpolant(blockN,blockE);
+            block_bottom_H=permute(fData.X_BP_bottomHeight(1:db_sub:end,blockPings),[3 1 2]);
+            block_bottomHeight = nan(size(blockH));
+            id_interp = (blockH>block_bottom_H);%reducing the amount of data we need to compute heigth above bottom for
+            
+            block_bottomHeight(id_interp) = HeightInterpolant(blockN(id_interp),blockE(id_interp));
+            
             blockH = blockH - block_bottomHeight;
             blockH(blockH<0) = NaN;
             clear block_bottomHeight
@@ -386,8 +394,9 @@ for iB = 1:nBlocks
             idx_keep = true(size(blockH));
     end
     
-    % ?
-    idx_keep = idx_keep & (blockE-minGridE)>=0 & (blockE-maxGridE)<=0 & (blockN-minGridN)>=0 & (blockN-maxGridN)<=0 & (blockH-minGridH)>=0 & (blockH-maxGridH)<=0;
+    %Only keep samples within the allocated grid (potential issue in bottom reference grids otherwise)
+    idx_keep = idx_keep &...
+        (blockE-minGridE)>=0 & (blockE-maxGridE)<=0 & (blockN-minGridN)>=0 & (blockN-maxGridN)<=0 & (blockH-minGridH)>=0 & (blockH-maxGridH)<=0;
     
     blockL(~idx_keep) = [];
     if isempty(blockL)
@@ -437,7 +446,7 @@ for iB = 1:nBlocks
         
         case '2D'
             
-            % no need for blcokH any more
+            % no need for blockH any more
             clear blockH
             
             % we use the accumarray function to sum all values in both the
