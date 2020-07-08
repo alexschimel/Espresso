@@ -91,11 +91,13 @@ switch datagramSource
     
     case {'WC' 'AP'}
         
+        % get the bottom samples in each ping/beam
+        X_BP_bottomSample = CFF_get_bottom_sample(fData); % not precising wether raw or processed here, as this code is used both when loading the data and after filtering
+        X_1BP_bottomSample = permute(X_BP_bottomSample,[3,1,2]);
+        
         % X_BP_startRangeSampleNumber = fData.WC_BP_StartRangeSampleNumber; % not needed for bottom detect (I think)
         X_BP_beamPointingAngleDeg = fData.(sprintf('%s_BP_BeamPointingAngle',datagramSource));
         X_BP_beamPointingAngleRad = deg2rad(X_BP_beamPointingAngleDeg);
-        X_BP_bottomSample = CFF_get_bottom_sample(fData);
-        X_1BP_bottomSample = permute(X_BP_bottomSample,[3,1,2]);
 
         % OWTT distance traveled in one sample
         X_1P_oneSampleDistance = CFF_inter_sample_distance(fData);
@@ -104,7 +106,7 @@ switch datagramSource
         [X_1BP_bottomEasting, X_1BP_bottomNorthing, X_1BP_bottomHeight, X_1BP_bottomAcrossDist, X_1BP_bottomUpDist, X_1BP_bottomRange] = CFF_georeference_sample(X_1BP_bottomSample, 0, X_1P_oneSampleDistance, X_BP_beamPointingAngleRad, X_1P_sonarEasting, X_1P_sonarNorthing, X_1P_sonarHeight, X_1P_thetaRad);
         
         % save info
-        fData.X_BP_bottomSample         = X_BP_bottomSample;
+        fData = CFF_set_bottom_sample(fData,X_BP_bottomSample);
         fData.X_PB_beamPointingAngleRad = X_BP_beamPointingAngleRad;
         fData.X_BP_bottomRange          = permute(X_1BP_bottomRange,[2,3,1]);
         

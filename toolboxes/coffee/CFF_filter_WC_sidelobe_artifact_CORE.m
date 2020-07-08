@@ -87,7 +87,7 @@ function [data, correction] = CFF_filter_WC_sidelobe_artifact_CORE(data, fData, 
 params.avg_calc = 'mean'; % 'mean' or 'median'
 
 % reference level type of calculation: constant or from ping data
-params.ref.type = 'from_ping_data'; % 'cst' or 'from_ping_data'
+params.ref.type = 'from_ping_data'; % 'from_ping_data'; % 'cst' or 'from_ping_data'
 
 % if constant ref, set the value here (in dB)
 params.ref.cst = -70;

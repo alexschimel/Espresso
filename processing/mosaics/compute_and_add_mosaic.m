@@ -88,7 +88,7 @@ if isempty(fData_tot)
 end
 
 % choose mode 'blend' (normal) or the new 'stitch'
-mosaic = init_mosaic(E_lim,N_lim,0,'blend');
+mosaic = init_mosaic(E_lim,N_lim,0,'stitch');
 
 [mosaic, fData_tot] = prep_mosaic(mosaic,fData_tot);
 

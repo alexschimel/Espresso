@@ -159,7 +159,7 @@ for nF = 1:numel(files_to_load)
         
         %% Processing bottom detect
         if ismember(CFF_get_datagramSource(fData_temp),{'WC' 'AP' 'X8'})
-            fprintf('...Processing bottom detect...\n');
+            fprintf('...Georeferencing bottom detect...\n');
             fData_temp = CFF_georeference_WC_bottom_detect(fData_temp);
         end
         
