@@ -76,23 +76,36 @@
 % Yoann Ladroit, Alexandre Schimel, NIWA. XXX
 
 %% Function
-function [lat_str,lon_str] = latlon2str(lat,lon,prec)
+function [lat_str,lon_str] = latlon2str(lat,lon)
 
-lon(lon>180) = lon(lon>180)-360;
 
-if lat>0
-    str_lat = 'N';
-else
-    str_lat = 'S';
-end
 
-if lon>180 || lon<0
-    str_lon = 'W';
-else
-    str_lon = 'E';
-end
+    if lon>180||lon<0        
+        e0w='W';
+        if lon>180
+           lon=abs(lon-360); 
+        end
+    else
+        e0w='E';
+    end
+    
+    if lat>0
+        n0s='N';
+    else
+        n0s='S';
+        lat=abs(lat);
+    end
+    
+    lat_deg=floor(abs(lat));
+    lon_deg=floor(abs(lon));
+    lat_min=(abs(lat)-abs(lat_deg))*60;
+    
+    lon_min=(abs(lon)-abs(lon_deg))*60;
+    
+    lat_str=sprintf('%d%c %05.2f'' %s',lat_deg,char(hex2dec('00BA')),lat_min,n0s);
+    lon_str=sprintf('%d%c %05.2f'' %s',lon_deg,char(hex2dec('00BA')),lon_min,e0w);
 
-lat_str = sprintf(['%.0f^\\circ' prec ' %s'],abs(lat),(abs(lat)-floor(abs(lat)))*1e2,str_lat);
-lon_str = sprintf(['%.0f^\\circ' prec ' %s'],abs(lon),(abs(lon)-floor(abs(lon)))*1e2,str_lon);
+
+
 
 end

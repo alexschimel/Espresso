@@ -117,7 +117,7 @@ zone = disp_config.get_zone();
 
 [lat,lon] = utm2ll(x,y,zone);
 
-[lat_str,lon_str] = latlon2str(lat,lon,'%.3f');
+[lat_str,lon_str] = latlon2str(lat,lon);
 
 pos_string = sprintf('%s\n%s\n',lat_str,lon_str);
 
