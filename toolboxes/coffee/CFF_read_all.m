@@ -183,11 +183,11 @@ end
 
 %% FIRST FILE
 
-% Get info in first (or only) file
+% Get info from first (or only) file
 info = CFF_all_file_info(ALLfilename{1});
 
 if isempty(datagrams_to_parse)
-    % parse all datagrams in firt file
+    % parse all datagrams in first file
     
     info.parsed(:) = 1;
     datagrams_parsed_in_first_file = unique(info.datagTypeNumber);
@@ -195,7 +195,7 @@ if isempty(datagrams_to_parse)
     datagrams_parsed_idx = [];
     
 else
-    % datagrams to parse are listed
+    % datagrams to parse are listed in input
 
     if isnumeric(datagrams_to_parse)
         

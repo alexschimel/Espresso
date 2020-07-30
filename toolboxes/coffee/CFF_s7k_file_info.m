@@ -218,19 +218,22 @@ while pif_nextrecordstart < filesize
     syncPattern     = fread(fid,1,'uint32');
     
     % test for synchronization
-    if syncPattern ~= 65535
+    if protocolVersion~=5 || DRF_offset~=60 || syncPattern~=65535
         % NOT SYNCHRONIZED
         % go back to new record start, advance one byte, and restart
         % reading
         fseek(fid, pif_recordstart+1, -1);
         pif_nextrecordstart = 0;
         syncCounter = syncCounter+1; % update sync counter
+        if syncCounter == 1
+            warning('Lost sync while reading datagrams. A record may be corrupted. Trying to resync...');
+        end
         continue;
     else
-        % SYNCHRNOZED
+        % SYNCHRONIZED
         % throw a warning if we had lost it
         if syncCounter
-            warning('Record corrupted. Lost synchronization here for a while, and resynced %i bytes later than expected',syncCounter);
+            warning('Back in sync (%i bytes later)',syncCounter);
         end
     end
     
@@ -330,7 +333,7 @@ while pif_nextrecordstart < filesize
     S7Kfileinfo.DRF_size(kk,1)      = DRF_size;
     S7Kfileinfo.RTHandRD_size(kk,1) = RTHandRD_size;
     
-    S7Kfileinfo.OD_offset(kk,1)       = optionalDataOffset;
+    S7Kfileinfo.OD_offset(kk,1)     = optionalDataOffset;
     S7Kfileinfo.OD_size(kk,1)       = OD_size;
     S7Kfileinfo.CS_size(kk,1)       = CS_size;
     
@@ -338,7 +341,7 @@ while pif_nextrecordstart < filesize
     S7Kfileinfo.syncCounter(kk,1) = syncCounter;
     
     % record time info
-    S7Kfileinfo.date{kk,1}=datenum(sevenKTime_year,0, sevenKTime_day);
+    S7Kfileinfo.date{kk,1} = datenum(sevenKTime_year,0, sevenKTime_day);
     S7Kfileinfo.timeSinceMidnightInMilliseconds(kk,1) = (sevenKTime_hours.*3600 + sevenKTime_minutes.*60 + sevenKTime_seconds).*1000;
     
     
