@@ -1,5 +1,5 @@
 %% function_name.m
-%
+% TEST
 % _This section contains a very short description of the function, for the
 % user to know this function is part of the software and what it does for
 % it. Example below to replace. Delete these lines XXX._
