@@ -2,7 +2,7 @@
 %
 % Reads contents of one Kongsberg EM series binary .all or .wcd data file,
 % or a pair of .all/.wcd files, allowing choice on which type of datagrams
-% to parse. 
+% to parse.
 %
 %% Help
 %
@@ -22,7 +22,7 @@
 % (that is, ALLfilename = 'myfile' for a myfile.all and myfile.wcd pair),
 % then the above commands will extract the requested datagrams from the
 % .wcd file and the remaining in the .all file.
-% 
+%
 % Note this function will extract all datagram types of interest. For more
 % control (say you only want the first ten depth datagrams and the last
 % position datagram), use CFF_read_all_from_fileinfo.
@@ -146,38 +146,18 @@ datagrams_to_parse = p.Results.datagrams;
 
 
 %% PREP
-
-if ~isempty(CFF_file_extension(ALLfilename))
-    % if filename has an extension, simply convert it to cell
-    
+if ischar(ALLfilename)
+    % single file .all OR .wcd. Convert filename to cell.
     ALLfilename = {ALLfilename};
-    
 else
-    % if filename does not have an extension. Check for the existence of
-    % .all and/or .wcd
-    
-    ALLfilename = CFF_get_Kongsberg_files(ALLfilename);
-    
-    % test for file existence
-    ind = [ exist(ALLfilename{1},'file'), exist(ALLfilename{2},'file') ];
-    ALLfilename = ALLfilename(ind>0);
-    
-    if ~all(ind)&&~iscell(ALLfilename)
-        % only one file exists, save as cell
-        ALLfilename = {ALLfilename};
-    else
-        % in case of an existing pair of all/wcd files, the order is important
-        % as this function only reads in the 2nd file what it could not find in
-        % the first.
-        % By default, we want the wcd file to be read first, and only grab
-        % from the all file what is needed and couldn't be found in the wcd
-        % file. Flipping it here rather than in CFF_get_Kongsberg_files because
-        % I want this function to output all/wcd by default and not wcd/all
-        if ~strcmp(CFF_file_extension(ALLfilename{1}),'.wcd')
-            ALLfilename = fliplr(ALLfilename);
-        end
+    % matching file pair .all AND .wcd.
+    % make sure .wcd is listed first because this function only reads in
+    % the 2nd file what it could not find in the first, and we want to only
+    % grab from the .all file what is needed and couldn't be found in the
+    % .wcd file.
+    if strcmp(CFF_file_extension(ALLfilename{1}),'.all')
+        ALLfilename = fliplr(ALLfilename);
     end
-    
 end
 
 
@@ -191,17 +171,16 @@ if isempty(datagrams_to_parse)
     
     info.parsed(:) = 1;
     datagrams_parsed_in_first_file = unique(info.datagTypeNumber);
-    
     datagrams_parsed_idx = [];
     
 else
     % datagrams to parse are listed in input
-
+    
     if isnumeric(datagrams_to_parse)
         
         % datagrams available
         datagrams_available = unique(info.datagTypeNumber);
-    
+        
         % find which datagrams can be read here
         datagrams_parsable_idx = ismember(datagrams_to_parse,datagrams_available);
         
@@ -231,7 +210,7 @@ else
             info.parsed(idx) = 1;
             datagrams_parsed_idx = datagrams_parsable_idx;
         end
-       
+        
     end
     
 end
@@ -240,92 +219,82 @@ end
 ALLdata = CFF_read_all_from_fileinfo(ALLfilename{1}, info);
 
 
-
-%% SECOND FILE
-% do only if we have a second file, and either we requested to read all
-% datagrams (in which case, the second file might have datagrams not read
-% in the first and we need to grab those) OR we requested a specific set of
-% datagrams and didn't get them all from the first file.
-if numel(ALLfilename)>1 && (isempty(datagrams_to_parse) || ~all(datagrams_parsed_idx))
+%% SECOND FILE (if any)
+if numel(ALLfilename)>1
     
-    % Get info in second file
-    info = CFF_all_file_info(ALLfilename{2});
-    
-    if isempty(datagrams_to_parse)
-        % parse all datagrams in second file which we didn't get in the
-        % first one.
+    % parse only if we requested to read all datagrams (in which case, the
+    % second file might have datagrams not read in the first and we need to
+    % grab those) OR if we requested a specific set of datagrams and didn't
+    % get them all from the first file. 
+    if isempty(datagrams_to_parse) || ~all(datagrams_parsed_idx)
         
-        % datagrams in second file
-        datagrams_available_in_second_file = unique(info.datagTypeNumber);
+        % Get info in second file
+        info = CFF_all_file_info(ALLfilename{2});
         
-        % those in second file that were not in first
-        datagrams_to_parse_in_second_file = setdiff(datagrams_available_in_second_file,datagrams_parsed_in_first_file);
-        
-        % parse those
-        idx = ismember(info.datagTypeNumber,datagrams_to_parse_in_second_file);
-        info.parsed(idx) = 1;
-        
-        % for output
-        datagrams_parsed_idx = [];
- 
-    else
-        % datagrams to parse are listed
-        
-        if isnumeric(datagrams_to_parse)
+        if isempty(datagrams_to_parse)
+            % parse all datagrams in second file which we didn't get in the
+            % first one.
             
+            % datagrams in second file
             datagrams_available_in_second_file = unique(info.datagTypeNumber);
             
-            % find which remaining datagram types can be read here
-            datagrams_to_parse_in_second_file_idx = ismember(datagrams_to_parse,datagrams_available_in_second_file) & ~datagrams_parsed_idx;
+            % those in second file that were not in first
+            datagrams_to_parse_in_second_file = setdiff(datagrams_available_in_second_file,datagrams_parsed_in_first_file);
             
-            % if any, read those datagrams
-            if any(datagrams_to_parse_in_second_file_idx)
+            % parse those
+            idx = ismember(info.datagTypeNumber,datagrams_to_parse_in_second_file);
+            info.parsed(idx) = 1;
+            
+            % for output
+            datagrams_parsed_idx = [];
+            
+        else
+            % datagrams to parse are listed
+            
+            if isnumeric(datagrams_to_parse)
                 
-                idx = ismember(info.datagTypeNumber,datagrams_to_parse(datagrams_to_parse_in_second_file_idx));
-                info.parsed(idx) = 1;                
-                datagrams_parsed_idx = datagrams_parsed_idx | datagrams_to_parse_in_second_file_idx;
+                datagrams_available_in_second_file = unique(info.datagTypeNumber);
+                
+                % find which remaining datagram types can be read here
+                datagrams_to_parse_in_second_file_idx = ismember(datagrams_to_parse,datagrams_available_in_second_file) & ~datagrams_parsed_idx;
+                
+                % if any, read those datagrams
+                if any(datagrams_to_parse_in_second_file_idx)
+                    
+                    idx = ismember(info.datagTypeNumber,datagrams_to_parse(datagrams_to_parse_in_second_file_idx));
+                    info.parsed(idx) = 1;
+                    datagrams_parsed_idx = datagrams_parsed_idx | datagrams_to_parse_in_second_file_idx;
+                    
+                end
+                
+            elseif ischar(datagrams_to_parse) || iscell(datagrams_to_parse)
+                % datagrams is one or several datagTypeText
+                
+                datagrams_available_in_second_file = unique(info.datagTypeText);
+                
+                % find which remaining datagram types can be read here
+                datagrams_to_parse_in_second_file_idx = ismember(datagrams_to_parse,datagrams_available_in_second_file) & ~datagrams_parsed_idx;
+                
+                % if any, read those datagrams
+                if any(datagrams_to_parse_in_second_file_idx)
+                    
+                    idx = ismember(info.datagTypeText,datagrams_to_parse(datagrams_to_parse_in_second_file_idx));
+                    info.parsed(idx) = 1;
+                    datagrams_parsed_idx = datagrams_parsed_idx | datagrams_to_parse_in_second_file_idx;
+                    
+                end
                 
             end
-
-        elseif ischar(datagrams_to_parse) || iscell(datagrams_to_parse)
-            % datagrams is one or several datagTypeText
             
-            datagrams_available_in_second_file = unique(info.datagTypeText);
-            
-            % find which remaining datagram types can be read here
-            datagrams_to_parse_in_second_file_idx = ismember(datagrams_to_parse,datagrams_available_in_second_file) & ~datagrams_parsed_idx;
-            
-            % if any, read those datagrams
-            if any(datagrams_to_parse_in_second_file_idx)
-                
-                idx = ismember(info.datagTypeText,datagrams_to_parse(datagrams_to_parse_in_second_file_idx));
-                info.parsed(idx) = 1;                
-                datagrams_parsed_idx = datagrams_parsed_idx | datagrams_to_parse_in_second_file_idx;
-                
-            end
-                
         end
         
+        % read data in second file
+        ALLdata2 = CFF_read_all_from_fileinfo(ALLfilename{2}, info);
+        
+        % combine to data from first file
+        ALLdata = {ALLdata ALLdata2};
+        
     end
-    
-    % read data in second file
-    ALLdata2 = CFF_read_all_from_fileinfo(ALLfilename{2}, info);
-    
-    % combine to data from first file
-    ALLdata = {ALLdata ALLdata2};
-    
-      
 end
-
-
-
-
-
-
-
-
-
-
-
 
 

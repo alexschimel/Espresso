@@ -1,3 +1,15 @@
+%% load_files.m
+%
+% Function description XXX
+%
+%% Help
+%
+% *AUTHOR, AFFILIATION & COPYRIGHT*
+%
+% Yoann Ladroit, Alexandre Schimel NIWA. Type |help Espresso.m| for
+% copyright information.
+
+%% Function
 function [fData, disp_config] = load_files(fData, files_to_load, files_not_converted, files_already_loaded, disp_config)
 
 % general timer

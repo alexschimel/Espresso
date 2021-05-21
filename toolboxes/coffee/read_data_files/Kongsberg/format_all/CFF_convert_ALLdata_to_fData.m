@@ -194,7 +194,7 @@ end
 
 if ~isfield(fData,'MET_Fmt_version') && ~isempty(fData)
     %added a version for fData
-    fData.MET_Fmt_version='0.0';
+    fData.MET_Fmt_version = '0.0';
 end
 
 if ~strcmpi(ver,CFF_get_current_fData_version)

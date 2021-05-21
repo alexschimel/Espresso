@@ -167,11 +167,7 @@ list_recordTypeIdentifier = cellfun(@(x) str2double(x(1:4)), list_recordTypeText
 
 
 %% Open file and initializing
-
-% NOTE: s7k files are in little Endian 'l', which is the default so no need
-% to specify
-
-% opening file
+% s7k files are in little Endian 'l', which is the default with fopen
 [fid,~] = fopen(S7Kfilename, 'r');
 
 % go to end of file to get number of bytes in file then rewind

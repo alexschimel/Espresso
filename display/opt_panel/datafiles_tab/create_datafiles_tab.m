@@ -5,31 +5,6 @@
 %
 %% Help
 %
-% *USE*
-%
-% TODO: write longer description of function
-%
-% *INPUT VARIABLES*
-%
-% * |input_variable_1|: TODO: write description and info on variable
-%
-% *OUTPUT VARIABLES*
-%
-% * |output_variable_1|: TODO: write description and info on variable
-%
-% *RESEARCH NOTES*
-%
-% TODO: write research notes
-%
-% *NEW FEATURES*
-%
-% * 2018-10-05: general editing and commenting (Alex Schimel)
-% * 2017-10-25: first version (Yoann Ladroit)
-%
-% *EXAMPLE*
-%
-% TODO: write examples
-%
 % *AUTHOR, AFFILIATION & COPYRIGHT*
 %
 % Yoann Ladroit, Alexandre Schimel NIWA. Type |help Espresso.m| for
@@ -131,9 +106,9 @@ uicontrol(file_tab_comp.file_tab,'Style','pushbutton','String','Convert, Load & 
 %% finalize
 
 % empties
-file_tab_comp.selected_idx = [];
+file_tab_comp.idx_selected = [];
 file_tab_comp.files = {};
-file_tab_comp.converted = [];
+file_tab_comp.idx_converted = [];
 
 % add tab to appdata
 setappdata(main_figure,'file_tab',file_tab_comp);
@@ -190,14 +165,18 @@ function callback_select_cell(~,evt,main_figure)
 % get tab data
 file_tab_comp = getappdata(main_figure,'file_tab');
 
+% init output
+n_files = numel(file_tab_comp.files);
+idx_selected = false(n_files,1);
+
+% fill in indices
 if ~isempty(evt.Indices)
-    selected_idx = (evt.Indices(:,1));
-else
-    selected_idx = [];
+    idx = unique(evt.Indices(:,1));
+    idx_selected(idx) = 1;
 end
 
 % update the selected file(s)
-file_tab_comp.selected_idx = unique(selected_idx);
+file_tab_comp.idx_selected = idx_selected;
 setappdata(main_figure,'file_tab',file_tab_comp);
 
 end
@@ -206,22 +185,31 @@ end
 
 
 %% Callback when pressing the "Convert" or "Re-convert" button
-function callback_press_convert_button(~,~,main_figure,reconvert_flag)
+function callback_press_convert_button(~,~,main_figure,flag_force_convert)
 
 % get tab data
 file_tab_comp = getappdata(main_figure,'file_tab');
 
-% get list of files requested for conversion
+% list of files
 files = file_tab_comp.files;
-selected_idx = file_tab_comp.selected_idx;
-files_to_convert = files(selected_idx);
 
-% get list of files already converted
-files_converted = file_tab_comp.converted;
-files_already_converted = files_converted(selected_idx);
+% index of files requested for conversion
+idx_selected = file_tab_comp.idx_selected;
 
-% CORE PART: convert files
-convert_files(files_to_convert, files_already_converted, reconvert_flag)
+if flag_force_convert
+    % files to (re)convert are all selected files
+    files_to_convert = files(idx_selected);
+else
+    % index of files already converted
+    idx_converted = file_tab_comp.idx_converted;
+
+    % files to convert are only those selected that are not already
+    % converted
+    files_to_convert = files(idx_selected & ~idx_converted);
+end
+
+% convert files
+convert_files(files_to_convert);
 
 % update display
 update_datafiles_tab(main_figure);
@@ -246,11 +234,11 @@ selected_idx = file_tab_comp.selected_idx;
 files_to_load = files(selected_idx);
 
 % get list of files not converted
-list_of_files_not_converted = ~file_tab_comp.converted;
+list_of_files_not_converted = ~file_tab_comp.idx_converted;
 files_not_converted = list_of_files_not_converted(selected_idx);
 
 % get list of files already loaded
-loaded_files = get_loaded_files(main_figure);
+loaded_files = get_loaded_files(fData);
 files_already_loaded = ismember(files_to_load,loaded_files);
 
 % CORE PART: load files

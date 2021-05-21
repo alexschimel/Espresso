@@ -37,26 +37,25 @@
 % Yoann Ladroit, Alexandre Schimel, NIWA.
 
 %% Function
-function wc_dir = CFF_converted_data_folder(files_full)
+function wc_dir = CFF_converted_data_folder(rawfileslist)
 
-if ischar(files_full)
-    files_full = {files_full};
+if ischar(rawfileslist)
+    rawfileslist = {rawfileslist};
 end
 
-% get file's path and filename
-[filepath,name,ext]  = cellfun(@fileparts,files_full,'UniformOutput',0);
-ext(~strcmpi(ext,'.db'))='';
+% simplify rawfileslist when pairs occur
+rawfileslist = CFF_onerawfileonly(rawfileslist);
+n_files = numel(rawfileslist);
 
-% coffee folder
-coffee_dir = 'Coffee_files';
-coffee_dir = repmat({coffee_dir},size(files_full));
+% get path and filename (without extension) for each file
+[filepath,filename,~]  = cellfun(@fileparts,rawfileslist,'UniformOutput',0);
+
+% define coffee folder
+coffee_dir_name = 'Coffee_files';
+coffee_dir_name = repmat({coffee_dir_name},[n_files, 1]);
 
 % putting everything together
-if ~isempty(ext)
-    wc_dir = cellfun(@fullfile,filepath,coffee_dir,cellfun(@(x,y) [x y],name,ext,'un',0),'UniformOutput',0);
-else
-    wc_dir = cellfun(@fullfile,filepath,coffee_dir,name,'UniformOutput',0);
-end
+wc_dir = cellfun(@fullfile,filepath,coffee_dir_name,filename,'UniformOutput',0);
 
 if numel(wc_dir) == 1
     wc_dir = cell2mat(wc_dir);

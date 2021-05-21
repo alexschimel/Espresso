@@ -68,7 +68,8 @@
 %
 % *AUTHOR, AFFILIATION & COPYRIGHT*
 %
-% Alexandre Schimel, Waikato University, Deakin University, NIWA.
+% Alexandre Schimel (NGU, NIWA), Yoann Ladroit (NIWA). 
+% Type |help CoFFee.m| for copyright information.
 
 %% Function
 function ALLfileinfo = CFF_all_file_info(ALLfilename)
