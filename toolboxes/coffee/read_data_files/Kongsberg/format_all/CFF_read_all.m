@@ -120,8 +120,7 @@
 function [ALLdata,datagrams_parsed_idx] = CFF_read_all(ALLfilename, varargin)
 
 
-%% Input arguments management using inputParser
-
+%% Input arguments management
 p = inputParser;
 
 % ALLfilename to parse as required argument.

@@ -1,16 +1,17 @@
 function datagramSource = CFF_get_datagramSource(fData,varargin)
 
-datagramSource=[];
+% init output
+datagramSource = [];
 
-if ~isempty(varargin)&&~isempty(varargin{1})
-    datagramSource=varargin{1};
+if ~isempty(varargin) && ~isempty(varargin{1})
+    datagramSource = varargin{1};
     % datagramSource was not specified, check fData for it
 elseif isfield(fData,'MET_datagramSource')
     datagramSource = fData.MET_datagramSource;
 end
 
 if ~isfield(fData,sprintf('%s_1P_Date',datagramSource))
-    datagramSource=[];
+    datagramSource = [];
 end
 
 if isempty(datagramSource)

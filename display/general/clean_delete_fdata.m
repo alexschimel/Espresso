@@ -41,30 +41,32 @@ j = 0;
 dname = {};
 fields = fieldnames(fData);
 for ifi = 1:numel(fields)
+    fieldname = fields{ifi};
     
     rmb = 0;
-    if isa(fData.(fields{ifi}),'memmapfile')
-        
+    if isa(fData.(fieldname),'memmapfile')
+        % field is a memory-mapped file
         j = j+1;
         rmb = 1;
-        dname{j} = fData.(fields{ifi}).Filename;
-        fData.(fields{ifi}) = [];
+        dname{j} = fData.(fieldname).Filename;
+        fData.(fieldname) = [];
         
-    elseif iscell(fData.(fields{ifi}))
+    elseif iscell(fData.(fieldname))
         
-        for ic = 1:numel(fData.(fields{ifi}))
-            if isa(fData.(fields{ifi}){ic},'memmapfile')
-                rmb = 1;
+        for ic = 1:numel(fData.(fieldname))
+            if isa(fData.(fieldname){ic},'memmapfile')
+                % field is a memory-mapped file
                 j = j+1;
-                dname{j} = fData.(fields{ifi}){ic}.Filename;
-                fData.(fields{ifi}){ic} = [];
+                rmb = 1;
+                dname{j} = fData.(fieldname){ic}.Filename;
+                fData.(fieldname){ic} = [];
             end
         end
         
     end
     
     if rmb > 0
-        fData = rmfield(fData,fields{ifi});
+        fData = rmfield(fData,fieldname);
     end
 end
 
@@ -81,7 +83,7 @@ for id = 1:numel(dname)
     
     if isfile(dname{id})
         try
-            fprintf('\nDeleting file %s\n',dname{id});
+            %fprintf('\nDeleting file %s\n',dname{id});
             delete(dname{id});
         catch
             fprintf('ERROR while deleting file %s\n',dname{id});

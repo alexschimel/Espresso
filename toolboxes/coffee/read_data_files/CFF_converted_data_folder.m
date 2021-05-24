@@ -39,6 +39,11 @@
 %% Function
 function wc_dir = CFF_converted_data_folder(rawfileslist)
 
+if isempty(rawfileslist)
+    wc_dir = [];
+    return
+end
+
 if ischar(rawfileslist)
     rawfileslist = {rawfileslist};
 end

@@ -19,7 +19,14 @@ db_sub = 1; % none for now
 % general timer
 timer_start = now;
 
+% number of files and start display
 n_files = numel(files_to_convert);
+if isempty(files_to_convert)
+    fprintf('Conversion requested but no files in input. Abort\n');
+    return
+else
+    fprintf('CONVERT %i raw data files (or pairs of files). Started at %s.\n', n_files, datestr(now));
+end
 
 % for each file
 for nF = 1:n_files
@@ -30,6 +37,14 @@ for nF = 1:n_files
         
         % get the file (or pair of files) to convert
         file_to_convert = files_to_convert{nF};
+        
+        % name of file(s) for display
+        if ischar(file_to_convert)
+            file_to_convert_disp = sprintf('file "%s"',file_to_convert);
+        else
+            % paired file
+            file_to_convert_disp = sprintf('pair of files "%s" and "%s"',file_to_convert{1},file_to_convert{2});
+        end
         
         % check file format
         [~,~,f_ext] = fileparts(CFF_onerawfileonly(file_to_convert));
@@ -50,24 +65,21 @@ for nF = 1:n_files
         % Now we can convert from a clean slate
         
         % display
-        if ischar(file_to_convert)
-            % single file
-            fprintf('\nConverting file "%s" (%i/%i)...\n',file_to_convert,nF,n_files);
-        else
-            % paired file
-            fprintf('\nConverting pair of files "%s" and "%s" (%i/%i)...\n',file_to_convert{1},file_to_convert{2},nF,n_files);
-        end
-        textprogressbar(sprintf('...Started at %s. Progress: ',datestr(now)));
+        fprintf('%i/%i: Now converting %s...\n',nF,n_files,file_to_convert_disp);
+        textprogressbar(sprintf('Started at %s. Progress: ',datestr(now)));
         textprogressbar(0);
         tic
         
         % create output folder
         mkdir(wc_dir);
         
+        % define mat filename
+        mat_fdata_file = fullfile(wc_dir, 'fData.mat');
+        
         switch file_format
             case 'Kongsberg_all'
                 
-                % List datagrams to read:
+                % relevant datagrams:
                 % * installation parameters (73)
                 % * position (80)
                 % * runtime parameters (82)
@@ -76,29 +88,29 @@ for nF = 1:n_files
                 % * Amplitude and Phase (114)
                 datagrams_to_parse = [73 80 82 88 107 114];
                 
-                % conversion to ALLdata format
+                % step 1: convert to ALLdata format
                 [EMdata,datags_parsed_idx] = CFF_read_all(file_to_convert, datagrams_to_parse);
                 textprogressbar(50);
                 
                 if datags_parsed_idx(end)
-                    datagramSource='AP';
+                    datagramSource = 'AP';
                 else
-                    datagramSource='WC';
+                    datagramSource = 'WC';
                 end
                 
                 % if not all datagrams were found at this point, message and abort
                 if nansum(datags_parsed_idx)<5
-                    if ~any(datags_parsed_idx(5:6))&&any(datags_parsed_idx(4:6))
+                    if ~any(datags_parsed_idx(5:6)) && any(datags_parsed_idx(4:6))
                         textprogressbar('File does not contain water-column datagrams. Conversion aborted.');
                         continue;
-                    elseif  ~all(datags_parsed_idx(1:3))||~any(datags_parsed_idx(4:6))
+                    elseif  ~all(datags_parsed_idx(1:3)) || ~any(datags_parsed_idx(4:6))
                         textprogressbar('File does not contain all necessary datagrams. Check file contents. Conversion aborted.');
                         continue;
                     end
                 end
                 
-                % if output file does not exist OR if forcing reconversion, simply convert
-                fData = CFF_convert_ALLdata_to_fData(EMdata,dr_sub,db_sub,fData_old);
+                % step 2: convert to fdata
+                fData = CFF_convert_ALLdata_to_fData(EMdata,dr_sub,db_sub);
                 
                 textprogressbar(90);
                 
@@ -136,7 +148,7 @@ for nF = 1:n_files
                 end
                 
                 % if output file does not exist OR if forcing reconversion, simply convert
-                fData = CFF_convert_S7Kdata_to_fData(RESONdata,dr_sub,db_sub,fData_old);
+                fData = CFF_convert_S7Kdata_to_fData(RESONdata,dr_sub,db_sub);
                 
                 textprogressbar(90);
                 
@@ -144,7 +156,7 @@ for nF = 1:n_files
             case 'Kongsberg_kmall'
                 
                 [EMdata,datags_parsed_idx] = CFF_read_kmall(file_to_convert);
-              
+                
         end
         
         % add datagram source
@@ -156,15 +168,16 @@ for nF = 1:n_files
         
         % disp
         textprogressbar(100)
-        textprogressbar(sprintf(' done. Elapsed time: %f seconds.\n',toc));
+        textprogressbar(sprintf(' done. Duration: ~%.2f seconds.\n',toc));
         
     catch err
-        [~,f_temp,e_temp] = fileparts(err.stack(1).file);
-        err_str = sprintf('Error in file %s, line %d',[f_temp e_temp],err.stack(1).line);
-        fprintf('%s: ERROR converting file %s \n%s\n',datestr(now,'HH:MM:SS'),file_to_convert,err_str);
-        fprintf('%s\n\n',err.message);
+        fprintf('%s: ERROR converting %s\n',datestr(now,'HH:MM:SS'),file_to_convert_disp);
         if ~isdeployed
             rethrow(err);
+        else
+            [~,f_temp,e_temp] = fileparts(err.stack(1).file);
+            err_str = sprintf('Error in file %s, line %d: %s',[f_temp e_temp],err.stack(1).line,err.message);
+            fprintf('%s\n\n',err_str);
         end
     end
     
@@ -172,4 +185,6 @@ end
 
 % general timer
 timer_end = now;
-fprintf('Total time for conversion: %f seconds (~%.2f minutes).\n\n',(timer_end-timer_start)*24*60*60,(timer_end-timer_start)*24*60);
+duration_sec = (timer_end-timer_start)*24*60*60;
+duration_min = (timer_end-timer_start)*24*60;
+fprintf('DONE. Total duration: ~%.2f seconds (~%.2f minutes).\n\n',duration_sec,duration_min);

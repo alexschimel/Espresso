@@ -1,8 +1,7 @@
 %% CFF_check_ALLfilename.m
 %
-% Check that input file (or pair of file) exists and that file extension
-% (and also filenames in case of a pair of files) indicate that input are
-% Kongsberg raw data files in the .all format.
+% Check that input file(s) exist(s) and are likely Kongsberg raw data files
+% in the .all format. 
 %
 %% Help
 %

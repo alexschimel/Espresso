@@ -209,7 +209,9 @@ else
 end
 
 % convert files
-convert_files(files_to_convert);
+if ~isempty(files_to_convert)
+    convert_files(files_to_convert);
+end
 
 % update display
 update_datafiles_tab(main_figure);
@@ -230,19 +232,22 @@ disp_config = getappdata(main_figure,'disp_config');
 
 % get list of files requested for loading
 files = file_tab_comp.files;
-selected_idx = file_tab_comp.selected_idx;
-files_to_load = files(selected_idx);
+idx_selected = file_tab_comp.idx_selected;
+files_to_load = files(idx_selected);
 
-% get list of files not converted
-list_of_files_not_converted = ~file_tab_comp.idx_converted;
-files_not_converted = list_of_files_not_converted(selected_idx);
+if isempty(files_to_load)
+    return
+end
 
-% get list of files already loaded
-loaded_files = get_loaded_files(fData);
-files_already_loaded = ismember(files_to_load,loaded_files);
+% get index of files not converted
+idx_not_converted = ~file_tab_comp.idx_converted;
+idx_not_converted = idx_not_converted(idx_selected);
+
+% get index of files already loaded
+idx_already_loaded = CFF_are_raw_files_loaded(files_to_load, get_loaded_files(fData));
 
 % CORE PART: load files
-[fData, disp_config] = load_files(fData, files_to_load, files_not_converted, files_already_loaded, disp_config);
+[fData, disp_config] = load_files(fData, files_to_load, idx_not_converted, idx_already_loaded, disp_config);
 
 % add fData to appdata
 setappdata(main_figure,'fData',fData);
@@ -288,7 +293,8 @@ switch answer
         callback_press_load_button(src,evt,main_figure);
         
         % process
-        % note this callback is not part of this tab but we can call it anyway
+        % note this callback is not part of this tab but we can call it
+        % here anyway
         callback_press_process_button(src,evt,main_figure);
 end
     
