@@ -6,15 +6,16 @@
 %
 % *AUTHOR, AFFILIATION & COPYRIGHT*
 %
-% Yoann Ladroit, Alexandre Schimel NIWA. Type |help Espresso.m| for
-% copyright information.
+% Alexandre Schimel (NGU, NIWA), Yoann Ladroit (NIWA). 
+% Type |help Espresso.m| for copyright information.
+
 
 %% Function
-function convert_files(files_to_convert)
+function convert_files(files_to_convert, flag_force_convert)
 
 % NOTE: HARD-CODED PARAMETERS subsampling factors:
-dr_sub = 1; % none for now
-db_sub = 1; % none for now
+dr_sub = 1; % none at this stage, subsampling occuring at processing
+db_sub = 1; % none at this stage, subsampling occuring at processing
 
 % general timer
 timer_start = now;
@@ -22,10 +23,14 @@ timer_start = now;
 % number of files and start display
 n_files = numel(files_to_convert);
 if isempty(files_to_convert)
-    fprintf('Conversion requested but no files in input. Abort\n');
+    fprintf('Requesting conversion, but no files in input. Abort.\n\n');
     return
 else
-    fprintf('CONVERT %i raw data files (or pairs of files). Started at %s.\n', n_files, datestr(now));
+    if n_files == 1
+        fprintf('Requested conversion of 1 raw data file (or pair of files) at %s...\n', datestr(now));
+    else
+        fprintf('Requested conversion of %i raw data files (or pairs of files) at %s...\n', n_files, datestr(now));
+    end
 end
 
 % for each file
@@ -38,15 +43,16 @@ for nF = 1:n_files
         % get the file (or pair of files) to convert
         file_to_convert = files_to_convert{nF};
         
-        % name of file(s) for display
+        % start of display for this file
         if ischar(file_to_convert)
             file_to_convert_disp = sprintf('file "%s"',file_to_convert);
         else
             % paired file
             file_to_convert_disp = sprintf('pair of files "%s" and "%s"',file_to_convert{1},file_to_convert{2});
         end
+        fprintf('%i/%i: %s.\n',nF,n_files,file_to_convert_disp);
         
-        % check file format
+        % file format
         [~,~,f_ext] = fileparts(CFF_onerawfileonly(file_to_convert));
         if strcmpi(f_ext,'.all') || strcmpi(f_ext,'.wcd')
             file_format = 'Kongsberg_all';
@@ -55,20 +61,35 @@ for nF = 1:n_files
         elseif strcmpi(f_ext,'.kmall') || strcmpi(f_ext,'.kmwcd')
             file_format = 'Reson_s7k';
         else
-            error('Raw file extension not recognized as a supported format.');
+            file_format = [];
         end
+        
+        % test if file already converted
+        bool_already_converted = CFF_are_raw_files_converted(file_to_convert);
+        
+        % management & display
+        if isempty(file_format)
+            % format not supported, abort.
+            fprintf('...Cannot be converted. Format not (yet?) supported: "%s".\n',f_ext);
+            continue
+        elseif bool_already_converted && ~flag_force_convert
+            % already converted and not asking for reconversion, abort.
+            fprintf('...Already converted (and not asking for reconversion).\n');
+            continue
+        elseif bool_already_converted && flag_force_convert
+            % already converted but asking for reconversion, proceed.
+            fprintf('...Already converted. Started re-converting at %s. \n',datestr(now));
+        else
+            % not yet converted, proceed.
+            fprintf('...Started converting at %s. \n',datestr(now));
+        end
+        textprogressbar('...Progress: ');
+        textprogressbar(0);
+        tic
         
         % First, clean up any existing converted data
         wc_dir = CFF_converted_data_folder(file_to_convert);
         clean_delete_fdata(wc_dir);
-        
-        % Now we can convert from a clean slate
-        
-        % display
-        fprintf('%i/%i: Now converting %s...\n',nF,n_files,file_to_convert_disp);
-        textprogressbar(sprintf('Started at %s. Progress: ',datestr(now)));
-        textprogressbar(0);
-        tic
         
         % create output folder
         mkdir(wc_dir);
@@ -168,7 +189,7 @@ for nF = 1:n_files
         
         % disp
         textprogressbar(100)
-        textprogressbar(sprintf(' done. Duration: ~%.2f seconds.\n',toc));
+        fprintf(' Done. Duration: ~%.2f seconds.\n',toc);
         
     catch err
         fprintf('%s: ERROR converting %s\n',datestr(now,'HH:MM:SS'),file_to_convert_disp);
@@ -187,4 +208,4 @@ end
 timer_end = now;
 duration_sec = (timer_end-timer_start)*24*60*60;
 duration_min = (timer_end-timer_start)*24*60;
-fprintf('DONE. Total duration: ~%.2f seconds (~%.2f minutes).\n\n',duration_sec,duration_min);
+fprintf('Done. Total duration: ~%.2f seconds (~%.2f minutes).\n\n',duration_sec,duration_min);

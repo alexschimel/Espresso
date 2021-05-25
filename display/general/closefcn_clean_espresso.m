@@ -24,7 +24,7 @@ delete(ext_figs);
 delete(main_figure);
 clear fData
 
-fprintf('...Done. Find a log of this output at %s. \n',logfile);
+fprintf('Done. Find a log of this output at %s.\n\n',logfile);
 diary off
 
 if isdeployed()

@@ -1,16 +1,17 @@
 %% load_files.m
 %
-% Function description XXX
+% Load converted data (fData) into Espresso
 %
 %% Help
 %
 % *AUTHOR, AFFILIATION & COPYRIGHT*
 %
-% Yoann Ladroit, Alexandre Schimel NIWA. Type |help Espresso.m| for
-% copyright information.
+% Alexandre Schimel (NGU, NIWA), Yoann Ladroit (NIWA). 
+% Type |help Espresso.m| for copyright information.
+
 
 %% Function
-function [fData, disp_config] = load_files(fData, files_to_load, files_not_converted, files_already_loaded, disp_config)
+function [fData, disp_config] = load_files(fData, files_to_load, disp_config)
 
 % general timer
 timer_start = now;
@@ -18,10 +19,14 @@ timer_start = now;
 % number of files and start display
 n_files = numel(files_to_load);
 if isempty(files_to_load)
-    fprintf('Loading requested but no files in input. Abort\n');
+    fprintf('Requesting loading, but no files in input. Abort.\n');
     return
 else
-    fprintf('LOAD %i converted data files (or pairs of files). Started at %s.\n', n_files, datestr(now));
+    if n_files == 1
+        fprintf('Requested loading of 1 data file (or pair of files) at %s...\n', datestr(now));
+    else
+        fprintf('Requested loading of %i data files (or pairs of files) at %s...\n', n_files, datestr(now));
+    end
 end
 
 % for each file
@@ -34,42 +39,35 @@ for nF = 1:n_files
         % get the file (or pair of files) to load
         file_to_load = files_to_load{nF};
         
-        % name of file(s) for display
+        % start of display for this file
         if ischar(file_to_load)
             file_to_load_disp = sprintf('file "%s"',file_to_load);
         else
             % paired file
             file_to_load_disp = sprintf('pair of files "%s" and "%s"',file_to_load{1},file_to_load{2});
         end
+        fprintf('%i/%i: %s.\n',nF,n_files,file_to_load_disp);
         
-        %% first checks then loading data
-        
+        % test if file was effectively converted, or already loaded
         % check if file was converted
-        if files_not_converted(nF)
-            fprintf('%s (%i/%i) has not been converted yet. Loading aborted.\n',file_to_load_disp,nF,n_files);
-            continue
-        end
+        bool_converted = CFF_are_raw_files_converted(file_to_load);
+        bool_already_loaded = CFF_are_raw_files_loaded(file_to_load, fData);
         
-        % check if file not already loaded
-        if files_already_loaded(nF)
-            fprintf('%s (%i/%i) is already loaded.\n',file_to_load_disp,nF,n_files);
+        % management & display
+        if ~bool_converted
+            fprintf('...Cannot be loaded. Has not been converted yet.\n');
             continue
+        elseif bool_already_loaded
+            fprintf('...Already loaded.\n');
+            continue
+        else
+            fprintf('...Started loading at %s...\n',datestr(now));
+            tic
         end
         
         % converted filename fData
         folder_for_converted_data = CFF_converted_data_folder(file_to_load);
         mat_fdata_file = fullfile(folder_for_converted_data,'fdata.mat');
-        
-        % check if converted file exists
-        if ~isfile(mat_fdata_file)
-            fprintf('File "%s" (%i/%i) is marked as converted and loadable but converted file cannot be found. Try re-convert. Loading aborted.\n',file_to_load,nF,n_files);
-            continue
-        end
-        
-        % Loading can begin
-        fprintf('Loading converted file "%s" (%i/%i)...\n',file_to_load,nF,n_files);
-        fprintf('...Started at %s...\n',datestr(now));
-        tic
         
         % loading temp
         fData_temp = load(mat_fdata_file);
@@ -221,7 +219,7 @@ for nF = 1:n_files
         fData{numel(fData)+1} = fData_temp;
         
         % disp
-        fprintf('  done. Duration: ~%.2f seconds.\n',toc);
+        fprintf('...Done. Duration: ~%.2f seconds.\n',toc);
         
     catch err
         fprintf('%s: ERROR loading %s\n',datestr(now,'HH:MM:SS'),file_to_load_disp);
@@ -240,4 +238,4 @@ end
 timer_end = now;
 duration_sec = (timer_end-timer_start)*24*60*60;
 duration_min = (timer_end-timer_start)*24*60;
-fprintf('DONE. Total duration: ~%.2f seconds (~%.2f minutes).\n\n',duration_sec,duration_min);
+fprintf('Done. Total duration: ~%.2f seconds (~%.2f minutes).\n\n',duration_sec,duration_min);

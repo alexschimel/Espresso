@@ -21,11 +21,10 @@ search_path = get(file_tab_comp.path_box,'string');
 rawfileslist = CFF_list_raw_files_in_dir(search_path);
 
 % check which are already converted
-idx_converted = CFF_are_raw_files_converted(rawfileslist);
+[idx_converted,flag_outdated_fdata] = CFF_are_raw_files_converted(rawfileslist);
 
 % check which are currently loaded
-loaded_files = get_loaded_files(fData);
-idx_loaded = CFF_are_raw_files_loaded(rawfileslist, loaded_files);
+idx_loaded = CFF_are_raw_files_loaded(rawfileslist, fData);
 
 % prepare array, without HTML tags yet
 n_rawfiles = numel(rawfileslist);
@@ -37,7 +36,6 @@ for ii = 1:n_rawfiles
     end
 end
 new_entry = [disp_files, disp_folder];
-
 
 %% add HTML tags
 
@@ -59,5 +57,10 @@ file_tab_comp.table_main.Data = new_entry;
 file_tab_comp.files = rawfileslist;
 file_tab_comp.idx_converted = idx_converted;
 setappdata(main_figure,'file_tab',file_tab_comp);
+
+% throw warning for outdated version
+if flag_outdated_fdata
+    warning('One or several files in this folder have been previously converted using an outdated version of Espresso. They will require reconversion and thus show as NOT converted.');
+end
 
 end

@@ -1,28 +1,35 @@
 %% CFF_are_raw_files_converted.m
 %
-% Check if raw files are already  converteed.
+% Check if one or a list of raw files are already converted.
 %
 %% Help
 %
 % *USE*
 %
-% Test for conversion includes whether the fData.mat file exists, and if
-% its version matches the current fData version
+% For each input file, the test for conversion includes whether the
+% corresponding fData.mat file exists, and if its version matches the
+% current fData version. If the version does not match, then the file is
+% officially NOT converted. 
+%
+% If any file was converted but has the wrong version, it sets the output
+% flag flag_outdated_fdata to one.
 %
 % *AUTHOR, AFFILIATION & COPYRIGHT*
 %
-% Alexandre Schimel (NGU, NIWA), Yoann Ladroit (NIWA). 
+% Alexandre Schimel (NGU, NIWA), Yoann Ladroit (NIWA).
 % Type |help Espresso.m| for copyright information.
 
 %% Function
-function idx_converted = CFF_are_raw_files_converted(rawfileslist)
+function [idx_converted,flag_outdated_fdata] = CFF_are_raw_files_converted(rawfileslist)
 
+% exit if no input
 if isempty(rawfileslist)
     idx_converted = [];
+    flag_outdated_fdata = [];
     return
 end
 
-% list of names of converted files
+% list of names of converted files, if input were converted
 wc_dir = CFF_converted_data_folder(rawfileslist);
 mat_fdata_files = fullfile(wc_dir,'fdata.mat');
 if ischar(mat_fdata_files)
@@ -32,6 +39,7 @@ n_files = numel(mat_fdata_files);
 
 % init output
 idx_converted = false(n_files, 1);
+flag_outdated_fdata = 0;
 
 % test each file
 for ii = 1:n_files
@@ -43,10 +51,15 @@ for ii = 1:n_files
     flag_fdata_exist = isfile(mat_fdata_file);
     
     % if it does, check version in the file and compare with current
-    % conversion code version 
+    % conversion code version
     if flag_fdata_exist
         file_ver = CFF_get_fData_version(mat_fdata_file);
         flag_fdata_ver_ok = strcmpi(file_ver,CFF_get_current_fData_version);
+        
+        % flag out the mismatch in version for output
+        if ~flag_fdata_ver_ok
+            flag_outdated_fdata = 1;
+        end
     end
     
     % output
