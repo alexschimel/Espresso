@@ -119,19 +119,22 @@ while next_dgm_start_pif < file_size
     
     %% test for synchronization and datagram completeness
     %
-    % A kmall datagram starts with the general header (EMdgmHeader_def),
-    % which starts with datagram size (uint32) and datagram type definition
-    % (e.g. #AAA). Then comes the rest of the datagram, depending on its
-    % type. Finally, the datagram ends with a repeat of its size in bytes
-    % (uint32). 
+    % A full kmall datagram is organized as a sequence of:
+    % * GH - General Header EMdgmHeader (20 bytes, at least for Rev H)
+    % * DB - Datagram Body (variable size)
+    % * DS - Datagram size (uint32, aka 4 bytes)
+    %
+    % The General Header is read here. It starts with:
+    % * The datagram size (uint32, aka 4 bytes)
+    % * The datagram type code (4 char, aka 4 bytes), e.g. '#IIP'
     %
     % We will test for both datagram completeness and sync by matching the
-    % datagram size fields, and checking for the hash symbol at the
-    % beggining of the datagram type definition.
+    % two datagram size fields, and checking for the hash symbol at the
+    % beggining of the datagram type code.
     
     % Starting parsing general header
     numBytesDgm_start = fread(fid,1,'uint32'); % Datagram length in bytes
-    dgmType           = char(fread(fid,4,'uchar')'); % Datagram type definition, e.g. #AAA
+    dgmType           = fscanf(fid,'%c',4); % Datagram type definition, e.g. #AAA
     
     % pif of presumed end of datagram
     dgm_end_pif = dgm_start_pif + numBytesDgm_start - 4;

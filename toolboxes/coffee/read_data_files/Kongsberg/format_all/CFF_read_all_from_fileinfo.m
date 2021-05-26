@@ -106,18 +106,19 @@ ALLfilename = p.Results.ALLfilename;
 ALLfileinfo = p.Results.ALLfileinfo;
 
 
-%% Get basic info for file opening
+%% Pre-reading
+
+% Get basic info for file opening
 filesize = ALLfileinfo.filesize;
 datagsizeformat = ALLfileinfo.datagsizeformat;
 datagramsformat = ALLfileinfo.datagramsformat;
 ALLdata.ALLfilename=ALLfilename;
 ALLdata.datagramsformat=datagramsformat;
 
-%% Open file
+% Open file
 [fid,~] = fopen(ALLfilename, 'r',datagramsformat);
 
-
-%% Parse only datagrams indicated in ALLfileinfo
+% Parse only datagrams indicated in ALLfileinfo
 datagToParse = find(ALLfileinfo.parsed==1);
 
 

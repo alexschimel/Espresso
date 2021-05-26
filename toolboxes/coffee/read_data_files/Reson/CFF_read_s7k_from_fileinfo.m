@@ -125,7 +125,7 @@ tx_pulse_env_id = {{'Tapered rectangular' 'Tukey' 'Hamming' 'Han' 'Rectangular'}
 tx_pulse_modes  = {{'Single ping' 'Multi-ping 2' 'Multi-ping 3' 'Multi-ping 4'};{1 2 3 4}};
 proj_beam_types = {{'Rectangular' 'Chebychev' 'Gauss'};{0 1 2}};
 rx_beam_win     = {{'Chebychev' 'Kaiser'};{0 1}};
-height_source  = {{'None' 'RTK' 'Tide'};{0  1 2}};
+height_source   = {{'None' 'RTK' 'Tide'};{0  1 2}};
 
 %% Reading datagrams
 for iDatag = datagToParse'
@@ -138,14 +138,13 @@ for iDatag = datagToParse'
     % * CS - Checksum (optional, 4 bytes)
     
     % DRF info was already read so get relevant parameters in fileinfo
-    pif_recordstart = S7Kfileinfo.recordStartPositionInFile(iDatag);
+    pif_recordstart      = S7Kfileinfo.recordStartPositionInFile(iDatag);
     recordTypeIdentifier = S7Kfileinfo.recordTypeIdentifier(iDatag);
-    
-    DRF_size      = S7Kfileinfo.DRF_size(iDatag);
-    RTHandRD_size = S7Kfileinfo.RTHandRD_size(iDatag);
-    OD_size       = S7Kfileinfo.OD_size(iDatag);
-    CS_size       = S7Kfileinfo.CS_size(iDatag);
-    OD_offset     = S7Kfileinfo.OD_offset(iDatag);
+    DRF_size             = S7Kfileinfo.DRF_size(iDatag);
+    RTHandRD_size        = S7Kfileinfo.RTHandRD_size(iDatag);
+    OD_size              = S7Kfileinfo.OD_size(iDatag);
+    CS_size              = S7Kfileinfo.CS_size(iDatag);
+    OD_offset            = S7Kfileinfo.OD_offset(iDatag);
     
     % Go directly to the start of RTH
     pif_current = ftell(fid);
@@ -157,7 +156,7 @@ for iDatag = datagToParse'
     switch recordTypeIdentifier
         
         case 1003
-            %% 1003 – Position TODO
+            %% 1003 – Position
             fieldname = 'R1003_Position';
             if ~(isempty(p.Results.OutputFields)||any(strcmp(fieldname,p.Results.OutputFields)))
                 continue;
@@ -283,7 +282,7 @@ for iDatag = datagToParse'
             parsed = 1;
             
         case 7001
-            %% 7001 – 7k Configuration TODO
+            %% 7001 – 7k Configuration
             fieldname = 'R7001_7kConfiguration';
             if ~(isempty(p.Results.OutputFields)||any(strcmp(fieldname,p.Results.OutputFields)))
                 continue;
@@ -317,7 +316,7 @@ for iDatag = datagToParse'
             parsed = 1;
             
         case 7002
-            %% 7002 – 7k Match Filter TODO
+            %% 7002 – 7k Match Filter
             fieldname = 'R7001_7kMatchFilter';
             if ~(isempty(p.Results.OutputFields)||any(strcmp(fieldname,p.Results.OutputFields)))
                 continue;
@@ -328,7 +327,7 @@ for iDatag = datagToParse'
             parsed = 1;
             
         case 7004
-            %% 7004 – 7k Beam Geometry TODO
+            %% 7004 – 7k Beam Geometry
             fieldname = 'R7004_7kBeamGeometry';
             if ~(isempty(p.Results.OutputFields)||any(strcmp(fieldname,p.Results.OutputFields)))
                 continue;
@@ -348,7 +347,7 @@ for iDatag = datagToParse'
             parsed = 1;
             
         case 7007
-            %% 7007 – 7k Side Scan Data TODO
+            %% 7007 – 7k Side Scan Data
             fieldname = 'R7004_7kSideScanData';
             if ~(isempty(p.Results.OutputFields)||any(strcmp(fieldname,p.Results.OutputFields)))
                 continue;
@@ -359,7 +358,7 @@ for iDatag = datagToParse'
             parsed = 1;
             
         case 7012
-            %% 7012 – 7k Ping Motion Data TODO
+            %% 7012 – 7k Ping Motion Data
             fieldname = 'R7012_7kPingMotionData';
             if ~(isempty(p.Results.OutputFields)||any(strcmp(fieldname,p.Results.OutputFields)))
                 continue;
@@ -416,7 +415,7 @@ for iDatag = datagToParse'
             parsed = 1;
             
         case 7021
-            %% 7021 – 7k Built-In Test Environment Data TODO
+            %% 7021 – 7k Built-In Test Environment Data
             fieldname = 'R7021_7kBuiltInTestEnvData';
             if ~(isempty(p.Results.OutputFields)||any(strcmp(fieldname,p.Results.OutputFields)))
                 continue;
@@ -427,7 +426,7 @@ for iDatag = datagToParse'
             parsed = 1;
             
         case 7022
-            %% 7022 – 7kCenter Version TODO
+            %% 7022 – 7kCenter Version
             fieldname = 'R7022_7kCenterVersion';
             if ~(isempty(p.Results.OutputFields)||any(strcmp(fieldname,p.Results.OutputFields)))
                 continue;
@@ -546,7 +545,7 @@ for iDatag = datagToParse'
             parsed = 1;
             
         case 7028
-            %% 7028 – 7k Snippet Data TODO
+            %% 7028 – 7k Snippet Data
             fieldname = 'R7028_SnippetData';
             if ~(isempty(p.Results.OutputFields)||any(strcmp(fieldname,p.Results.OutputFields)))
                 continue;
@@ -763,7 +762,7 @@ for iDatag = datagToParse'
             parsed = 1;
             
         case 7300
-            %% 7300 – 7k File Catalog Record TODO
+            %% 7300 – 7k File Catalog Record
             fieldname = 'R7200_FileCatalogRecord';
             if ~(isempty(p.Results.OutputFields)||any(strcmp(fieldname,p.Results.OutputFields)))
                 continue;
@@ -773,7 +772,7 @@ for iDatag = datagToParse'
             icurr_field = i7300;
             
         case 7503
-            %% 7503 – Remote Control Sonar Settings TODO
+            %% 7503 – Remote Control Sonar Settings
             fieldname = 'R7503_FileCatalogRecord';
             if ~(isempty(p.Results.OutputFields)||any(strcmp(fieldname,p.Results.OutputFields)))
                 continue;
@@ -783,7 +782,7 @@ for iDatag = datagToParse'
             icurr_field = i7503;
             
         case 7504
-            %% 7504 – 7P Common System Settings TODO
+            %% 7504 – 7P Common System Settings
             fieldname = 'R7504_7pCommonSystemSettings';
             if ~(isempty(p.Results.OutputFields)||any(strcmp(fieldname,p.Results.OutputFields)))
                 continue;
@@ -793,7 +792,7 @@ for iDatag = datagToParse'
             icurr_field = i7504;
             
         case 7610
-            %% 7610 – 7k Sound Velocity TODO
+            %% 7610 – 7k Sound Velocity
             fieldname = 'R7610_7kSoundVelocity';
             if ~(isempty(p.Results.OutputFields)||any(strcmp(fieldname,p.Results.OutputFields)))
                 continue;
@@ -823,9 +822,10 @@ fclose(fid);
 
 %% add info to parsed data
 S7Kdata.info = S7Kfileinfo;
+
 end
 
-%% subfunction to read some paratmers
+%% subfunction to read some parameters
 function val = get_param_val(rx_beam_win,t_temp)
 
 idx = [rx_beam_win{2}{:}] == double(t_temp);

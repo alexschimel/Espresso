@@ -38,7 +38,7 @@
 %     (Reson .s7k format)
 %     * |RTHandRD_size|: combined size of the "Record Type Header" and
 %     "Record Data" parts of the record (Reson .s7k format)
-%     * |OD_offset|: size of the Data Record Frame part of the record
+%     * |OD_offset|: offset of the "Optional Data" part of the record
 %     (Reson .s7k format)
 %     * |OD_size|: size of the "Optional Data" part of the record (Reson
 %     .s7k format)
