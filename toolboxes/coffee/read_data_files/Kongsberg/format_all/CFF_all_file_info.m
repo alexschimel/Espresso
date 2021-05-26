@@ -1,15 +1,15 @@
 %% CFF_all_file_info.m
 %
-% Records basic info about the datagrams contained in one Kongsberg EM
-% series binary .all or .wcd data file. 
+% Records basic info about the datagrams contained in one binary raw data
+% file in the Kongsberg EM series format .all.
 %
 %% Help
 %
 % *USE*
 %
-% ALLfileinfo = CFF_all_file_info(ALLfilename) opens ALLfilename and reads
-% through quickly to get information about each datagram, and store this
-% info in ALLfileinfo.
+% ALLfileinfo = CFF_all_file_info(ALLfilename) opens file ALLfilename and
+% reads through the start of each datagram to get basic information about
+% it, and store it all in ALLfileinfo.
 %
 % *INPUT VARIABLES*
 %
@@ -26,24 +26,23 @@
 %     * |datagramsformat|: endianness of the datagrams 'b' or 'l'
 %     * |datagNumberInFile|: number of datagram in file
 %     * |datagPositionInFile|: position of beginning of datagram in file
-%     * |datagTypeNumber|: for each datagram, SIMRAD datagram type in
-%     decimal 
-%     * |datagTypeText|: for each datagram, SIMRAD datagram type
-%     description 
-%     * |parsed|: 0 for each datagram at this stage. To be later turned to
-%     1 for parsing 
-%     * |counter|: the counter of this type of datagram in the file (ie
+%     * |datagTypeNumber|: datagram type in decimal (Kongsberg .all format) 
+%     * |datagTypeText|: datagram type description (Kongsberg .all format)
+%     * |parsed|: flag for whether the datagram has been parsed. Initiated
+%     at 0 at this stage. To be later turned to 1 for parsing.
+%     * |counter|: counter of this type of datagram in the file (ie
 %     first datagram of that type is 1 and last datagram is the total
 %     number of datagrams of that type)
 %     * |number|: the number/counter found in the datagram (usually
-%     different to counter) 
-%     * |size|: for each datagram, datagram size in bytes
-%     * |syncCounter|: for each datagram, the number of bytes founds
-%     between this datagram and the previous one (any number different than
-%     zero indicates a sync error)
+%     different to counter)
+%     * |size|: datagram size in bytes
+%     * |syncCounter|: number of bytes found between this datagram and the
+%     previous one (any number different than zero indicates a sync error)
 %     * |emNumber|: EM Model number (eg 2045 for EM2040c)
+%     * |systemSerialNumber|: System serial number
 %     * |date|: datagram date in YYYMMDD
-%     * |timeSinceMidnightInMilliseconds|: time since midnight in msecs 
+%     * |timeSinceMidnightInMilliseconds|: time since midnight in
+%     milliseconds
 %
 % *DEVELOPMENT NOTES*
 %
@@ -55,11 +54,12 @@
 %
 % *NEW FEATURES*
 %
-% * 2018-10-11: updated header before adding to Coffee v3
+% * 2021-05-26: updated docstring 
+% * 2018-10-11: updated docstring before adding to Coffee v3
 % * 2017-10-17: changed way filesize is calculated without it reading the
 % entire file
-% * 2017-06-29: header updated
-% * 2015-09-30: first version taking from convert_all_to_mat
+% * 2017-06-29: updated docstring
+% * 2015-09-30: first version, inspired from convert_all_to_mat
 %
 % *EXAMPLE*
 %
@@ -68,7 +68,8 @@
 %
 % *AUTHOR, AFFILIATION & COPYRIGHT*
 %
-% Alexandre Schimel (NGU, NIWA), Yoann Ladroit (NIWA). 
+% Alexandre Schimel (NGU, NIWA, Deakin Uni, Uni of Waikato), Yoann Ladroit
+% (NIWA).  
 % Type |help CoFFee.m| for copyright information.
 
 %% Function
@@ -85,7 +86,7 @@ p = inputParser;
 % ALLfilename to parse as only required argument. Test for file existence and
 % extension.
 argName = 'ALLfilename';
-argCheck = @(x) exist(x,'file') && any(strcmp(CFF_file_extension(x),{'.all','.ALL','.wcd','.WCD'}));
+argCheck = @(x) CFF_check_ALLfilename(x);
 addRequired(p,argName,argCheck);
 
 % now parse inputs
