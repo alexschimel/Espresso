@@ -90,202 +90,250 @@ for iDatag = datagToParse'
     % Relevant info from the general header
     dgm_type_code = KMALLfileinfo.dgm_type_code{iDatag}(2:end);
     dgm_start_pif = KMALLfileinfo.dgm_start_pif(iDatag);
-    dgm_size      = KMALLfileinfo.dgm_size(iDatag);
     
-    % size of datagram body
-    GH_size = 20;
-    DS_size = 4;
-    dgm_body_size = dgm_size - GH_size - DS_size;
-    
-    % Go directly to the start of datagram body, after the general header
-    fseek(fid, dgm_start_pif + GH_size, -1);
+    % Go to start of dgm
+    fseek(fid, dgm_start_pif, -1);
     
     % reset the parsed switch
     parsed = 0;
     
     switch dgm_type_code
         
+        
+        %% --------- INSTALLATION AND RUNTIME DATAGRAMS (I..) -------------
+        
         case 'IIP'
-            %% '#IIP - Installation parameters and sensor setup'
+            % '#IIP - Installation parameters and sensor setup'
             if ~( isempty(p.Results.OutputFields) || any(strcmp(dgm_type_code,p.Results.OutputFields)) )
                 continue;
             end
             try iIIP=iIIP+1; catch, iIIP=1; end
+             
+            KMALLdata.EMdgmIIP(iIIP) = CFF_read_EMdgmIIP(fid);
             
-            KMALLdata.IIP.numBytesCmnPart(iIIP) = fread(fid,1,'uint16');
-            KMALLdata.IIP.info(iIIP)            = fread(fid,1,'uint16');
-            KMALLdata.IIP.status(iIIP)          = fread(fid,1,'uint16');
-            KMALLdata.IIP.install_txt{iIIP}     = fscanf(fid, '%c',dgm_body_size-6); % rest of the datagram is text info
+            % extract kmall version
+            kmall_version = CFF_get_kmall_version(KMALLdata.EMdgmIIP(iIIP));
+            if ~strcmp(kmall_version, 'H')
+                warning('This kmall format version (%s) is different to the one used to develop the raw data reading code (H). This may lead to issues.');
+            end
             
             parsed = 1;
             
         case 'IOP'
-            %% '#IOP - Runtime parameters as chosen by operator'
+            % '#IOP - Runtime parameters as chosen by operator'
             if ~( isempty(p.Results.OutputFields) || any(strcmp(dgm_type_code,p.Results.OutputFields)) )
                 continue;
             end
             try iIOP=iIOP+1; catch, iIOP=1; end
             
-            KMALLdata.IOP.numBytesCmnPart(iIOP) = fread(fid,1,'uint16');
-            KMALLdata.IOP.info(iIOP)            = fread(fid,1,'uint16');
-            KMALLdata.IOP.status(iIOP)          = fread(fid,1,'uint16');
-            KMALLdata.IOP.runtime_txt{iIOP}     = fscanf(fid, '%c',dgm_body_size-6); % rest of the datagram is text info
+            KMALLdata.EMdgmIOP(iIOP) = CFF_read_EMdgmIOP(fid);
             
             parsed = 1;
             
         case 'IBE'
-            %% '#IBE - Built in test (BIST) error report'
+            % '#IBE - Built in test (BIST) error report'
             if ~( isempty(p.Results.OutputFields) || any(strcmp(dgm_type_code,p.Results.OutputFields)) )
                 continue;
             end
             try iIBE=iIBE+1; catch, iIBE=1; end
             
+            % in progress...
+            % KMALLdata.EMdgmIBE(iIBE) = CFF_read_EMdgmIBE(fid);
+            
+            parsed = 0;
+            
         case 'IBR'
-            %% '#IBR - Built in test (BIST) reply'
+            % '#IBR - Built in test (BIST) reply'
             if ~( isempty(p.Results.OutputFields) || any(strcmp(dgm_type_code,p.Results.OutputFields)) )
                 continue;
             end
             try iIBR=iIBR+1; catch, iIBR=1; end
             
-        case 'IBS'
-            %% '#IBS - Built in test (BIST) short reply'
+            % in progress...
+            % KMALLdata.EMdgmIBR(iIBR) = CFF_read_EMdgmIBR(fid);
+            
+            parsed = 0;
+            
+        case 'IBS' 
+            % '#IBS - Built in test (BIST) short reply'
             if ~( isempty(p.Results.OutputFields) || any(strcmp(dgm_type_code,p.Results.OutputFields)) )
                 continue;
             end
             try iIBS=iIBS+1; catch, iIBS=1; end
             
+            % in progress...
+            % KMALLdata.EMdgmIBS(iIBS) = CFF_read_EMdgmIBS(fid);
+            
+            parsed = 0;
+            
+          
+        %% ------------------ MULTIBEAM DATAGRAMS (M..) -------------------
+      
         case 'MRZ'
-            %% '#MRZ - Multibeam (M) raw range (R) and depth(Z) datagram'
+            % '#MRZ - Multibeam (M) raw range (R) and depth(Z) datagram'
             if ~( isempty(p.Results.OutputFields) || any(strcmp(dgm_type_code,p.Results.OutputFields)) )
                 continue;
             end
             try iMRZ=iMRZ+1; catch, iMRZ=1; end
             
+            % in progress...
+            % KMALLdata.EMdgmMRZ(iMRZ) = CFF_read_EMdgmMRZ(fid);
+            
+            parsed = 0;
+            
         case 'MWC'
-            %% '#MWC - Multibeam (M) water (W) column (C) datagram'
+            % '#MWC - Multibeam (M) water (W) column (C) datagram'
             if ~( isempty(p.Results.OutputFields) || any(strcmp(dgm_type_code,p.Results.OutputFields)) )
                 continue;
             end
             try iMWC=iMWC+1; catch, iMWC=1; end
             
+            % in progress...
+            % KMALLdata.EMdgmMWC(iMWC) = CFF_read_EMdgmMWC(fid);
+            
+            parsed = 0;
+
+        %% ------------------- SENSOR DATAGRAMS (S..) ---------------------
+
         case 'SPO'
-            %% '#SPO - Sensor (S) data for position (PO)'
+            % '#SPO - Sensor (S) data for position (PO)'
             if ~( isempty(p.Results.OutputFields) || any(strcmp(dgm_type_code,p.Results.OutputFields)) )
                 continue;
             end
             try iSPO=iSPO+1; catch, iSPO=1; end
             
+            KMALLdata.EMdgmSPO(iSPO) = CFF_read_EMdgmSPO(fid);
+            
+            parsed = 1;
+            
         case 'SKM'
-            %% '#SKM - Sensor (S) KM binary sensor format'
+            % '#SKM - Sensor (S) KM binary sensor format'
             if ~( isempty(p.Results.OutputFields) || any(strcmp(dgm_type_code,p.Results.OutputFields)) )
                 continue;
             end
             try iSKM=iSKM+1; catch, iSKM=1; end
             
+            KMALLdata.EMdgmSKM(iSKM) = CFF_read_EMdgmSKM(fid);
+            
+            parsed = 1;
+            
         case 'SVP'
-            %% '#SVP - Sensor (S) data from sound velocity (V) profile (P) or CTD'
+            % '#SVP - Sensor (S) data from sound velocity (V) profile (P) or CTD'
             if ~( isempty(p.Results.OutputFields) || any(strcmp(dgm_type_code,p.Results.OutputFields)) )
                 continue;
             end
             try iSVP=iSVP+1; catch, iSVP=1; end
             
-            KMALLdata.SVP.numBytesCmnPart(iSVP) = fread(fid,1,'uint16');
-            
-            N = fread(fid,1,'uint16');
-            KMALLdata.SVP.numSamples(iSVP) = N;
-            
-            KMALLdata.SVP.sensorFormat{iSVP}    = fscanf(fid,'%c',4);
-            KMALLdata.SVP.time_sec(iSVP)        = fread(fid,1,'uint32');
-            KMALLdata.SVP.latitude_deg(iSVP)    = fread(fid,1,'double');
-            KMALLdata.SVP.longitude_deg(iSVP)   = fread(fid,1,'double');
-            
-            % repeat cycles: N entries of S bytes
-            % sensorData struct EMdgmSVPpoint_def
-            temp = ftell(fid);
-            S = 20; 
-            KMALLdata.SVP.depth_m{iSVP}               = fread(fid,N,'float',S-4);
-            fseek(fid,temp+4,'bof'); % to next data type
-            KMALLdata.SVP.soundVelocity_mPerSec{iSVP} = fread(fid,N,'float',S-4);
-            fseek(fid,temp+8,'bof'); % to next data type
-            KMALLdata.SVP.padding{iSVP}               = fread(fid,N,'uint32',S-4);
-            fseek(fid,temp+12,'bof'); % to next data type
-            KMALLdata.SVP.temp_C{iSVP}                = fread(fid,N,'float',S-4);
-            fseek(fid,temp+16,'bof'); % to next data type
-            KMALLdata.SVP.salinity{iSVP}              = fread(fid,N,'float',S-4);
-            fseek(fid,4-S,'cof'); % we need to come back after last jump
+            KMALLdata.EMdgmSVP(iSVP) = CFF_read_EMdgmSVP(fid);
             
             parsed = 1;
             
             if DEBUG
+                depth    = [KMALLdata.EMdgmSVP(iSVP).sensorData.depth_m];
+                velocity = [KMALLdata.EMdgmSVP(iSVP).sensorData.soundVelocity_mPerSec];
+                temp     = [KMALLdata.EMdgmSVP(iSVP).sensorData.temp_C];
+                salinity = [KMALLdata.EMdgmSVP(iSVP).sensorData.salinity];
                 figure;
-                subplot(131)
-                plot(KMALLdata.SVP.soundVelocity_mPerSec{iSVP},-KMALLdata.SVP.depth_m{iSVP},'.-');
-                ylabel('depth (m)')
-                xlabel('sound velocity (m/s)')
-                grid on
-                subplot(132)
-                plot(KMALLdata.SVP.temp_C{iSVP},-KMALLdata.SVP.depth_m{iSVP},'.-');
-                ylabel('depth (m)')
-                xlabel('temperature (C)')
-                grid on
+                subplot(131); plot(velocity,-depth,'.-');
+                ylabel('depth (m)'); xlabel('sound velocity (m/s)'); grid on
+                subplot(132); plot(temp,-depth,'.-');
+                ylabel('depth (m)'); xlabel('temperature (C)'); grid on
                 title('KMALL Sound Velocity Profile datagram contents')
-                subplot(133)
-                plot(KMALLdata.SVP.salinity{iSVP},-KMALLdata.SVP.depth_m{iSVP},'.-');
-                ylabel('depth (m)')
-                xlabel('salinity')
-                grid on
+                subplot(133); plot(salinity,-depth,'.-');
+                ylabel('depth (m)'); xlabel('salinity'); grid on
             end
             
         case 'SVT'
-            %% '#SVT - Sensor (S) data for sound velocity (V) at transducer (T)'
+            % '#SVT - Sensor (S) data for sound velocity (V) at transducer (T)'
             if ~( isempty(p.Results.OutputFields) || any(strcmp(dgm_type_code,p.Results.OutputFields)) )
                 continue;
             end
             try iSVT=iSVT+1; catch, iSVT=1; end
             
+            % in progress...
+            % KMALLdata.EMdgmSVT(iSVT) = CFF_read_EMdgmSVT(fid);
+            
+            parsed = 0;
+            
         case 'SCL'
-            %% '#SCL - Sensor (S) data from clock (CL)'
+            % '#SCL - Sensor (S) data from clock (CL)'
             if ~( isempty(p.Results.OutputFields) || any(strcmp(dgm_type_code,p.Results.OutputFields)) )
                 continue;
             end
             try iSCL=iSCL+1; catch, iSCL=1; end
+            
+            KMALLdata.EMdgmSCL(iSCL) = CFF_read_EMdgmSCL(fid);
+            
+            parsed = 1;
+            
         case 'SDE'
-            %% '#SDE - Sensor (S) data from depth (DE) sensor'
+            % '#SDE - Sensor (S) data from depth (DE) sensor'
             if ~( isempty(p.Results.OutputFields) || any(strcmp(dgm_type_code,p.Results.OutputFields)) )
                 continue;
             end
             try iSDE=iSDE+1; catch, iSDE=1; end
             
+            % in progress...
+            % KMALLdata.EMdgmSDE(iSDE) = CFF_read_EMdgmSDE(fid);
+            
+            parsed = 0;
+            
         case 'SHI'
-            %% '#SHI - Sensor (S) data for height (HI)'
+            % '#SHI - Sensor (S) data for height (HI)'
             if ~( isempty(p.Results.OutputFields) || any(strcmp(dgm_type_code,p.Results.OutputFields)) )
                 continue;
             end
             try iSHI=iSHI+1; catch, iSHI=1; end
             
+            % in progress...
+            % KMALLdata.EMdgmSHI(iSHI) = CFF_read_EMdgmSHI(fid);
+            
+            parsed = 0;
+            
+            
+        %% --------------- COMPATIBILITY DATAGRAMS (C..) ------------------
+                    
         case 'CPO'
-            %% '#CPO - Compatibility (C) data for position (PO)'
+            % '#CPO - Compatibility (C) data for position (PO)'
             if ~( isempty(p.Results.OutputFields) || any(strcmp(dgm_type_code,p.Results.OutputFields)) )
                 continue;
             end
             try iCPO=iCPO+1; catch, iCPO=1; end
             
+            KMALLdata.EMdgmCPO(iCPO) = CFF_read_EMdgmCPO(fid);
+            
+            parsed = 1;
+            
         case 'CHE'
-            %% '#CHE - Compatibility (C) data for heave (HE)'
+            % '#CHE - Compatibility (C) data for heave (HE)'
             if ~( isempty(p.Results.OutputFields) || any(strcmp(dgm_type_code,p.Results.OutputFields)) )
                 continue;
             end
             try iCHE=iCHE+1; catch, iCHE=1; end
+           
+            KMALLdata.EMdgmCHE(iCHE) = CFF_read_EMdgmCHE(fid);
             
+            parsed = 1;
+            
+ 
+        %% --------------------- FILE DATAGRAMS (F..) ---------------------
+                                           
         case '#FCF - Backscatter calibration (C) file (F) datagram'
-            %% 'YYY'
+            % 'YYY'
             if ~( isempty(p.Results.OutputFields) || any(strcmp(dgm_type_code,p.Results.OutputFields)) )
                 continue;
             end
             try iFCF=iFCF+1; catch, iFCF=1; end
             
+            % in progress...
+            % KMALLdata.EMdgmFCF(iFCF) = CFF_read_EMdgmFCF(fid);
+            
+            parsed = 0;
+            
         otherwise
-            % dgm_type_code not recognized yet. Skip for now.
+            % dgm_type_code not recognized. Skip.
+            
+            parsed = 0;
             
     end
     
@@ -300,4 +348,7 @@ fclose(fid);
 
 %% add info to parsed data
 KMALLdata.info = KMALLfileinfo;
+
+end
+
 

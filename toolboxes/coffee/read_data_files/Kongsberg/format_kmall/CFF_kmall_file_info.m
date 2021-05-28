@@ -98,8 +98,8 @@ if nargout
 end
 
 % initialize list of datagram types and counter
-list_dgm_typeversion = {};
-list_dgm_counter = [];
+list_dgmType = {};
+list_dgmType_counter = [];
 
 % intitializing the counter of datagrams in this file
 kk = 0;
@@ -115,10 +115,7 @@ while next_dgm_start_pif < file_size
     
     % new record begins
     dgm_start_pif = ftell(fid);
-    
-    
-    %% test for synchronization and datagram completeness
-    %
+      
     % A full kmall datagram is organized as a sequence of:
     % * GH - General Header EMdgmHeader (20 bytes, at least for Rev H)
     % * DB - Datagram Body (variable size)
@@ -132,28 +129,28 @@ while next_dgm_start_pif < file_size
     % two datagram size fields, and checking for the hash symbol at the
     % beggining of the datagram type code.
     
-    % Starting parsing general header
-    numBytesDgm_start = fread(fid,1,'uint32'); % Datagram length in bytes
-    dgmType           = fscanf(fid,'%c',4); % Datagram type definition, e.g. #AAA
+    % parsing general header
+    header = CFF_read_EMdgmHeader(fid);
     
     % pif of presumed end of datagram
-    dgm_end_pif = dgm_start_pif + numBytesDgm_start - 4;
+    dgm_end_pif = dgm_start_pif + header.numBytesDgm - 4;
     
     % get the repeat file_size at the end of the datagram
     if dgm_end_pif < file_size
-        pif_temp = ftell(fid);
         fseek(fid, dgm_end_pif, -1);
-        numBytesDgm_end  = fread(fid,1,'uint32'); % Datagram length in bytes
+        numBytesDgm_repeat  = fread(fid,1,'uint32'); % Datagram length in bytes
         next_dgm_start_pif = ftell(fid);
-        fseek(fid, pif_temp, -1); % rewind
     else
-        % Being here can be due to two things: either 1) we are in sync but
-        % this datagram is incomplete, or 2) we are out of syn.
-        numBytesDgm_end = [];
+        % Being here can be due to two things:
+        % 1) we are in sync but this datagram is incomplete, or 
+        % 2) we are out of sync.
+        numBytesDgm_repeat = [];
     end
     
-    flag_numBytesDgm_match = numBytesDgm_start == numBytesDgm_end;
-    flag_hash = strcmp(dgmType(1), '#');
+    % check for matching datagram size, amd the hash symbol of datagram
+    % type code.
+    flag_numBytesDgm_match = (header.numBytesDgm == numBytesDgm_repeat);
+    flag_hash = strcmp(header.dgmType(1), '#');
     
     if ~flag_numBytesDgm_match || ~flag_hash
         % We've either lost sync, or the last datagram is incomplete
@@ -176,65 +173,49 @@ while next_dgm_start_pif < file_size
             sync_counter = 0;
         end
     end
-    
-    % finish parsing general header
-    dgmVersion    = fread(fid,1,'uint8');  % Datagram version
-    systemID      = fread(fid,1,'uint8');  % System ID. Parameter used for separating datagrams from different echosounders
-    echoSounderID = fread(fid,1,'uint16'); % Echo sounder identity, e.g. 124, 304, 712, 2040, 2045 (EM 2040C)
-    time_sec      = fread(fid,1,'uint32'); % UTC time in seconds. Epoch 1970-01-01. time_nanosec part to be added for more exact time. 
-    time_nanosec  = fread(fid,1,'uint32'); % Nano seconds remainder. time_nanosec part to be added to time_sec for more exact time. 
-        
 
-    %% process time
-    dgm_date_time = datetime(time_sec + time_nanosec.*10^-9,'ConvertFrom','posixtime');
-    
     
     %% datagram type counter
     
-    % combine type and version
-    dgm_typeversion = [dgmType '_v' num2str(dgmVersion)];
-    
     % index of datagram type in the list
-    idx_dgmType = find(cellfun(@(x) strcmp(dgm_typeversion,x), list_dgm_typeversion));
+    idx_dgmType = find(cellfun(@(x) strcmp(header.dgmType,x), list_dgmType));
     
+    % if type encountered for the first time, add it to the list and
+    % initialize counter
     if isempty(idx_dgmType)
-        % new type, add it to the list
-        idx_dgmType = numel(list_dgm_typeversion) + 1;
-        list_dgm_typeversion{idx_dgmType,1} = dgm_typeversion;
-        list_dgm_counter(idx_dgmType,1) = 0;
+        idx_dgmType = numel(list_dgmType) + 1;
+        list_dgmType{idx_dgmType,1} = header.dgmType;
+        list_dgmType_counter(idx_dgmType,1) = 0;
     end
     
     % increment counter
-    list_dgm_counter(idx_dgmType) = list_dgm_counter(idx_dgmType) + 1;
-    dgm_counter = list_dgm_counter(idx_dgmType);
-    
+    list_dgmType_counter(idx_dgmType) = list_dgmType_counter(idx_dgmType) + 1;
+
     
     %% write output KMALLfileinfo
     
-    % record complete
-    kk = kk+1;
-    
     % Datagram number in file
+    kk = kk+1;
     KMALLfileinfo.dgm_num(kk,1) = kk;
     
     % Datagram info
-    KMALLfileinfo.dgm_type_code{kk,1}    = dgmType;
-    KMALLfileinfo.dgm_type_text{kk,1}    = get_dgm_type_txt(dgmType);
-    KMALLfileinfo.dgm_type_version(kk,1) = dgmVersion;
-    KMALLfileinfo.dgm_counter(kk,1)      = dgm_counter;
+    KMALLfileinfo.dgm_type_code{kk,1}    = header.dgmType;
+    KMALLfileinfo.dgm_type_text{kk,1}    = get_dgm_type_txt(header.dgmType);
+    KMALLfileinfo.dgm_type_version(kk,1) = header.dgmVersion;
+    KMALLfileinfo.dgm_counter(kk,1)      = list_dgmType_counter(idx_dgmType);
     KMALLfileinfo.dgm_start_pif(kk,1)    = dgm_start_pif;
-    KMALLfileinfo.dgm_size(kk,1)         = numBytesDgm_start;
+    KMALLfileinfo.dgm_size(kk,1)         = header.numBytesDgm;
     
     % System info
-    KMALLfileinfo.dgm_sys_ID(kk,1) = systemID;
-    KMALLfileinfo.dgm_EM_ID(kk,1)  = echoSounderID;
+    KMALLfileinfo.dgm_sys_ID(kk,1) = header.systemID;
+    KMALLfileinfo.dgm_EM_ID(kk,1)  = header.echoSounderID;
+
+    % Time info
+    KMALLfileinfo.date_time(kk,1) = datetime(header.time_sec + header.time_nanosec.*10^-9,'ConvertFrom','posixtime');
     
-    % report sync issues in reading, if any
+    % Report any sync issue in reading
     KMALLfileinfo.sync_counter(kk,1) = sync_counter;
     
-    % Time info
-    KMALLfileinfo.date_time(kk,1) = dgm_date_time;
-
     %% prepare for reloop
     
     % go to end of datagram
@@ -246,8 +227,8 @@ end
 %% finalizing
 
 % adding lists
-KMALLfileinfo.list_dgm_typeversion = list_dgm_typeversion;
-KMALLfileinfo.list_dgm_counter = list_dgm_counter;
+KMALLfileinfo.list_dgm_type = list_dgmType;
+KMALLfileinfo.list_dgm_counter = list_dgmType_counter;
 
 % initialize parsing field
 KMALLfileinfo.parsed = zeros(size(KMALLfileinfo.dgm_num));
@@ -258,6 +239,8 @@ fclose(fid);
 end
 
 %% subfunctions
+
+%%
 function dgm_type_text = get_dgm_type_txt(dgm_type_code)
 
 list_dgm_type_text = {...
@@ -285,7 +268,7 @@ idx = find(cellfun(@(x) strcmp(x(1:4),dgm_type_code), list_dgm_type_text));
 if ~isempty(idx)
     dgm_type_text = list_dgm_type_text{idx};
 else
-    dgm_type_text = sprintf('%i - UNKNOWN RECORD TYPE',dgm_type_code);
+    dgm_type_text = sprintf('%i - UNKNOWN DATAGRAM TYPE',dgm_type_code);
 end
 
 end
