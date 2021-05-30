@@ -176,10 +176,9 @@ for iDatag = datagToParse'
             end
             try iMRZ=iMRZ+1; catch, iMRZ=1; end
             
-            % in progress...
-            % KMALLdata.EMdgmMRZ(iMRZ) = CFF_read_EMdgmMRZ(fid);
+            KMALLdata.EMdgmMRZ(iMRZ) = CFF_read_EMdgmMRZ(fid);
             
-            parsed = 0;
+            parsed = 1;
             
         case 'MWC'
             % '#MWC - Multibeam (M) water (W) column (C) datagram'

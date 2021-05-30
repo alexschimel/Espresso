@@ -176,7 +176,11 @@ for nF = 1:n_files
                 
             case 'Kongsberg_kmall'
                 
+                profile on
                 [EMdata,datags_parsed_idx] = CFF_read_kmall(file_to_convert);
+                profile off
+                profile viewer
+                A = 0;
                 
         end
         

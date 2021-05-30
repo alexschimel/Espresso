@@ -16,7 +16,7 @@ if out_struct.header.dgmVersion == 1
         out_struct.sectorData(iTx) = CFF_read_EMdgmMWCtxSectorData(fid);
     end
     
-    out_struct.rxInfo     = CFF_read_EMdgmMWCrxInfo(fid);
+    out_struct.rxInfo = CFF_read_EMdgmMWCrxInfo(fid);
     
     Nrx = out_struct.rxInfo.numBeams;
     for iRx = 1:Nrx

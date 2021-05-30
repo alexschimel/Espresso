@@ -17,6 +17,6 @@ function out_struct = CFF_read_EMdgmMpartition(fid)
 out_struct.numOfDgms = fread(fid,1,'uint16');
 
 % Datagram part number, e.g. 2 (of 3). 
-out_struct.dgmNum    = fread(fid,1,'uint16');
+out_struct.dgmNum = fread(fid,1,'uint16');
 
 end
