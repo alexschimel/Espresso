@@ -1,7 +1,7 @@
 %% CFF_kmall_file_info.m
 %
-% Records basic info about the datagrams contained in one binary raw data
-% file in the Kongsberg EM series format .kmall.
+% Records basic info about the datagrams contained in one Kongsberg EM
+% series binary data file in .kmall format (.kmall or .kmwcd)
 %
 %% Help
 %

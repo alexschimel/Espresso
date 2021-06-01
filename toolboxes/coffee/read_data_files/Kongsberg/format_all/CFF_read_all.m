@@ -1,8 +1,8 @@
 %% CFF_read_all.m
 %
-% Reads contents of one Kongsberg EM series binary .all or .wcd data file,
-% or a pair of .all/.wcd files, allowing choice on which type of datagrams
-% to parse.
+% Reads contents of one Kongsberg EM series binary data file in .all format
+% (.all or .wcd), or a pair of .all/.wcd files, allowing choice on which
+% type of datagrams to parse.
 %
 %% Help
 %
@@ -98,6 +98,8 @@
 %
 % *NEW FEATURES*
 %
+% * 2021-06-01: fixed bug when requesting to read a single datagram type
+% (alex) 
 % * 2018-10-31: updated to read pair of .all/.wcd files.
 % * 2018-10-11: updated header before adding to Coffee v3
 % * 2017-06-28: first version. Adapated from CFF_convert_all_to_mat_v2.m
@@ -207,8 +209,8 @@ else
         if any(datagrams_parsable_idx)
             idx = ismember(info.datagTypeText,datagrams_to_parse(datagrams_parsable_idx));
             info.parsed(idx) = 1;
-            datagrams_parsed_idx = datagrams_parsable_idx;
         end
+        datagrams_parsed_idx = datagrams_parsable_idx;
         
     end
     
@@ -276,12 +278,10 @@ if numel(ALLfilename)>1
                 
                 % if any, read those datagrams
                 if any(datagrams_to_parse_in_second_file_idx)
-                    
                     idx = ismember(info.datagTypeText,datagrams_to_parse(datagrams_to_parse_in_second_file_idx));
                     info.parsed(idx) = 1;
-                    datagrams_parsed_idx = datagrams_parsed_idx | datagrams_to_parse_in_second_file_idx;
-                    
                 end
+                datagrams_parsed_idx = datagrams_parsed_idx | datagrams_to_parse_in_second_file_idx;
                 
             end
             

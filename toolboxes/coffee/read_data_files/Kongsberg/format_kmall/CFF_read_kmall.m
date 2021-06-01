@@ -1,13 +1,25 @@
-%% function_name.m
+%% CFF_read_kmall.m
 %
-% Function description XXX
+% Reads contents of one Kongsberg EM series binary data file in .kmall
+% format (.kmall or .kmwcd), or a pair of .kmall/.kmwcd files, allowing
+% choice on which type of datagrams to parse.
 %
 %% Help
 %
+% *INPUT VARIABLES*
+%
+% XXX
+% 
+% *NEW FEATURES*
+%
+% * 2021-06-01: fixed bug when requesting to read a single datagram type.
+% Updated docstring (alex)
+% * 2021-05-??: first version (alex)
+%
 % *AUTHOR, AFFILIATION & COPYRIGHT*
 %
-% Yoann Ladroit, Alexandre Schimel NIWA. Type |help Espresso.m| for
-% copyright information.
+% Alexandre Schimel (NGU), Yoann Ladroit (NIWA). 
+% Type |help Espresso.m| for copyright information.
 
 %% Function
 function [KMALLdata,datagrams_parsed_idx] = CFF_read_kmall(KMALLfilename, varargin)
@@ -82,8 +94,8 @@ else
     if any(datagrams_parsable_idx)
         idx = ismember(info.dgm_type_code,datagrams_to_parse(datagrams_parsable_idx));
         info.parsed(idx) = 1;
-        datagrams_parsed_idx = datagrams_parsable_idx;
     end
+    datagrams_parsed_idx = datagrams_parsable_idx;
     
 end
 
@@ -133,9 +145,9 @@ if numel(KMALLfilename)>1
             if any(datagrams_to_parse_in_second_file_idx)
                 idx = ismember(info.dgm_type_code,datagrams_to_parse(datagrams_to_parse_in_second_file_idx));
                 info.parsed(idx) = 1;
-                datagrams_parsed_idx = datagrams_parsed_idx | datagrams_to_parse_in_second_file_idx;
             end
-
+            datagrams_parsed_idx = datagrams_parsed_idx | datagrams_to_parse_in_second_file_idx;
+            
         end
         
         % read data in second file

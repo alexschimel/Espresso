@@ -1,7 +1,7 @@
 %% CFF_all_file_info.m
 %
-% Records basic info about the datagrams contained in one binary raw data
-% file in the Kongsberg EM series format .all.
+% Records basic info about the datagrams contained in one Kongsberg EM
+% series binary data file in .all format (.all or .wcd)
 %
 %% Help
 %

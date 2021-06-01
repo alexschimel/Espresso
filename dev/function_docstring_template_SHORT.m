@@ -6,7 +6,7 @@
 %
 % *AUTHOR, AFFILIATION & COPYRIGHT*
 %
-% Alexandre Schimel (NGU, NIWA), Yoann Ladroit (NIWA). 
+% Alexandre Schimel (NGU), Yoann Ladroit (NIWA). 
 % Type |help Espresso.m| for copyright information.
 
 %% Function

@@ -1,7 +1,8 @@
 %% CFF_read_all_from_fileinfo.m
 %
-% Reads contents of one Kongsberg EM series binary .all or .wcd data file,
-% using ALLfileinfo to indicate which datagrams to be parsed.
+% Reads contents of one Kongsberg EM series binary data file in .all format
+% (.all or .wcd), using ALLfileinfo to indicate which datagrams to be
+% parsed. 
 %
 %% Help
 %

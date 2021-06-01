@@ -6,6 +6,10 @@
 %
 % *AUTHOR, AFFILIATION & COPYRIGHT*
 %
+% * 2021-06-01: Updated docstring (alex)
+% * 2021-05-??: Support kmall started (alex)
+% * ????-??-??: first version
+%
 % Alexandre Schimel (NGU, NIWA), Yoann Ladroit (NIWA). 
 % Type |help Espresso.m| for copyright information.
 
@@ -176,10 +180,20 @@ for nF = 1:n_files
                 
             case 'Kongsberg_kmall'
                 
+                % relevant datagrams:
+                % XXX TO BE DEFINED, FOR NOW JUST TESTING READING DATAGRAMS
+                % dg_wc = {'#SPO'}; % Position
+                % dg_wc = {'#MRZ'}; % bathy and BS
+                % dg_wc = {'#MWC'}; % WCD
+                dg_wc = {}; % to parse everything
+                
                 profile on
-                [EMdata,datags_parsed_idx] = CFF_read_kmall(file_to_convert);
+                
+                [EMdata,datags_parsed_idx] = CFF_read_kmall(file_to_convert, dg_wc);
+                
                 profile off
                 profile viewer
+                
                 A = 0;
                 
         end
