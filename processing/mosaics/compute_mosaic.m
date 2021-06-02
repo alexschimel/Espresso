@@ -111,13 +111,18 @@ for iF = 1:numel(fData_tot)
     
     % get data
     fData = fData_tot{iF};
+    if ~all(isfield(fData,{'X_1E_gridEasting' 'X_N1_gridNorthing'}))
+        continue;
+    end
     E = fData.X_1E_gridEasting;
     N = fData.X_N1_gridNorthing;
     data = CFF_get_fData_wc_grid(fData,{'gridLevel' 'gridDensity' 'gridMaxHorizDist'}, d_lim_sonar_ref, d_lim_bottom_ref);
     L = data{1};
     W = data{2};
     D = data{3};
-        
+    if isempty(L)
+        continue;
+    end
     % remove all data outside of mosaic boundaries
     idx_keep_E = E>E_lim(1) & E<E_lim(2);
     idx_keep_N = N>N_lim(1) & N<N_lim(2);
@@ -149,12 +154,12 @@ for iF = 1:numel(fData_tot)
     D(indNan) = [];
     
     % This should not happen as it's been checked already but if no data
-    % within mosaic bounds, continue to next file 
+    % within mosaic bounds, continue to next file
     if isempty(L)
         continue;
     end
     
-    % pass grid level in natural before gridding. 
+    % pass grid level in natural before gridding.
     L = 10.^(L./10);
     
     % data indices in the mosaic
@@ -180,7 +185,7 @@ for iF = 1:numel(fData_tot)
     sz   = single([N_N N_E]);     % size of ouptut
     
     % calculate the sum of weights per mosaic cell, and the sum of weighted
-    % levels per mosaic cell 
+    % levels per mosaic cell
     mosaicTotalWeightTemp = accumarray(subs,W',sz,@sum,single(0));
     mosaicWeightedSumTemp = accumarray(subs,W'.*L',sz,@sum,single(0));
     

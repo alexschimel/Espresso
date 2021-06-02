@@ -76,9 +76,9 @@
 % Yoann Ladroit, Alexandre Schimel, NIWA. XXX
 
 %% Function
-function create_mosaic(~,~,main_figure)
+function create_mosaic(~,~,main_figure,mos_type)
 
-select_rect_area(main_figure,@compute_and_add_mosaic);
+select_rect_area(main_figure,@compute_and_add_mosaic,mos_type);
 
 
 

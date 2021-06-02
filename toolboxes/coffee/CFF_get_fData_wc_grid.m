@@ -37,12 +37,20 @@ if size(L{1},3)>1
             d_line_max = nanmin(d_lim_sonar_ref(2),d_max);
             d_line_min = nanmax(d_lim_sonar_ref(1),d_min);
             
+            if ~any(~isnan(d_lim_sonar_ref))
+                return;
+            end
+            
             idx_rem = (squeeze(fData.X_11H_gridHeight)+fData.X_1_gridVerticalResolution/2<d_line_min)|(squeeze(fData.X_11H_gridHeight)-fData.X_1_gridVerticalResolution/2>d_line_max);
             
         case {'height above bottom' 'Bottom'}
             
             d_max = nanmax(abs(nanmin(fData.X_BP_bottomHeight(:))));
             d_min = 0;
+            
+            if ~any(~isnan(d_lim_bottom_ref))
+                return;
+            end
             
             d_line_max = nanmin(d_lim_bottom_ref(2),d_max);
             d_line_min = nanmax(d_lim_bottom_ref(1),d_min);
