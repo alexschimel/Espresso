@@ -8,23 +8,11 @@
 %
 % *USE*
 %
-% _This section contains a more detailed description of what the function
-% does and how to use it, for the interested user to have an overall
-% understanding of its function. Example below to replace. Delete these
-% lines XXX._
-%
-% This is a text file containing the basic comment template to add at the
-% start of any new ESP3 function to serve as function help. XXX
+% XXX
 %
 % *INPUT VARIABLES*
 %
-% _This section contains bullet points of input variables with description
-% and information. Put input variable and other valid entries or defaults
-% between | symbols so it shows as monospace. Information section to
-% contain, in order: requirement (i.e. Required/Optional/Paramter), valid
-% type (e.g. Num, Positive num, char, 1xN cell array, etc.) and default
-% value if there is one (e.g. Default: '10'). Example below to replace.
-% Delete these lines XXX._
+% XXX
 %
 % * |fData|: Required. Structure for the storage of kongsberg EM series
 % multibeam data in a format more convenient for processing. The data is
@@ -41,25 +29,18 @@
 
 % *OUTPUT VARIABLES*
 %
-% _This section contains bullet points of output variables with description
-% and information. See input variables for template. Example below to
-% replace. Delete these lines XXX._
+% XXX
 %
 % * |data|: Description (Information). XXX
 %
 % *DEVELOPMENT NOTES*
 %
-% _This section describes what features are temporary, needed future
-% developments and paper references. Example below to replace. Delete these
-% lines XXX._
+% XXX
 %
 % * research point 1. XXX
 % * research point 2. XXX
 %
 % *NEW FEATURES*
-%
-% _This section contains dates and descriptions of major updates. Example
-% below to replace. Delete these lines XXX._
 %
 % * 2018-10-11: header
 % * 2018-10-08: introduced option to extract data as raw or true. Info for
@@ -68,17 +49,12 @@
 %
 % *EXAMPLE*
 %
-% _This section contains examples of valid function calls. Note that
-% example lines start with 3 white spaces so that the publish function
-% shows them correctly as matlab code. Example below to replace. Delete
-% these lines XXX._
-%
-%   example_use_1; % comment on what this does. XXX
-%   example_use_2: % comment on what this line does. XXX
+% XXX
 %
 % *AUTHOR, AFFILIATION & COPYRIGHT*
 %
-% Yoann Ladroit, Alexandre Schimel, NIWA.
+% Yoann Ladroit, Alexandre Schimel NIWA. Type |help Espresso.m| for
+% copyright information.
 
 %% Function
 function data_tot = CFF_get_WC_data(fData,fieldN,varargin)

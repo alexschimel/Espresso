@@ -1,7 +1,8 @@
 %% CFF_read_all_from_fileinfo.m
 %
-% Reads contents of one Kongsberg EM series binary .all or .wcd data file,
-% using ALLfileinfo to indicate which datagrams to be parsed.
+% Reads contents of one Kongsberg EM series binary data file in .all format
+% (.all or .wcd), using ALLfileinfo to indicate which datagrams to be
+% parsed. 
 %
 %% Help
 %
@@ -106,18 +107,19 @@ ALLfilename = p.Results.ALLfilename;
 ALLfileinfo = p.Results.ALLfileinfo;
 
 
-%% Get basic info for file opening
+%% Pre-reading
+
+% Get basic info for file opening
 filesize = ALLfileinfo.filesize;
 datagsizeformat = ALLfileinfo.datagsizeformat;
 datagramsformat = ALLfileinfo.datagramsformat;
 ALLdata.ALLfilename=ALLfilename;
 ALLdata.datagramsformat=datagramsformat;
 
-%% Open file
+% Open file
 [fid,~] = fopen(ALLfilename, 'r',datagramsformat);
 
-
-%% Parse only datagrams indicated in ALLfileinfo
+% Parse only datagrams indicated in ALLfileinfo
 datagToParse = find(ALLfileinfo.parsed==1);
 
 

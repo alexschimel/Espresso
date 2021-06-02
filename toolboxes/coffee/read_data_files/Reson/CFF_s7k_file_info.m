@@ -1,65 +1,65 @@
 %% CFF_s7k_file_info.m
 %
-% Records basic info about the datagrams contained in one Kongsberg EM
-% series binary .s7k or .wcd data file.
+% Records basic info about the datagrams contained in one binary raw data
+% file in the Teledyne-Reson format .s7k.
 %
 %% Help
 %
 % *USE*
 %
-% S7Kfileinfo = CFF_s7k_file_info(S7Kfilename) opens S7Kfilename and reads
-% through quickly to get information about each datagram, and store this
-% info in S7Kfileinfo.
+% S7Kfileinfo = CFF_s7k_file_info(S7Kfilename) opens file S7Kfilename and
+% reads through the start of each datagram to get basic information about
+% it, and store it all in S7Kfileinfo.
 %
 % *INPUT VARIABLES*
 %
-% * |S7Kfilename|: Required. String filename to parse (extension in .s7k or
-% .wcd)
+% * |S7Kfilename|: Required. String filename to parse (extension in .s7k)
 %
 % *OUTPUT VARIABLES*
 %
-% * |S7Kfileinfo|: structure containing information about datagrams in
+% * |S7Kfileinfo|: structure containing information about records in
 % S7Kfilename, with fields:
 %     * |S7Kfilename|: input file name
 %     * |filesize|: file size in bytes
-%     * |datagsizeformat|: endianness of the datagram size field 'b' or 'l'
-%     * |datagramsformat|: endianness of the datagrams 'b' or 'l'
-%     * |datagNumberInFile|: number of datagram in file
-%     * |datagPositionInFile|: position of beginning of datagram in file
-%     * |datagTypeNumber|: for each datagram, SIMRAD datagram type in
-%     decimal
-%     * |datagTypeText|: for each datagram, SIMRAD datagram type
-%     description
-%     * |parsed|: 0 for each datagram at this stage. To be later turned to
-%     1 for parsing
-%     * |counter|: the counter of this type of datagram in the file (ie
-%     first datagram of that type is 1 and last datagram is the total
-%     number of datagrams of that type)
-%     * |number|: the number/counter found in the datagram (usually
-%     different to counter)
-%     * |size|: for each datagram, datagram size in bytes
-%     * |syncCounter|: for each datagram, the number of bytes founds
-%     between this datagram and the previous one (any number different than
-%     zero indicates a sync error)
-%     * |emNumber|: EM Model number (eg 2045 for EM2040c)
+%     * |datagsizeformat|: endianness of the datagram size field. Always
+%     'l' for .s7k files
+%     * |datagramsformat|: endianness of the datagrams 'b' or 'l'. Always
+%     'l' for .s7k files
+%     * |recordNumberInFile|: number of record in file
+%     * |recordTypeIdentifier|: record type in int (Reson .s7k format) 
+%     * |recordTypeText|: record type description (Reson .s7k format)
+%     * |recordTypeCounter|: counter of this type of record in the file (ie
+%     first record of that type is 1 and last record is the total
+%     number of record of that type)
+%     * |recordStartPositionInFile|: position of beginning of record in
+%     file 
+%     * |record_size|: record size in bytes
+%     * |DRF_size|: size of the "Data Record Frame" part of the record
+%     (Reson .s7k format)
+%     * |RTHandRD_size|: combined size of the "Record Type Header" and
+%     "Record Data" parts of the record (Reson .s7k format)
+%     * |OD_offset|: offset of the "Optional Data" part of the record
+%     (Reson .s7k format)
+%     * |OD_size|: size of the "Optional Data" part of the record (Reson
+%     .s7k format)
+%     * |CS_size|: size of the "Checksum" part of the record (Reson .s7k
+%     format)
+%     * |syncCounter|: number of bytes found between this record and the
+%     previous one (any number different than zero indicates a sync error)
 %     * |date|: datagram date in YYYMMDD
-%     * |timeSinceMidnightInMilliseconds|: time since midnight in msecs
+%     * |timeSinceMidnightInMilliseconds|: time since midnight in
+%     milliseconds
+%     * |parsed|: flag for whether the record has been parsed. Initiated
+%     at 0 at this stage. To be later turned to 1 for parsing.
 %
 % *DEVELOPMENT NOTES*
 %
-% * The code currently lists the EM model numbers supported as a test for
-% sync. Add your model number in the list if it is not currently there (and
-% if the parsing works). It would be better to remove this test and try to
-% sync on ETX and Checksum instead.
-% * Check regularly with Kongsberg doc to keep updated with new datagrams.
+% * Check regularly with Reson doc to keep updated with new datagrams.
 %
 % *NEW FEATURES*
 %
-% * 2018-10-11: updated header before adding to Coffee v3
-% * 2017-10-17: changed way filesize is calculated without it reading the
-% entire file
-% * 2017-06-29: header updated
-% * 2015-09-30: first version taking from convert_s7k_to_mat
+% * 2021-05-26: docstring updated
+% * ????-??-??: first version, inspired from CFF_all_file_info.m
 %
 % *EXAMPLE*
 %
@@ -68,7 +68,8 @@
 %
 % *AUTHOR, AFFILIATION & COPYRIGHT*
 %
-% Alexandre Schimel, Waikato University, Deakin University, NIWA.
+% Alexandre Schimel (NGU, NIWA), Yoann Ladroit (NIWA). 
+% Type |help CoFFee.m| for copyright information.
 
 %% Function
 function S7Kfileinfo = CFF_s7k_file_info(S7Kfilename)
@@ -79,7 +80,7 @@ p = inputParser;
 % S7Kfilename to parse as only required argument. Test for file existence and
 % extension.
 argName = 'S7Kfilename';
-argCheck = @(x) exist(x,'file') && any(strcmp(CFF_file_extension(x),{'.s7k','.S7K'}));
+argCheck = @(x) CFF_check_S7Kfilename(x);
 addRequired(p,argName,argCheck);
 
 % now parse inputs
@@ -167,11 +168,7 @@ list_recordTypeIdentifier = cellfun(@(x) str2double(x(1:4)), list_recordTypeText
 
 
 %% Open file and initializing
-
-% NOTE: s7k files are in little Endian 'l', which is the default so no need
-% to specify
-
-% opening file
+% s7k files are in little Endian 'l', which is the default with fopen
 [fid,~] = fopen(S7Kfilename, 'r');
 
 % go to end of file to get number of bytes in file then rewind
@@ -231,9 +228,11 @@ while pif_nextrecordstart < filesize
         continue;
     else
         % SYNCHRONIZED
-        % throw a warning if we had lost it
         if syncCounter
+            % if we had lost sync, warn here we're back
             warning('Back in sync (%i bytes later)',syncCounter);
+            % reinitialize sync counter
+            syncCounter = 0;
         end
     end
     
@@ -347,15 +346,13 @@ while pif_nextrecordstart < filesize
     
     %% prepare for reloop
     
-    % reinitialize sync counter
-    syncCounter = 0;
-    
     % go to end of record
     fseek(fid, pif_nextrecordstart, -1);
     
 end
 
-S7Kfileinfo.date=cellfun(@(x) datestr(x,'yyyymmdd'),S7Kfileinfo.date,'un',0);
+% date as string
+S7Kfileinfo.date = cellfun(@(x) datestr(x,'yyyymmdd'),S7Kfileinfo.date,'un',0);
 
 % initialize parsing field
 S7Kfileinfo.parsed = zeros(size(S7Kfileinfo.recordNumberInFile));

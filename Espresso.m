@@ -31,7 +31,7 @@ if ~isdeployed()
     if ~isempty(wc_win)
         fprintf('Espresso already running. Activating window...\n');
         figure(wc_win);
-        fprintf('...Done. Espresso is ready for use.\n')
+        fprintf('Done. Espresso is ready for use.\n\n')
         return;
     end
 end
@@ -50,7 +50,7 @@ EspressoUserdata.logfile=logfile;
 
 %% Starting messages
 fprintf('Starting Espresso at %s... \n',datestr(now));
-fprintf('...INFO: Find a log of this output at %s. \n',Espresso_diary_file);
+fprintf('Find a log of this output at %s.\n',Espresso_diary_file);
 
 %% Software main path
 main_path = whereisroot();
@@ -59,7 +59,7 @@ if ~isdeployed
 end
 
 %% check for possibility of GPU computation
-fprintf('...Checking for GPU computation availability and compatibility...');
+fprintf('Checking for GPU computation availability and compatibility...');
 [gpu_comp,g] = get_gpu_comp_stat();
 if gpu_comp > 0
     fprintf(' Available.\n');
@@ -109,12 +109,12 @@ setappdata(main_figure,'features',[]);
 
 
 %% Create the contents of main figure
-fprintf('...Creating main figure...\n');
+fprintf('Creating main figure...\n');
 initialize_display(main_figure);
 
 %% Initialize controls with main figure
 
-fprintf('...Initializing controls...\n');
+fprintf('Initializing controls...\n');
 init_listeners(main_figure);
 initialize_interactions_v2(main_figure);
 
@@ -122,7 +122,7 @@ initialize_interactions_v2(main_figure);
 %init_listeners(main_figure);%TODO
 
 %% Final message
-fprintf('...Done. Espresso is ready for use.\n')
+fprintf('Done. Espresso is ready for use.\n\n')
 
 end
 

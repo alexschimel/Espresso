@@ -1,133 +1,145 @@
-function convert_files(files_to_convert, files_already_converted, reconvert_flag)
+%% convert_files.m
+%
+% Convert raw data files to CoFFee format (fData)
+%
+%% Help
+%
+% *AUTHOR, AFFILIATION & COPYRIGHT*
+%
+% * 2021-06-01: Updated docstring (alex)
+% * 2021-05-??: Support kmall started (alex)
+% * ????-??-??: first version
+%
+% Alexandre Schimel (NGU, NIWA), Yoann Ladroit (NIWA). 
+% Type |help Espresso.m| for copyright information.
 
-% HARD-CODED PARAMETER:
-% the source datagram that will be used throughout the program for
-% processing
-% by default is 'WC' but 'AP' can be used for Amplitude-Phase datagrams
-% instead. If there is no water-column datagram, you can still use Espresso
-% to convert and load and display data, using the depths datagrams 'De' or
-% 'X8'
 
+%% Function
+function convert_files(files_to_convert, flag_force_convert)
+
+% NOTE: HARD-CODED PARAMETERS subsampling factors:
+dr_sub = 1; % none at this stage, subsampling occuring at processing
+db_sub = 1; % none at this stage, subsampling occuring at processing
 
 % general timer
 timer_start = now;
 
+% number of files and start display
+n_files = numel(files_to_convert);
+if isempty(files_to_convert)
+    fprintf('Requesting conversion, but no files in input. Abort.\n\n');
+    return
+else
+    if n_files == 1
+        fprintf('Requested conversion of 1 raw data file (or pair of files) at %s...\n', datestr(now));
+    else
+        fprintf('Requested conversion of %i raw data files (or pairs of files) at %s...\n', n_files, datestr(now));
+    end
+end
+
 % for each file
-for nF = 1:numel(files_to_convert)
+for nF = 1:n_files
     
     % using a try-catch sequence to allow continuing to the next file if
     % conversion of one fails.
     try
         
-        % get file to convert
+        % get the file (or pair of files) to convert
         file_to_convert = files_to_convert{nF};
         
-        [~,~,f_ext] = fileparts(file_to_convert);
-        
-        if isempty(f_ext)||strcmpi(f_ext,'.db')
-            if isfile([file_to_convert,'.wcd'])
-                f_ext = '.wcd';
-            elseif isfile([file_to_convert,'.all'])
-                f_ext = '.all';
-            elseif isfile([file_to_convert,'.s7k'])
-                f_ext = '.s7k';
-            end
-        end
-        
-        % get folder for converted data
-        folder_for_converted_data = CFF_converted_data_folder(file_to_convert);
-        
-        % converted filename fData
-        mat_fdata_file = fullfile(folder_for_converted_data,'fdata.mat');
-        
-        % subsampling factors:
-        dr_sub = 1; % none for now
-        db_sub = 1; % none for now
-        
-        dr_sub_old = 0;
-        db_sub_old = 0;
-        ver = '0.0';
-        
-        % check if converted file exists
-        if isfile(mat_fdata_file)
-            fData_old = load(mat_fdata_file);
-            if isfield(fData_old,'MET_Fmt_version')
-                % added a version for fData
-                ver = fData_old.MET_Fmt_version;
-            end
-            dr_sub_old = fData_old.dr_sub;
-            db_sub_old = fData_old.db_sub;
+        % start of display for this file
+        if ischar(file_to_convert)
+            file_to_convert_disp = sprintf('file "%s"',file_to_convert);
         else
-            fData_old = {};
+            % paired file
+            file_to_convert_disp = sprintf('pair of files "%s" and "%s"',file_to_convert{1},file_to_convert{2});
+        end
+        fprintf('%i/%i: %s.\n',nF,n_files,file_to_convert_disp);
+        
+        % file format
+        [~,~,f_ext] = fileparts(CFF_onerawfileonly(file_to_convert));
+        if strcmpi(f_ext,'.all') || strcmpi(f_ext,'.wcd')
+            file_format = 'Kongsberg_all';
+        elseif strcmpi(f_ext,'.kmall') || strcmpi(f_ext,'.kmwcd')
+            file_format = 'Kongsberg_kmall';
+        elseif strcmpi(f_ext,'.kmall') || strcmpi(f_ext,'.kmwcd')
+            file_format = 'Reson_s7k';
+        else
+            file_format = [];
         end
         
-        convert = reconvert_flag || ~isfile(mat_fdata_file) || ~strcmpi(ver,CFF_get_current_fData_version) || dr_sub_old~=dr_sub || db_sub_old~=db_sub || ~files_already_converted(nF);
+        % test if file already converted
+        bool_already_converted = CFF_are_raw_files_converted(file_to_convert);
         
-        % if file already converted and not asking for reconversion, exit here
-        if ~convert
-            fprintf('File "%s" (%i/%i) is already converted.\n',file_to_convert,nF,numel(files_to_convert));
-            continue;
+        % management & display
+        if isempty(file_format)
+            % format not supported, abort.
+            fprintf('...Cannot be converted. Format not (yet?) supported: "%s".\n',f_ext);
+            continue
+        elseif bool_already_converted && ~flag_force_convert
+            % already converted and not asking for reconversion, abort.
+            fprintf('...Already converted (and not asking for reconversion).\n');
+            continue
+        elseif bool_already_converted && flag_force_convert
+            % already converted but asking for reconversion, proceed.
+            fprintf('...Already converted. Started re-converting at %s. \n',datestr(now));
+        else
+            % not yet converted, proceed.
+            fprintf('...Started converting at %s. \n',datestr(now));
         end
-        
-        clean_fdata(fData_old);
-        if isfile(mat_fdata_file)
-            delete(mat_fdata_file);
-        end
-        fData_old = {};
-        
-        % Otherwise, starting conversion...
-        fprintf('\nConverting file "%s" (%i/%i)...\n',file_to_convert,nF,numel(files_to_convert));
-        textprogressbar(sprintf('...Started at %s. Progress: ',datestr(now)));
+        textprogressbar('...Progress: ');
         textprogressbar(0);
         tic
         
-        % if output folder doesn't exist, create it
-        MATfilepath = fileparts(mat_fdata_file);
-        if ~exist(MATfilepath,'dir') && ~isempty(MATfilepath)
-            mkdir(MATfilepath);
-        end
+        % First, clean up any existing converted data
+        wc_dir = CFF_converted_data_folder(file_to_convert);
+        clean_delete_fdata(wc_dir);
         
-        switch f_ext
-            case {'.all' '.wcd'}
+        % create output folder
+        mkdir(wc_dir);
+        
+        % define mat filename
+        mat_fdata_file = fullfile(wc_dir, 'fData.mat');
+        
+        switch file_format
+            case 'Kongsberg_all'
                 
-                % set datagram source
-                %             datagramSource = 'WC'; % 'AP', 'De', 'X8'
-                %
-                %             switch datagramSource
-                %                 case 'WC'
-                %                     wc_d = 107;
-                %                 case 'AP'
-                %                     wc_d = 114;
-                %                 case 'De'
-                %                     wc_d = 68;
-                %             end
+                % relevant datagrams:
+                % * installation parameters (73)
+                % * position (80)
+                % * runtime parameters (82)
+                % * X8 depth (88)
+                % * water-column (107)
+                % * Amplitude and Phase (114)
+                datagrams_to_parse = [73 80 82 88 107 114];
                 
-                % We also need installation parameters (73), position (80), and runtime
-                % parameters (82) datagrams. List datagrams required
-                dg_wc = [73 80 82 88 107 114];
-                
-                % conversion to ALLdata format
-                [EMdata,datags_parsed_idx] = CFF_read_all(file_to_convert, dg_wc);
+                % step 1: convert to ALLdata format
+                [EMdata,datags_parsed_idx] = CFF_read_all(file_to_convert, datagrams_to_parse);
                 textprogressbar(50);
                 
                 if datags_parsed_idx(end)
-                    datagramSource='AP';
+                    datagramSource = 'AP';
                 else
-                    datagramSource='WC';
+                    datagramSource = 'WC';
                 end
                 
                 % if not all datagrams were found at this point, message and abort
                 if nansum(datags_parsed_idx)<5
-                    if ~any(datags_parsed_idx(5:6))&&any(datags_parsed_idx(4:6))
+                    if ~any(datags_parsed_idx(5:6)) && any(datags_parsed_idx(4:6))
                         textprogressbar('File does not contain water-column datagrams. Conversion aborted.');
                         continue;
-                    elseif  ~all(datags_parsed_idx(1:3))||~any(datags_parsed_idx(4:6))
+                    elseif  ~all(datags_parsed_idx(1:3)) || ~any(datags_parsed_idx(4:6))
                         textprogressbar('File does not contain all necessary datagrams. Check file contents. Conversion aborted.');
                         continue;
                     end
                 end
                 
-            case '.s7k'
+                % step 2: convert to fdata
+                fData = CFF_convert_ALLdata_to_fData(EMdata,dr_sub,db_sub);
+                
+                textprogressbar(90);
+                
+            case 'Reson_s7k'
                 
                 % relevant datagrams:
                 % R1015_Navigation
@@ -141,6 +153,7 @@ for nF = 1:numel(files_to_convert)
                 dg_wc = [1015 1003 7000 7001 7004 7027 7018 7042];
                 
                 [RESONdata, datags_parsed_idx] = CFF_read_s7k(file_to_convert,dg_wc);
+                textprogressbar(50);
                 
                 % if not all datagrams were found at this point, message and abort
                 if ~all(datags_parsed_idx)
@@ -159,22 +172,30 @@ for nF = 1:numel(files_to_convert)
                     datagramSource = 'WC';
                 end
                 
-            otherwise
-                continue;
-        end
-        
-        switch f_ext
-            case {'.all' '.wcd'}
                 % if output file does not exist OR if forcing reconversion, simply convert
-                fData = CFF_convert_ALLdata_to_fData(EMdata,dr_sub,db_sub,fData_old);
+                fData = CFF_convert_S7Kdata_to_fData(RESONdata,dr_sub,db_sub);
                 
                 textprogressbar(90);
                 
-            case '.s7k'
-                % if output file does not exist OR if forcing reconversion, simply convert
-                fData = CFF_convert_S7Kdata_to_fData(RESONdata,dr_sub,db_sub,fData_old);
                 
-                textprogressbar(90);
+            case 'Kongsberg_kmall'
+                
+                % relevant datagrams:
+                % XXX TO BE DEFINED, FOR NOW JUST TESTING READING DATAGRAMS
+                % dg_wc = {'#SPO'}; % Position
+                % dg_wc = {'#MRZ'}; % bathy and BS
+                % dg_wc = {'#MWC'}; % WCD
+                dg_wc = {}; % to parse everything
+                
+                profile on
+                
+                [EMdata,datags_parsed_idx] = CFF_read_kmall(file_to_convert, dg_wc);
+                
+                profile off
+                profile viewer
+                
+                A = 0;
+                
         end
         
         % add datagram source
@@ -186,15 +207,16 @@ for nF = 1:numel(files_to_convert)
         
         % disp
         textprogressbar(100)
-        textprogressbar(sprintf(' done. Elapsed time: %f seconds.\n',toc));
+        fprintf(' Done. Duration: ~%.2f seconds.\n',toc);
         
     catch err
-        [~,f_temp,e_temp] = fileparts(err.stack(1).file);
-        err_str = sprintf('Error in file %s, line %d',[f_temp e_temp],err.stack(1).line);
-        fprintf('%s: ERROR converting file %s \n%s\n',datestr(now,'HH:MM:SS'),file_to_convert,err_str);
-        fprintf('%s\n\n',err.message);
+        fprintf('%s: ERROR converting %s\n',datestr(now,'HH:MM:SS'),file_to_convert_disp);
         if ~isdeployed
             rethrow(err);
+        else
+            [~,f_temp,e_temp] = fileparts(err.stack(1).file);
+            err_str = sprintf('Error in file %s, line %d: %s',[f_temp e_temp],err.stack(1).line,err.message);
+            fprintf('%s\n\n',err_str);
         end
     end
     
@@ -202,4 +224,6 @@ end
 
 % general timer
 timer_end = now;
-fprintf('Total time for conversion: %f seconds (~%.2f minutes).\n\n',(timer_end-timer_start)*24*60*60,(timer_end-timer_start)*24*60);
+duration_sec = (timer_end-timer_start)*24*60*60;
+duration_min = (timer_end-timer_start)*24*60;
+fprintf('Done. Total duration: ~%.2f seconds (~%.2f minutes).\n\n',duration_sec,duration_min);

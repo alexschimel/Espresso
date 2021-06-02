@@ -1,7 +1,7 @@
 %% CFF_convert_ALLdata_to_fData.m
 %
-% Converts the Kongsberg EM series data files in ALLdata format (containing
-% the KONGSBERG datagrams) to the fData format used in processing.
+% Converts Kongsberg EM series data FROM the ALLdata format (read by
+% CFF_read_all) TO the fData format used in processing.
 %
 %% Help
 %
@@ -11,33 +11,26 @@
 % one ALLdata structure to a structure in the fData format.
 %
 % fData = CFF_convert_ALLdata_to_fData({ALLdata;WCDdata}) converts two
-% ALLdata structures into one fData sructure. While many more structures
-% can thus be loaded, this is typically done because ALLdata structures
-% exist on a per-file basis and Kongsberg raw data often come in pairs of
-% files: one .all and one .wcd. Note that the ALLdata structures are
-% converted to fData in the order they are in input, and that the first
-% ones take precedence, aka in the example above, if WCDdata contains a
-% type of datagram that is already in ALLdata, they will NOT be converted.
-% This is to avoid doubling up. Order the ALLdata structures in input in
-% order of desired precedence. DO NOT use this feature to convert ALLdata
-% structures from different acquisition files. It will not work. Convert
-% each into its own fData structure.
+% ALLdata structures into one fData sructure. This type of input is
+% obtained from running CFF_read_all on a Kongsberg pair of files
+% (.all/.wcd). 
 %
-% fData = CFF_convert_ALLdata_to_fData(ALLdata,10,2) operates the
-% conversion with sub-sampling in range and in beams. For example, to
-% sub-sample range by a factor of 10 and beams by a factor of 2, use fData
-% = CFF_convert_ALLdata_to_fData(ALLdata,10,2).
+% Note that the ALLdata structures are converted to fData in the order they
+% are in input, and that the first ones take precedence. Aka in the example
+% above, if WCDdata contains a type of datagram that is already in ALLdata,
+% they will NOT be converted. This is to avoid doubling up the data that
+% may exist in duplicate in the two input files. Order the ALLdata
+% structures in input in order of desired precedence.
 %
-% [fData,update_flag] = CFF_convert_ALLdata_to_fData(ALLdata,1,1,fData);
-% takes the result of a precedent conversion in input to allow potentially
-% saving time. The function will start by loading the result of the
-% precedent conversion, check that what you're trying to add to it comes
-% from the same raw data source, and add to fData only those types of
-% datagrams that may be missing. If fData has been modified, it will return
-% a update_flag=1. If the output is the same and no modification occured,
-% then it will return a update_flag=0. NOTE: If the decimation factors in
-% input are different to those used in the input fData, then the data
-% WILL be updated. This is actually the main use of this feature...
+% Do not try to use this feature to convert ALLdata structures from
+% different acquisition files. It will not work. Convert each into its own
+% fData structure. 
+%
+% fData = CFF_convert_ALLdata_to_fData(ALLdata,dr_sub,db_sub) operates the
+% conversion with a sub-sampling of the water-column data (either WC or AP
+% datagrams) in range and in beams. For example, to sub-sample range by a
+% factor of 10 and beams by a factor of 2, use
+% fData = CFF_convert_ALLdata_to_fData(ALLdata,10,2). 
 %
 % *INPUT VARIABLES*
 %
@@ -96,8 +89,6 @@
 %     * c: data type, obtained from the original variable name in the
 %     Kongsberg datagram, or from the user's imagination for derived data
 %     obtained from subsequent functions.
-% * |update_flag|: 1 if a fData was given in input and was modified with
-% this function
 %
 % *DEVELOPMENT NOTES*
 %
@@ -112,6 +103,8 @@
 %
 % *NEW FEATURES*
 %
+% * 2021-05-24: cleaned up, and removed the update capability, since it was
+% not being used.
 % * 2018-10-11: updated header before adding to Coffee v3
 % * 2018-10-09: started adding runtime params
 % * 2017-10-04: complete re-ordering of dimensions, no backward
@@ -138,11 +131,12 @@
 %
 % *AUTHOR, AFFILIATION & COPYRIGHT*
 %
-% Alexandre Schimel,Deakin University, NIWA.
-% Yoann Ladroit, NIWA.
+% Alexandre Schimel (NGU, NIWA), Yoann Ladroit (NIWA). 
+% Type |help CoFFee.m| for copyright information.
 
 %% Function
-function [fData,update_flag] = CFF_convert_ALLdata_to_fData(ALLdataGroup,varargin)
+function fData = CFF_convert_ALLdata_to_fData(ALLdataGroup,varargin)
+
 
 %% input parsing
 
@@ -155,7 +149,6 @@ addRequired(p,'ALLdataGroup',@(x) isstruct(x) || iscell(x));
 % optional
 addOptional(p,'dr_sub',1,@(x) isnumeric(x)&&x>0);
 addOptional(p,'db_sub',1,@(x) isnumeric(x)&&x>0);
-addOptional(p,'fData',{},@(x) isstruct(x) || iscell(x));
 
 % parse
 parse(p,ALLdataGroup,varargin{:})
@@ -164,88 +157,65 @@ parse(p,ALLdataGroup,varargin{:})
 ALLdataGroup = p.Results.ALLdataGroup;
 dr_sub = p.Results.dr_sub;
 db_sub = p.Results.db_sub;
-fData = p.Results.fData;
 clear p;
+
 
 %% pre-processing
 
-if ~iscell(ALLdataGroup)
+if isstruct(ALLdataGroup)
+    % single ALLdata structure
+    
+    % check it's from Kongsberg and that source file exist
+    has_ALLfilename = isfield(ALLdataGroup, 'ALLfilename');
+    if ~has_ALLfilename || ~CFF_check_ALLfilename(ALLdataGroup.ALLfilename)
+        error('Invalid input');
+    end
+    
+    % if clear, turn to cell before processing further
     ALLdataGroup = {ALLdataGroup};
+    
+elseif iscell(ALLdataGroup) && numel(ALLdataGroup)==2
+    % pair of ALLdata structures
+    
+    % check it's from a pair of Kongsberg all/wcd files and that source
+    % files exist 
+    has_ALLfilename = cell2mat(cellfun(@(x) isfield(x, 'ALLfilename'), ALLdataGroup, 'UniformOutput', false));
+    rawfilenames = cellfun(@(x) x.ALLfilename, ALLdataGroup, 'UniformOutput', false);
+    if ~all(has_ALLfilename) || ~CFF_check_ALLfilename(rawfilenames)
+        error('Invalid input');
+    end
+    
+else
+    error('Invalid input');
 end
 
 % number of individual ALLdata structures in input ALLdataGroup
 nStruct = length(ALLdataGroup);
 
-% initialize fData if one not given in input
-if isempty(fData)
-    
-    % initialize FABC structure by writing in the raw data filenames to be
-    % added here
-    fData.ALLfilename = cell(1,nStruct);
-    for iF = 1:nStruct
-        fData.ALLfilename{iF} = ALLdataGroup{iF}.ALLfilename;
-    end
-    
-    % add the decimation factors given here in input
-    fData.dr_sub = dr_sub;
-    fData.db_sub = db_sub;
-    
-end
+% initialize fData, with current version number
+fData.MET_Fmt_version = CFF_get_current_fData_version();
 
-if ~isfield(fData,'MET_Fmt_version') && ~isempty(fData)
-    %added a version for fData
-    fData.MET_Fmt_version='0.0';
-end
-
-if ~strcmpi(ver,CFF_get_current_fData_version)
-    f_reconvert = 1;
-    update_mode = 0;
-else
-    f_reconvert = 0;
-    update_mode = 1;
-end
-
-% initialize update_flag
-update_flag = 0;
-
+% initialize source filenames
+fData.ALLfilename = cell(1,nStruct);
 
 
 %% take one ALLdata structure at a time and add its contents to fData
-
 for iF = 1:nStruct
-    
-    
-    %% pre processing
     
     % get current structure
     ALLdata = ALLdataGroup{iF};
     
-    % Make sure we don't update fData with datagrams from different
-    % sources
-    % XXX clean up that display later
-    if ~ismember(ALLdata.ALLfilename,fData.ALLfilename)
-        fprintf('Cannot add different files to this structure.\n')
-        continue;
-    end
-    
-    % open the original raw file in case we need to grab WC data from it
-    fid_all = fopen(fData.ALLfilename{iF},'r',ALLdata.datagramsformat);
-    
-    % get folder for converted data
-    wc_dir = CFF_converted_data_folder(fData.ALLfilename{iF});
+    % add source filename
+    fData.ALLfilename{iF} = ALLdata.ALLfilename;
     
     % now reading each type of datagram...
     
-    %% EM_InstallationStart (v2 VERIFIED)
-    
+    %% EM_InstallationStart
     if isfield(ALLdata,'EM_InstallationStart')
         
-        % only convert these datagrams if this type doesn't already exist in output
-        if f_reconvert || ~isfield(fData,'IP_ASCIIparameters')
-            
-            if update_mode
-                update_flag = 1;
-            end
+        % only convert these datagrams if fData does not already contain
+        % any
+        if ~isfield(fData,'IP_ASCIIparameters')
             
             % initialize struct
             IP_ASCIIparameters = struct;
@@ -298,12 +268,9 @@ for iF = 1:nStruct
     
     if isfield(ALLdata,'EM_Runtime')
         
-        % only convert these datagrams if this type doesn't already exist in output
-        if f_reconvert || ~isfield(fData,'Ru_1D_Date')
-            
-            if update_mode
-                update_flag = 1;
-            end
+        % only convert these datagrams if fData does not already contain
+        % any
+        if ~isfield(fData,'Ru_1D_Date')
             
             % NumberOfDatagrams  = length(ALLdata.EM_Runtime.TypeOfDatagram);
             % MaxNumberOfEntries = max(ALLdata.EM_Runtime.NumberOfEntries);
@@ -325,12 +292,9 @@ for iF = 1:nStruct
     
     if isfield(ALLdata,'EM_SoundSpeedProfile')
         
-        % only convert these datagrams if this type doesn't already exist in output
-        if f_reconvert || ~isfield(fData,'SS_1D_Date')
-            
-            if update_mode
-                update_flag = 1;
-            end
+        % only convert these datagrams if fData does not already contain
+        % any
+        if ~isfield(fData,'SS_1D_Date')
             
             NumberOfDatagrams  = length(ALLdata.EM_SoundSpeedProfile.TypeOfDatagram);
             MaxNumberOfEntries = max(ALLdata.EM_SoundSpeedProfile.NumberOfEntries);
@@ -363,12 +327,9 @@ for iF = 1:nStruct
     
     if isfield(ALLdata,'EM_Attitude')
         
-        % only convert these datagrams if this type doesn't already exist in output
-        if f_reconvert || ~isfield(fData,'At_1D_Date')
-            
-            if update_mode
-                update_flag = 1;
-            end
+        % only convert these datagrams if fData does not already contain
+        % any
+        if ~isfield(fData,'At_1D_Date')
             
             NumberOfDatagrams  = length(ALLdata.EM_Attitude.TypeOfDatagram);
             MaxNumberOfEntries = max(ALLdata.EM_Attitude.NumberOfEntries);
@@ -407,12 +368,9 @@ for iF = 1:nStruct
     
     if isfield(ALLdata,'EM_Height')
         
-        % only convert these datagrams if this type doesn't already exist in output
-        if f_reconvert || ~isfield(fData,'He_1D_Date')
-            
-            if update_mode
-                update_flag = 1;
-            end
+        % only convert these datagrams if fData does not already contain
+        % any
+        if ~isfield(fData,'He_1D_Date')
             
             % NumberOfDatagrams = length(ALLdata.EM_Height.TypeOfDatagram);
             
@@ -429,12 +387,9 @@ for iF = 1:nStruct
     
     if isfield(ALLdata,'EM_Position')
         
-        % only convert these datagrams if this type doesn't already exist in output
-        if f_reconvert || ~isfield(fData,'Po_1D_Date')
-            
-            if update_mode
-                update_flag = 1;
-            end
+        % only convert these datagrams if fData does not already contain
+        % any
+        if ~isfield(fData,'Po_1D_Date')
             
             % NumberOfDatagrams = length(ALLdata.EM_Position.TypeOfDatagram);
             
@@ -457,12 +412,9 @@ for iF = 1:nStruct
     
     if isfield(ALLdata,'EM_Depth')
         
-        % only convert these datagrams if this type doesn't already exist in output
-        if f_reconvert || ~isfield(fData,'De_1P_Date')
-            
-            if update_mode
-                update_flag = 1;
-            end
+        % only convert these datagrams if fData does not already contain
+        % any
+        if ~isfield(fData,'De_1P_Date')
             
             NumberOfPings    = length(ALLdata.EM_Depth.TypeOfDatagram); % total number of pings in file
             MaxNumberOfBeams = max(cellfun(@(x) max(x),ALLdata.EM_Depth.BeamNumber)); % maximum beam number in file
@@ -516,12 +468,9 @@ for iF = 1:nStruct
     
     if isfield(ALLdata,'EM_XYZ88')
         
-        % only convert these datagrams if this type doesn't already exist in output
-        if f_reconvert || ~isfield(fData,'X8_1P_Date')
-            
-            if update_mode
-                update_flag = 1;
-            end
+        % only convert these datagrams if fData does not already contain
+        % any
+        if ~isfield(fData,'X8_1P_Date')
             
             NumberOfPings    = length(ALLdata.EM_XYZ88.TypeOfDatagram); % total number of pings in file
             MaxNumberOfBeams = max(ALLdata.EM_XYZ88.NumberOfBeamsInDatagram); % maximum beam number in file
@@ -571,12 +520,9 @@ for iF = 1:nStruct
     
     if isfield(ALLdata,'EM_SeabedImage')
         
-        % only convert these datagrams if this type doesn't already exist in output
-        if f_reconvert || ~isfield(fData,'SI_1P_Date')
-            
-            if update_mode
-                update_flag = 1;
-            end
+        % only convert these datagrams if fData does not already contain
+        % any
+        if ~isfield(fData,'SI_1P_Date')
             
             NumberOfPings      = length(ALLdata.EM_SeabedImage.TypeOfDatagram); % total number of pings in file
             MaxNumberOfBeams   = max(cellfun(@(x) max(x),ALLdata.EM_SeabedImage.BeamIndexNumber))+1; % maximum beam number (beam index number +1), in file
@@ -643,12 +589,9 @@ for iF = 1:nStruct
     
     if isfield(ALLdata,'EM_SeabedImage89')
         
-        % only convert these datagrams if this type doesn't already exist in output
-        if f_reconvert || ~isfield(fData,'S8_1P_Date')
-            
-            if update_mode
-                update_flag = 1;
-            end
+        % only convert these datagrams if fData does not already contain
+        % any
+        if ~isfield(fData,'S8_1P_Date')
             
             NumberOfPings      = length(ALLdata.EM_SeabedImage89.TypeOfDatagram); % total number of pings in file
             MaxNumberOfBeams   = max(ALLdata.EM_SeabedImage89.NumberOfValidBeams);
@@ -710,17 +653,20 @@ for iF = 1:nStruct
         
     end
     
-
+    
     %% EM_WaterColumn (v2 verified)
     
     if isfield(ALLdata,'EM_WaterColumn')
         
-        % only convert these datagrams if this type doesn't already exist in output
-        if f_reconvert || ~isfield(fData,'WC_1P_Date') || fData.dr_sub~=dr_sub || fData.db_sub~=db_sub
+        % only convert these datagrams if fData does not already contain
+        % any
+        if ~isfield(fData,'WC_1P_Date')
             
-            if update_mode
-                update_flag = 1;
-            end
+            % for WC or AP data, we will need to fopen the source file to
+            % grab the data, and get the output directory to store the
+            % binary files
+            fid_all = fopen(fData.ALLfilename{iF},'r',ALLdata.datagramsformat);
+            wc_dir = CFF_converted_data_folder(fData.ALLfilename{iF});
             
             % get the number of heads
             headNumber = unique(ALLdata.EM_WaterColumn.SystemSerialNumber,'stable');
@@ -760,6 +706,10 @@ for iF = 1:nStruct
                     %     ALLdata.EM_WaterColumn.DatagramNumbers == 1);
                 end
             end
+            
+            % add the WCD decimation factors given here in input
+            fData.dr_sub = dr_sub;
+            fData.db_sub = db_sub;
             
             % save ping numbers
             fData.WC_1P_PingCounter = pingCounters;
@@ -807,10 +757,10 @@ for iF = 1:nStruct
             % maxNSamples = max(cellfun(@(x) max(x), ALLdata.EM_WaterColumn.NumberOfSamples(ismember(ALLdata.EM_WaterColumn.PingCounter,pingCounters)))); % maximum number of samples in a ping
             
             % get dimensions of data to red after decimation
-            maxNBeams_sub = max(fData.WC_1P_NumberOfBeamsToRead); % maximum number of receive beams TO READ 
+            maxNBeams_sub = max(fData.WC_1P_NumberOfBeamsToRead); % maximum number of receive beams TO READ
             % maxNSamples_sub  = ceil(maxNSamples/dr_sub); % maximum number of samples TO READ
             [maxNSamples_groups, ping_group_start, ping_group_end] = CFF_group_pings(ALLdata.EM_WaterColumn.NumberOfSamples, pingCounters, ALLdata.EM_WaterColumn.PingCounter); % make groups of pings
-            maxNSamples_groups = ceil(maxNSamples_groups/dr_sub); % maximum number of samples TO READ, per group. 
+            maxNSamples_groups = ceil(maxNSamples_groups/dr_sub); % maximum number of samples TO READ, per group.
             
             % initialize data per transmit sector and ping
             fData.WC_TP_TiltAngle            = nan(maxNTransmitSectors,nPings);
@@ -942,7 +892,7 @@ for iF = 1:nStruct
                         fData.WC_BP_TransmitSectorNumber(iBeamDest,iP)   = ALLdata.EM_WaterColumn.TransmitSectorNumber2{iDatagrams(iD)}(iBeamSource);
                         fData.WC_BP_BeamNumber(iBeamDest,iP)             = ALLdata.EM_WaterColumn.BeamNumber{iDatagrams(iD)}(iBeamSource);
                         fData.WC_BP_SystemSerialNumber(iBeamDest,iP)     = headSSN;
-                         
+                        
                         % and then, in each beam...
                         for iB = 1:nBeam
                             
@@ -971,10 +921,13 @@ for iF = 1:nStruct
                 
                 % finished reading this ping's WC data. Store the data in
                 % the appropriate binary file, at the appropriate ping,
-                % through the memory mapping 
+                % through the memory mapping
                 fData.WC_SBP_SampleAmplitudes{iG}.Data.val(:,:,iP-ping_group_start(iG)+1) = SB_temp;
                 
             end
+            
+            % close the original raw file
+            fclose(fid_all);
             
         end
     end
@@ -984,16 +937,23 @@ for iF = 1:nStruct
     
     if isfield(ALLdata,'EM_AmpPhase')
         
-        % only convert these datagrams if this type doesn't already exist in output
-        if f_reconvert || ~isfield(fData,'AP_1P_Date') || fData.dr_sub~=dr_sub || fData.db_sub~=db_sub
+        % only convert these datagrams if fData does not already contain
+        % any
+        if ~isfield(fData,'AP_1P_Date')
             
-            if update_mode
-                update_flag = 1;
-            end
+            % for WC or AP data, we will need to fopen the source file to
+            % grab the data, and get the output directory to store the
+            % binary files
+            fid_all = fopen(fData.ALLfilename{iF},'r',ALLdata.datagramsformat);
+            wc_dir = CFF_converted_data_folder(fData.ALLfilename{iF});
             
             % get the list of pings and the index of first datagram for
             % each ping
             [pingCounters,iFirstDatagram] = unique(ALLdata.EM_AmpPhase.PingCounter,'stable');
+            
+            % add the WCD decimation factors given here in input
+            fData.dr_sub = dr_sub;
+            fData.db_sub = db_sub;
             
             % save ping numbers
             fData.AP_1P_PingCounter = ALLdata.EM_AmpPhase.PingCounter(iFirstDatagram);
@@ -1022,10 +982,10 @@ for iF = 1:nStruct
             % maxNSamples = max(cellfun(@(x) max(x), ALLdata.EM_AmpPhase.NumberOfSamples)); % max number of samples for a beam in file
             
             % get dimensions of data to red after decimation
-            maxNBeams_sub = max(fData.AP_1P_NumberOfBeamsToRead); % maximum number of receive beams TO READ 
+            maxNBeams_sub = max(fData.AP_1P_NumberOfBeamsToRead); % maximum number of receive beams TO READ
             % maxNSamples_sub  = ceil(maxNSamples/dr_sub); % maximum number of samples TO READ
             [maxNSamples_groups, ping_group_start, ping_group_end] = CFF_group_pings(ALLdata.EM_AmpPhase.NumberOfSamples, pingCounters, ALLdata.EM_AmpPhase.PingCounter); % make groups of pings
-            maxNSamples_groups = ceil(maxNSamples_groups/dr_sub); % maximum number of samples TO READ, per group. 
+            maxNSamples_groups = ceil(maxNSamples_groups/dr_sub); % maximum number of samples TO READ, per group.
             
             % initialize data per transmit sector and ping
             fData.AP_TP_TiltAngle            = nan(maxNTransmitSectors,nPings);
@@ -1041,7 +1001,7 @@ for iF = 1:nStruct
             fData.AP_BP_TransmitSectorNumber   = nan(maxNBeams_sub,nPings);
             fData.AP_BP_BeamNumber             = nan(maxNBeams_sub,nPings);
             % fData.AC_BP_SystemSerialNumber     = nan(maxNBeams_sub,nPings);
-  
+            
             % initialize data-holding binary files
             fData = CFF_init_memmapfiles(fData, ...
                 'field', 'AP_SBP_SampleAmplitudes', ...
@@ -1089,7 +1049,7 @@ for iF = 1:nStruct
                 if pingCounter > fData.AP_1P_PingCounter(ping_group_end(iG))
                     iG = iG+1;
                 end
-               
+                
                 % initialize the water column data matrix for that ping.
                 SB2_temp = intmin('int16').*ones(maxNSamples_groups(iG),maxNBeams_sub,'int16');
                 Ph_temp = 200.*ones(maxNSamples_groups(iG),maxNBeams_sub,'int16');
@@ -1107,7 +1067,7 @@ for iF = 1:nStruct
                 nBeamsPerDatagram = ALLdata.EM_AmpPhase.NumberOfBeamsInThisDatagram(iDatagrams); % number of beams in each datagram making up this ping (ex: 56-61-53-28)
                 
                 % number of transmit sectors in this ping
-                nTxSect = fData.AP_1P_NumberOfTransmitSectors(1,iP); 
+                nTxSect = fData.AP_1P_NumberOfTransmitSectors(1,iP);
                 
                 % recording data per transmit sector
                 fData.AP_TP_TiltAngle(1:nTxSect,iP)            = ALLdata.EM_AmpPhase.TiltAngle{iDatagrams(1)};
@@ -1169,9 +1129,9 @@ for iF = 1:nStruct
                 
                 % finished reading this ping's WC data. Store the data in
                 % the appropriate binary file, at the appropriate ping,
-                % through the memory mapping 
+                % through the memory mapping
                 fData.AP_SBP_SampleAmplitudes{iG}.Data.val(:,:,iP-ping_group_start(iG)+1) = SB2_temp;
-                fData.AP_SBP_SamplePhase{iG}.Data.val(:,:,iP-ping_group_start(iG)+1)      = Ph_temp;   
+                fData.AP_SBP_SamplePhase{iG}.Data.val(:,:,iP-ping_group_start(iG)+1)      = Ph_temp;
                 
                 % debug graph
                 if disp_wc
@@ -1186,14 +1146,12 @@ for iF = 1:nStruct
                 end
                 
             end
-
+            
+            % close the original raw file
+            fclose(fid_all);
+            
         end
         
     end
-    
-    % close the original raw file
-    fclose(fid_all);
-    
-    fData.MET_Fmt_version = CFF_get_current_fData_version();
     
 end
