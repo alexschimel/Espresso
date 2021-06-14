@@ -102,7 +102,16 @@ for itt = idx_fData(:)'
             
             % processing per block of pings in memmap file, in reverse
             % since the last block is the most likely to need updating
-            for iB = nBlocks:-1:1
+            
+             params.avg_calc = 'mean'; % 'mean' or 'median'
+    
+             % reference level type of calculation: constant or from ping data
+             params.ref.type = 'from_ping_data'; % 'from_ping_data'; % 'cst' or 'from_ping_data'
+             params.ref.cst = -70;
+             params.ref.area = 'cleanWC'; % 'nadirWC' or 'cleanWC'
+             params.ref.val_calc = 'perc25'; % 'mean', 'median', 'mode', 'perc5', 'perc10', 'perc25'
+             
+             for iB = nBlocks:-1:1
                 
                 % list of pings in this block
                 blockPings  = (blocks(iB,1):blocks(iB,2));
@@ -113,7 +122,6 @@ for itt = idx_fData(:)'
                 % grab original data in dB
                 data = CFF_get_WC_data(fData_tot{itt},sprintf('%s_SBP_SampleAmplitudes',CFF_get_datagramSource(fData_tot{itt})),'iPing',blockPings_f,'iRange',1:nSamples(ig),'output_format','true');
                 
-                
                 % BEGINNING OF PROCESSING %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                 %
                 % PROCESSING STEP 1: radiometric corrections
@@ -123,7 +131,9 @@ for itt = idx_fData(:)'
                 %
                 % PROCESSING STEP 2: filtering sidelobe artefact
                 if procpar.sidelobefilter_flag
-                    [data, correction] = CFF_filter_WC_sidelobe_artifact_CORE(data, fData_tot{itt}, blockPings_f);
+                    
+                    [data, correction,ref_level] = CFF_filter_WC_sidelobe_artifact_CORE(data, fData_tot{itt}, blockPings_f,params);
+
                     % uncomment this for weighted gridding based on sidelobe correction
                     % fData_tot{itt}.X_S1P_sidelobeArtifactCorrection(:,:,blockPings) = correction;
                 end

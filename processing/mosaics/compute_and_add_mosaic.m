@@ -76,7 +76,7 @@
 % Yoann Ladroit, Alexandre Schimel, NIWA. XXX
 
 %% Function
-function compute_and_add_mosaic(main_figure,E_lim,N_lim)
+function compute_and_add_mosaic(main_figure,E_lim,N_lim,mos_type)
 
 fData_tot = getappdata(main_figure,'fData');
 fdata_tab_comp = getappdata(main_figure,'fdata_tab');
@@ -88,12 +88,12 @@ if isempty(fData_tot)
 end
 
 % choose mode 'blend' (normal) or the new 'stitch'
-mosaic = init_mosaic(E_lim,N_lim,0,'stitch');
+mosaic_init = init_mosaic(E_lim,N_lim,0,'stitch');
 
-[mosaic, fData_tot] = prep_mosaic(mosaic,fData_tot);
+[mosaic_init, fData_tot] = prep_mosaic(mosaic_init,fData_tot);
 
 % mosaic requested outside of data available
-if mosaic.res == 0
+if mosaic_init.res == 0
     
     disp('No mosaic was created because there were no data within requested bounds.');
     
@@ -105,30 +105,94 @@ if mosaic.res == 0
 end
 
 % get vertical extent of 3D grid displayed
-display_tab_comp = getappdata(main_figure,'display_tab');
-d_lim_sonar_ref  = [sscanf(display_tab_comp.d_line_min.Label,'%fm') sscanf(display_tab_comp.d_line_max.Label,'%fm')];
-d_lim_bottom_ref = [sscanf(display_tab_comp.d_line_bot_min.Label,'%fm') sscanf(display_tab_comp.d_line_bot_max.Label,'%fm')];
+        display_tab_comp = getappdata(main_figure,'display_tab');
 
-% compute mosaic
-mosaic = compute_mosaic(mosaic,fData_tot,d_lim_sonar_ref,d_lim_bottom_ref);
+switch mos_type
+    case '2D'
+        d_lim_sonar_ref  = [sscanf(display_tab_comp.d_line_min.Label,'%fm');sscanf(display_tab_comp.d_line_max.Label,'%fm')];
+        d_lim_bottom_ref = [sscanf(display_tab_comp.d_line_bot_min.Label,'%fm');sscanf(display_tab_comp.d_line_bot_max.Label,'%fm')];
+    case '3D'
+        wc_proc_tab_comp = getappdata(main_figure,'wc_proc_tab');
+        fData_tot = getappdata(main_figure,'fData');
+        
+        if isempty(fData_tot)
+            return;
+        end
 
+        d_max=0;
+        d_min=nan;
+        
+        d_max_bot=nan;
+        d_min_bot=0;
+        
+        for ui=1:numel(fData_tot)
+            d_min=nanmin(nanmin(fData_tot{ui}.X_BP_bottomHeight(:),d_min));
+            d_max_bot=nanmax(d_max_bot,abs(d_min));
+        end
+        
+        v_res = str2double(wc_proc_tab_comp.vert_grid_val.String);
+        n_ref_bot = ceil(1/2*(d_max_bot-d_min_bot)/v_res);
+        n_ref = ceil(1/2*(d_max-d_min)/v_res);
+        d_ref_sonar  = linspace(d_min,d_max,n_ref);
+        d_ref_bot  = linspace(d_min_bot,d_max_bot,n_ref_bot);
+        d_lim_sonar_ref = [d_ref_sonar(1:end-1);d_ref_sonar(2:end)];
+        d_lim_bottom_ref  = [d_ref_bot(1:end-1);d_ref_bot(2:end)];
+               
+end
 mosaics = getappdata(main_figure,'mosaics');
 
-if numel(mosaics) >= 1
+for uir = 1:size(d_lim_sonar_ref,2)
+    % compute mosaic
+    mosaic = compute_mosaic(mosaic_init,fData_tot,d_lim_sonar_ref(:,uir),[nan nan]);
     
-    id_g = mosaics(:).ID;
-    
-    idx_mosaic = find(id_g==mosaic.ID);
-    
-    if isempty(idx_mosaic)
-        idx_mosaic = numel(mosaics)+1;
+    mosaic.name  =sprintf('Sonar_ref_%.0f_%.0fm',d_lim_sonar_ref(1,uir),d_lim_sonar_ref(2,uir));
+    mosaic.ID       = str2double(datestr(now,'yyyymmddHHMMSSFFF'));
+    if ~any(~isnan(mosaic.mosaic_level),'all')
+        continue;
+    end
+    if numel(mosaics) >= 1 
+        
+        id_g = mosaics(:).ID;
+        
+        idx_mosaic = find(id_g==mosaic.ID);
+        
+        if isempty(idx_mosaic)
+            idx_mosaic = numel(mosaics)+1;
+        end
+        
+        mosaics(idx_mosaic) = mosaic;
+        
+    else
+        mosaics = mosaic;
     end
     
-    mosaics(idx_mosaic) = mosaic;
+end
+
+for uir = 1:size(d_lim_bottom_ref,2)
+    % compute mosaic
+    mosaic = compute_mosaic(mosaic_init,fData_tot,[nan nan],d_lim_bottom_ref(:,uir));
+    mosaic.name  =sprintf('Bottom_ref_%.0f_%.0fm',d_lim_bottom_ref(1,uir),d_lim_bottom_ref(2,uir));
+    mosaic.ID       = str2double(datestr(now,'yyyymmddHHMMSSFFF'));
     
-else
+    if ~any(~isnan(mosaic.mosaic_level),'all')
+        continue;
+    end
     
-    mosaics = mosaic;
+    if numel(mosaics) >= 1 
+        
+        id_g = mosaics(:).ID;
+        
+        idx_mosaic = find(id_g==mosaic.ID);
+        
+        if isempty(idx_mosaic)
+            idx_mosaic = numel(mosaics)+1;
+        end
+        
+        mosaics(idx_mosaic) = mosaic;
+        
+    else
+        mosaics = mosaic;
+    end
     
 end
 
@@ -141,6 +205,6 @@ update_mosaic_tab(main_figure);
 % update map, calling for new mosaic. Adjusting zoom on lines that
 % contributed to the mosaic
 update_map_tab(main_figure,0,1,1,idx_fData);
-
+end
 
 

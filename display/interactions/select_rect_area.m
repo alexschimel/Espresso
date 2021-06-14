@@ -76,7 +76,7 @@
 % Yoann Ladroit, Alexandre Schimel, NIWA. XXX
 
 %% Function
-function select_rect_area(main_figure,func)
+function select_rect_area(main_figure,func,mos_type)
 
 map_tab_comp = getappdata(main_figure,'Map_tab');
 
@@ -150,7 +150,7 @@ replace_interaction(main_figure,'interaction','WindowButtonUpFcn','id',2,'intera
         
         delete(hp);
         
-        feval(func,main_figure,[x_min x_max],[y_min y_max]);
+        feval(func,main_figure,[x_min x_max],[y_min y_max],mos_type);
         
     end
 

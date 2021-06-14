@@ -121,6 +121,7 @@ while 1
     % read in little endian
     pif    = ftell(fid);
     nbDatagL = fread(fid,1,'uint32','l'); % number of bytes in datagram
+    
     if isempty(nbDatagL)
         %file finished
         error('.all file parsing synchronization failed');
@@ -139,6 +140,7 @@ while 1
     else
         etxDatagL = NaN;
     end
+    
     if fseek(fid,pif+4+nbDatagB-3,-1) + 1
         etxDatagB = fread(fid,1,'uint8'); % ETX (always H03)
     else
@@ -203,10 +205,12 @@ while 1
     % new datagram begins, start reading
     pif   = ftell(fid);
     nbDatag = fread(fid,1,'uint32',datagsizeformat); % number of bytes in datagram
+    
     if isempty(nbDatag)
         % file finished, leave the loop
         break;
     end
+    
     stxDatag                        = fread(fid,1,'uint8');  % STX (always H02)
     datagTypeNumber                 = fread(fid,1,'uint8');  % SIMRAD type of datagram
     emNumber                        = fread(fid,1,'uint16'); % EM Model Number

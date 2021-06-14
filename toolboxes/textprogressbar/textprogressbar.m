@@ -11,7 +11,7 @@ function textprogressbar(c)
 % Version: 1.0
 % Changes tracker:  29.06.2010  - First version
 
-% Inspired by: http://blogs.mathworks.com/loren/2007/08/01/monitoring-progress-of-a-calculation/
+% Inspired by: 	
 
 %% Initialization
 persistent strCR;           %   Carriage return pesistent variable

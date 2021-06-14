@@ -327,7 +327,6 @@ for iF = 1:nStruct
                 % now get data for each ping
                 
                 mag_fmt='uint16';
-                phase_fmt='int16';
                 
                 % now get data for each ping
                 for iP = 1:nPings

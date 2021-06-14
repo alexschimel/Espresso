@@ -1297,7 +1297,7 @@ for iDatag = datagToParse'
                 catch
                     
                     % issue in the recording, flag and exit the loop
-                    ALLdata.EM_WaterColumn.NumberOfSamples{i107}(jj) = 0;
+                    ALLdata.EM_AmpPhase.NumberOfSamples{i114}(jj) = 0;
                     Ns(jj) = 0;
                     wc_parsing_error = 1;
                     continue;

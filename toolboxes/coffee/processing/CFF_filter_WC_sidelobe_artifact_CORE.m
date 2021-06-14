@@ -78,29 +78,30 @@
 % Yoann Ladroit, Alexandre Schimel, NIWA. XXX
 
 %% Function
-function [data, correction] = CFF_filter_WC_sidelobe_artifact_CORE(data, fData, block_pings)
+function [data, correction,ref_level] = CFF_filter_WC_sidelobe_artifact_CORE(data, fData, block_pings,params)
 
 
 %% set algorithm parameters here
 
-% mode of calculation of the average value across beams
-params.avg_calc = 'mean'; % 'mean' or 'median'
-
-% reference level type of calculation: constant or from ping data
-params.ref.type = 'from_ping_data'; % 'from_ping_data'; % 'cst' or 'from_ping_data'
-
-% if constant ref, set the value here (in dB)
-params.ref.cst = -70;
-
-% if reference from ping data, set the reference area here: data from
-% middle beams above bottom (nadirWC), or all data before minimum slant
-% range (cleanWC)
-params.ref.area = 'cleanWC'; % 'nadirWC' or 'cleanWC'
-
-% if reference from ping data, set mode of calculation of the reference
-% value here
-params.ref.val_calc = 'perc25'; % 'mean', 'median', 'mode', 'perc5', 'perc10', 'perc25'
-
+if isempty(params)
+    % mode of calculation of the average value across beams
+    params.avg_calc = 'mean'; % 'mean' or 'median'
+    
+    % reference level type of calculation: constant or from ping data
+    params.ref.type = 'from_ping_data'; % 'from_ping_data'; % 'cst' or 'from_ping_data'
+    
+    % if constant ref, set the value here (in dB)
+    params.ref.cst = -70;
+    
+    % if reference from ping data, set the reference area here: data from
+    % middle beams above bottom (nadirWC), or all data before minimum slant
+    % range (cleanWC)
+    params.ref.area = 'cleanWC'; % 'nadirWC' or 'cleanWC'
+    
+    % if reference from ping data, set mode of calculation of the reference
+    % value here
+    params.ref.val_calc = 'perc25'; % 'mean', 'median', 'mode', 'perc5', 'perc10', 'perc25'
+end
 
 %% average value across beams
 switch params.avg_calc
