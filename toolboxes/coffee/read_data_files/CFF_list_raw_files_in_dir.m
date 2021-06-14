@@ -86,8 +86,8 @@ function [paired_files_list, A_only_list, B_only_list] = pair_files(file_list_A,
 % don't match
 
 % extract parts of files in each list
-[filepath_A,name_A,ext_A] = fileparts_as_cell(file_list_A);
-[filepath_B,name_B,ext_B] = fileparts_as_cell(file_list_B);
+[filepath_A,name_A,ext_A] = CFF_fileparts_as_cell(file_list_A);
+[filepath_B,name_B,ext_B] = CFF_fileparts_as_cell(file_list_B);
 
 % pairs
 [C,ia,ib] = intersect(name_A, name_B);
@@ -118,26 +118,5 @@ else
     B_only_list = {};
 end
 
-end
-
-
-%%
-function [filepath,name,ext] = fileparts_as_cell(file_list)
-% If the file_list has zero or N>2 elements, the parts are cell arrays. But
-% if it has only one element, the returned parts are strings. 
-% Correct this silly behaviour.
-
-    [filepath,name,ext] = fileparts(file_list);
-    
-    if ischar(filepath)
-        filepath = {filepath};
-    end
-    if ischar(name)
-        name = {name};
-    end
-    if ischar(ext)
-        ext = {ext};
-    end
-    
 end
 

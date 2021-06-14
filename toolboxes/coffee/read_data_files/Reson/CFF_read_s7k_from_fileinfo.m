@@ -567,6 +567,13 @@ for iDatag = datagToParse'
             try i7042=i7042+1; catch, i7042=1; end
             icurr_field = i7042;
             
+            % ----- IMPORTANT NOTE ----------------------------------------
+            % This datagram's data is too to be stored in memory. Instead,
+            % we record the metadata and the position-in-file location of
+            % the data, which be extracted and stored in binary format at
+            % the next stage of data conversion. 
+            % -------------------------------------------------------------
+            
             % parsing RTH
             S7Kdata.R7042_CompressedWaterColumn.SonarId(i7042)           = fread(fid,1,'uint64');
             S7Kdata.R7042_CompressedWaterColumn.PingNumber(i7042)        = fread(fid,1,'uint32');

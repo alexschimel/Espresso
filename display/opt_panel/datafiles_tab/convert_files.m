@@ -148,7 +148,7 @@ for nF = 1:n_files
                 % R7001_7kConfiguration
                 % R7004_7kBeamGeometry
                 % R7027_RAWdetection
-                % R7018_Water_column
+                % R7018_7kBeamformedData
                 % R7042_CompressedWaterColumn
                 dg_wc = [1015 1003 7000 7001 7004 7027 7018 7042];
                 
@@ -160,7 +160,7 @@ for nF = 1:n_files
                     if ~any((datags_parsed_idx(7:8)))
                         textprogressbar('File does not contain water-column datagrams. Check file contents. Conversion aborted.');
                         continue;
-                    elseif ~all(datags_parsed_idx(3:6))||~any(datags_parsed_idx(1:2))
+                    elseif ~all(datags_parsed_idx(3:6))||~any(datags_parsed_idx(1:2))e
                         textprogressbar('File does not contain all necessary datagrams. Check file contents. Conversion aborted.');
                         continue;
                     end

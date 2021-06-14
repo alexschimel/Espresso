@@ -28,10 +28,11 @@ idx_loaded = CFF_are_raw_files_loaded(rawfileslist, fData);
 
 % prepare array, without HTML tags yet
 n_rawfiles = numel(rawfileslist);
-[disp_folder, filename, ext] = fileparts(CFF_onerawfileonly(rawfileslist));
+[disp_folder, filename, ext] = CFF_fileparts_as_cell(CFF_onerawfileonly(rawfileslist));
 disp_files = strcat(filename, ext);
 for ii = 1:n_rawfiles
     if iscell(rawfileslist{ii})
+        % paired file
         disp_files{ii} = strcat(disp_files{ii}, ' (paired)');
     end
 end

@@ -957,73 +957,75 @@ for iDatag = datagToParse'
             try i107=i107+1; catch, i107=1; end
             
             % ----- IMPORTANT NOTE ----------------------------------------
-            % This datagram's data is massive so we don't extract it from
-            % the files and store in memory as is. Instead, we record the
-            % metadata and the exact location of the data for later
-            % extraction. 
+            % This datagram's data is too to be stored in memory. Instead,
+            % we record the metadata and the position-in-file location of
+            % the data, which be extracted and stored in binary format at
+            % the next stage of data conversion. 
             % -------------------------------------------------------------
             
             % parsing
             ALLdata.EM_WaterColumn.NumberOfBytesInDatagram(i107) = nbDatag;
             
-            % position at start of datagram
+            % position at STX identifier
             pos_1 = ftell(fid); 
             
-            ALLdata.EM_WaterColumn.STX(i107)                               = stxDatag;
-            ALLdata.EM_WaterColumn.TypeOfDatagram(i107)                    = datagTypeNumber;
-            ALLdata.EM_WaterColumn.EMModelNumber(i107)                     = emNumber;
-            ALLdata.EM_WaterColumn.Date(i107)                              = date;
-            ALLdata.EM_WaterColumn.TimeSinceMidnightInMilliseconds(i107)   = timeSinceMidnightInMilliseconds;
-            ALLdata.EM_WaterColumn.PingCounter(i107)                       = number;
-            ALLdata.EM_WaterColumn.SystemSerialNumber(i107)                = systemSerialNumber;
+            % fields already read
+            ALLdata.EM_WaterColumn.STX(i107)                             = stxDatag;
+            ALLdata.EM_WaterColumn.TypeOfDatagram(i107)                  = datagTypeNumber;
+            ALLdata.EM_WaterColumn.EMModelNumber(i107)                   = emNumber;
+            ALLdata.EM_WaterColumn.Date(i107)                            = date;
+            ALLdata.EM_WaterColumn.TimeSinceMidnightInMilliseconds(i107) = timeSinceMidnightInMilliseconds;
+            ALLdata.EM_WaterColumn.PingCounter(i107)                     = number;
+            ALLdata.EM_WaterColumn.SystemSerialNumber(i107)              = systemSerialNumber;
             
-            ALLdata.EM_WaterColumn.NumberOfDatagrams(i107)                 = fread(fid,1,'uint16');
-            ALLdata.EM_WaterColumn.DatagramNumbers(i107)                   = fread(fid,1,'uint16');
-            ALLdata.EM_WaterColumn.NumberOfTransmitSectors(i107)           = fread(fid,1,'uint16'); %Ntx
-            ALLdata.EM_WaterColumn.TotalNumberOfReceiveBeams(i107)         = fread(fid,1,'uint16');
-            ALLdata.EM_WaterColumn.NumberOfBeamsInThisDatagram(i107)       = fread(fid,1,'uint16'); %Nrx
-            ALLdata.EM_WaterColumn.SoundSpeed(i107)                        = fread(fid,1,'uint16'); %SS
-            ALLdata.EM_WaterColumn.SamplingFrequency(i107)                 = fread(fid,1,'uint32'); %SF
-            ALLdata.EM_WaterColumn.TXTimeHeave(i107)                       = fread(fid,1,'int16');
-            ALLdata.EM_WaterColumn.TVGFunctionApplied(i107)                = fread(fid,1,'uint8'); %X
-            ALLdata.EM_WaterColumn.TVGOffset(i107)                         = fread(fid,1,'int8'); %C
-            ALLdata.EM_WaterColumn.ScanningInfo(i107)                      = fread(fid,1,'uint8');
-            ALLdata.EM_WaterColumn.Spare1(i107)                            = fread(fid,1,'uint8');
-            ALLdata.EM_WaterColumn.Spare2(i107)                            = fread(fid,1,'uint8');
-            ALLdata.EM_WaterColumn.Spare3(i107)                            = fread(fid,1,'uint8');
+            % remaining fields in start of datagram
+            ALLdata.EM_WaterColumn.NumberOfDatagrams(i107)           = fread(fid,1,'uint16');
+            ALLdata.EM_WaterColumn.DatagramNumbers(i107)             = fread(fid,1,'uint16');
+            ALLdata.EM_WaterColumn.NumberOfTransmitSectors(i107)     = fread(fid,1,'uint16'); %Ntx
+            ALLdata.EM_WaterColumn.TotalNumberOfReceiveBeams(i107)   = fread(fid,1,'uint16');
+            ALLdata.EM_WaterColumn.NumberOfBeamsInThisDatagram(i107) = fread(fid,1,'uint16'); %Nrx
+            ALLdata.EM_WaterColumn.SoundSpeed(i107)                  = fread(fid,1,'uint16'); %SS
+            ALLdata.EM_WaterColumn.SamplingFrequency(i107)           = fread(fid,1,'uint32'); %SF
+            ALLdata.EM_WaterColumn.TXTimeHeave(i107)                 = fread(fid,1,'int16');
+            ALLdata.EM_WaterColumn.TVGFunctionApplied(i107)          = fread(fid,1,'uint8'); %X
+            ALLdata.EM_WaterColumn.TVGOffset(i107)                   = fread(fid,1,'int8'); %C
+            ALLdata.EM_WaterColumn.ScanningInfo(i107)                = fread(fid,1,'uint8');
+            ALLdata.EM_WaterColumn.Spare1(i107)                      = fread(fid,1,'uint8');
+            ALLdata.EM_WaterColumn.Spare2(i107)                      = fread(fid,1,'uint8');
+            ALLdata.EM_WaterColumn.Spare3(i107)                      = fread(fid,1,'uint8');
             
-            % repeat cycle #1: Ntx entries of 6 bits
+            % --- repeat cycle #1 -----------------------------------------
+            % Ntx entries of 6 bits 
             temp = ftell(fid);
             C = 6;
             Ntx = ALLdata.EM_WaterColumn.NumberOfTransmitSectors(i107);
-            ALLdata.EM_WaterColumn.TiltAngle{i107}                     = fread(fid,Ntx,'int16',C-2);
+            ALLdata.EM_WaterColumn.TiltAngle{i107}            = fread(fid,Ntx,'int16',C-2);
             fseek(fid,temp+2,'bof'); % to next data type
-            ALLdata.EM_WaterColumn.CenterFrequency{i107}               = fread(fid,Ntx,'uint16',C-2);
+            ALLdata.EM_WaterColumn.CenterFrequency{i107}      = fread(fid,Ntx,'uint16',C-2);
             fseek(fid,temp+4,'bof'); % to next data type
-            ALLdata.EM_WaterColumn.TransmitSectorNumber{i107}          = fread(fid,Ntx,'uint8',C-1);
+            ALLdata.EM_WaterColumn.TransmitSectorNumber{i107} = fread(fid,Ntx,'uint8',C-1);
             fseek(fid,temp+5,'bof'); % to next data type
-            ALLdata.EM_WaterColumn.Spare{i107}                         = fread(fid,Ntx,'uint8',C-1);
+            ALLdata.EM_WaterColumn.Spare{i107}                = fread(fid,Ntx,'uint8',C-1);
             fseek(fid,1-C,'cof'); % we need to come back after last jump
-            
-            % repeat cycle #2: Nrx entries of a possibly variable number of
-            % bits. Reading everything first and using a for loop to parse
-            % the data in it
+            % --- end of repeat cycle #1 ----------------------------------
+
+            % --- repeat cycle #2 -----------------------------------------
+            % Nrx entries of a possibly variable number of bits.
             Nrx = ALLdata.EM_WaterColumn.NumberOfBeamsInThisDatagram(i107);
             
-            pos_init = ftell(fid); % position at start of data
-
+            pos_2 = ftell(fid); % position at start of data
             
             id_tot = 0;
             wc_parsing_error = 0; % initialize flag
             
             % initialize outputs
-            ALLdata.EM_WaterColumn.BeamPointingAngle{i107}          = nan(1,Nrx);
-            ALLdata.EM_WaterColumn.StartRangeSampleNumber{i107}     = nan(1,Nrx);
-            ALLdata.EM_WaterColumn.NumberOfSamples{i107}            = nan(1,Nrx);
-            ALLdata.EM_WaterColumn.DetectedRangeInSamples{i107}     = nan(1,Nrx);
-            ALLdata.EM_WaterColumn.TransmitSectorNumber2{i107}      = nan(1,Nrx);
-            ALLdata.EM_WaterColumn.BeamNumber{i107}                 = nan(1,Nrx);
-            ALLdata.EM_WaterColumn.SampleAmplitudePosition{i107}    = nan(1,Nrx); 
+            ALLdata.EM_WaterColumn.BeamPointingAngle{i107}       = nan(1,Nrx);
+            ALLdata.EM_WaterColumn.StartRangeSampleNumber{i107}  = nan(1,Nrx);
+            ALLdata.EM_WaterColumn.NumberOfSamples{i107}         = nan(1,Nrx);
+            ALLdata.EM_WaterColumn.DetectedRangeInSamples{i107}  = nan(1,Nrx);
+            ALLdata.EM_WaterColumn.TransmitSectorNumber2{i107}   = nan(1,Nrx);
+            ALLdata.EM_WaterColumn.BeamNumber{i107}              = nan(1,Nrx);
+            ALLdata.EM_WaterColumn.SampleAmplitudePosition{i107} = nan(1,Nrx); 
             Ns  = zeros(1,Nrx);
             
             % now parse the data
@@ -1031,16 +1033,16 @@ for iDatag = datagToParse'
                 
                 try
                     
-                    ALLdata.EM_WaterColumn.BeamPointingAngle{i107}(jj)       = fread(fid,1,'int16');
+                    ALLdata.EM_WaterColumn.BeamPointingAngle{i107}(jj)      = fread(fid,1,'int16');
                     ttt = fread(fid,3,'uint16');
-                    ALLdata.EM_WaterColumn.StartRangeSampleNumber{i107}(jj)  = ttt(1);
-                    ALLdata.EM_WaterColumn.NumberOfSamples{i107}(jj)         = ttt(2);
-                    ALLdata.EM_WaterColumn.DetectedRangeInSamples{i107}(jj)  = ttt(3);
-                    ALLdata.EM_WaterColumn.TransmitSectorNumber2{i107}(jj)   = fread(fid,1,'uint8');
-                    ALLdata.EM_WaterColumn.BeamNumber{i107}(jj)          	 = fread(fid,1,'uint8');
+                    ALLdata.EM_WaterColumn.StartRangeSampleNumber{i107}(jj) = ttt(1);
+                    ALLdata.EM_WaterColumn.NumberOfSamples{i107}(jj)        = ttt(2);
+                    ALLdata.EM_WaterColumn.DetectedRangeInSamples{i107}(jj) = ttt(3);
+                    ALLdata.EM_WaterColumn.TransmitSectorNumber2{i107}(jj)  = fread(fid,1,'uint8');
+                    ALLdata.EM_WaterColumn.BeamNumber{i107}(jj)             = fread(fid,1,'uint8');
                     
                     % recording data position instead of data themselves
-                    ALLdata.EM_WaterColumn.SampleAmplitudePosition{i107}(jj) = pos_init + id_tot + 10; 
+                    ALLdata.EM_WaterColumn.SampleAmplitudePosition{i107}(jj) = pos_2 + id_tot + 10; 
                     % actual data recording would be:
                     % ALLdata.EM_WaterColumn.SampleAmplitude{i107}{jj} = tmp((11+id):(11+id+Ns(jj)-1));
                     
@@ -1060,6 +1062,7 @@ for iDatag = datagToParse'
                 end
                 
             end
+            % --- end of repeat cycle #2 ----------------------------------
             
             pos_end = ftell(fid);
             tmp_end = fread(fid,nbDatag-(pos_end-pos_1+1)-15,'int8=>int8'); 
@@ -1191,57 +1194,60 @@ for iDatag = datagToParse'
             try i114=i114+1; catch, i114=1; end
             
             % ----- IMPORTANT NOTE ----------------------------------------
-            % This datagram's data is massive so we don't extract it from
-            % the files and store in memory as is. Instead, we record the
-            % metadata and the exact location of the data for later
-            % extraction. 
+            % This datagram's data is too to be stored in memory. Instead,
+            % we record the metadata and the position-in-file location of
+            % the data, which be extracted and stored in binary format at
+            % the next stage of data conversion. 
             % -------------------------------------------------------------
             
             % parsing
-            ALLdata.EM_AmpPhase.NumberOfBytesInDatagram(i114)           = nbDatag;
+            ALLdata.EM_AmpPhase.NumberOfBytesInDatagram(i114) = nbDatag;
             
-            % position at start of datagram
+            % position at STX identifier
             pos_1 = ftell(fid); 
             
-            ALLdata.EM_AmpPhase.STX(i114)                               = stxDatag;
-            ALLdata.EM_AmpPhase.TypeOfDatagram(i114)                    = datagTypeNumber;
-            ALLdata.EM_AmpPhase.EMModelNumber(i114)                     = emNumber;
-            ALLdata.EM_AmpPhase.Date(i114)                              = date;
-            ALLdata.EM_AmpPhase.TimeSinceMidnightInMilliseconds(i114)   = timeSinceMidnightInMilliseconds;
-            ALLdata.EM_AmpPhase.PingCounter(i114)                       = number;
-            ALLdata.EM_AmpPhase.SystemSerialNumber(i114)                = systemSerialNumber;
+            % fields already read
+            ALLdata.EM_AmpPhase.STX(i114)                             = stxDatag;
+            ALLdata.EM_AmpPhase.TypeOfDatagram(i114)                  = datagTypeNumber;
+            ALLdata.EM_AmpPhase.EMModelNumber(i114)                   = emNumber;
+            ALLdata.EM_AmpPhase.Date(i114)                            = date;
+            ALLdata.EM_AmpPhase.TimeSinceMidnightInMilliseconds(i114) = timeSinceMidnightInMilliseconds;
+            ALLdata.EM_AmpPhase.PingCounter(i114)                     = number;
+            ALLdata.EM_AmpPhase.SystemSerialNumber(i114)              = systemSerialNumber;
             
-            ALLdata.EM_AmpPhase.NumberOfDatagrams(i114)                 = fread(fid,1,'uint16');
-            ALLdata.EM_AmpPhase.DatagramNumbers(i114)                   = fread(fid,1,'uint16');
-            ALLdata.EM_AmpPhase.NumberOfTransmitSectors(i114)           = fread(fid,1,'uint16'); %Ntx
-            ALLdata.EM_AmpPhase.TotalNumberOfReceiveBeams(i114)         = fread(fid,1,'uint16');
-            ALLdata.EM_AmpPhase.NumberOfBeamsInThisDatagram(i114)       = fread(fid,1,'uint16'); %Nrx
-            ALLdata.EM_AmpPhase.SoundSpeed(i114)                        = fread(fid,1,'uint16'); %SS
-            ALLdata.EM_AmpPhase.SamplingFrequency(i114)                 = fread(fid,1,'uint32'); %SF
-            ALLdata.EM_AmpPhase.TXTimeHeave(i114)                       = fread(fid,1,'int16');
-            ALLdata.EM_AmpPhase.TVGFunctionApplied(i114)                = fread(fid,1,'uint8'); %X
-            ALLdata.EM_AmpPhase.TVGOffset(i114)                         = fread(fid,1,'uint8'); %C
-            ALLdata.EM_AmpPhase.ScanningInfo(i114)                      = fread(fid,1,'uint8');
-            ALLdata.EM_AmpPhase.Spare1(i114)                            = fread(fid,1,'uint8');
-            ALLdata.EM_AmpPhase.Spare2(i114)                            = fread(fid,1,'uint8');
-            ALLdata.EM_AmpPhase.Spare3(i114)                            = fread(fid,1,'uint8');
+            % remaining fields in start of datagram
+            ALLdata.EM_AmpPhase.NumberOfDatagrams(i114)           = fread(fid,1,'uint16');
+            ALLdata.EM_AmpPhase.DatagramNumbers(i114)             = fread(fid,1,'uint16');
+            ALLdata.EM_AmpPhase.NumberOfTransmitSectors(i114)     = fread(fid,1,'uint16'); %Ntx
+            ALLdata.EM_AmpPhase.TotalNumberOfReceiveBeams(i114)   = fread(fid,1,'uint16');
+            ALLdata.EM_AmpPhase.NumberOfBeamsInThisDatagram(i114) = fread(fid,1,'uint16'); %Nrx
+            ALLdata.EM_AmpPhase.SoundSpeed(i114)                  = fread(fid,1,'uint16'); %SS
+            ALLdata.EM_AmpPhase.SamplingFrequency(i114)           = fread(fid,1,'uint32'); %SF
+            ALLdata.EM_AmpPhase.TXTimeHeave(i114)                 = fread(fid,1,'int16');
+            ALLdata.EM_AmpPhase.TVGFunctionApplied(i114)          = fread(fid,1,'uint8'); %X
+            ALLdata.EM_AmpPhase.TVGOffset(i114)                   = fread(fid,1,'uint8'); %C
+            ALLdata.EM_AmpPhase.ScanningInfo(i114)                = fread(fid,1,'uint8');
+            ALLdata.EM_AmpPhase.Spare1(i114)                      = fread(fid,1,'uint8');
+            ALLdata.EM_AmpPhase.Spare2(i114)                      = fread(fid,1,'uint8');
+            ALLdata.EM_AmpPhase.Spare3(i114)                      = fread(fid,1,'uint8');
             
-            % repeat cycle #1: Ntx entries of 6 bits
+            % --- repeat cycle #1 -----------------------------------------
+            % Ntx entries of 6 bits 
             temp = ftell(fid);
             C = 6;
             Ntx = ALLdata.EM_AmpPhase.NumberOfTransmitSectors(i114);
-            ALLdata.EM_AmpPhase.TiltAngle{i114}                     = fread(fid,Ntx,'int16',C-2);
+            ALLdata.EM_AmpPhase.TiltAngle{i114}            = fread(fid,Ntx,'int16',C-2);
             fseek(fid,temp+2,'bof'); % to next data type
-            ALLdata.EM_AmpPhase.CenterFrequency{i114}               = fread(fid,Ntx,'uint16',C-2);
+            ALLdata.EM_AmpPhase.CenterFrequency{i114}      = fread(fid,Ntx,'uint16',C-2);
             fseek(fid,temp+4,'bof'); % to next data type
-            ALLdata.EM_AmpPhase.TransmitSectorNumber{i114}          = fread(fid,Ntx,'uint8',C-1);
+            ALLdata.EM_AmpPhase.TransmitSectorNumber{i114} = fread(fid,Ntx,'uint8',C-1);
             fseek(fid,temp+5,'bof'); % to next data type
-            ALLdata.EM_AmpPhase.Spare{i114}                         = fread(fid,Ntx,'uint8',C-1);
+            ALLdata.EM_AmpPhase.Spare{i114}                = fread(fid,Ntx,'uint8',C-1);
             fseek(fid,1-C,'cof'); % we need to come back after last jump
+            % --- end of repeat cycle #1 ----------------------------------
             
-            % repeat cycle #2: Nrx entries of a possibly variable number of
-            % bits. Reading everything first and using a for loop to parse
-            % the data in it
+            % --- repeat cycle #2 -----------------------------------------
+            % Nrx entries of a possibly variable number of bits.
             Nrx = ALLdata.EM_AmpPhase.NumberOfBeamsInThisDatagram(i114);
             
             pos_2 = ftell(fid); % position at start of data
