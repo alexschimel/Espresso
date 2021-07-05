@@ -1,12 +1,25 @@
-function fData = CFF_init_memmapfiles(fData,varargin)
-%CFF_INIT_MEMMAPFILES Initiliazes data-containing memmap files
-%   fData = CFF_INIT_MEMMAPFILES(fData) creates an empty binary file of the
-%   right size to store upcoming large data, link it as a memmap file into
-%   a fData field, and add info as fData fields.
-%   This function is to be used with the proper varargin parameters to
-%   initialize the binary files (and link them to fData) with empty values,
-%   prior to reading the acoustic data and filling the binary files
+%% CFF_init_memmapfiles.m
+%
+% Initializes data-containing memmap files
+%
+%% Help
+%
+% *USE*
+%
+% Create one or several empty binary files of the right size to store ONE
+% type of an upcoming large data, link it as a memmap file into a fData
+% field, and add info as additional fData fields. 
+% This function is to be used with the proper varargin parameters
+% to initialize the binary files (and link them to fData) with empty
+% values, prior to reading the acoustic data and filling the binary files.
+%
+% *AUTHOR, AFFILIATION & COPYRIGHT*
+%
+% Alexandre Schimel (NGU), Yoann Ladroit (NIWA).
+% Type |help Espresso.m| for copyright information.
 
+%% Function
+function fData = CFF_init_memmapfiles(fData,varargin)
 
 %% input parser
 p = inputParser;
@@ -38,7 +51,7 @@ ping_group_end     = p.Results.ping_group_end;
 
 %% prep
 
-% number of memmap files requested
+% number of memmap files requested, one per group of pings
 num_files = numel(ping_group_start);
 
 % if data field already exists, delete it
@@ -73,9 +86,9 @@ for uig = 1:num_files
     file_binary = fullfile(wc_dir,sprintf('%s_%.0f_%.0f.dat',field,ping_group_start(uig),ping_group_end(uig)));
     
     % sizes
-    num_samples = maxNSamples_groups(uig);
-    num_beams = maxNBeams_sub;
-    num_pings = (ping_group_end(uig)-ping_group_start(uig)+1);
+    nSamples = maxNSamples_groups(uig);
+    nBeams = maxNBeams_sub;
+    nPings = (ping_group_end(uig)-ping_group_start(uig)+1);
     
     % create empty binary file if it does not exist
     if ~isfile(file_binary)
@@ -84,7 +97,7 @@ for uig = 1:num_files
         fileID = fopen(file_binary,'w+');
         
         % initialize file with zeros
-        total_num_elements = num_samples*num_beams*num_pings;
+        total_num_elements = nSamples*nBeams*nPings;
         num_skip_bytes = num_bytes*(total_num_elements-1);
         fwrite(fileID,0,Class,num_skip_bytes);
         
@@ -93,7 +106,7 @@ for uig = 1:num_files
         
     else
         % ideally, if file already exists, we should test to see if it has
-        % the right "class [num_samples num_beams num_pings]" before
+        % the right "class [nSamples nBeams nPings]" before
         % linking it after. Checking this means we should not have deleted
         % the field before.
         %
@@ -107,10 +120,10 @@ for uig = 1:num_files
     
     % memory map this binary file as a field in fData
     fData.(field){uig} = memmapfile(file_binary,...
-        'Format',{Class [num_samples num_beams num_pings] 'val'},...
+        'Format',{Class [nSamples nBeams nPings] 'val'},...
         'repeat',1,...
         'writable',true);
-
+    
 end
 
 

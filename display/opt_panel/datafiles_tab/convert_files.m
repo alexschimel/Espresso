@@ -112,8 +112,8 @@ for nF = 1:n_files
                 % * water-column (107)
                 % * Amplitude and Phase (114)
                 datagrams_to_parse = [73 80 82 88 107 114];
-                
-                % step 1: convert to ALLdata format
+               
+                % step 1: read
                 [EMdata,datags_parsed_idx] = CFF_read_all(file_to_convert, datagrams_to_parse);
                 textprogressbar(50);
                 
@@ -134,9 +134,8 @@ for nF = 1:n_files
                     end
                 end
                 
-                % step 2: convert to fdata
+                % step 2: convert
                 fData = CFF_convert_ALLdata_to_fData(EMdata,dr_sub,db_sub);
-                
                 textprogressbar(90);
                 
             case 'Reson_s7k'
@@ -152,6 +151,7 @@ for nF = 1:n_files
                 % R7042_CompressedWaterColumn
                 dg_wc = [1015 1003 7000 7001 7004 7027 7018 7042];
                 
+                % step 1: read
                 [RESONdata, datags_parsed_idx] = CFF_read_s7k(file_to_convert,dg_wc);
                 textprogressbar(50);
                 
@@ -160,7 +160,7 @@ for nF = 1:n_files
                     if ~any((datags_parsed_idx(7:8)))
                         textprogressbar('File does not contain water-column datagrams. Check file contents. Conversion aborted.');
                         continue;
-                    elseif ~all(datags_parsed_idx(3:6))||~any(datags_parsed_idx(1:2))e
+                    elseif ~all(datags_parsed_idx(3:6))||~any(datags_parsed_idx(1:2))
                         textprogressbar('File does not contain all necessary datagrams. Check file contents. Conversion aborted.');
                         continue;
                     end
@@ -172,29 +172,28 @@ for nF = 1:n_files
                     datagramSource = 'WC';
                 end
                 
-                % if output file does not exist OR if forcing reconversion, simply convert
+                % step 2: convert
                 fData = CFF_convert_S7Kdata_to_fData(RESONdata,dr_sub,db_sub);
-                
                 textprogressbar(90);
-                
                 
             case 'Kongsberg_kmall'
                 
                 % relevant datagrams:
                 % XXX TO BE DEFINED, FOR NOW JUST TESTING READING DATAGRAMS
-                % dg_wc = {'#SPO'}; % Position
-                % dg_wc = {'#MRZ'}; % bathy and BS
-                % dg_wc = {'#MWC'}; % WCD
-                dg_wc = {}; % to parse everything
-                
-                profile on
+                % dg_wc = {'#IIP'}; % Installation Parameters only
+                % dg_wc = {'#IOP'}; % Runtime parameters only
+                % dg_wc = {'#SPO'}; % Position only
+                % dg_wc = {'#MRZ'}; % Bathy and BS only
+                % dg_wc = {'#MWC'}; % WCD only
+                dg_wc = {'#IIP','#IOP','#SPO','#MRZ','#MWC'}; % all five above
+                % dg_wc = {}; % everything
                 
                 [EMdata,datags_parsed_idx] = CFF_read_kmall(file_to_convert, dg_wc);
+                datagramSource = 'WC'; % XXX to update this datagramsource business eventually
                 
-                profile off
-                profile viewer
-                
-                A = 0;
+                % step 2: convert
+                fData = CFF_convert_KMALLdata_to_fData(EMdata,dr_sub,db_sub);
+                textprogressbar(90);
                 
         end
         

@@ -1,6 +1,16 @@
+%% CFF_group_pings.m
+%
+% Makes groups of pings based on the max number of samples in each ping.
+%
+%% Help
+%
+% *AUTHOR, AFFILIATION & COPYRIGHT*
+%
+% Alexandre Schimel (NGU), Yoann Ladroit (NIWA). 
+% Type |help Espresso.m| for copyright information.
+
+%% Function
 function [maxNSamples_groups,ping_group_start,ping_group_end] = CFF_group_pings(num_samp_per_dtgrm, ping_counter, dtgrm_ping_number)
-%CFF_GROUP_PINGS Makes groups of pings based on the max number
-%   of samples in each ping.
 
 % total number of samples per ping
 if iscell(num_samp_per_dtgrm)
@@ -31,7 +41,7 @@ idx_change = find(diff(group_by_nb_s)~=0);
 idx_change_2 = find(diff(ping_counter)>1)+1;
 idx_change = union(idx_change,idx_change_2);
 
-% % mystery plot
+% % mystery plot for the mystery algorithm
 % figure();
 % plot(ping_counter,ceil(max_num_samp_per_ping/div_factor));
 % hold on;
@@ -47,7 +57,7 @@ ping_group_start = ping_counter(idx_new_group);
 ping_group_end   = ping_counter([idx_new_group(2:end)-1 numel(ping_counter)]);
 num_groups = numel(idx_new_group);
 
-% calculate the max number of sample in a ping, per group
+% calculate the max number of samples in a ping, per group
 maxNSamples_groups = nan(1,num_groups);
 for uig = 1:num_groups
     % find datagrams in this group of pings
@@ -60,7 +70,7 @@ for uig = 1:num_groups
 end
 
 % because ping counters often wrap around (i.e. max ping counter is 65536
-% then it goes bach to 1), this can trip up later code, so Yoann here
+% then it goes back to 1), this can trip up later code, so Yoann here
 % changes the ping groups back to 1.
 for ui = 1:num_groups
     ping_group_start(ui) = find(ping_counter==ping_group_start(ui),1);

@@ -40,9 +40,7 @@ if out_struct.header.dgmVersion == 2
     end
     
     Nrx = out_struct.rxInfo.numSoundingsMaxMain;
-    for iRx = 1:(Nrx+Nd)
-        out_struct.sounding(iRx) = CFF_read_EMdgmMRZ_sounding(fid);
-    end
+    out_struct.sounding = CFF_read_EMdgmMRZ_sounding(fid, Nrx+Nd);
     
     % Seabed image sample amplitude, in 0.1 dB. Actual number of seabed
     % image samples (SIsample_desidB) to be found by summing parameter
@@ -482,7 +480,7 @@ out_struct.alarmFlag = fread(fid,1,'uint8');
 
 end
 
-function out_struct = CFF_read_EMdgmMRZ_sounding(fid)
+function out_struct = CFF_read_EMdgmMRZ_sounding(fid, N)
 % #MRZ - Data for each sounding, e.g. XYZ, reflectivity, two way travel
 % time etc.
 %
@@ -490,13 +488,17 @@ function out_struct = CFF_read_EMdgmMRZ_sounding(fid)
 % datablock (number of samples in SI etc.). To be entered in loop
 % (numSoundingsMaxMain + numExtraDetections) times.
 
+structSize = 120;
+data = fread(fid,N.*structSize,'uint8=>uint8');
+data = reshape(data, [structSize,N]);
+
 % Sounding index. Cross reference for seabed image. Valid range: 0 to
 % (numSoundingsMaxMain+numExtraDetections)-1, i.e. 0 - (Nrx+Nd)-1.
-out_struct.soundingIndex = fread(fid,1,'uint16');
+out_struct.soundingIndex = typecast(reshape(data(1:2,:),1,[]),'uint16');
 
 % Transmitting sector number. Valid range: 0-(Ntx-1), where Ntx is
 % numTxSectors.
-out_struct.txSectorNumb = fread(fid,1,'uint8');
+out_struct.txSectorNumb = data(3,:);
 
 
 %% Detection info
@@ -508,79 +510,79 @@ out_struct.txSectorNumb = fread(fid,1,'uint8');
 % 2 = rejected detection
 % In case 2, the estimated range has been used to fill in amplitude samples
 % in the seabed image datagram.
-out_struct.detectionType = fread(fid,1,'uint8');
+out_struct.detectionType = data(4,:);
 
 % Method for determining bottom detection, e.g. amplitude or phase.
 % 0 = no valid detection
 % 1 = amplitude detection
 % 2 = phase detection
 % 3-15 for future use.
-out_struct.detectionMethod = fread(fid,1,'uint8');
+out_struct.detectionMethod = data(5,:);
 
 % For Kongsberg use.
-out_struct.rejectionInfo1 = fread(fid,1,'uint8');
+% out_struct.rejectionInfo1 = data(6,:);
 
 % For Kongsberg use.
-out_struct.rejectionInfo2 = fread(fid,1,'uint8');
+% out_struct.rejectionInfo2 = data(7,:);
 
 % For Kongsberg use.
-out_struct.postProcessingInfo = fread(fid,1,'uint8');
+% out_struct.postProcessingInfo = data(8,:);
 
 % Only used by extra detections. Detection class based on detected range.
 % Detection class 1 to 7 corresponds to value 0 to 6. If the value is
 % between 100 and 106, the class is disabled by the operator. If the value
 % is 107, the detections are outside the treshhold limits.
-out_struct.detectionClass = fread(fid,1,'uint8');
+out_struct.detectionClass = data(9,:);
 
 % Detection confidence level.
-out_struct.detectionConfidenceLevel = fread(fid,1,'uint8');
+out_struct.detectionConfidenceLevel = data(10,:);
 
 % Byte alignment.
-out_struct.padding = fread(fid,1,'uint16');
+% out_struct.padding = typecast(reshape(data(11:12,:),1,[]),'uint16');
 
 % Unit %. rangeFactor = 100 if main detection.
-out_struct.rangeFactor = fread(fid,1,'float');
+out_struct.rangeFactor = typecast(reshape(data(13:16,:),1,[]),'single');
 
 % Estimated standard deviation as % of the detected depth. Quality Factor
 % (QF) is calculated from IFREMER Quality Factor (IFQ):
 % QF=Est(dz)/z=100*10^-IQF
-out_struct.qualityFactor = fread(fid,1,'float');
+out_struct.qualityFactor = typecast(reshape(data(17:20,:),1,[]),'single');
 
 % Vertical uncertainty, based on quality factor (QF, qualityFactor).
-out_struct.detectionUncertaintyVer_m = fread(fid,1,'float');
+out_struct.detectionUncertaintyVer_m = typecast(reshape(data(21:24,:),1,[]),'single');
 
 % Horizontal uncertainty, based on quality factor (QF, qualityFactor).
-out_struct.detectionUncertaintyHor_m = fread(fid,1,'float');
+out_struct.detectionUncertaintyHor_m = typecast(reshape(data(25:28,:),1,[]),'single');
 
 % Detection window length. Unit second. Sample data range used in final
 % detection.
-out_struct.detectionWindowLength_sec = fread(fid,1,'float');
+out_struct.detectionWindowLength_sec = typecast(reshape(data(29:32,:),1,[]),'single');
 
 % Measured echo length. Unit second.
-out_struct.echoLength_sec = fread(fid,1,'float');
+out_struct.echoLength_sec = typecast(reshape(data(33:36,:),1,[]),'single');
 
 
 %% Water column parameters
 
 % Water column beam number. Info for plotting soundings together with water
 % column data.
-out_struct.WCBeamNumb = fread(fid,1,'uint16');
+out_struct.WCBeamNumb = typecast(reshape(data(37:38,:),1,[]),'uint16');
 
 % Water column range. Range of bottom detection, in samples.
-out_struct.WCrange_samples = fread(fid,1,'uint16');
+out_struct.WCrange_samples = typecast(reshape(data(39:40,:),1,[]),'uint16');
 
 % Water column nominal beam angle across. Re vertical.
-out_struct.WCNomBeamAngleAcross_deg = fread(fid,1,'float');
+out_struct.WCNomBeamAngleAcross_deg = typecast(reshape(data(41:44,:),1,[]),'single');
 
 
 %% Reflectivity data (backscatter (BS) data)
 
 % Mean absorption coefficient, alfa. Used for TVG calculations. Value as
 % used. Unit dB/km.
-out_struct.meanAbsCoeff_dBPerkm = fread(fid,1,'float');
+out_struct.meanAbsCoeff_dBPerkm = typecast(reshape(data(45:48,:),1,[]),'single');
 
 % Beam intensity, using the traditional KM special TVG.
-out_struct.reflectivity1_dB = fread(fid,1,'float');
+out_struct.reflectivity1_dB = typecast(reshape(data(49:52,:),1,[]),'single');
 
 % Beam intensity (BS), using TVG = X log(R) + 2 alpha R. X (operator
 % selected) is common to all beams in datagram. Alpha (variabel
@@ -588,11 +590,11 @@ out_struct.reflectivity1_dB = fread(fid,1,'float');
 % BS = EL - SL - M + TVG + BScorr,
 % where EL= detected echo level (not recorded in datagram), and the rest of
 % the parameters are found below.
-out_struct.reflectivity2_dB = fread(fid,1,'float');
+out_struct.reflectivity2_dB = typecast(reshape(data(53:56,:),1,[]),'single');
 
 % Receiver sensitivity (M), in dB, compensated for RX beampattern at actual
 % transmit frequency at current vessel attitude.
-out_struct.receiverSensitivityApplied_dB = fread(fid,1,'float');
+out_struct.receiverSensitivityApplied_dB = typecast(reshape(data(57:60,:),1,[]),'single');
 
 % Source level (SL) applied (dB):
 % SL = SLnom + SLcorr
@@ -602,29 +604,29 @@ out_struct.receiverSensitivityApplied_dB = fread(fid,1,'float');
 % power level and any use of digital power control. SL is corrected for TX
 % beampattern along and across at actual transmit frequency at current
 % vessel attitude.
-out_struct.sourceLevelApplied_dB = fread(fid,1,'float');
+out_struct.sourceLevelApplied_dB = typecast(reshape(data(61:64,:),1,[]),'single');
 
 % Backscatter (BScorr) calibration offset applied (default = 0 dB).
-out_struct.BScalibration_dB = fread(fid,1,'float');
+out_struct.BScalibration_dB = typecast(reshape(data(65:68,:),1,[]),'single');
 
 % Time Varying Gain (TVG) used when correcting reflectivity.
-out_struct.TVG_dB = fread(fid,1,'float');
+out_struct.TVG_dB = typecast(reshape(data(69:72,:),1,[]),'single');
 
 
 %% Range and angle data
 
 % Angle relative to the RX transducer array, except for ME70, where the
 % angles are relative to the horizontal plane.
-out_struct.beamAngleReRx_deg = fread(fid,1,'float');
+out_struct.beamAngleReRx_deg = typecast(reshape(data(73:76,:),1,[]),'single');
 
 % Applied beam pointing angle correction.
-out_struct.beamAngleCorrection_deg = fread(fid,1,'float');
+out_struct.beamAngleCorrection_deg = typecast(reshape(data(77:80,:),1,[]),'single');
 
 % Two way travel time (also called range). Unit second.
-out_struct.twoWayTravelTime_sec = fread(fid,1,'float');
+out_struct.twoWayTravelTime_sec = typecast(reshape(data(81:84,:),1,[]),'single');
 
 % Applied two way travel time correction. Unit second.
-out_struct.twoWayTravelTimeCorrection_sec = fread(fid,1,'float');
+out_struct.twoWayTravelTimeCorrection_sec = typecast(reshape(data(85:88,:),1,[]),'single');
 
 
 %% Georeferenced depth points
@@ -632,47 +634,60 @@ out_struct.twoWayTravelTimeCorrection_sec = fread(fid,1,'float');
 % Distance from vessel reference point at time of first tx pulse in ping,
 % to depth point. Measured in the surface coordinate system (SCS), see
 % Coordinate systems for definition. Unit decimal degrees.
-out_struct.deltaLatitude_deg = fread(fid,1,'float');
+out_struct.deltaLatitude_deg = typecast(reshape(data(89:92,:),1,[]),'single');
 
 % Distance from vessel reference point at time of first tx pulse in ping,
 % to depth point. Measured in the surface coordinate system (SCS), see
 % Coordinate systems for definition. Unit decimal degree.
-out_struct.deltaLongitude_deg = fread(fid,1,'float');
+out_struct.deltaLongitude_deg = typecast(reshape(data(93:96,:),1,[]),'single');
 
 % Vertical distance z. Distance from vessel reference point at time of
 % first tx pulse in ping, to depth point. Measured in the surface
 % coordinate system (SCS), see Coordinate systems for definition.
-out_struct.z_reRefPoint_m = fread(fid,1,'float');
+out_struct.z_reRefPoint_m = typecast(reshape(data(97:100,:),1,[]),'single');
 
 % Horizontal distance y. Distance from vessel reference point at time of
 % first tx pulse in ping, to depth point. Measured in the surface
 % coordinate system (SCS), see Coordinate systems for definition.
-out_struct.y_reRefPoint_m = fread(fid,1,'float');
+out_struct.y_reRefPoint_m = typecast(reshape(data(101:104,:),1,[]),'single');
 
 % Horizontal distance x. Distance from vessel reference point at time of
 % first tx pulse in ping, to depth point. Measured in the surface
 % coordinate system (SCS), see Coordinate systems for definition.
-out_struct.x_reRefPoint_m = fread(fid,1,'float');
+out_struct.x_reRefPoint_m = typecast(reshape(data(105:108,:),1,[]),'single');
 
 % Beam incidence angle adjustment (IBA) unit degree.
-out_struct.beamIncAngleAdj_deg = fread(fid,1,'float');
+out_struct.beamIncAngleAdj_deg = typecast(reshape(data(109:112,:),1,[]),'single');
 
 % For future use.
-out_struct.realTimeCleanInfo = fread(fid,1,'uint16');
+out_struct.realTimeCleanInfo = typecast(reshape(data(113:114,:),1,[]),'uint16');
 
 
 %% Seabed image
 
 % Seabed image start range, in sample number from transducer. Valid only
 % for the current beam.
-out_struct.SIstartRange_samples = fread(fid,1,'uint16');
+out_struct.SIstartRange_samples = typecast(reshape(data(115:116,:),1,[]),'uint16');
 
 % Seabed image. Number of the centre seabed image sample for the current
 % beam.
-out_struct.SIcentreSample = fread(fid,1,'uint16');
+out_struct.SIcentreSample = typecast(reshape(data(117:118,:),1,[]),'uint16');
 
 % Seabed image. Number of range samples from the current beam, used to form
 % the seabed image.
-out_struct.SInumSamples = fread(fid,1,'uint16');
+out_struct.SInumSamples = typecast(reshape(data(119:120,:),1,[]),'uint16');
+
+
+%% change out_struct organization
+% from one struct with array fields to array of structs with
+% single-variable fields, like all other stuctures in this format
+% for field = fieldnames(out_struct)'
+%     for ii = 1:N
+%         out_struct_2(ii).(field{1}) = out_struct.(field{1})(ii);
+%     end
+% end
+% out_struct = out_struct_2;
+
+
 
 end

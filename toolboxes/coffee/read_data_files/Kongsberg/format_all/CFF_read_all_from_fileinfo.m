@@ -1013,10 +1013,8 @@ for iDatag = datagToParse'
             % Nrx entries of a possibly variable number of bits.
             Nrx = ALLdata.EM_WaterColumn.NumberOfBeamsInThisDatagram(i107);
             
-            pos_2 = ftell(fid); % position at start of data
-            
-            id_tot = 0;
-            wc_parsing_error = 0; % initialize flag
+            % initialize flag of parsing error
+            wc_parsing_error = 0;
             
             % initialize outputs
             ALLdata.EM_WaterColumn.BeamPointingAngle{i107}       = nan(1,Nrx);
@@ -1026,7 +1024,7 @@ for iDatag = datagToParse'
             ALLdata.EM_WaterColumn.TransmitSectorNumber2{i107}   = nan(1,Nrx);
             ALLdata.EM_WaterColumn.BeamNumber{i107}              = nan(1,Nrx);
             ALLdata.EM_WaterColumn.SampleAmplitudePosition{i107} = nan(1,Nrx); 
-            Ns  = zeros(1,Nrx);
+            Ns = zeros(1,Nrx);
             
             % now parse the data
             for jj = 1:Nrx
@@ -1034,26 +1032,30 @@ for iDatag = datagToParse'
                 try
                     
                     ALLdata.EM_WaterColumn.BeamPointingAngle{i107}(jj)      = fread(fid,1,'int16');
-                    ttt = fread(fid,3,'uint16');
-                    ALLdata.EM_WaterColumn.StartRangeSampleNumber{i107}(jj) = ttt(1);
-                    ALLdata.EM_WaterColumn.NumberOfSamples{i107}(jj)        = ttt(2);
-                    ALLdata.EM_WaterColumn.DetectedRangeInSamples{i107}(jj) = ttt(3);
+                    ALLdata.EM_WaterColumn.StartRangeSampleNumber{i107}(jj) = fread(fid,1,'uint16');
+                    ALLdata.EM_WaterColumn.NumberOfSamples{i107}(jj)        = fread(fid,1,'uint16'); %Ns
+                    ALLdata.EM_WaterColumn.DetectedRangeInSamples{i107}(jj) = fread(fid,1,'uint16'); %DR
                     ALLdata.EM_WaterColumn.TransmitSectorNumber2{i107}(jj)  = fread(fid,1,'uint8');
                     ALLdata.EM_WaterColumn.BeamNumber{i107}(jj)             = fread(fid,1,'uint8');
                     
-                    % recording data position instead of data themselves
-                    ALLdata.EM_WaterColumn.SampleAmplitudePosition{i107}(jj) = pos_2 + id_tot + 10; 
-                    % actual data recording would be:
-                    % ALLdata.EM_WaterColumn.SampleAmplitude{i107}{jj} = tmp((11+id):(11+id+Ns(jj)-1));
-                    
+                    % record number of samples
                     Ns(jj) = ALLdata.EM_WaterColumn.NumberOfSamples{i107}(jj);
                     
-                    % offset to next jj block
-                    id_tot = 10*jj + sum(Ns);
+                    % Next are the samples data themselves, which you could
+                    % record with:
+                    % ALLdata.EM_WaterColumn.SampleAmplitude{i107}{jj} = fread(fid,Ns(jj),'int8');
+                    % But instead, we're only going to record the position
+                    % of the start of data:
+                    ALLdata.EM_WaterColumn.SampleAmplitudePosition{i107}(jj) = ftell(fid); 
+                    
+                    % and since we did not read that data, we need to
+                    % move manually onto the next beam:
                     fseek(fid,Ns(jj),'cof');
+                    
                 catch
                     
-                    % issue in the recording, flag and exit the loop
+                    % if there's any issue in the recording, flag and exit
+                    % the loop 
                     ALLdata.EM_WaterColumn.NumberOfSamples{i107}(jj) = 0;
                     Ns(jj) = 0;
                     wc_parsing_error = 1;
@@ -1064,53 +1066,38 @@ for iDatag = datagToParse'
             end
             % --- end of repeat cycle #2 ----------------------------------
             
+            % read the rest of the datagram. If all went well should be 3
+            % or 4 bytes
             pos_end = ftell(fid);
-            tmp_end = fread(fid,nbDatag-(pos_end-pos_1+1)-15,'int8=>int8'); 
+            tmp_end = fread(fid,nbDatag-(pos_end-pos_1+1)-15,'int8=>int8');
             
-            if numel(tmp_end)<=3
-                 wc_parsing_error = 1;
+            % "spare byte if required to get even length (always 0 if used)"
+            if floor((Nrx*10+sum(Ns))/2) == (Nrx*10+sum(Ns))/2
+                % all data parsed so far is an even number. Since ETX is 1
+                % byte, add a spare byte here 
+                ALLdata.EM_WaterColumn.Spare4(i107) = double(typecast(tmp_end(1),'uint8'));
+                
+                % and remove it from tmp_end
+                tmp_end(1) = [];
+            else
+                % odd. No added spare
+                ALLdata.EM_WaterColumn.Spare4(i107) = NaN;
+            end
+            
+            % record end of datagram
+            ALLdata.EM_WaterColumn.ETX(i107)      = typecast(tmp_end(1),'uint8');
+            ALLdata.EM_WaterColumn.CheckSum(i107) = typecast(tmp_end(2:3),'uint16');
+            
+            % ETX check
+            if ALLdata.EM_WaterColumn.ETX(i107)~=3
+                wc_parsing_error = 1;
             end
             
             if wc_parsing_error == 0
                 % HERE if data parsing all went well
-                us = 0;
-                % "spare byte if required to get even length (always 0 if used)"
-                if floor((Nrx*10+sum(Ns))/2) == (Nrx*10+sum(Ns))/2
-                    % even so far, since ETX is 1 byte, add a spare here
-                    ALLdata.EM_WaterColumn.Spare4(i107) = double(typecast(tmp_end(1),'uint8'));
-                    us = us+1;
-                else
-                    % odd so far, since ETX is 1 bytes, no spare
-                    ALLdata.EM_WaterColumn.Spare4(i107) = NaN;
-                end
                 
-                % end of datagram
-                ALLdata.EM_WaterColumn.ETX(i107)      = typecast(tmp_end(us+1),'uint8');
-                ALLdata.EM_WaterColumn.CheckSum(i107) = typecast(tmp_end(2+us:3+us),'uint16');
-                % confirm parsing
+                % confirm parsing and exit
                 parsed = 1;
-                
-                % ETX check
-                if ALLdata.EM_WaterColumn.ETX(i107)~=3
-                    warning('wrong ETX value (ALLdata.EM_WaterColumn)');
-                    % HERE if data parsing failed, add a blank datagram in
-                    % output
-                    
-                    % copy field names of previous entries
-                    fields_wc = fieldnames(ALLdata.EM_WaterColumn);
-                    
-                    % add blanks fields for those missing
-                    for ifi = 1:numel(fields_wc)
-                        if numel(ALLdata.EM_WaterColumn.(fields_wc{ifi})) >= i107
-                            ALLdata.EM_WaterColumn.(fields_wc{ifi})(i107) = [];
-                        end
-                    end
-                    
-                    i107 = i107-1; % XXX if we do that, then we'll rewrite over the blank record we just entered??
-                    parsed = 0;
-                end
-                
-
                 
             else
                 % HERE if data parsing failed, add a blank datagram in
@@ -1126,7 +1113,7 @@ for iDatag = datagToParse'
                     end
                 end
                 
-                i107 = i107-1; % XXX if we do that, then we'll rewrite over the blank record we just entered??
+                % failed parsing flag
                 parsed = 0;
                 
             end
@@ -1139,29 +1126,29 @@ for iDatag = datagToParse'
             try i110=i110+1; catch, i110=1; end
             
             % parsing
-            ALLdata.EM_NetworkAttitude.NumberOfBytesInDatagram(i110)                    = nbDatag;
-            ALLdata.EM_NetworkAttitude.STX(i110)                                        = stxDatag;
-            ALLdata.EM_NetworkAttitude.TypeOfDatagram(i110)                             = datagTypeNumber;
-            ALLdata.EM_NetworkAttitude.EMModelNumber(i110)                              = emNumber;
-            ALLdata.EM_NetworkAttitude.Date(i110)                                       = date;
-            ALLdata.EM_NetworkAttitude.TimeSinceMidnightInMilliseconds(i110)            = timeSinceMidnightInMilliseconds;
-            ALLdata.EM_NetworkAttitude.NetworkAttitudeCounter(i110)                     = number;
-            ALLdata.EM_NetworkAttitude.SystemSerialNumber(i110)                         = systemSerialNumber;
+            ALLdata.EM_NetworkAttitude.NumberOfBytesInDatagram(i110)         = nbDatag;
+            ALLdata.EM_NetworkAttitude.STX(i110)                             = stxDatag;
+            ALLdata.EM_NetworkAttitude.TypeOfDatagram(i110)                  = datagTypeNumber;
+            ALLdata.EM_NetworkAttitude.EMModelNumber(i110)                   = emNumber;
+            ALLdata.EM_NetworkAttitude.Date(i110)                            = date;
+            ALLdata.EM_NetworkAttitude.TimeSinceMidnightInMilliseconds(i110) = timeSinceMidnightInMilliseconds;
+            ALLdata.EM_NetworkAttitude.NetworkAttitudeCounter(i110)          = number;
+            ALLdata.EM_NetworkAttitude.SystemSerialNumber(i110)              = systemSerialNumber;
             
-            ALLdata.EM_NetworkAttitude.NumberOfEntries(i110)                            = fread(fid,1,'uint16'); %N
-            ALLdata.EM_NetworkAttitude.SensorSystemDescriptor(i110)                     = fread(fid,1,'int8');
-            ALLdata.EM_NetworkAttitude.Spare(i110)                                      = fread(fid,1,'uint8');
+            ALLdata.EM_NetworkAttitude.NumberOfEntries(i110)        = fread(fid,1,'uint16'); %N
+            ALLdata.EM_NetworkAttitude.SensorSystemDescriptor(i110) = fread(fid,1,'int8');
+            ALLdata.EM_NetworkAttitude.Spare(i110)                  = fread(fid,1,'uint8');
             
             % repeat cycle: N entries of a variable number of bits. Using a for loop
             N = ALLdata.EM_NetworkAttitude.NumberOfEntries(i110);
             Nx = nan(1,N);
-            for jj=1:N
-                ALLdata.EM_NetworkAttitude.TimeInMillisecondsSinceRecordStart{i110}(jj)     = fread(fid,1,'uint16');
-                ALLdata.EM_NetworkAttitude.Roll{i110}(jj)                                   = fread(fid,1,'int16');
-                ALLdata.EM_NetworkAttitude.Pitch{i110}(jj)                                  = fread(fid,1,'int16');
-                ALLdata.EM_NetworkAttitude.Heave{i110}(jj)                                  = fread(fid,1,'int16');
-                ALLdata.EM_NetworkAttitude.Heading{i110}(jj)                                = fread(fid,1,'uint16');
-                ALLdata.EM_NetworkAttitude.NumberOfBytesInInputDatagrams{i110}(jj)          = fread(fid,1,'uint8'); %Nx
+            for jj = 1:N
+                ALLdata.EM_NetworkAttitude.TimeInMillisecondsSinceRecordStart{i110}(jj) = fread(fid,1,'uint16');
+                ALLdata.EM_NetworkAttitude.Roll{i110}(jj)                               = fread(fid,1,'int16');
+                ALLdata.EM_NetworkAttitude.Pitch{i110}(jj)                              = fread(fid,1,'int16');
+                ALLdata.EM_NetworkAttitude.Heave{i110}(jj)                              = fread(fid,1,'int16');
+                ALLdata.EM_NetworkAttitude.Heading{i110}(jj)                            = fread(fid,1,'uint16');
+                ALLdata.EM_NetworkAttitude.NumberOfBytesInInputDatagrams{i110}(jj)      = fread(fid,1,'uint8'); %Nx
                 Nx(jj) = ALLdata.EM_NetworkAttitude.NumberOfBytesInInputDatagrams{i110}(jj);
                 ALLdata.EM_NetworkAttitude.NetworkAttitudeInputDatagramAsReceived{i110}{jj} = fread(fid,Nx(jj),'uint8');
             end
@@ -1169,14 +1156,14 @@ for iDatag = datagToParse'
             % "spare byte if required to get even length (always 0 if used)"
             if floor((N*11+sum(Nx))/2) == (N*11+sum(Nx))/2
                 % even so far, since ETX is 1 byte, add a spare here
-                ALLdata.EM_NetworkAttitude.Spare2(i110)                                    = fread(fid,1,'uint8');
+                ALLdata.EM_NetworkAttitude.Spare2(i110) = fread(fid,1,'uint8');
             else
                 % odd so far, since ETX is 1 bytes, no spare
                 ALLdata.EM_NetworkAttitude.Spare2(i110) = NaN;
             end
             
-            ALLdata.EM_NetworkAttitude.ETX(i110)                                           = fread(fid,1,'uint8');
-            ALLdata.EM_NetworkAttitude.CheckSum(i110)                                      = fread(fid,1,'uint16');
+            ALLdata.EM_NetworkAttitude.ETX(i110)      = fread(fid,1,'uint8');
+            ALLdata.EM_NetworkAttitude.CheckSum(i110) = fread(fid,1,'uint16');
             
             % ETX check
             if ALLdata.EM_NetworkAttitude.ETX(i110)~=3
@@ -1296,7 +1283,8 @@ for iDatag = datagToParse'
                     
                 catch
                     
-                    % issue in the recording, flag and exit the loop
+                    % if there's any issue in the recording, flag and exit
+                    % the loop 
                     ALLdata.EM_AmpPhase.NumberOfSamples{i114}(jj) = 0;
                     Ns(jj) = 0;
                     wc_parsing_error = 1;
@@ -1305,6 +1293,7 @@ for iDatag = datagToParse'
                 end
                 
             end
+            % --- end of repeat cycle #2 ----------------------------------
             
             if wc_parsing_error == 0
                 % HERE if data parsing all went well
@@ -1365,22 +1354,29 @@ end
 %% close fid
 fclose(fid);
 
-All_fields=fieldnames(ALLdata);
 
-%modify the ping numbers in case they have gone over intmax('uint16')
-for ifif=1:numel(All_fields)
-    if isfield(ALLdata.(All_fields{ifif}),'PingCounter')
-        number_pings=ALLdata.(All_fields{ifif}).PingCounter;
-        idx_high=find(-diff(number_pings)==intmax('uint16'));
-        idx_high=[idx_high+1 numel(number_pings)];
+%% modify the ping numbers in case they have gone over intmax('uint16')
+
+% do with all datagram types that have ping numbers
+All_fields = fieldnames(ALLdata);
+for ifif = 1:numel(All_fields)
+    if isstruct(ALLdata.(All_fields{ifif})) && isfield(ALLdata.(All_fields{ifif}),'PingCounter')
         
-        for iu =1:numel(idx_high)-1
-            number_pings(idx_high(iu):idx_high(iu+1)) = number_pings(idx_high(iu):idx_high(iu+1))+iu*double(intmax('uint16'))+1;
+        % list of ping numbers
+        pings = ALLdata.(All_fields{ifif}).PingCounter;
+        
+        % search for indices where pings go from 65535 to 0
+        idx_rollover = find(diff(pings)==-double(intmax('uint16')));
+        
+        % new ping numbers
+        idx_high = [idx_rollover+1 numel(pings)];
+        for iu = 1:numel(idx_high)-1
+            pings(idx_high(iu):idx_high(iu+1)) = pings(idx_high(iu):idx_high(iu+1))+iu*double(intmax('uint16'))+1;
         end
         
-        ALLdata.(All_fields{ifif}).PingCounter=number_pings;
+        % save back into structure
+        ALLdata.(All_fields{ifif}).PingCounter = pings;
     end
-    
 end
 
 %% add info to parsed data

@@ -189,8 +189,8 @@ else
         if any(datagrams_parsable_idx)
             idx = ismember(info.datagTypeNumber,datagrams_to_parse(datagrams_parsable_idx));
             info.parsed(idx) = 1;
-            datagrams_parsed_idx = datagrams_parsable_idx;
         end
+        datagrams_parsed_idx = datagrams_parsable_idx;
         
     elseif ischar(datagrams_to_parse) || iscell(datagrams_to_parse)
         % datagrams is one or several datagTypeText
@@ -261,12 +261,10 @@ if numel(ALLfilename)>1
                 
                 % if any, read those datagrams
                 if any(datagrams_to_parse_in_second_file_idx)
-                    
                     idx = ismember(info.datagTypeNumber,datagrams_to_parse(datagrams_to_parse_in_second_file_idx));
                     info.parsed(idx) = 1;
-                    datagrams_parsed_idx = datagrams_parsed_idx | datagrams_to_parse_in_second_file_idx;
-                    
                 end
+                datagrams_parsed_idx = datagrams_parsed_idx | datagrams_to_parse_in_second_file_idx;
                 
             elseif ischar(datagrams_to_parse) || iscell(datagrams_to_parse)
                 % datagrams is one or several datagTypeText
