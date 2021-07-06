@@ -590,7 +590,7 @@ for iDatag = datagToParse'
             % flag processing
             [flags,sample_size,~,~] = CFF_get_R7042_flags(S7Kdata.R7042_CompressedWaterColumn.Flags(i7042));
             if sample_size == 0
-                warning('%s: WC flag combination non taken into account',fieldname);
+                warning('%s: WC flag combination not taken into account',fieldname);
                 fields_wc = fieldnames(S7Kdata.R7042_CompressedWaterColumn);
                 
                 % add blanks fields for those missing

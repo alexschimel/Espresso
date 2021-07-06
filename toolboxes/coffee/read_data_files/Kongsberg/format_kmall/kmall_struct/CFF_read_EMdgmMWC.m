@@ -154,41 +154,48 @@ out_struct.detectedRangeInSamplesHighResolution = fread(fid,1,'float');
 
 Ns = out_struct.numSampleData;
 
-% Pointer to start of array with Water Column data. Lenght of array =
-% numSampleData. Sample amplitudes in 0.5 dB resolution. Size of array is
-% numSampleData * int8_t. Amplitude array is followed by phase information
-% if phaseFlag >0. Use (numSampleData * int8_t) to jump to next beam, or to
-% start of phase info for this beam, if phase flag > 0.
-out_struct.sampleAmplitude05dB_p = fread(fid,Ns,'int8');
+% ------------------ OPTION 1: ACTUALLY READ DATA -------------------------
+%
+% % Pointer to start of array with Water Column data. Lenght of array =
+% % numSampleData. Sample amplitudes in 0.5 dB resolution. Size of array is
+% % numSampleData * int8_t. Amplitude array is followed by phase information
+% % if phaseFlag >0. Use (numSampleData * int8_t) to jump to next beam, or to
+% % start of phase info for this beam, if phase flag > 0.
+% out_struct.sampleAmplitude05dB_p = fread(fid,Ns,'int8');
+% 
+% switch phaseFlag
+%     % #MWC - Beam sample phase info, specific for each beam and water
+%     % column sample. numBeams * numSampleData = (Nrx * Ns) entries.
+%     case 1
+%         % Only added to datagram if phaseFlag = 1. Total size of phase
+%         % block is numSampleData * int8_t.
+%         
+%         % Rx beam phase in 180/128 degree resolution.
+%         out_struct.rxBeamPhase = fread(fid,Ns,'int8');
+%         
+%     case 2
+%         % Only added to datagram if phaseFlag = 2. Total size of phase
+%         % block is numSampleData * int16_t.
+%         
+%         % Rx beam phase in 0.01 degree resolution.
+%         out_struct.rxBeamPhase = fread(fid,Ns,'int16');
+%         
+% end
+%
+% ------------------ END OF OPTION 1 --------------------------------------
 
-switch phaseFlag
-    case 1
-        out_struct.rxBeamPhase = CFF_read_EMdgmMWCrxBeamPhase1(fid, Ns);
-    case 2
-        out_struct.rxBeamPhase = CFF_read_EMdgmMWCrxBeamPhase2(fid, Ns);
-end
+% ------------------ OPTION 2: SAVING POSITION IN FILE --------------------
+% instead of reading file as above, we save the position in file for later
+% reading.
+pif = ftell(fid);
+out_struct.sampleDataPositionInFile = pif;
 
-end
+% we still need to fast-forward to the end of the data section so that
+% reading can continue from there
+dataBlockSizeInBytes = Ns.*(1+phaseFlag);
+fseek(fid,dataBlockSizeInBytes,0);
 
+% ------------------ END OF OPTION 2 --------------------------------------
 
-function out = CFF_read_EMdgmMWCrxBeamPhase1(fid, Ns)
-% #MWC - Beam sample phase info, specific for each beam and water column
-% sample. numBeams * numSampleData = (Nrx * Ns) entries. Only added to
-% datagram if phaseFlag = 1. Total size of phase block is numSampleData *
-% int8_t.
-
-% Rx beam phase in 180/128 degree resolution. 
-out = fread(fid,Ns,'int8');
-
-end
-
-function out = CFF_read_EMdgmMWCrxBeamPhase2(fid, Ns)
-% #MWC - Beam sample phase info, specific for each beam and water column
-% sample. numBeams * numSampleData = (Nrx * Ns) entries. Only added to
-% datagram if phaseFlag = 2. Total size of phase block is numSampleData *
-% int16_t.
-
-% Rx beam phase in 0.01 degree resolution. 
-out = fread(fid,Ns,'int16');
 
 end
