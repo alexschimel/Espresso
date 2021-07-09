@@ -87,7 +87,7 @@ for iF = 1:nStruct
     end
     
     % open the original raw file in case we need to grab WC data from it
-    fid_all = fopen(fData.ALLfilename{iF},'r',S7Kdata.datagramsformat);
+    fid = fopen(fData.ALLfilename{iF},'r',S7Kdata.datagramsformat);
     
     % get folder for converted data
     wc_dir = CFF_converted_data_folder(fData.ALLfilename{iF});
@@ -184,8 +184,8 @@ for iF = 1:nStruct
                 end
                 
                 nPings    = numel(S7Kdata.R7027_RAWdetection.PingNumber); % total number of pings in file
-                maxNBeams=nanmax(cellfun(@nanmax,S7Kdata.R7027_RAWdetection.BeamDescriptor));
-                maxNBeams = maxNBeams+1;
+                maxnBeams=nanmax(cellfun(@nanmax,S7Kdata.R7027_RAWdetection.BeamDescriptor));
+                maxnBeams = maxnBeams+1;
                 
                 fData.X8_1P_Date                            = S7Kdata.R7027_RAWdetection.Date;
                 fData.X8_1P_TimeSinceMidnightInMilliseconds = S7Kdata.R7027_RAWdetection.TimeSinceMidnightInMilliseconds;
@@ -198,16 +198,16 @@ for iF = 1:nStruct
                 fData.X8_1P_SamplingFrequencyInHz           = S7Kdata.R7027_RAWdetection.SamplingRate;
                 
                 % initialize
-                fData.X8_BP_DepthZ                       = nan(maxNBeams,nPings);
-                fData.X8_BP_AcrosstrackDistanceY         = nan(maxNBeams,nPings);
-                fData.X8_BP_AlongtrackDistanceX          = nan(maxNBeams,nPings);
-                fData.X8_BP_DetectionWindowLength        = nan(maxNBeams,nPings);
-                fData.X8_BP_QualityFactor                = nan(maxNBeams,nPings);
-                fData.X8_BP_BeamIncidenceAngleAdjustment = nan(maxNBeams,nPings);
-                fData.X8_BP_DetectionInformation         = nan(maxNBeams,nPings);
-                fData.X8_BP_RealTimeCleaningInformation  = nan(maxNBeams,nPings);
-                fData.X8_BP_ReflectivityBS               = nan(maxNBeams,nPings);
-                fData.X8_B1_BeamNumber                   = (1:maxNBeams)';
+                fData.X8_BP_DepthZ                       = nan(maxnBeams,nPings);
+                fData.X8_BP_AcrosstrackDistanceY         = nan(maxnBeams,nPings);
+                fData.X8_BP_AlongtrackDistanceX          = nan(maxnBeams,nPings);
+                fData.X8_BP_DetectionWindowLength        = nan(maxnBeams,nPings);
+                fData.X8_BP_QualityFactor                = nan(maxnBeams,nPings);
+                fData.X8_BP_BeamIncidenceAngleAdjustment = nan(maxnBeams,nPings);
+                fData.X8_BP_DetectionInformation         = nan(maxnBeams,nPings);
+                fData.X8_BP_RealTimeCleaningInformation  = nan(maxnBeams,nPings);
+                fData.X8_BP_ReflectivityBS               = nan(maxnBeams,nPings);
+                fData.X8_B1_BeamNumber                   = (1:maxnBeams)';
                 
                 for iP = 1:nPings
                     iBeam = S7Kdata.R7027_RAWdetection.BeamDescriptor{iP}+1;
@@ -255,7 +255,7 @@ for iF = 1:nStruct
                 end
                 % get indices of first datagram for each ping
                 pingNumber=1:numel(S7Kdata.R7018_7kBeamformedData.SonarId);
-                maxNBeams=nanmax(S7Kdata.R7018_7kBeamformedData.N);
+                maxnBeams=nanmax(S7Kdata.R7018_7kBeamformedData.N);
                 nPings=numel(S7Kdata.R7018_7kBeamformedData.N);
                 maxNSamples=nanmax(S7Kdata.R7018_7kBeamformedData.S);
                 maxNTransmitSectors = 1;
@@ -281,12 +281,12 @@ for iF = 1:nStruct
                 fData.WC_TP_TransmitSectorNumber = nan(maxNTransmitSectors,nPings);
                 
                 % initialize data per decimated beam and ping
-                fData.WC_BP_BeamPointingAngle      = nan(maxNBeams,nPings);
-                fData.WC_BP_StartRangeSampleNumber = nan(maxNBeams,nPings);
-                fData.WC_BP_NumberOfSamples        = nan(maxNBeams,nPings);
-                fData.WC_BP_DetectedRangeInSamples = zeros(maxNBeams,nPings);
-                fData.WC_BP_TransmitSectorNumber   = ones(maxNBeams,nPings);
-                fData.WC_BP_BeamNumber             = nan(maxNBeams,nPings);
+                fData.WC_BP_BeamPointingAngle      = nan(maxnBeams,nPings);
+                fData.WC_BP_StartRangeSampleNumber = nan(maxnBeams,nPings);
+                fData.WC_BP_NumberOfSamples        = nan(maxnBeams,nPings);
+                fData.WC_BP_DetectedRangeInSamples = zeros(maxnBeams,nPings);
+                fData.WC_BP_TransmitSectorNumber   = ones(maxnBeams,nPings);
+                fData.WC_BP_BeamNumber             = nan(maxnBeams,nPings);
                 
                 
                 [maxNSamples_groups,ping_group_start,ping_group_end]=CFF_group_pings(S7Kdata.R7018_7kBeamformedData.S,pingNumber,pingNumber);
@@ -307,7 +307,7 @@ for iF = 1:nStruct
                     'Nanval', intmin('int16'), ...
                     'Offset', 0, ...
                     'MaxSamples', maxNSamples_groups, ...
-                    'MaxBeams', maxNBeams, ...
+                    'MaxBeams', maxnBeams, ...
                     'ping_group_start', ping_group_start, ...
                     'ping_group_end', ping_group_end);
                 
@@ -319,31 +319,34 @@ for iF = 1:nStruct
                     'Nanval', 200, ...
                     'Offset', 0, ...
                     'MaxSamples', maxNSamples_groups, ...
-                    'MaxBeams', maxNBeams, ...
+                    'MaxBeams', maxnBeams, ...
                     'ping_group_start', ping_group_start, ...
                     'ping_group_end', ping_group_end);
                 
-                ig=1;
+                % initialize ping group counter, to use to specify which memmapfile
+                % to fill. We start in the first.
+                iG=1;
+                
                 % now get data for each ping
                 
                 mag_fmt='uint16';
                 
                 % now get data for each ping
                 for iP = 1:nPings
-                    if iP>ping_group_end(ig)
-                        ig=ig+1;
+                    if iP>ping_group_end(iG)
+                        iG=iG+1;
                     end
                     
-                    fseek(fid_all,S7Kdata.R7018_7kBeamformedData.BeamformedDataPos(iP),'bof');
-                    Mag_tmp=(fread(fid_all,[S7Kdata.R7018_7kBeamformedData.N(iP) S7Kdata.R7018_7kBeamformedData.S(iP)],'uint16',2))';
-                    fseek(fid_all,S7Kdata.R7018_7kBeamformedData.BeamformedDataPos(iP)+2,'bof');
-                    Ph_tmp=(fread(fid_all,[S7Kdata.R7018_7kBeamformedData.N(iP) S7Kdata.R7018_7kBeamformedData.S(iP)],'int16=>int16',2))';
+                    fseek(fid,S7Kdata.R7018_7kBeamformedData.BeamformedDataPos(iP),'bof');
+                    Mag_tmp=(fread(fid,[S7Kdata.R7018_7kBeamformedData.N(iP) S7Kdata.R7018_7kBeamformedData.S(iP)],'uint16',2))';
+                    fseek(fid,S7Kdata.R7018_7kBeamformedData.BeamformedDataPos(iP)+2,'bof');
+                    Ph_tmp=(fread(fid,[S7Kdata.R7018_7kBeamformedData.N(iP) S7Kdata.R7018_7kBeamformedData.S(iP)],'int16=>int16',2))';
                     
                     Mag_tmp(Mag_tmp==eval([mag_fmt '(-inf)']))=eval([mag_fmt '(-inf)']);
                     Mag_tmp=20*log10(Mag_tmp/double(intmax('uint16')))/fData.WC_1_SampleAmplitudes_Factor;
                     
-                    fData.WC_SBP_SampleAmplitudes{ig}.Data.val(:,:,iP-ping_group_start(ig)+1)=int16(Mag_tmp);
-                    fData.WC_SBP_SamplePhase{ig}.Data.val(:,:,iP-ping_group_start(ig)+1)=Ph_temp;
+                    fData.WC_SBP_SampleAmplitudes{iG}.Data.val(:,:,iP-ping_group_start(iG)+1)=int16(Mag_tmp);
+                    fData.WC_SBP_SamplePhase{iG}.Data.val(:,:,iP-ping_group_start(iG)+1)=Ph_temp;
                     
                 end
                 
@@ -365,14 +368,22 @@ for iF = 1:nStruct
                     update_flag = 1;
                 end
                 
-                % get indices of first datagram for each ping
-                pingNumber=1:numel(S7Kdata.R7042_CompressedWaterColumn.SonarId);
-                maxNBeams=nanmax(cellfun(@numel,S7Kdata.R7042_CompressedWaterColumn.BeamNumber));
-                nPings=numel(S7Kdata.R7042_CompressedWaterColumn.BeamNumber);
-                maxNSamples=nanmax(S7Kdata.R7042_CompressedWaterColumn.FirstSample+cellfun(@nanmax,S7Kdata.R7042_CompressedWaterColumn.NumberOfSamples));
+                % number of pings
+                nPings = numel(S7Kdata.R7042_CompressedWaterColumn.SonarId); % number of datagrams/pings
+                pingNumber = 1:nPings; % ping counter
+                
+                % number of Tx sectors
                 maxNTransmitSectors = 1;
                 
+                % number of beams
+                nBeams = cellfun(@numel,S7Kdata.R7042_CompressedWaterColumn.BeamNumber); % number of beams per ping
+                maxnBeams = nanmax(nBeams); % maximum number of beams in file
                 
+                % number of samples
+                % maxNSamples = nanmax(S7Kdata.R7042_CompressedWaterColumn.FirstSample+cellfun(@nanmax,S7Kdata.R7042_CompressedWaterColumn.NumberOfSamples));
+                dtg_nSamples = S7Kdata.R7042_CompressedWaterColumn.NumberOfSamples; % number of samples per datagram and beam
+                [maxNSamples_groups, ping_group_start, ping_group_end] = CFF_group_pings(dtg_nSamples,pingNumber,pingNumber); % making groups of pings to limit size of memmaped files
+
                 % read data per ping from first datagram of each ping
                 fData.AP_1P_Date                            = S7Kdata.R7042_CompressedWaterColumn.Date;
                 fData.AP_1P_TimeSinceMidnightInMilliseconds = S7Kdata.R7042_CompressedWaterColumn.TimeSinceMidnightInMilliseconds;
@@ -393,32 +404,27 @@ for iF = 1:nStruct
                 fData.AP_TP_TransmitSectorNumber = nan(maxNTransmitSectors,nPings);
                 
                 % initialize data per decimated beam and ping
-                fData.AP_BP_BeamPointingAngle      = nan(maxNBeams,nPings);
-                fData.AP_BP_StartRangeSampleNumber = nan(maxNBeams,nPings);
-                fData.AP_BP_NumberOfSamples        = nan(maxNBeams,nPings);
-                fData.AP_BP_DetectedRangeInSamples = zeros(maxNBeams,nPings);
-                fData.AP_BP_TransmitSectorNumber   = nan(maxNBeams,nPings);
-                fData.AP_BP_BeamNumber             = nan(maxNBeams,nPings);
+                fData.AP_BP_BeamPointingAngle      = nan(maxnBeams,nPings);
+                fData.AP_BP_StartRangeSampleNumber = nan(maxnBeams,nPings);
+                fData.AP_BP_NumberOfSamples        = nan(maxnBeams,nPings);
+                fData.AP_BP_DetectedRangeInSamples = zeros(maxnBeams,nPings);
+                fData.AP_BP_TransmitSectorNumber   = nan(maxnBeams,nPings);
+                fData.AP_BP_BeamNumber             = nan(maxnBeams,nPings);
                 
-                [maxNSamples_groups,ping_group_start,ping_group_end]=CFF_group_pings(S7Kdata.R7042_CompressedWaterColumn.NumberOfSamples,pingNumber,pingNumber);
-                [flags,sample_size,mag_fmt,phase_fmt]=CFF_get_R7042_flags(S7Kdata.R7042_CompressedWaterColumn.Flags(1));
+                % flags indicating what data are available
+                [flags,sample_size,mag_fmt,phase_fmt] = CFF_get_R7042_flags(S7Kdata.R7042_CompressedWaterColumn.Flags(1));
                 
-                switch phase_fmt
-                    case 'int8'
-                        phase_fact=360/256;
-                    case 'int16'
-                        phase_fact=180/pi/10430;
-                end
-                
+                % amplitude format
                 switch mag_fmt
                     case 'int8'
-                        mag_fact=1;
-                        mag_file_fmt='int8';
-                    case {'uint16' 'float32'}
-                        mag_fact=1/200;
-                        mag_file_fmt='int16';
+                        mag_file_fmt = 'int8';
+                        mag_fact = 1;
+                    case {'uint16', 'float32'}
+                        mag_file_fmt = 'int16';
+                        mag_fact = 1/200;
                 end
                 
+                % initialize data-holding binary files for Amplitude
                 fData = CFF_init_memmapfiles(fData,...
                     'field', 'AP_SBP_SampleAmplitudes', ...
                     'wc_dir', wc_dir, ...
@@ -427,165 +433,201 @@ for iF = 1:nStruct
                     'Nanval', intmin(mag_file_fmt), ...
                     'Offset', 0, ...
                     'MaxSamples', maxNSamples_groups, ...
-                    'MaxBeams', maxNBeams, ...
+                    'MaxBeams', maxnBeams, ...
                     'ping_group_start', ping_group_start, ...
                     'ping_group_end', ping_group_end);
                 
-                fData = CFF_init_memmapfiles(fData, ...
-                    'field', 'AP_SBP_SamplePhase', ...
-                    'wc_dir', wc_dir, ...
-                    'Class', phase_fmt, ...
-                    'Factor', phase_fact, ...
-                    'Nanval', 200, ...
-                    'Offset', 0, ...
-                    'MaxSamples', maxNSamples_groups, ...
-                    'MaxBeams', maxNBeams, ...
-                    'ping_group_start', ping_group_start, ...
-                    'ping_group_end', ping_group_end);
+                % do the same for phase if it's available
+                if ~flags.magnitudeOnly
+                    
+                    % phase format
+                    switch phase_fmt
+                        case 'int8'
+                            phase_fact = 360/256;
+                        case 'int16'
+                            phase_fact = 180/pi/10430;
+                    end
+                    
+                    % initialize data-holding binary files for Phase
+                    fData = CFF_init_memmapfiles(fData, ...
+                        'field', 'AP_SBP_SamplePhase', ...
+                        'wc_dir', wc_dir, ...
+                        'Class', phase_fmt, ...
+                        'Factor', phase_fact, ...
+                        'Nanval', 200, ...
+                        'Offset', 0, ...
+                        'MaxSamples', maxNSamples_groups, ...
+                        'MaxBeams', maxnBeams, ...
+                        'ping_group_start', ping_group_start, ...
+                        'ping_group_end', ping_group_end);
+                    
+                end
                 
-                ig=1;
-                % now get data for each ping
-                disp_wc=0;
+                % correct sampling frequency record
+                if flags.downsamplingType > 0
+                    fData.AP_1P_SamplingFrequencyHz = fData.AP_1P_SamplingFrequencyHz./flags.downsamplingDivisor;
+                end
+                
+                % initialize ping group counter, to use to specify which memmapfile
+                % to fill. We start in the first.
+                iG = 1;
+                
+                % debug graph
+                disp_wc = 0;
                 if disp_wc
                     f = figure();
-                    ax_mag = axes(f,'outerposition',[0 0.5 1 0.5]);
-                    ax_phase = axes(f,'outerposition',[0 0 1 0.5]);
+                    if flags.magnitudeOnly
+                        ax_mag = axes(f,'outerposition',[0 0 1 1]);
+                    else
+                        ax_mag = axes(f,'outerposition',[0 0.5 1 0.5]);
+                        ax_phase = axes(f,'outerposition',[0 0 1 0.5]);
+                    end
                 end
+                
+                % now get data for each ping
                 for iP = 1:nPings
                     
-                    if iP>ping_group_end(ig)
-                        ig=ig+1;
+                    % update ping group counter if needed
+                    if iP > ping_group_end(iG)
+                        iG = iG+1;
                     end
-                    
-                    % find datagrams composing this ping
-                    %pingCounter = fData.AP_1P_PingCounter(1,iP); % ping number (ex: 50455)
-                    iBeam=S7Kdata.R7042_CompressedWaterColumn.BeamNumber{iP}+1;
-                    
-                    if flags.downsamplingType>0
-                        fData.AP_1P_SamplingFrequencyHz(iP)=fData.AP_1P_SamplingFrequencyHz(iP)/flags.downsamplingDivisor;
-                    end
-                    % assuming transmit sectors data are not split between several datagrams, get that data from the first datagram.
+                  
+                    % data per Tx sector
                     nTransmitSectors = fData.AP_1P_NumberOfTransmitSectors(1,iP); % number of transmit sectors in this ping
                     fData.AP_TP_TiltAngle(1:nTransmitSectors,iP)            = zeros(nTransmitSectors,1);
                     fData.AP_TP_CenterFrequency(1:nTransmitSectors,iP)      = S7Kdata.R7000_SonarSettings.Frequency(iP)*ones(nTransmitSectors,1);
                     fData.AP_TP_TransmitSectorNumber(1:nTransmitSectors,iP) = 1:nTransmitSectors;
                     
-                    % ping x beam data
+                    % data per beam
+                    iBeam = S7Kdata.R7042_CompressedWaterColumn.BeamNumber{iP}+1; % beam numbers in this ping
                     fData.AP_BP_BeamPointingAngle(iBeam,iP)      = S7Kdata.R7004_7kBeamGeometry.BeamHorizontalDirectionAngleRad{iP}/pi*180;
                     fData.AP_BP_StartRangeSampleNumber(iBeam,iP) = round(S7Kdata.R7042_CompressedWaterColumn.FirstSample(iP));
                     fData.AP_BP_NumberOfSamples(iBeam,iP)        = round(S7Kdata.R7042_CompressedWaterColumn.NumberOfSamples{iP});
                     fData.AP_BP_DetectedRangeInSamples(S7Kdata.R7027_RAWdetection.BeamDescriptor{iP}+1,iP) = round(S7Kdata.R7027_RAWdetection.DetectionPoint{iP}/flags.downsamplingDivisor);
                     fData.AP_BP_TransmitSectorNumber(iBeam,iP)   = 1;
-                    fData.AP_BP_BeamNumber(iBeam,iP)             = S7Kdata.R7004_7kBeamGeometry.N(iP);
-                    
-                    
-                    
-                    
-                    % now getting watercolumn data (beams x samples)
-                    
-                    if flags.magnitudeOnly
-                        Mag_tmp=ones(maxNSamples_groups(ig),maxNBeams,mag_fmt)*eval([mag_fmt '(-inf)']);
-                    else
-                        Mag_tmp=ones(maxNSamples_groups(ig),maxNBeams,mag_fmt)*eval([mag_fmt '(-inf)']);
-                        Ph_tmp=zeros(maxNSamples_groups(ig),maxNBeams,phase_fmt);
+                    fData.AP_BP_BeamNumber(iBeam,iP)             = S7Kdata.R7004_7kBeamGeometry.N(iP); % from R7004??? XXX
+                 
+                    % initialize amplitude and phase matrices
+                    Mag_tmp = ones(maxNSamples_groups(iG),maxnBeams,mag_fmt)*eval([mag_fmt '(-inf)']);
+                    if ~flags.magnitudeOnly
+                        Ph_tmp = zeros(maxNSamples_groups(iG),maxnBeams,phase_fmt);
                     end
-                    start_sample=S7Kdata.R7042_CompressedWaterColumn.FirstSample(iP)+1;
-                    Ns=S7Kdata.R7042_CompressedWaterColumn.NumberOfSamples{iP};
-                    pos=ftell(fid_all);
-                    fseek(fid_all,S7Kdata.R7042_CompressedWaterColumn.SampleStartPositionInFile{iP}(1)-pos,'cof');
+
+                    % number of samples for each beam in this ping
+                    nSamples = S7Kdata.R7042_CompressedWaterColumn.NumberOfSamples{iP};
                     
-                    pos_start_ping=S7Kdata.R7042_CompressedWaterColumn.SampleStartPositionInFile{iP}(1);
-                    pos_end_ping=S7Kdata.R7042_CompressedWaterColumn.SampleStartPositionInFile{iP}(end)+Ns(end)*sample_size;
+                    % got to start of data in raw file, from here
+                    pos = ftell(fid);
+                    fseek(fid,S7Kdata.R7042_CompressedWaterColumn.SampleStartPositionInFile{iP}(1)-pos,'cof');
                     
-                    DataSamples_tot=fread(fid_all,pos_end_ping-pos_start_ping+1,'int8=>int8');
+                    % read the ping's data as int8, between the start
+                    % position for the first beam's data and the end
+                    % position of the last beam's data
+                    pos_start_ping = S7Kdata.R7042_CompressedWaterColumn.SampleStartPositionInFile{iP}(1);
+                    pos_end_ping = S7Kdata.R7042_CompressedWaterColumn.SampleStartPositionInFile{iP}(end)+nSamples(end)*sample_size;
+                    DataSamples_tot = fread(fid,pos_end_ping-pos_start_ping+1,'int8=>int8');
                     
+                    % index of first sample
+                    start_sample = S7Kdata.R7042_CompressedWaterColumn.FirstSample(iP)+1;
                     
-                    for jj=1:S7Kdata.R7004_7kBeamGeometry.N(iP)
-                        idx_pp = S7Kdata.R7042_CompressedWaterColumn.SampleStartPositionInFile{iP}(jj):(S7Kdata.R7042_CompressedWaterColumn.SampleStartPositionInFile{iP}(jj)+Ns(jj)*sample_size-1);
+                    % read beam by beam
+                    for jj = 1:S7Kdata.R7004_7kBeamGeometry.N(iP)  % from R7004??? XXX
+                        
+                        % get data for that beam
+                        idx_pp = S7Kdata.R7042_CompressedWaterColumn.SampleStartPositionInFile{iP}(jj):(S7Kdata.R7042_CompressedWaterColumn.SampleStartPositionInFile{iP}(jj)+nSamples(jj)*sample_size-1);
                         idx_pp = idx_pp-pos_start_ping+1;
-                        DataSamples_tmp=DataSamples_tot(idx_pp);
+                        DataSamples_tmp = DataSamples_tot(idx_pp);
                         
                         if flags.magnitudeOnly
+                            % data are amplitude only
                             switch mag_fmt
-                                case 'float32'
-                                    Mag_tmp((start_sample:start_sample+Ns(jj)-1),jj)=10*log10(typecast(DataSamples_tmp,mag_fmt));
+                                % read amplitude data
                                 case 'int8'
-                                    Mag_tmp((start_sample:start_sample+Ns(jj)-1),jj)=DataSamples;
+                                    Mag_tmp((start_sample:start_sample+nSamples(jj)-1),jj) = DataSamples_tmp;
                                 case 'uint16'
-                                    Mag_tmp((start_sample:start_sample+Ns(jj)-1),jj)=typecast(DataSamples_tmp,mag_fmt);
+                                    Mag_tmp((start_sample:start_sample+nSamples(jj)-1),jj) = typecast(DataSamples_tmp,mag_fmt);
+                                case 'float32'
+                                    Mag_tmp((start_sample:start_sample+nSamples(jj)-1),jj) = 10*log10(typecast(DataSamples_tmp,mag_fmt));
                                 otherwise
                                     warning('WC compression flag issue');
                             end
                         else
-                            switch phase_fmt
-                                case'int8'
-                                    Ph_tmp((start_sample:start_sample+Ns(jj)-1),jj)=DataSamples_tmp(2:2:end,:);
-                                case 'int16'
-                                    idx_tot=rem(1:numel(DataSamples_tmp),4);
-                                    idx_phase=idx_tot==3|idx_tot==0;
-                                    Ph_tmp((start_sample:start_sample+Ns(jj)-1),jj)=typecast(DataSamples_tmp(idx_phase,:),phase_fmt);
-                                otherwise
-                                    warning('WC compression flag issue');
-                            end
-                            
+                            % data are amplitude AND phase
                             switch mag_fmt
+                                % read amplitude data
                                 case 'int8'
-                                    Mag_tmp((start_sample:start_sample+Ns(jj)-1),jj)=DataSamples_tmp(1:2:end,:);
+                                    Mag_tmp((start_sample:start_sample+nSamples(jj)-1),jj) = DataSamples_tmp(1:2:end,:);
                                 case 'uint16'
-                                    idx_tot=rem(1:numel(DataSamples_tmp),4);
-                                    idx_mag=idx_tot==1|idx_tot==2;
-                                    Mag_tmp((start_sample:start_sample+Ns(jj)-1),jj)=typecast(DataSamples_tmp(idx_mag,:),mag_fmt);
+                                    idx_tot = rem(1:numel(DataSamples_tmp),4);
+                                    idx_mag = idx_tot==1 | idx_tot==2;
+                                    Mag_tmp((start_sample:start_sample+nSamples(jj)-1),jj) = typecast(DataSamples_tmp(idx_mag,:),mag_fmt);
                                 otherwise
                                     warning('WC compression flag issue');
                             end
-                            
+                            switch phase_fmt
+                                % read phase data
+                                case'int8'
+                                    Ph_tmp((start_sample:start_sample+nSamples(jj)-1),jj) = DataSamples_tmp(2:2:end,:);
+                                case 'int16'
+                                    idx_tot = rem(1:numel(DataSamples_tmp),4);
+                                    idx_phase = idx_tot==3 | idx_tot==0;
+                                    Ph_tmp((start_sample:start_sample+nSamples(jj)-1),jj) = typecast(DataSamples_tmp(idx_phase,:),phase_fmt);
+                                otherwise
+                                    warning('WC compression flag issue');
+                            end
                         end
                         
                     end
                     
-                    
+                    % debug graph
                     if disp_wc
+                        % display amplitude
                         switch mag_fmt
                             case 'int8'
                                 imagesc(ax_mag,double(Mag_tmp)-128);
                             case 'uint16'
-                                imagesc(10*log10(double(Mag_tmp)/double(intmax('int16'))));
+                                imagesc(ax_mag,10*log10(double(Mag_tmp)/double(intmax('int16'))));
                         end
                         caxis(ax_mag,[-100 -20]);
-                        
-                        imagesc(ax_phase,Ph_tmp*phase_fact);
+                        colorbar
+                        title(sprintf('ping %i/%i',iP,nPings));
+                        % display phase
+                        if ~flags.magnitudeOnly
+                            imagesc(ax_phase,Ph_tmp*phase_fact);
+                            colorbar
+                        end
                         drawnow;
                     end
                     
-                    
-                    % store amp data on binary file
+                    % reformat amplitude data for storing
                     switch mag_fmt
                         case 'int8'
-                            Mag_tmp=Mag_tmp-int8(128);
+                            Mag_tmp = Mag_tmp - int8(128);
                         case 'uint16'
-                            idx0=Mag_tmp==0;
-                            Mag_tmp=(10*log10(double(Mag_tmp)/double(intmax('uint16')))/mag_fact);
-                            Mag_tmp(idx0)=-inf;
-                            Mag_tmp=int16(Mag_tmp);
+                            idx0 = Mag_tmp==0;
+                            Mag_tmp = (10*log10(double(Mag_tmp)/double(intmax('uint16')))/mag_fact);
+                            Mag_tmp(idx0) = -inf;
+                            Mag_tmp = int16(Mag_tmp);
                         case 'float32'
-                            Mag_tmp=int16(Mag_tmp/mag_fact);
+                            Mag_tmp = int16(Mag_tmp/mag_fact);
                     end
                     
-                    fData.AP_SBP_SampleAmplitudes{ig}.Data.val(:,:,iP-ping_group_start(ig)+1)=Mag_tmp;
+                    % store amplitude data on memmapped file
+                    fData.AP_SBP_SampleAmplitudes{iG}.Data.val(:,:,iP-ping_group_start(iG)+1) = Mag_tmp;
+                    
+                    % store phase data on memmapped file
                     if ~flags.magnitudeOnly
-                        fData.AP_SBP_SamplePhase{ig}.Data.val(:,:,iP-ping_group_start(ig)+1)=Ph_tmp;
+                        fData.AP_SBP_SamplePhase{iG}.Data.val(:,:,iP-ping_group_start(iG)+1) = Ph_tmp;
                     end
                     
                 end
-                
-                
-                
+
             end
             
         end
         
         % close the original raw file
-        fclose(fid_all);
+        fclose(fid);
         
     end
     

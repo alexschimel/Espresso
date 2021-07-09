@@ -80,7 +80,8 @@ for iF = 1:nStruct
     KMALLdata = KMALLdataGroup{iF};
     
     % add source filename
-    fData.ALLfilename{iF} = KMALLdata.KMALLfilename;
+    KMALLfilename = KMALLdata.KMALLfilename;
+    fData.ALLfilename{iF} = KMALLfilename;
     
     % now reading each type of datagram.
     % Note we only convert the datagrams if fData does not already contain
@@ -180,15 +181,30 @@ for iF = 1:nStruct
     %% '#MWC - Multibeam (M) water (W) column (C) datagram'
     if isfield(KMALLdata,'EMdgmMWC') && ~isfield(fData,'WC_1D_Date')
         
-        % number of entries
-        nPings = numel(KMALLdata.EMdgmMWC); % total number of pings in file
-        nBeams = nanmax(CFF_getfield([KMALLdata.EMdgmMWC.rxInfo],'numBeams')); % maximum beam number in file
-
+        % number of datagrams
+        nDatag = numel(KMALLdata.EMdgmMWC);
+        
+        % number of pings
+        dtg_ping_counter = CFF_getfield([KMALLdata.EMdgmMWC.cmnPart],'pingCnt'); % ping counter for each datagram
+        [ping_counter, iFirstDatagram] = unique(dtg_ping_counter,'stable'); % list of ping numbers
+        nPings = numel(ping_counter); % total number of pings in file
+        
+        % number of beams
+        nBeams_per_dtg = CFF_getfield([KMALLdata.EMdgmMWC.rxInfo],'numBeams'); % number of beams per datagram
+        nBeams = nBeams_per_dtg(iFirstDatagram); % number of beams per ping
+        maxnBeams = nanmax(nBeams); % maximum number of beams in file
+        maxnBeams_sub = ceil(maxnBeams/db_sub); % maximum number of receive beams TO READ
+        
+        % number of samples
+        dtg_nSamples = arrayfun(@(idx) [KMALLdata.EMdgmMWC(idx).beamData_p(:).numSampleData], 1:nDatag, 'UniformOutput', false); % number of samples per datagram
+        [maxnSamples_groups, ping_group_start, ping_group_end] = CFF_group_pings(dtg_nSamples, ping_counter, dtg_ping_counter); % making groups of pings to limit size of memmaped files
+        maxnSamples_groups = ceil(maxnSamples_groups/dr_sub); % maximum number of samples TO READ, per group.
+        
         % get date and time-since-midnight-in-milleseconds from header
         [fData.WC_1P_Date, fData.WC_1P_TimeSinceMidnightInMilliseconds] = CFF_get_date_and_TSMIM_from_kmall(KMALLdata.EMdgmMWC(:));
         
         % data per ping
-        fData.WC_1P_PingCounter                     = CFF_getfield([KMALLdata.EMdgmMWC.cmnPart],'pingCnt');
+        fData.WC_1P_PingCounter                     = ping_counter;
         fData.WC_1P_NumberOfDatagrams               = 0; % unused anyway
         fData.WC_1P_NumberOfTransmitSectors         = 0; % unused anyway
         fData.WC_1P_TotalNumberOfReceiveBeams       = 0; % unused anyway
@@ -205,19 +221,12 @@ for iF = 1:nStruct
         fData.WC_TP_TransmitSectorNumber = 0; % unused anyway
         
         % data per decimated beam and ping
-        fData.WC_BP_BeamPointingAngle      = reshape(CFF_getfield([KMALLdata.EMdgmMWC.beamData_p],'beamPointAngReVertical_deg'),nBeams,nPings);
-        fData.WC_BP_StartRangeSampleNumber = reshape(CFF_getfield([KMALLdata.EMdgmMWC.beamData_p],'startRangeSampleNum'),nBeams,nPings);
-        fData.WC_BP_NumberOfSamples        = reshape(CFF_getfield([KMALLdata.EMdgmMWC.beamData_p],'numSampleData'),nBeams,nPings);
-        fData.WC_BP_DetectedRangeInSamples = reshape(CFF_getfield([KMALLdata.EMdgmMWC.beamData_p],'detectedRangeInSamplesHighResolution'),nBeams,nPings);
+        fData.WC_BP_BeamPointingAngle      = reshape(CFF_getfield([KMALLdata.EMdgmMWC.beamData_p],'beamPointAngReVertical_deg'),maxnBeams_sub,nPings);
+        fData.WC_BP_StartRangeSampleNumber = reshape(CFF_getfield([KMALLdata.EMdgmMWC.beamData_p],'startRangeSampleNum'),maxnBeams_sub,nPings);
+        fData.WC_BP_NumberOfSamples        = reshape(CFF_getfield([KMALLdata.EMdgmMWC.beamData_p],'numSampleData'),maxnBeams_sub,nPings);
+        fData.WC_BP_DetectedRangeInSamples = reshape(CFF_getfield([KMALLdata.EMdgmMWC.beamData_p],'detectedRangeInSamplesHighResolution'),maxnBeams_sub,nPings);
         fData.WC_BP_TransmitSectorNumber   = 0; % unused anyway
         fData.WC_BP_BeamNumber             = 0; % unused anyway
-        
-        % make groups of pings, so that indiviudal binary files are not too
-        % big
-        [maxnSamples_groups, ping_group_start, ping_group_end] = CFF_group_pings(ALLdata.EM_WaterColumn.NumberOfSamples, pingCounters, ALLdata.EM_WaterColumn.PingCounter); 
-        
-        % maximum number of samples TO READ, per group.
-        maxnSamples_groups = ceil(maxnSamples_groups/dr_sub); 
         
         % Definition of Kongsberg's KMALL water-column data format. We keep
         % it exactly like this to save disk space.
@@ -225,9 +234,138 @@ for iF = 1:nStruct
         % -128 to 127) with -128 being the NaN value. It needs to be
         % multiplied by a factor of 1/2 to retrieve the true value, aka an
         % int8 record of -41 is actually -20.5dB.
-        raw_WC_Class = 'int8';
-        raw_WC_Factor = 1./2;
-        raw_WC_Nanval = intmin(raw_WC_Class); % -128
+        raw_WCamp_Class = 'int8';
+        raw_WCamp_Factor = 1./2;
+        raw_WCamp_Nanval = intmin(raw_WCamp_Class); % -128
+        
+        % also, that data will not be saved in fData but in binary files.
+        % Get the output directory to store memmaped files
+        wc_dir = CFF_converted_data_folder(KMALLfilename);
+        
+        % initialize data-holding binary files for Amplitude
+        fData = CFF_init_memmapfiles(fData, ...
+            'field', 'WC_SBP_SampleAmplitudes', ...
+            'wc_dir', wc_dir, ...
+            'Class', raw_WCamp_Class, ...
+            'Factor', raw_WCamp_Factor, ...
+            'Nanval', raw_WCamp_Nanval, ...
+            'Offset', 0, ...
+            'MaxSamples', maxnSamples_groups, ...
+            'MaxBeams', maxnBeams_sub, ...
+            'ping_group_start', ping_group_start, ...
+            'ping_group_end', ping_group_end);
+        
+        % was phase recorded?
+        phaseFlags = CFF_getfield([KMALLdata.EMdgmMWC.rxInfo],'phaseFlag');
+        if all(phaseFlags==1)
+            phaseFlag = 1;
+        elseif all(phaseFlags==2)
+            phaseFlag = 2;
+        else
+            % also here if flag is not consistent between pings
+            phaseFlag = 0;
+        end
+        
+        % record phase data, if available
+        if phaseFlag
+            
+            % raw Phase data format
+            if phaseFlag==1
+                raw_WCph_Class = 'int8';
+                raw_WCph_Factor = 180/128;
+            else
+                raw_WCph_Class = 'int16';
+                raw_WCph_Factor = 0.01;
+            end
+            raw_WCph_Nanval = intmin(raw_WCph_Class);
+            
+            % initialize data-holding binary files for Phase
+            fData = CFF_init_memmapfiles(fData, ...
+                'field', 'WC_SBP_SamplePhase', ...
+                'wc_dir', wc_dir, ...
+                'Class', raw_WCph_Class, ...
+                'Factor', raw_WCph_Factor, ...
+                'Nanval', raw_WCph_Nanval, ...
+                'Offset', 0, ...
+                'MaxSamples', maxnSamples_groups, ...
+                'MaxBeams', maxnBeams_sub, ...
+                'ping_group_start', ping_group_start, ...
+                'ping_group_end', ping_group_end);
+            
+        end
+        
+        % samples data from WC or AP datagrams were not recorded, so we
+        % need to fopen the source file to grab the data
+        fid = fopen(KMALLfilename,'r','l');
+        
+        % initialize ping group counter, to use to specify which memmapfile
+        % to fill. We start in the first.
+        iG = 1;
+        
+        % debug graph
+        disp_wc = 1;
+        if disp_wc
+            f = figure();
+            if ~phaseFlag
+                ax_mag = axes(f,'outerposition',[0 0 1 1]);
+            else
+                ax_mag = axes(f,'outerposition',[0 0.5 1 0.5]);
+                ax_phase = axes(f,'outerposition',[0 0 1 0.5]);
+            end
+        end
+        
+        % position of start of data in each beam
+        WC_BP_sampleDataPIF = reshape(CFF_getfield([KMALLdata.EMdgmMWC.beamData_p],'sampleDataPositionInFile'),maxnBeams_sub,nPings);
+                
+        % now get data for each ping
+        for iP = 1:nPings
+            
+            % update ping group counter if needed
+            if iP > ping_group_end(iG)
+                iG = iG+1;
+            end
+            
+            % initialize amplitude and phase matrices for that ping
+            Mag_tmp = raw_WCamp_Nanval.*ones(maxnSamples_groups(iG),maxnBeams_sub,raw_WCamp_Class);
+            if phaseFlag
+                Ph_tmp = raw_WCph_Nanval.*ones(maxnSamples_groups(iG),maxnBeams_sub,raw_WCph_Class);
+            end
+            
+            % in each beam
+            for iB = 1:nBeams(iP)
+                
+                sR = fData.WC_BP_StartRangeSampleNumber(iB,iP);
+                nS = fData.WC_BP_NumberOfSamples(iB,iP);
+                dpif = WC_BP_sampleDataPIF(iB,iP);
+                
+                % get to start of record
+                fseek(fid,dpif,-1);
+                
+                if phaseFlags(iP) == 0
+                    Mag_tmp(sR+1:sR+nS,iB) = fread(fid, nS, 'int8=>int8');
+                elseif phaseFlags(iP) == 1
+                    Mag_tmp(sR+1:sR+nS,iB) = fread(fid, nS, 'int8=>int8',1);
+                    fseek(fid,dpif+1,-1);
+                    Ph_tmp(sR+1:sR+nS,iB) = fread(fid, nS, 'int8=>int8',1);
+                else
+                    Mag_tmp(sR+1:sR+nS,iB) = fread(fid, nS, 'int8=>int8',2);
+                    fseek(fid,dpif+1,-1);
+                    Ph_tmp(sR+1:sR+nS,iB) = fread(fid, nS, 'int16=>int16',2);
+                end
+            end
+            
+            imagesc(ax_mag, Mag_tmp)
+
+            
+        end
+        
+        
+        
+        
+        
+        
+        
+        
         
         
         

@@ -404,6 +404,13 @@ for iDatag = datagToParse'
             try i7018 = i7018+1; catch, i7018 = 1; end
             icurr_field = i7018;
             
+            % ----- IMPORTANT NOTE ----------------------------------------
+            % This datagram's data is too to be stored in memory. Instead,
+            % we record the metadata and the position-in-file location of
+            % the data, which be extracted and stored in binary format at
+            % the next stage of data conversion. 
+            % -------------------------------------------------------------
+            
             S7Kdata.R7018_7kBeamformedData.SonarId(i7018)            = fread(fid,1,'uint64');
             S7Kdata.R7018_7kBeamformedData.PingNumber(i7018)         = fread(fid,1,'uint32');
             S7Kdata.R7018_7kBeamformedData.MultipingSequence(i7018)  = fread(fid,1,'uint16');
@@ -562,8 +569,6 @@ for iDatag = datagToParse'
             if ~(isempty(p.Results.OutputFields)||any(strcmp(fieldname,p.Results.OutputFields)))
                 continue;
             end
-            
-            % counter for this type of datagram
             try i7042=i7042+1; catch, i7042=1; end
             icurr_field = i7042;
             
@@ -715,7 +720,6 @@ for iDatag = datagToParse'
             if ~(isempty(p.Results.OutputFields)||any(strcmp(fieldname,p.Results.OutputFields)))
                 continue;
             end
-            % counter for this type of datagram
             try i7200 = i7200+1; catch, i7200 = 1; end
             icurr_field = i7200;
             
@@ -774,7 +778,6 @@ for iDatag = datagToParse'
             if ~(isempty(p.Results.OutputFields)||any(strcmp(fieldname,p.Results.OutputFields)))
                 continue;
             end
-            % counter for this type of datagram
             try i7300 = i7300+1; catch, i7300 = 1; end
             icurr_field = i7300;
             
@@ -784,7 +787,6 @@ for iDatag = datagToParse'
             if ~(isempty(p.Results.OutputFields)||any(strcmp(fieldname,p.Results.OutputFields)))
                 continue;
             end
-            % counter for this type of datagram
             try i7503 = i7503+1; catch, i7503 = 1; end
             icurr_field = i7503;
             
@@ -794,7 +796,6 @@ for iDatag = datagToParse'
             if ~(isempty(p.Results.OutputFields)||any(strcmp(fieldname,p.Results.OutputFields)))
                 continue;
             end
-            % counter for this type of datagram
             try i7504 = i7504+1; catch, i7504 = 1; end
             icurr_field = i7504;
             
@@ -804,7 +805,6 @@ for iDatag = datagToParse'
             if ~(isempty(p.Results.OutputFields)||any(strcmp(fieldname,p.Results.OutputFields)))
                 continue;
             end
-            % counter for this type of datagram
             try i7610 = i7610+1; catch, i7610 = 1; end
             icurr_field = i7610;
             
@@ -816,8 +816,8 @@ for iDatag = datagToParse'
     % modify parsed status in info
     S7Kfileinfo.parsed(iDatag,1) = parsed;
     if parsed == 1
-        S7Kdata.(fieldname).TimeSinceMidnightInMilliseconds(icurr_field)  = S7Kfileinfo.timeSinceMidnightInMilliseconds(iDatag);
-        S7Kdata.(fieldname).Date(icurr_field)                             = str2double(S7Kfileinfo.date{iDatag});
+        S7Kdata.(fieldname).TimeSinceMidnightInMilliseconds(icurr_field) = S7Kfileinfo.timeSinceMidnightInMilliseconds(iDatag);
+        S7Kdata.(fieldname).Date(icurr_field)                            = str2double(S7Kfileinfo.date{iDatag});
     end
     
 end

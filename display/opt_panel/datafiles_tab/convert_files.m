@@ -62,7 +62,7 @@ for nF = 1:n_files
             file_format = 'Kongsberg_all';
         elseif strcmpi(f_ext,'.kmall') || strcmpi(f_ext,'.kmwcd')
             file_format = 'Kongsberg_kmall';
-        elseif strcmpi(f_ext,'.kmall') || strcmpi(f_ext,'.kmwcd')
+        elseif strcmpi(f_ext,'.s7k')
             file_format = 'Reson_s7k';
         else
             file_format = [];
@@ -156,15 +156,18 @@ for nF = 1:n_files
                 textprogressbar(50);
                 
                 % if not all datagrams were found at this point, message and abort
-                if ~all(datags_parsed_idx)
-                    if ~any((datags_parsed_idx(7:8)))
-                        textprogressbar('File does not contain water-column datagrams. Check file contents. Conversion aborted.');
-                        continue;
-                    elseif ~all(datags_parsed_idx(3:6))||~any(datags_parsed_idx(1:2))
-                        textprogressbar('File does not contain all necessary datagrams. Check file contents. Conversion aborted.');
-                        continue;
-                    end
-                end
+%                 if ~all(datags_parsed_idx)
+%                     if ~any((datags_parsed_idx(7:8)))
+%                         textprogressbar('File does not contain water-column datagrams (either R7018 or R7042). Check file contents. Conversion aborted.');
+%                         continue;
+%                     elseif ~any(datags_parsed_idx(1:2))
+%                         textprogressbar('File does not contain position datagrams (either R1015 or R1003). Check file contents. Conversion aborted.');
+%                         continue;
+%                     elseif ~all(datags_parsed_idx(3:6))
+%                         textprogressbar('File does not contain all necessary datagrams. Check file contents. Conversion aborted.');
+%                         continue;
+%                     end
+%                 end
                 
                 if datags_parsed_idx(end)
                     datagramSource = 'AP';

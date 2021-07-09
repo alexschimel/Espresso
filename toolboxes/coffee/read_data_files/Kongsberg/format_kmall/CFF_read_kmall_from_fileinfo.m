@@ -117,7 +117,7 @@ for iDatag = datagToParse'
             % extract kmall version
             kmall_version = CFF_get_kmall_version(KMALLdata.EMdgmIIP(iIIP));
             if ~strcmp(kmall_version, 'H')
-                warning('This kmall format version (%s) is different to the one used to develop the raw data reading code (H). This may lead to issues.');
+                warning('This kmall format version (%s) is different to the one used to develop the raw data reading code (H). This may lead to issues.',kmall_version);
             end
             
             parsed = 1;

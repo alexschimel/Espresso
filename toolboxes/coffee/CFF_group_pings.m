@@ -12,7 +12,7 @@
 %% Function
 function [maxNSamples_groups,ping_group_start,ping_group_end] = CFF_group_pings(num_samp_per_dtgrm, ping_counter, dtgrm_ping_number)
 
-% total number of samples per ping
+% get the maximum number of samples for each ping
 if iscell(num_samp_per_dtgrm)
     % if num_samp_per_dtgrm is a cell array, it holds the number of
     % samples per datagram. Group them by ping and find the max

@@ -14,19 +14,19 @@
 % *INPUT VARIABLES*
 %
 % * |ALLfilename|: Required. String filename to parse (extension in .all or
-% .wcd) 
+% .wcd)
 %
 % *OUTPUT VARIABLES*
 %
 % * |ALLfileinfo|: structure containing information about datagrams in
-% ALLfilename, with fields:  
+% ALLfilename, with fields:
 %     * |ALLfilename|: input file name
 %     * |filesize|: file size in bytes
 %     * |datagsizeformat|: endianness of the datagram size field 'b' or 'l'
 %     * |datagramsformat|: endianness of the datagrams 'b' or 'l'
 %     * |datagNumberInFile|: number of datagram in file
 %     * |datagPositionInFile|: position of beginning of datagram in file
-%     * |datagTypeNumber|: datagram type in decimal (Kongsberg .all format) 
+%     * |datagTypeNumber|: datagram type in decimal (Kongsberg .all format)
 %     * |datagTypeText|: datagram type description (Kongsberg .all format)
 %     * |parsed|: flag for whether the datagram has been parsed. Initiated
 %     at 0 at this stage. To be later turned to 1 for parsing.
@@ -54,7 +54,7 @@
 %
 % *NEW FEATURES*
 %
-% * 2021-05-26: updated docstring 
+% * 2021-05-26: updated docstring
 % * 2018-10-11: updated docstring before adding to Coffee v3
 % * 2017-10-17: changed way filesize is calculated without it reading the
 % entire file
@@ -69,7 +69,7 @@
 % *AUTHOR, AFFILIATION & COPYRIGHT*
 %
 % Alexandre Schimel (NGU, NIWA, Deakin Uni, Uni of Waikato), Yoann Ladroit
-% (NIWA).  
+% (NIWA).
 % Type |help CoFFee.m| for copyright information.
 
 %% Function
@@ -77,7 +77,7 @@ function ALLfileinfo = CFF_all_file_info(ALLfilename)
 
 %% supported systems:
 % see help for info
-emNumberList = [122; 300; 302; 710; 2040; 2045; 3000; 3002; 3020]; %2045 is 2040c
+emNumberList = [122; 300; 302; 304; 710; 712; 2040; 2045; 3000; 3002; 3020]; %2045 is 2040c
 
 
 %% Input arguments management using inputParser
@@ -114,6 +114,9 @@ filesize = ftell(fid);
 
 % rewind to start
 fseek(fid,0,-1);
+
+% counter for resynchornization attempts
+resync_counter = 0;
 
 % reading data from first datagram
 while 1
@@ -155,6 +158,10 @@ while 1
         break
     else
         % trying to re-synchronize: fwd one byte and repeat the above
+        resync_counter = resync_counter+1;
+        if resync_counter == 10000
+            error('Struggling to recognize start of file. Ensure your EM model is in the list of this function.');
+        end
         fseek(fid,pif+1,-1);
         continue
     end
@@ -241,174 +248,137 @@ while 1
     
     switch datagTypeNumber
         
+        case 48
+            datagTypeText = 'PU ID OUTPUT (30H)';
+            try i48=i48+1; catch, i48=1; end
+            counter = i48;
         case 49
-            
             datagTypeText = 'PU STATUS OUTPUT (31H)';
-            
-            % counter for this type of datagram
             try i49=i49+1; catch, i49=1; end
             counter = i49;
-            
+        case 51
+            datagTypeText = 'EXTRAPARAMETERS DATAGRAM (33H)';
+            try i51=i51+1; catch, i51=1; end
+            counter = i51;
         case 65
-            
             datagTypeText = 'ATTITUDE (41H)';
-            
-            % counter for this type of datagram
             try i65=i65+1; catch, i65=1; end
             counter = i65;
-            
+        case 66
+            datagTypeText = 'PU BIST RESULT OUTPUT (42H)';
+            try i66=i66+1; catch, i66=1; end
+            counter = i66;
         case 67
-            
             datagTypeText = 'CLOCK (43H)';
-            
-            % counter for this type of datagram
             try i67=i67+1; catch, i67=1; end
             counter = i67;
-            
         case 68
-            
             datagTypeText = 'DEPTH DATAGRAM (44H)';
-            
-            % counter for this type of datagram
-            try i68=i68+1; catch, i68=1; end
+            try i68 = i68+1; catch, i68=1; end
             counter = i68;
-            
+        case 69
+            datagTypeText = 'SINGLE BEAM ECHO SOUNDER DEPTH (45H)';
+            try i69=i69+1; catch, i69=1; end
+            counter = i69;
+        case 70
+            datagTypeText = 'RAW RANGE AND BEAM ANGLE (F) (46H)';
+            try i70=i70+1; catch, i70=1; end
+            counter = i70;
         case 71
-            datagTypeText='SURFACE SOUND SPEED (47H)';
-            % counter for this type of datagram
+            datagTypeText = 'SURFACE SOUND SPEED (47H)';
             try i71=i71+1; catch, i71=1; end
             counter = i71;
-            
         case 72
-            
             datagTypeText = 'HEADING (48H)';
-            
-            % counter for this type of datagram
             try i72=i72+1; catch, i72=1; end
             counter = i72;
-            
         case 73
-            
             datagTypeText = 'INSTALLATION PARAMETERS - START (49H)';
-            
-            % counter for this type of datagram
             try i73=i73+1; catch, i73=1; end
             counter = i73;
-            
+        case 74
+            datagTypeText = 'MECHANICAL TRANSDUCER TILT (4AH)';
+            try i74=i74+1; catch, i74=1; end
+            counter = i74;
+        case 75
+            datagTypeText = 'CENTRAL BEAMS ECHOGRAM (4BH)';
+            try i75=i75+1; catch, i75=1; end
+            counter = i75;
         case 78
-            
             datagTypeText = 'RAW RANGE AND ANGLE 78 (4EH)';
-            
-            % counter for this type of datagram
             try i78=i78+1; catch, i78=1; end
             counter = i78;
-            
         case 79
-            
             datagTypeText = 'QUALITY FACTOR DATAGRAM 79 (4FH)';
-            
-            % counter for this type of datagram
             try i79=i79+1; catch, i79=1; end
             counter = i79;
-            
         case 80
-            
             datagTypeText = 'POSITION (50H)';
-            
-            % counter for this type of datagram
             try i80=i80+1; catch, i80=1; end
             counter = i80;
-            
         case 82
-            
             datagTypeText = 'RUNTIME PARAMETERS (52H)';
-            
-            % counter for this type of datagram
             try i82=i82+1; catch, i82=1; end
             counter = i82;
-            
         case 83
-            
             datagTypeText = 'SEABED IMAGE DATAGRAM (53H)';
-            
-            % counter for this type of datagram
             try i83=i83+1; catch, i83=1; end
             counter = i83;
-            
+        case 84
+            datagTypeText = 'TIDE DATAGRAM (54H)';
+            try i84=i84+1; catch, i84=1; end
+            counter = i84;
         case 85
-            
             datagTypeText = 'SOUND SPEED PROFILE (55H)';
-            
-            % counter for this type of datagram
             try i85=i85+1; catch, i85=1; end
-            counter = i85;
-            
+            counter = i85;   
+        case 87
+            datagTypeText = 'KONGSBERG MARITIME SSP OUTPUT DATAGRAM (057H)';
+            try i87=i87+1; catch, i87=1; end
+            counter = i87;
         case 88
-            
             datagTypeText = 'XYZ 88 (58H)';
-            
-            % counter for this type of datagram
             try i88=i88+1; catch, i88=1; end
             counter = i88;
-            
         case 89
-            
             datagTypeText = 'SEABED IMAGE DATA 89 (59H)';
-            
-            % counter for this type of datagram
             try i89=i89+1; catch, i89=1; end
             counter = i89;
-            
         case 102
-            
             datagTypeText = 'RAW RANGE AND BEAM ANGLE (f) (66H)';
-            
-            % counter for this type of datagram
             try i102=i102+1; catch, i102=1; end
             counter = i102;
-            
         case 104
-            
             datagTypeText = 'DEPTH (PRESSURE) OR HEIGHT DATAGRAM (68H)';
-            
-            % counter for this type of datagram
             try i104=i104+1; catch, i104=1; end
             counter = i104;
-            
         case 105
-            
             datagTypeText = 'INSTALLATION PARAMETERS -  STOP (69H)';
-            
-            % counter for this type of datagram
             try i105=i105+1; catch, i105=1; end
             counter = i105;
-            
         case 107
-            
             datagTypeText = 'WATER COLUMN DATAGRAM (6BH)';
-            
-            % counter for this type of datagram
             try i107=i107+1; catch, i107=1; end
             counter = i107;
-            
+        case 108
+            datagTypeText = 'EXTRA DETECTIONS (6CH)';
+            try i108=i108+1; catch, i108=1; end
+            counter = i108;
         case 110
-            
             datagTypeText = 'NETWORK ATTITUDE VELOCITY DATAGRAM 110 (6EH)';
-            
-            % counter for this type of datagram
             try i110=i110+1; catch, i110=1; end
             counter = i110;
-            
-        case 114 
-             datagTypeText = 'AMPLITUDE AND PHASE WC DATAGRAM 114 (72H)';
-            
-            % counter for this type of datagram
+        case 112
+            datagTypeText = 'INSTALLATION PARAMETERS - REMOTE INFO (70H)';
+            try i112=i112+1; catch, i112=1; end
+            counter = i112;
+        case 114
+            datagTypeText = 'AMPLITUDE AND PHASE WC DATAGRAM 114 (72H)';
             try i114=i114+1; catch, i114=1; end
             counter = i114;
         otherwise
-
             % this datagTypeNumber is not recognized yet
-            datagTypeText = {sprintf('UNKNOWN DATAGRAM (%sH)',dec2hex(datagTypeNumber))};
+            datagTypeText = sprintf('UNKNOWN DATAGRAM (%sH)',dec2hex(datagTypeNumber));
             
     end
     

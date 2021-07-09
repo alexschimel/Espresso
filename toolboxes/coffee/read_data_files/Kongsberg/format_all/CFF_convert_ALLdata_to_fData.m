@@ -680,34 +680,21 @@ for iF = 1:nStruct
             fData.WC_1P_NumberOfBeamsToRead       = ceil(ALLdata.EM_WaterColumn.TotalNumberOfReceiveBeams(iFirstDatagram)/db_sub);
         end
         
-        % ----- get original data dimensions ------------------------------
-        % total number of pings in file
-        nPings = length(pingCounters);
+        % number of pings
+        nPings = length(pingCounters); % total number of pings in file
         
-        % maximum number of transmit sectors in a ping
-        maxnTxSectors = max(fData.WC_1P_NumberOfTransmitSectors); 
+        % number of Tx sectors
+        maxnTxSectors = max(fData.WC_1P_NumberOfTransmitSectors); % maximum number of transmit sectors in a ping
         
-        % maximum number of receive beams in a ping (not using it)
-        % maxnBeams = max(fData.WC_1P_TotalNumberOfReceiveBeams); 
+        % number of beams
+        % maxnBeams = max(fData.WC_1P_TotalNumberOfReceiveBeams); % maximum number of receive beams in a ping (not using it)
+        maxnBeams_sub = max(fData.WC_1P_NumberOfBeamsToRead); % maximum number of receive beams TO READ
         
-        % maximum number of samples in a ping (not using it)
-        % maxnSamples = max(cellfun(@(x) max(x), ALLdata.EM_WaterColumn.NumberOfSamples(ismember(ALLdata.EM_WaterColumn.PingCounter,pingCounters))));
-        % ----------------------------------------------------------------- 
-        
-        % ----- get dimensions of data to read after decimation -----------
-        % maximum number of receive beams TO READ
-        maxnBeams_sub = max(fData.WC_1P_NumberOfBeamsToRead); 
-        
-        % maximum number of samples TO READ
+        % number of samples
+        % maxnSamples = max(cellfun(@(x) max(x), ALLdata.EM_WaterColumn.NumberOfSamples(ismember(ALLdata.EM_WaterColumn.PingCounter,pingCounters)))); % maximum number of samples in a ping (not using it)
         % maxnSamples_sub  = ceil(maxnSamples/dr_sub); 
-        
-        % make groups of pings, so that indiviudal binary files are not too
-        % big
-        [maxnSamples_groups, ping_group_start, ping_group_end] = CFF_group_pings(ALLdata.EM_WaterColumn.NumberOfSamples, pingCounters, ALLdata.EM_WaterColumn.PingCounter); 
-        
-        % maximum number of samples TO READ, per group.
-        maxnSamples_groups = ceil(maxnSamples_groups/dr_sub); 
-        % ----------------------------------------------------------------- 
+        [maxnSamples_groups, ping_group_start, ping_group_end] = CFF_group_pings(ALLdata.EM_WaterColumn.NumberOfSamples, pingCounters, ALLdata.EM_WaterColumn.PingCounter); % making groups of pings to limit size of memmaped files
+        maxnSamples_groups = ceil(maxnSamples_groups/dr_sub); % maximum number of samples TO READ, per group.
          
         % initialize data per transmit sector and ping
         fData.WC_TP_TiltAngle            = nan(maxnTxSectors,nPings);
@@ -765,7 +752,7 @@ for iF = 1:nStruct
                 iG = iG+1;
             end
             
-            % initialize the water column data matrix for that ping.
+            % initialize amplitude matrix for that ping
             SB_temp = raw_WC_Nanval.*ones(maxnSamples_groups(iG),maxnBeams_sub,raw_WC_Class);
             
             % initialize number of sectors and beams recorded so far for
@@ -796,7 +783,7 @@ for iF = 1:nStruct
                 % indices of those sectors in output structure
                 iTxSectDest = nTxSectTot + (1:nTxSect);
                 
-                % recording data per transmit sector
+                % data per Tx sector
                 fData.WC_TP_TiltAngle(iTxSectDest,iP)            = ALLdata.EM_WaterColumn.TiltAngle{iDatagrams(1)};
                 fData.WC_TP_CenterFrequency(iTxSectDest,iP)      = ALLdata.EM_WaterColumn.CenterFrequency{iDatagrams(1)};
                 fData.WC_TP_TransmitSectorNumber(iTxSectDest,iP) = ALLdata.EM_WaterColumn.TransmitSectorNumber{iDatagrams(1)};
