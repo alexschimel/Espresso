@@ -188,8 +188,8 @@ for nF = 1:n_files
                 % dg_wc = {'#SPO'}; % Position only
                 % dg_wc = {'#MRZ'}; % Bathy and BS only
                 % dg_wc = {'#MWC'}; % WCD only
-                dg_wc = {'#IIP','#IOP','#SPO','#MRZ','#MWC'}; % all five above
-                % dg_wc = {}; % everything
+                % dg_wc = {'#IIP','#IOP','#SPO','#MRZ','#MWC'}; % all five above
+                dg_wc = {}; % everything
                 
                 [EMdata,datags_parsed_idx] = CFF_read_kmall(file_to_convert, dg_wc);
                 datagramSource = 'WC'; % XXX to update this datagramsource business eventually

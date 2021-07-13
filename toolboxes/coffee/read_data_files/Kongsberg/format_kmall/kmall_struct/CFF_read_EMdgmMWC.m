@@ -1,42 +1,45 @@
-function out_struct = CFF_read_EMdgmMWC(fid)
+function out_struct = CFF_read_EMdgmMWC(fid, dgmVersion_warning_flag)
 % #MWC - Multibeam Water Column Datagram. Entire datagram containing
 % several sub structs.
+%
+% Verified correct for kmall versions H,I
 
 out_struct.header = CFF_read_EMdgmHeader(fid);
 
-if out_struct.header.dgmVersion == 1
-    % definition for MWC_VERSION 1
-    
-    out_struct.partition = CFF_read_EMdgmMpartition(fid);
-    out_struct.cmnPart   = CFF_read_EMdgmMbody(fid);
-    out_struct.txInfo    = CFF_read_EMdgmMWCtxInfo(fid);
-    
-    Ntx = out_struct.txInfo.numTxSectors;
-    for iTx = 1:Ntx
-        out_struct.sectorData(iTx) = CFF_read_EMdgmMWCtxSectorData(fid);
-    end
-    
-    out_struct.rxInfo = CFF_read_EMdgmMWCrxInfo(fid);
-    
-    % Pointer to beam related information. Struct defines information about
-    % data for a beam. Beam information is followed by sample amplitudes in
-    % 0.5 dB resolution . Amplitude array is followed by phase information
-    % if phaseFlag >0. These data defined by struct
-    % EMdgmMWCrxBeamPhase1_def (int8_t) or struct EMdgmMWCrxBeamPhase2_def
-    % (int16_t) if indicated in the field phaseFlag in struct
-    % EMdgmMWCrxInfo_def.
-    % Lenght of data block for each beam depends on the operators choise of
-    % phase information (see table).
-    % phaseFlag 	Beam block size
-    % 0             numBytesPerBeamEntry + numSampleData* size(sampleAmplitude05dB_p)
-    % 1             numBytesPerBeamEntry + numSampleData* size(sampleAmplitude05dB_p) + numSampleData* size(EMdgmMWCrxBeamPhase1_def)
-    % 2             numBytesPerBeamEntry + numSampleData* size(sampleAmplitude05dB_p) + numSampleData* size(EMdgmMWCrxBeamPhase2_def)
-    Nrx = out_struct.rxInfo.numBeams;
-    phaseFlag = out_struct.rxInfo.phaseFlag;
-    for iRx = 1:Nrx
-        out_struct.beamData_p(iRx) = CFF_read_EMdgmMWCrxBeamData(fid, phaseFlag);        
-    end
-    
+if ~any(out_struct.header.dgmVersion==[1,2]) && dgmVersion_warning_flag
+    % definition valid for MWC_VERSION 1 (kmall version H) and 2 (kmall
+    % version I)
+    warning('#MWC datagram version (%i) unsupported. Continue reading but there may be issues.',out_struct.header.dgmVersion);
+end
+
+out_struct.partition = CFF_read_EMdgmMpartition(fid);
+out_struct.cmnPart   = CFF_read_EMdgmMbody(fid);
+out_struct.txInfo    = CFF_read_EMdgmMWCtxInfo(fid);
+
+Ntx = out_struct.txInfo.numTxSectors;
+for iTx = 1:Ntx
+    out_struct.sectorData(iTx) = CFF_read_EMdgmMWCtxSectorData(fid);
+end
+
+out_struct.rxInfo = CFF_read_EMdgmMWCrxInfo(fid);
+
+% Pointer to beam related information. Struct defines information about
+% data for a beam. Beam information is followed by sample amplitudes in
+% 0.5 dB resolution . Amplitude array is followed by phase information
+% if phaseFlag >0. These data defined by struct
+% EMdgmMWCrxBeamPhase1_def (int8_t) or struct EMdgmMWCrxBeamPhase2_def
+% (int16_t) if indicated in the field phaseFlag in struct
+% EMdgmMWCrxInfo_def.
+% Lenght of data block for each beam depends on the operators choise of
+% phase information (see table).
+% phaseFlag 	Beam block size
+% 0             numBytesPerBeamEntry + numSampleData* size(sampleAmplitude05dB_p)
+% 1             numBytesPerBeamEntry + numSampleData* size(sampleAmplitude05dB_p) + numSampleData* size(EMdgmMWCrxBeamPhase1_def)
+% 2             numBytesPerBeamEntry + numSampleData* size(sampleAmplitude05dB_p) + numSampleData* size(EMdgmMWCrxBeamPhase2_def)
+Nrx = out_struct.rxInfo.numBeams;
+phaseFlag = out_struct.rxInfo.phaseFlag;
+for iRx = 1:Nrx
+    out_struct.beamData_p(iRx) = CFF_read_EMdgmMWCrxBeamData(fid, phaseFlag);
 end
 
 end
@@ -44,6 +47,8 @@ end
 
 function out_struct = CFF_read_EMdgmMWCtxInfo(fid)
 % #MWC - data block 1: transmit sectors, general info for all sectors
+%
+% Verified correct for kmall versions H,I
 
 % Number of bytes in current struct.
 out_struct.numBytesTxInfo = fread(fid,1,'uint16');
@@ -67,6 +72,8 @@ end
 
 function out_struct = CFF_read_EMdgmMWCtxSectorData(fid)
 % #MWC - data block 1: transmit sector data, loop for all i = numTxSectors.
+%
+% Verified correct for kmall versions H,I
 
 % Along ship steering angle of the TX beam (main lobe of transmitted
 % pulse), angle referred to transducer face. Angle as used by beamformer
@@ -90,6 +97,8 @@ end
 
 function out_struct = CFF_read_EMdgmMWCrxInfo(fid)
 % #MWC - data block 2: receiver, general info
+%
+% Verified correct for kmall versions H,I
 
 % Number of bytes in current struct.
 out_struct.numBytesRxInfo = fread(fid,1,'uint16');
@@ -128,6 +137,8 @@ end
 
 function out_struct = CFF_read_EMdgmMWCrxBeamData(fid, phaseFlag)
 % #MWC - data block 2: receiver, specific info for each beam.
+%
+% Verified correct for kmall versions H,I
 
 out_struct.beamPointAngReVertical_deg = fread(fid,1,'float');
 

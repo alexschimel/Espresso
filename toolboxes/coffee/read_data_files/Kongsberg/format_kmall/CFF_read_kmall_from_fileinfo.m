@@ -41,6 +41,9 @@ function KMALLdata = CFF_read_kmall_from_fileinfo(KMALLfilename,KMALLfileinfo,va
 
 global DEBUG;
 
+% This code was developped around the following kmall format versions.
+kmall_versions_supported = 'H,I';
+
 %% Input arguments management using inputParser
 p = inputParser;
 
@@ -78,6 +81,8 @@ KMALLdata.KMALLfilename = KMALLfilename;
 % Parse only datagrams indicated in KMALLfileinfo
 datagToParse = find(KMALLfileinfo.parsed==1);
 
+% flag so kmall version warning only goes off once
+kmall_version_warning_flag = 0;
 
 %% Reading datagrams
 for iDatag = datagToParse'
@@ -97,8 +102,11 @@ for iDatag = datagToParse'
     % Go to start of dgm
     fseek(fid, dgm_start_pif, -1);
     
-    % reset the parsed switch
+    % set/reset the parsed switch
     parsed = 0;
+    
+    % set/reset the datagram version warning flag
+    dtg_warn_flag = 0;
     
     switch dgm_type_code
         
@@ -110,14 +118,16 @@ for iDatag = datagToParse'
             if ~( isempty(p.Results.OutputFields) || any(strcmp(dgm_type_code,p.Results.OutputFields)) )
                 continue;
             end
-            try iIIP=iIIP+1; catch, iIIP=1; end
+            try iIIP=iIIP+1; catch, iIIP=1; dtg_warn_flag = 1; end
              
-            KMALLdata.EMdgmIIP(iIIP) = CFF_read_EMdgmIIP(fid);
+            KMALLdata.EMdgmIIP(iIIP) = CFF_read_EMdgmIIP(fid, dtg_warn_flag);
             
             % extract kmall version
             kmall_version = CFF_get_kmall_version(KMALLdata.EMdgmIIP(iIIP));
-            if ~strcmp(kmall_version, 'H')
-                warning('This kmall format version (%s) is different to the one used to develop the raw data reading code (H). This may lead to issues.',kmall_version);
+            
+            if ~ismember(kmall_version, kmall_versions_supported) && ~kmall_version_warning_flag
+                warning('The kmall format version (%s) of this file is different to that used to develop the raw data reading code (%s). Data will be read anyway, but there may be issues.',kmall_version,kmall_versions_supported);
+                kmall_version_warning_flag = 1;
             end
             
             parsed = 1;
@@ -127,9 +137,9 @@ for iDatag = datagToParse'
             if ~( isempty(p.Results.OutputFields) || any(strcmp(dgm_type_code,p.Results.OutputFields)) )
                 continue;
             end
-            try iIOP=iIOP+1; catch, iIOP=1; end
+            try iIOP=iIOP+1; catch, iIOP=1; dtg_warn_flag = 1; end
             
-            KMALLdata.EMdgmIOP(iIOP) = CFF_read_EMdgmIOP(fid);
+            KMALLdata.EMdgmIOP(iIOP) = CFF_read_EMdgmIOP(fid, dtg_warn_flag);
             
             parsed = 1;
             
@@ -138,10 +148,10 @@ for iDatag = datagToParse'
             if ~( isempty(p.Results.OutputFields) || any(strcmp(dgm_type_code,p.Results.OutputFields)) )
                 continue;
             end
-            try iIBE=iIBE+1; catch, iIBE=1; end
+            try iIBE=iIBE+1; catch, iIBE=1; dtg_warn_flag = 1; end
             
             % in progress...
-            % KMALLdata.EMdgmIBE(iIBE) = CFF_read_EMdgmIBE(fid);
+            % KMALLdata.EMdgmIBE(iIBE) = CFF_read_EMdgmIBE(fid, dtg_warn_flag);
             
             parsed = 0;
             
@@ -150,10 +160,10 @@ for iDatag = datagToParse'
             if ~( isempty(p.Results.OutputFields) || any(strcmp(dgm_type_code,p.Results.OutputFields)) )
                 continue;
             end
-            try iIBR=iIBR+1; catch, iIBR=1; end
+            try iIBR=iIBR+1; catch, iIBR=1; dtg_warn_flag = 1; end
             
             % in progress...
-            % KMALLdata.EMdgmIBR(iIBR) = CFF_read_EMdgmIBR(fid);
+            % KMALLdata.EMdgmIBR(iIBR) = CFF_read_EMdgmIBR(fid, dtg_warn_flag);
             
             parsed = 0;
             
@@ -162,10 +172,10 @@ for iDatag = datagToParse'
             if ~( isempty(p.Results.OutputFields) || any(strcmp(dgm_type_code,p.Results.OutputFields)) )
                 continue;
             end
-            try iIBS=iIBS+1; catch, iIBS=1; end
+            try iIBS=iIBS+1; catch, iIBS=1; dtg_warn_flag = 1; end
             
             % in progress...
-            % KMALLdata.EMdgmIBS(iIBS) = CFF_read_EMdgmIBS(fid);
+            % KMALLdata.EMdgmIBS(iIBS) = CFF_read_EMdgmIBS(fid, dtg_warn_flag);
             
             parsed = 0;
             
@@ -177,9 +187,9 @@ for iDatag = datagToParse'
             if ~( isempty(p.Results.OutputFields) || any(strcmp(dgm_type_code,p.Results.OutputFields)) )
                 continue;
             end
-            try iMRZ=iMRZ+1; catch, iMRZ=1; end
+            try iMRZ=iMRZ+1; catch, iMRZ=1; dtg_warn_flag = 1; end
             
-            KMALLdata.EMdgmMRZ(iMRZ) = CFF_read_EMdgmMRZ(fid);
+            KMALLdata.EMdgmMRZ(iMRZ) = CFF_read_EMdgmMRZ(fid, dtg_warn_flag);
             
             parsed = 1;
             
@@ -236,9 +246,9 @@ for iDatag = datagToParse'
             if ~( isempty(p.Results.OutputFields) || any(strcmp(dgm_type_code,p.Results.OutputFields)) )
                 continue;
             end
-            try iMWC=iMWC+1; catch, iMWC=1; end
+            try iMWC=iMWC+1; catch, iMWC=1; dtg_warn_flag = 1; end
             
-            KMALLdata.EMdgmMWC(iMWC) = CFF_read_EMdgmMWC(fid);
+            KMALLdata.EMdgmMWC(iMWC) = CFF_read_EMdgmMWC(fid, dtg_warn_flag);
             
             parsed = 1;
             
@@ -295,9 +305,9 @@ for iDatag = datagToParse'
             if ~( isempty(p.Results.OutputFields) || any(strcmp(dgm_type_code,p.Results.OutputFields)) )
                 continue;
             end
-            try iSPO=iSPO+1; catch, iSPO=1; end
+            try iSPO=iSPO+1; catch, iSPO=1; dtg_warn_flag = 1; end
             
-            KMALLdata.EMdgmSPO(iSPO) = CFF_read_EMdgmSPO(fid);
+            KMALLdata.EMdgmSPO(iSPO) = CFF_read_EMdgmSPO(fid, dtg_warn_flag);
             
             parsed = 1;
             
@@ -306,9 +316,9 @@ for iDatag = datagToParse'
             if ~( isempty(p.Results.OutputFields) || any(strcmp(dgm_type_code,p.Results.OutputFields)) )
                 continue;
             end
-            try iSKM=iSKM+1; catch, iSKM=1; end
+            try iSKM=iSKM+1; catch, iSKM=1; dtg_warn_flag = 1; end
             
-            KMALLdata.EMdgmSKM(iSKM) = CFF_read_EMdgmSKM(fid);
+            KMALLdata.EMdgmSKM(iSKM) = CFF_read_EMdgmSKM(fid, dtg_warn_flag);
             
             parsed = 1;
             
@@ -317,9 +327,9 @@ for iDatag = datagToParse'
             if ~( isempty(p.Results.OutputFields) || any(strcmp(dgm_type_code,p.Results.OutputFields)) )
                 continue;
             end
-            try iSVP=iSVP+1; catch, iSVP=1; end
+            try iSVP=iSVP+1; catch, iSVP=1; dtg_warn_flag = 1; end
             
-            KMALLdata.EMdgmSVP(iSVP) = CFF_read_EMdgmSVP(fid);
+            KMALLdata.EMdgmSVP(iSVP) = CFF_read_EMdgmSVP(fid, dtg_warn_flag);
             
             parsed = 1;
             
@@ -343,10 +353,10 @@ for iDatag = datagToParse'
             if ~( isempty(p.Results.OutputFields) || any(strcmp(dgm_type_code,p.Results.OutputFields)) )
                 continue;
             end
-            try iSVT=iSVT+1; catch, iSVT=1; end
+            try iSVT=iSVT+1; catch, iSVT=1; dtg_warn_flag = 1; end
             
             % in progress...
-            % KMALLdata.EMdgmSVT(iSVT) = CFF_read_EMdgmSVT(fid);
+            % KMALLdata.EMdgmSVT(iSVT) = CFF_read_EMdgmSVT(fid, dtg_warn_flag);
             
             parsed = 0;
             
@@ -355,9 +365,9 @@ for iDatag = datagToParse'
             if ~( isempty(p.Results.OutputFields) || any(strcmp(dgm_type_code,p.Results.OutputFields)) )
                 continue;
             end
-            try iSCL=iSCL+1; catch, iSCL=1; end
+            try iSCL=iSCL+1; catch, iSCL=1; dtg_warn_flag = 1; end
             
-            KMALLdata.EMdgmSCL(iSCL) = CFF_read_EMdgmSCL(fid);
+            KMALLdata.EMdgmSCL(iSCL) = CFF_read_EMdgmSCL(fid, dtg_warn_flag);
             
             parsed = 1;
             
@@ -366,10 +376,10 @@ for iDatag = datagToParse'
             if ~( isempty(p.Results.OutputFields) || any(strcmp(dgm_type_code,p.Results.OutputFields)) )
                 continue;
             end
-            try iSDE=iSDE+1; catch, iSDE=1; end
+            try iSDE=iSDE+1; catch, iSDE=1; dtg_warn_flag = 1; end
             
             % in progress...
-            % KMALLdata.EMdgmSDE(iSDE) = CFF_read_EMdgmSDE(fid);
+            % KMALLdata.EMdgmSDE(iSDE) = CFF_read_EMdgmSDE(fid, dtg_warn_flag);
             
             parsed = 0;
             
@@ -378,10 +388,10 @@ for iDatag = datagToParse'
             if ~( isempty(p.Results.OutputFields) || any(strcmp(dgm_type_code,p.Results.OutputFields)) )
                 continue;
             end
-            try iSHI=iSHI+1; catch, iSHI=1; end
+            try iSHI=iSHI+1; catch, iSHI=1; dtg_warn_flag = 1; end
             
             % in progress...
-            % KMALLdata.EMdgmSHI(iSHI) = CFF_read_EMdgmSHI(fid);
+            % KMALLdata.EMdgmSHI(iSHI) = CFF_read_EMdgmSHI(fid, dtg_warn_flag);
             
             parsed = 0;
             
@@ -393,9 +403,9 @@ for iDatag = datagToParse'
             if ~( isempty(p.Results.OutputFields) || any(strcmp(dgm_type_code,p.Results.OutputFields)) )
                 continue;
             end
-            try iCPO=iCPO+1; catch, iCPO=1; end
+            try iCPO=iCPO+1; catch, iCPO=1; dtg_warn_flag = 1; end
             
-            KMALLdata.EMdgmCPO(iCPO) = CFF_read_EMdgmCPO(fid);
+            KMALLdata.EMdgmCPO(iCPO) = CFF_read_EMdgmCPO(fid, dtg_warn_flag);
             
             parsed = 1;
             
@@ -404,9 +414,9 @@ for iDatag = datagToParse'
             if ~( isempty(p.Results.OutputFields) || any(strcmp(dgm_type_code,p.Results.OutputFields)) )
                 continue;
             end
-            try iCHE=iCHE+1; catch, iCHE=1; end
+            try iCHE=iCHE+1; catch, iCHE=1; dtg_warn_flag = 1; end
            
-            KMALLdata.EMdgmCHE(iCHE) = CFF_read_EMdgmCHE(fid);
+            KMALLdata.EMdgmCHE(iCHE) = CFF_read_EMdgmCHE(fid, dtg_warn_flag);
             
             parsed = 1;
             
@@ -418,10 +428,10 @@ for iDatag = datagToParse'
             if ~( isempty(p.Results.OutputFields) || any(strcmp(dgm_type_code,p.Results.OutputFields)) )
                 continue;
             end
-            try iFCF=iFCF+1; catch, iFCF=1; end
+            try iFCF=iFCF+1; catch, iFCF=1; dtg_warn_flag = 1; end
             
             % in progress...
-            % KMALLdata.EMdgmFCF(iFCF) = CFF_read_EMdgmFCF(fid);
+            % KMALLdata.EMdgmFCF(iFCF) = CFF_read_EMdgmFCF(fid, dtg_warn_flag);
             
             parsed = 0;
             

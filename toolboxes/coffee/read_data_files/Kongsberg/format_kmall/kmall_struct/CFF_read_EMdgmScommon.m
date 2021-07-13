@@ -1,5 +1,7 @@
 function out_struct = CFF_read_EMdgmScommon(fid)
 % Sensor (S) output datagram - common part for all external sensors.
+%
+% Verified correct for kmall versions H,I
 
 % Size in bytes of current struct.
 out_struct.numBytesCmnPart = fread(fid,1,'uint16');
@@ -22,8 +24,8 @@ out_struct.sensorSystem = fread(fid,1,'uint16');
 %
 % Bits 0 -7 common to all sensors and #MRZ sensor status:
 % Bit number 	Sensor data
-% 0             0 = Data OK
-%               1 = Data OK and sensor is chosen as active
+% 0             For rev H: 0 = Data OK, 1 = Data OK and sensor is chosen as active
+%               For rev I: 1 = Sensor is chosen as active
 %               #SCL only: 1 = Valid data and 1PPS OK
 % 1             0
 % 2             0 = Data OK
@@ -37,7 +39,7 @@ out_struct.sensorSystem = fread(fid,1,'uint16');
 %               1 = Velocity calculated by PU
 % 7             0
 %
-% For #SPO (position) and CPO (position compatibility) datagrams, bit 8 - 15:
+% For #SPO (position) and CPO (position compatibility) datagrams, bit 8-15:
 %
 % Bit number 	Sensor data
 % 8             0

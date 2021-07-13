@@ -612,10 +612,10 @@ for iF = 1:nStruct
                             Mag_tmp = int16(Mag_tmp/mag_fact);
                     end
                     
-                    % store amplitude data on memmapped file
+                    % finished reading this ping's WC data. Store the data in the
+                    % appropriate binary file, at the appropriate ping, through the
+                    % memory mapping
                     fData.AP_SBP_SampleAmplitudes{iG}.Data.val(:,:,iP-ping_group_start(iG)+1) = Mag_tmp;
-                    
-                    % store phase data on memmapped file
                     if ~flags.magnitudeOnly
                         fData.AP_SBP_SamplePhase{iG}.Data.val(:,:,iP-ping_group_start(iG)+1) = Ph_tmp;
                     end

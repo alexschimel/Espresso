@@ -1,4 +1,4 @@
-function out_struct = CFF_read_EMdgmSKM(fid)
+function out_struct = CFF_read_EMdgmSKM(fid, dgmVersion_warning_flag)
 % #SKM - data from attitude and attitude velocity sensors.
 %
 % Datagram may contain several sensor measurements. The number of samples
@@ -9,19 +9,21 @@ function out_struct = CFF_read_EMdgmSKM(fid)
 % to the KM binary format by the PU. All parameters are uncorrected. For
 % processing of data, installation offsets, installation angles and
 % attitude values are needed to correct the data for motion.
+%
+% Verified correct for kmall versions H,I
 
 out_struct.header = CFF_read_EMdgmHeader(fid);
 
-if out_struct.header.dgmVersion == 1
-    % definition for SKM_VERSION 1
+if ~any(out_struct.header.dgmVersion==[1]) && dgmVersion_warning_flag
+    % definition valid for SKM_VERSION 1 (kmall versions H,I)
+    warning('#SKM datagram version (%i) unsupported. Continue reading but there may be issues.',out_struct.header.dgmVersion);
+end
 
-    out_struct.infoPart = CFF_read_EMdgmSKMinfo(fid);
-    
-    Nsamp = out_struct.infoPart.numSamplesArray;
-    for iS = 1:Nsamp
-        out_struct.sample(iS) = CFF_read_EMdgmSKMsample_def(fid);
-    end
-    
+out_struct.infoPart = CFF_read_EMdgmSKMinfo(fid);
+
+Nsamp = out_struct.infoPart.numSamplesArray;
+for iS = 1:Nsamp
+    out_struct.sample(iS) = CFF_read_EMdgmSKMsample_def(fid);
 end
 
 end
@@ -29,6 +31,8 @@ end
 
 function out_struct = CFF_read_EMdgmSKMinfo(fid)
 % Sensor (S) output datagram - info of KMB datagrams.
+%
+% Verified correct for kmall versions H,I
 
 % Size in bytes of current struct. Used for denoting size of rest of
 % datagram in cases where only one datablock is attached.
@@ -44,8 +48,7 @@ out_struct.sensorSystem = fread(fid,1,'uint8');
 % sensorDataContents.
 % Bits 0 -7 common to all sensors and #MRZ sensor status:
 % Bit number 	Sensor data
-% 0             0 = Data OK
-%               1 = Data OK and sensor is chosen as active
+% 0             1 = Sensor is chosen as active
 % 1             0
 % 2             0 = Data OK
 %               1 = Reduced performance
@@ -67,7 +70,6 @@ out_struct.sensorStatus = fread(fid,1,'uint8');
 % 5 	Seapath binary 23
 % 6 	Seapath binary 26
 % 7 	POS M/V GRP 102/103
-% 8 	Coda Octopus MCOM 
 out_struct.sensorInputFormat = fread(fid,1,'uint16'); 
 
 % Number of KM binary sensor samples added in this datagram. 
@@ -94,7 +96,8 @@ out_struct.numBytesPerSample = fread(fid,1,'uint16');
 % 0             Horizontal position and velocity
 % 1             Roll and pitch
 % 2             Heading
-% 3             Heave and vertical velocity
+% 3             In Rev H: Heave and vertical velocity
+%               In Rev I: Heave
 % 4             Acceleration
 % 5             Error fields
 % 6             Delayed heave 
@@ -106,6 +109,8 @@ function out_struct = CFF_read_EMdgmSKMsample_def(fid)
 % #SKM - all available data.
 %
 % An implementation of the KM Binary sensor input format. 
+%
+% Verified correct for kmall versions H,I
 
 out_struct.KMdefault = CFF_read_KMbinary(fid);
 out_struct.delayedHeave = CFF_read_KMdelayedHeave(fid);
@@ -117,6 +122,8 @@ function out_struct = CFF_read_KMbinary(fid)
 % #SKM - Sensor attitude data block. Data given timestamped, not corrected.
 %
 % See Coordinate systems for definition of positive angles and axis. 
+%
+% Verified correct for kmall versions H,I
 
 % #KMB 
 out_struct.dgmType = fscanf(fid,'%c',4);
@@ -156,7 +163,8 @@ out_struct.time_nanosec = fread(fid,1,'uint32');
 % 2             Heading
 % 3             Heave and vertical velocity
 % 4             Acceleration
-% 5             Error fields
+% 5             For Rev H: Error fields
+%               For Rev I: Delayed heave
 % 6             Delayed heave
 % 
 % Reduced performance:
@@ -167,7 +175,8 @@ out_struct.time_nanosec = fread(fid,1,'uint32');
 % 18            Heading
 % 19            Heave and vertical velocity
 % 20            Acceleration
-% 21            Error fields
+% 21            For Rev H: Error fields
+%               For Rev I: Delayed heave
 % 22            Delayed heave 
 out_struct.status = fread(fid,1,'uint32');
 
@@ -247,6 +256,8 @@ end
 
 function out_struct = CFF_read_KMdelayedHeave(fid)
 % #SKM - delayed heave. Included if available from sensor. 
+%
+% Verified correct for kmall versions H,I
 
 out_struct.time_sec = fread(fid,1,'uint32');
 out_struct.time_nanosec = fread(fid,1,'uint32');

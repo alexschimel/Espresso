@@ -27,5 +27,3 @@ if isempty(datagramSource)
         error('can''t find a suitable datagramSource')
     end
 end
-
-

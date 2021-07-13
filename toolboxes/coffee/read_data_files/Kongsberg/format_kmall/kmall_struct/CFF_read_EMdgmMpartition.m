@@ -11,6 +11,8 @@ function out_struct = CFF_read_EMdgmMpartition(fid)
 % .kmall files will therefore always have numOfDgm = 1 and dgmNum = 1, and
 % may have size > 64 kB. The maximum number of partitions from PU is given
 % by MAX_NUM_MWC_DGMS and MAX_NUM_MRZ_DGMS.
+%
+% Verified correct for kmall versions H,I
 
 % Number of datagram parts to re-join to get one Multibeam datagram. E.g.
 % 3.  

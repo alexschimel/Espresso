@@ -6,6 +6,8 @@ function out_struct = CFF_read_EMdgmMbody(fid)
 % in different system configurations. Each vertical column is data from one
 % datagram. See index description table and figure below for more
 % information. See the chapter for #MRZ datagram, for more details.
+%
+% Verified correct for kmall versions H,I
 
 % Used for denoting size of current struct, EMdgmMbody_def. 
 out_struct.numBytesCmnPart = fread(fid,1,'uint16'); 

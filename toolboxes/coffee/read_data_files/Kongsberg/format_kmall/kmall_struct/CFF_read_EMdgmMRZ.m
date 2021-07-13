@@ -1,4 +1,4 @@
-function out_struct = CFF_read_EMdgmMRZ(fid)
+function out_struct = CFF_read_EMdgmMRZ(fid, dgmVersion_warning_flag)
 % #MRZ - Multibeam Raw Range and Depth datagram. The datagram also contains
 % seabed image data.
 %
@@ -17,45 +17,48 @@ function out_struct = CFF_read_EMdgmMRZ(fid)
 % coordinate systems. Reference points are also described in Reference
 % points and offsets. Explanation of the xyz reference points is also
 % illustrated in the figure below.
+%
+% Verified correct for kmall versions H,I
 
 out_struct.header = CFF_read_EMdgmHeader(fid);
 
-if out_struct.header.dgmVersion == 2
-    % definition for MRZ_VERSION 2
-    
-    out_struct.partition = CFF_read_EMdgmMpartition(fid);
-    out_struct.cmnPart   = CFF_read_EMdgmMbody(fid);
-    out_struct.pingInfo  = CFF_read_EMdgmMRZ_pingInfo(fid);
-    
-    Ntx = out_struct.pingInfo.numTxSectors;
-    for iTx = 1:Ntx
-        out_struct.sectorInfo(iTx) = CFF_read_EMdgmMRZ_txSectorInfo(fid);
-    end
-    
-    out_struct.rxInfo = CFF_read_EMdgmMRZ_rxInfo(fid);
-    
-    Nd = out_struct.rxInfo.numExtraDetectionClasses;
-    for iD = 1:Nd
-        out_struct.extraDetClassInfo(iD) = CFF_read_EMdgmMRZ_extraDetClassInfo(fid);
-    end
-    
-    Nrx = out_struct.rxInfo.numSoundingsMaxMain;
-    out_struct.sounding = CFF_read_EMdgmMRZ_sounding(fid, Nrx+Nd);
-    
-    % Seabed image sample amplitude, in 0.1 dB. Actual number of seabed
-    % image samples (SIsample_desidB) to be found by summing parameter
-    % SInumSamples in struct EMdgmMRZ_sounding_def for all beams. Seabed
-    % image data are raw beam sample data taken from the RX beams. The data
-    % samples are selected based on the bottom detection ranges. First
-    % sample for each beam is the one with the lowest range. The centre
-    % sample from each beam is geo referenced (x, y, z data from the
-    % detections). The BS corrections applied at the centre sample are the
-    % same as used for reflectivity2_dB (struct EMdgmMRZ_sounding_def).
-    Ns = [out_struct.sounding.SInumSamples];
-    for iRx = 1:(Nrx+Nd)
-        out_struct.SIsample_desidB{iRx} = fread(fid,Ns(iRx),'int16');
-    end
-    
+if ~any(out_struct.header.dgmVersion==[2,3]) && dgmVersion_warning_flag
+    % definition valid for MRZ_VERSION 2 (kmall version H) and 3 (kmall
+    % version I)
+    warning('#MRZ datagram version (%i) unsupported. Continue reading but there may be issues.',out_struct.header.dgmVersion);
+end
+
+out_struct.partition = CFF_read_EMdgmMpartition(fid);
+out_struct.cmnPart   = CFF_read_EMdgmMbody(fid);
+out_struct.pingInfo  = CFF_read_EMdgmMRZ_pingInfo(fid);
+
+Ntx = out_struct.pingInfo.numTxSectors;
+for iTx = 1:Ntx
+    out_struct.sectorInfo(iTx) = CFF_read_EMdgmMRZ_txSectorInfo(fid);
+end
+
+out_struct.rxInfo = CFF_read_EMdgmMRZ_rxInfo(fid);
+
+Nd = out_struct.rxInfo.numExtraDetectionClasses;
+for iD = 1:Nd
+    out_struct.extraDetClassInfo(iD) = CFF_read_EMdgmMRZ_extraDetClassInfo(fid);
+end
+
+Nrx = out_struct.rxInfo.numSoundingsMaxMain;
+out_struct.sounding = CFF_read_EMdgmMRZ_sounding(fid, Nrx+Nd);
+
+% Seabed image sample amplitude, in 0.1 dB. Actual number of seabed
+% image samples (SIsample_desidB) to be found by summing parameter
+% SInumSamples in struct EMdgmMRZ_sounding_def for all beams. Seabed
+% image data are raw beam sample data taken from the RX beams. The data
+% samples are selected based on the bottom detection ranges. First
+% sample for each beam is the one with the lowest range. The centre
+% sample from each beam is geo referenced (x, y, z data from the
+% detections). The BS corrections applied at the centre sample are the
+% same as used for reflectivity2_dB (struct EMdgmMRZ_sounding_def).
+Ns = [out_struct.sounding.SInumSamples];
+for iRx = 1:(Nrx+Nd)
+    out_struct.SIsample_desidB{iRx} = fread(fid,Ns(iRx),'int16');
 end
 
 end
@@ -63,6 +66,8 @@ end
 function out_struct = CFF_read_EMdgmMRZ_pingInfo(fid)
 % #MRZ - ping info. Information on vessel/system level, i.e. information
 % common to all beams in the current ping.
+%
+% Verified correct for kmall versions H,I
 
 % Number of bytes in current struct.
 out_struct.numBytesInfoData = fread(fid,1,'uint16');
@@ -98,7 +103,8 @@ out_struct.depthMode = fread(fid,1,'uint8');
 % not used (when depth mode is auto).
 out_struct.subDepthMode = fread(fid,1,'uint8');
 
-% Achieved distance between swaths, in percent relative to required swath distance.
+% Achieved distance between swaths, in percent relative to required swath
+% distance. 
 % 0 = function is not used
 % 100 = achieved swath distance equals required swath distance.
 out_struct.distanceBtwSwath = fread(fid,1,'uint8');
@@ -340,6 +346,8 @@ function out_struct = CFF_read_EMdgmMRZ_txSectorInfo(fid)
 %
 % Information specific to each transmitting sector. sectorInfo is repeated
 % numTxSectors (Ntx)- times in datagram.
+%
+% Verified correct for kmall versions H,I
 
 % TX sector index number, used in the sounding section. Starts at 0.
 out_struct.txSectorNumb = fread(fid,1,'uint8');
@@ -420,6 +428,8 @@ function out_struct = CFF_read_EMdgmMRZ_rxInfo(fid)
 % #MRZ - receiver specific information.
 %
 % Information specific to the receiver unit used in this swath.
+%
+% Verified correct for kmall versions H,I
 
 % Bytes in current struct.
 out_struct.numBytesRxInfo = fread(fid,1,'uint16');
@@ -467,6 +477,8 @@ function out_struct = CFF_read_EMdgmMRZ_extraDetClassInfo(fid)
 % #MRZ - Extra detection class information.
 %
 % To be entered in loop numExtraDetectionClasses - times.
+%
+% Verified correct for kmall versions H,I
 
 % Number of extra detection in this class.
 out_struct.numExtraDetInClass = fread(fid,1,'uint16');
@@ -487,6 +499,8 @@ function out_struct = CFF_read_EMdgmMRZ_sounding(fid, N)
 % Also contains information necessary to read seabed image following this
 % datablock (number of samples in SI etc.). To be entered in loop
 % (numSoundingsMaxMain + numExtraDetections) times.
+%
+% Verified correct for kmall versions H,I
 
 structSize = 120;
 data = fread(fid,N.*structSize,'uint8=>uint8');

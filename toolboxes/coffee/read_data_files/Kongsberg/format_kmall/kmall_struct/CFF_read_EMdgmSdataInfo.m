@@ -3,6 +3,8 @@ function out_struct = CFF_read_EMdgmSdataInfo(fid)
 %
 % Info about data from sensor. Part included if data from sensor appears
 % multiple times in a datagram.
+%
+% Verified correct for kmall versions H,I
 
 % Size in bytes of current struct. 
 out_struct.numBytesInfoPart = fread(fid,1,'uint16');
