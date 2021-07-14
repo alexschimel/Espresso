@@ -45,6 +45,15 @@ for iD = 1:Nd
 end
 
 Nrx = out_struct.rxInfo.numSoundingsMaxMain;
+
+% DEV NOTE: Normally, if following stricly the "struct" organization of
+% kmall data, we would read ONE "sounding" struct per beam, using a for
+% loop over all soundings. However, this was taking too much time because
+% there are a lot of fields to read in that structure and a lot of beams
+% per ping. So, just for this one, we're doing things differently. We're
+% recording a SINGLE "sounding" struct, containing arrays for each
+% soundings, which can be read efficiently because the total size is the
+% same for all beams.
 out_struct.sounding = CFF_read_EMdgmMRZ_sounding(fid, Nrx+Nd);
 
 % Seabed image sample amplitude, in 0.1 dB. Actual number of seabed

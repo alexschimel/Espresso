@@ -36,11 +36,9 @@ out_struct.rxInfo = CFF_read_EMdgmMWCrxInfo(fid);
 % 0             numBytesPerBeamEntry + numSampleData* size(sampleAmplitude05dB_p)
 % 1             numBytesPerBeamEntry + numSampleData* size(sampleAmplitude05dB_p) + numSampleData* size(EMdgmMWCrxBeamPhase1_def)
 % 2             numBytesPerBeamEntry + numSampleData* size(sampleAmplitude05dB_p) + numSampleData* size(EMdgmMWCrxBeamPhase2_def)
-Nrx = out_struct.rxInfo.numBeams;
 phaseFlag = out_struct.rxInfo.phaseFlag;
-for iRx = 1:Nrx
-    out_struct.beamData_p(iRx) = CFF_read_EMdgmMWCrxBeamData(fid, phaseFlag);
-end
+Nrx = out_struct.rxInfo.numBeams;
+out_struct.beamData_p = CFF_read_EMdgmMWCrxBeamData(fid, phaseFlag, Nrx);
 
 end
 
@@ -107,7 +105,7 @@ out_struct.numBytesRxInfo = fread(fid,1,'uint16');
 out_struct.numBeams = fread(fid,1,'uint16');
 
 % Bytes in EMdgmMWCrxBeamData struct, excluding sample amplitudes (which
-% have varying lengths) 
+% have varying lengths)
 out_struct.numBytesPerBeamEntry = fread(fid,1,'uint8');
 
 % 0 = off
@@ -135,78 +133,84 @@ out_struct.soundVelocity_mPerSec = fread(fid,1,'float');
 end
 
 
-function out_struct = CFF_read_EMdgmMWCrxBeamData(fid, phaseFlag)
+function out_struct = CFF_read_EMdgmMWCrxBeamData(fid, phaseFlag, Nrx)
 % #MWC - data block 2: receiver, specific info for each beam.
 %
 % Verified correct for kmall versions H,I
 
-out_struct.beamPointAngReVertical_deg = fread(fid,1,'float');
-
-out_struct.startRangeSampleNum = fread(fid,1,'uint16');
-
-% Two way range in samples. Approximation to calculated distance from tx to
-% bottom detection [meters] = soundVelocity_mPerSec *
-% detectedRangeInSamples / (sampleFreq_Hz * 2). The detected range is set
-% to zero when the beam has no bottom detection. Replaced by
-% detectedRangeInSamplesHighResolution for higher precision.
-out_struct.detectedRangeInSamples = fread(fid,1,'uint16');
-
-out_struct.beamTxSectorNum = fread(fid,1,'uint16');
-
-% Number of sample data for current beam. Also denoted Ns.
-out_struct.numSampleData = fread(fid,1,'uint16');
-
-% The same information as in detectedRangeInSamples with higher resolution.
-% Two way range in samples. Approximation to calculated distance from tx to
-% bottom detection [meters] = soundVelocity_mPerSec *
-% detectedRangeInSamples / (sampleFreq_Hz * 2). The detected range is set
-% to zero when the beam has no bottom detection.
-out_struct.detectedRangeInSamplesHighResolution = fread(fid,1,'float');
-
-Ns = out_struct.numSampleData;
-
-% ------------------ OPTION 1: ACTUALLY READ DATA -------------------------
-%
-% % Pointer to start of array with Water Column data. Lenght of array =
-% % numSampleData. Sample amplitudes in 0.5 dB resolution. Size of array is
-% % numSampleData * int8_t. Amplitude array is followed by phase information
-% % if phaseFlag >0. Use (numSampleData * int8_t) to jump to next beam, or to
-% % start of phase info for this beam, if phase flag > 0.
-% out_struct.sampleAmplitude05dB_p = fread(fid,Ns,'int8');
-% 
-% switch phaseFlag
-%     % #MWC - Beam sample phase info, specific for each beam and water
-%     % column sample. numBeams * numSampleData = (Nrx * Ns) entries.
-%     case 1
-%         % Only added to datagram if phaseFlag = 1. Total size of phase
-%         % block is numSampleData * int8_t.
-%         
-%         % Rx beam phase in 180/128 degree resolution.
-%         out_struct.rxBeamPhase = fread(fid,Ns,'int8');
-%         
-%     case 2
-%         % Only added to datagram if phaseFlag = 2. Total size of phase
-%         % block is numSampleData * int16_t.
-%         
-%         % Rx beam phase in 0.01 degree resolution.
-%         out_struct.rxBeamPhase = fread(fid,Ns,'int16');
-%         
-% end
-%
-% ------------------ END OF OPTION 1 --------------------------------------
-
-% ------------------ OPTION 2: SAVING POSITION IN FILE --------------------
-% instead of reading file as above, we save the position in file for later
-% reading.
-pif = ftell(fid);
-out_struct.sampleDataPositionInFile = pif;
-
-% we still need to fast-forward to the end of the data section so that
-% reading can continue from there
-dataBlockSizeInBytes = Ns.*(1+phaseFlag);
-fseek(fid,dataBlockSizeInBytes,0);
-
-% ------------------ END OF OPTION 2 --------------------------------------
-
+for iRx = 1:Nrx
+    
+    out_struct.beamPointAngReVertical_deg(iRx) = fread(fid,1,'float');
+    
+    out_struct.startRangeSampleNum(iRx) = fread(fid,1,'uint16');
+    
+    % Two way range in samples. Approximation to calculated distance from
+    % tx to bottom detection [meters] = soundVelocity_mPerSec *
+    % detectedRangeInSamples / (sampleFreq_Hz * 2). The detected range is
+    % set to zero when the beam has no bottom detection. Replaced by
+    % detectedRangeInSamplesHighResolution for higher precision.
+    out_struct.detectedRangeInSamples(iRx) = fread(fid,1,'uint16');
+    
+    out_struct.beamTxSectorNum(iRx) = fread(fid,1,'uint16');
+    
+    % Number of sample data for current beam. Also denoted Ns.
+    out_struct.numSampleData(iRx) = fread(fid,1,'uint16');
+    
+    % The same information as in detectedRangeInSamples with higher
+    % resolution. Two way range in samples. Approximation to calculated
+    % distance from tx to bottom detection [meters] = soundVelocity_mPerSec
+    % * detectedRangeInSamples / (sampleFreq_Hz * 2). The detected range is
+    % set to zero when the beam has no bottom detection.
+    out_struct.detectedRangeInSamplesHighResolution(iRx) = fread(fid,1,'float');
+    
+    Ns = out_struct.numSampleData(iRx);
+    
+    
+    % ------------------ OPTION 1: ACTUALLY READ DATA ---------------------
+    %
+    % % Pointer to start of array with Water Column data. Lenght of array =
+    % % numSampleData. Sample amplitudes in 0.5 dB resolution. Size of
+    % % array is numSampleData * int8_t. Amplitude array is followed by
+    % % phase information if phaseFlag >0. Use (numSampleData * int8_t) to
+    % % jump to next beam, or to start of phase info for this beam, if
+    % % phase flag > 0. 
+    % out_struct.sampleAmplitude05dB_p = fread(fid,Ns,'int8');
+    %
+    % switch phaseFlag
+    %     % #MWC - Beam sample phase info, specific for each beam and water
+    %     % column sample. numBeams * numSampleData = (Nrx * Ns) entries.
+    %     case 1
+    %         % Only added to datagram if phaseFlag = 1. Total size of
+    %         % phase block is numSampleData * int8_t.
+    %
+    %         % Rx beam phase in 180/128 degree resolution.
+    %         out_struct.rxBeamPhase = fread(fid,Ns,'int8');
+    %
+    %     case 2
+    %         % Only added to datagram if phaseFlag = 2. Total size of
+    %         % phase block is numSampleData * int16_t.
+    %
+    %         % Rx beam phase in 0.01 degree resolution.
+    %         out_struct.rxBeamPhase = fread(fid,Ns,'int16');
+    %
+    % end
+    %
+    % ------------------ END OF OPTION 1 ----------------------------------
+    
+    
+    % ------------------ OPTION 2: SAVING POSITION IN FILE ----------------
+    % instead of reading file as above, we save the position in file for
+    % later reading. 
+    pif = ftell(fid);
+    out_struct.sampleDataPositionInFile(iRx) = pif;
+    
+    % we still need to fast-forward to the end of the data section so that
+    % reading can continue from there
+    dataBlockSizeInBytes = Ns.*(1+phaseFlag);
+    fseek(fid,dataBlockSizeInBytes,0);
+    
+    % ------------------ END OF OPTION 2 ----------------------------------
+    
+end
 
 end

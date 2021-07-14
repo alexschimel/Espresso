@@ -13,7 +13,7 @@
 function clean_delete_fdata(wc_dir)
 
 % if wc_dir does not exist, exit here
-if ~isdir(wc_dir)
+if ~isfolder(wc_dir)
     return
 end
 
@@ -70,27 +70,42 @@ for ifi = 1:numel(fields)
     end
 end
 
-% next delete all binary data, and the fData file itself
+% next delete all binary data files
 dname = unique(dname);
 fclose all;
 for id = 1:numel(dname)
-    
-    [folder,~,~] = fileparts(dname{id});
-    
-    if isfile(fullfile(folder,'fdata.mat'))
-        delete(fullfile(folder,'fdata.mat'));
-    end
-    
     if isfile(dname{id})
         try
-            %fprintf('\nDeleting file %s\n',dname{id});
             delete(dname{id});
         catch
-            fprintf('ERROR while deleting file %s\n',dname{id});
+            fprintf('Error - Could not delete file %s.\n',dname{id});
         end
     end
-    
 end
 
-% finally, delete the folder
-rmdir(wc_dir);
+% delete fData
+try
+    delete(mat_fdata_file);
+catch
+    fprintf('Error - Could not delete file %s.\n',mat_fdata_file);
+end
+
+% delete any other file in the folder
+listing = dir(wc_dir);
+for ii = 1:numel(listing)
+    if ~listing(ii).isdir
+        filename = fullfile(listing(ii).folder, listing(ii).name);
+        try
+            delete(filename);
+        catch
+            fprintf('Error - Could not delete file %s.\n',filename);
+        end
+    end
+end
+
+% finally, delete the folder.
+try
+    rmdir(wc_dir);
+catch
+    fprintf('Error - Could not delete folder %s.\n',wc_dir);
+end

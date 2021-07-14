@@ -254,22 +254,44 @@ for iDatag = datagToParse'
             
             if DEBUG
                 
+                % save pif
+                pif_save = ftell(fid);
+                
                 % get water-column amplitude for this ping and phase if it
                 % exists)
                 max_samples = max([KMALLdata.EMdgmMWC(iMWC).beamData_p.startRangeSampleNum] ...
                     + [KMALLdata.EMdgmMWC(iMWC).beamData_p.numSampleData]);
-                num_beams = KMALLdata.EMdgmMWC(iMWC).rxInfo.numBeams;
-                WC = nan(max_samples, num_beams);
-                Ph = nan(max_samples, num_beams);
+                nBeams = KMALLdata.EMdgmMWC(iMWC).rxInfo.numBeams;
+                Mag_tmp = nan(max_samples, nBeams);
+                Ph_tmp = nan(max_samples, nBeams);
                 phaseFlag = KMALLdata.EMdgmMWC(iMWC).rxInfo.phaseFlag;
-                for iB = 1:num_beams
-                    startRangeSampleNum = KMALLdata.EMdgmMWC(iMWC).beamData_p(iB).startRangeSampleNum;
-                    numSampleData = KMALLdata.EMdgmMWC(iMWC).beamData_p(iB).numSampleData;
-                    WC(startRangeSampleNum+[1:numSampleData],iB) = KMALLdata.EMdgmMWC(iMWC).beamData_p(iB).sampleAmplitude05dB_p;
-                    if phaseFlag
-                        Ph(startRangeSampleNum+[1:numSampleData],iB) = KMALLdata.EMdgmMWC(iMWC).beamData_p(iB).rxBeamPhase;
+                for iB = 1:nBeams
+                    dpif = KMALLdata.EMdgmMWC(iMWC).beamData_p.sampleDataPositionInFile(iB);
+                    fseek(fid,dpif,-1);
+                    sR = KMALLdata.EMdgmMWC(iMWC).beamData_p.startRangeSampleNum(iB);
+                    nS = KMALLdata.EMdgmMWC(iMWC).beamData_p.numSampleData(iB);
+                    if phaseFlag == 0
+                        % Only nS records of amplitude of 1 byte
+                        Mag_tmp(sR+1:sR+nS,iB) = fread(fid, nS, 'int8=>int8',0);
+                    elseif phaseFlag == 1
+                        % XXX this case was not tested yet. Find data for it
+                        % nS records of amplitude of 1 byte alternated with nS
+                        % records of phase of 1 byte
+                        Mag_tmp(sR+1:sR+nS,iB) = fread(fid, nS, 'int8=>int8',1);
+                        fseek(fid,dpif+1,-1); % rewind to after the first amplitude record
+                        Ph_tmp(sR+1:sR+nS,iB) = fread(fid, nS, 'int8=>int8',1);
+                    else
+                        % XXX this case was not tested yet. Find data for it
+                        % nS records of amplitude of 1 byte alternated with nS
+                        % records of phase of 2 bytes
+                        Mag_tmp(sR+1:sR+nS,iB) = fread(fid, nS, 'int8=>int8',2);
+                        fseek(fid,dpif+1,-1); % rewind to after the first amplitude record
+                        Ph_tmp(sR+1:sR+nS,iB) = fread(fid, nS, 'int16=>int16',1);
                     end
                 end
+                
+                % reset pif
+                fseek(fid, pif_save,-1);
                 
                 % plot
                 figure;
@@ -343,7 +365,7 @@ for iDatag = datagToParse'
                 ylabel('depth (m)'); xlabel('sound velocity (m/s)'); grid on
                 subplot(132); plot(temp,-depth,'.-');
                 ylabel('depth (m)'); xlabel('temperature (C)'); grid on
-                title('KMALL Sound Velocity Profile datagram contents')
+                title(sprintf('%s\nSound Velocity Profile datagram contents',KMALLdata.KMALLfilename));
                 subplot(133); plot(salinity,-depth,'.-');
                 ylabel('depth (m)'); xlabel('salinity'); grid on
             end
