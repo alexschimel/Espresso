@@ -12,7 +12,7 @@
 % kmall those two swathes are recorded with the same ping counter because
 % they were produced at about the same time.
 % To deal with this, we're going to create new "swath numbers" based on the
-% original ping number and swath counter for a ping. 
+% original ping number and swath counter for a ping.
 % For example a ping #832 made up of four swathes counted 0-3 will have new
 % "swath numbers" of 832.00, 832.01, 832.02, and 832.03. We will maintain
 % the current "ping" nomenclature in fData, but using those swath numbers.
@@ -171,6 +171,9 @@ for iF = 1:nStruct
     %% '#MRZ - Multibeam (M) raw range (R) and depth(Z) datagram'
     if isfield(KMALLdata,'EMdgmMRZ') && ~isfield(fData,'X8_1D_Date')
         
+        % DEV NOTE: note we don't decimate beam data here as we do for
+        % water-column data
+        
         % extract data
         header  = [KMALLdata.EMdgmMRZ.header];
         cmnPart  = [KMALLdata.EMdgmMRZ.cmnPart];
@@ -211,34 +214,51 @@ for iF = 1:nStruct
         % initialize data per beam and ping
         fData.X8_BP_DepthZ                       = nan(maxnBeams,nSwaths);
         fData.X8_BP_AcrosstrackDistanceY         = nan(maxnBeams,nSwaths);
-        fData.X8_BP_AlongtrackDistanceX          = nan(maxnBeams,nSwaths); % unused anyway
-        fData.X8_BP_DetectionWindowLength        = nan(maxnBeams,nSwaths); % unused anyway
-        fData.X8_BP_QualityFactor                = nan(maxnBeams,nSwaths); % unused anyway
-        fData.X8_BP_BeamIncidenceAngleAdjustment = nan(maxnBeams,nSwaths); % unused anyway
-        fData.X8_BP_DetectionInformation         = nan(maxnBeams,nSwaths); % unused anyway
-        fData.X8_BP_RealTimeCleaningInformation  = nan(maxnBeams,nSwaths); % unused anyway
+        fData.X8_BP_AlongtrackDistanceX          = NaN; % unused anyway
+        fData.X8_BP_DetectionWindowLength        = NaN; % unused anyway
+        fData.X8_BP_QualityFactor                = NaN; % unused anyway
+        fData.X8_BP_BeamIncidenceAngleAdjustment = NaN; % unused anyway
+        fData.X8_BP_DetectionInformation         = NaN; % unused anyway
+        fData.X8_BP_RealTimeCleaningInformation  = NaN; % unused anyway
         fData.X8_BP_ReflectivityBS               = nan(maxnBeams,nSwaths);
         fData.X8_B1_BeamNumber                   = (1:maxnBeams)';
         
         % record data per beam and ping
         for iS = 1:nSwaths
-            SD = sounding(iC==iS); % soundings data for all datagrams making up that swath
-            iB_tot = 0; % total number of beams recorded so far for that swath
-            for iD = 1:numel(SD)
-                nRx = numel(SD(iD).soundingIndex); % number of beams in this datagram
-                iB = iB_tot+(1:nRx); % indices of beams for data storage
-                fData.X8_BP_DepthZ(iB,iS)               = SD(iD).z_reRefPoint_m;
-                fData.X8_BP_AcrosstrackDistanceY(iB,iS) = SD(iD).y_reRefPoint_m;
-                fData.X8_BP_ReflectivityBS(iB,iS)       = SD(iD).reflectivity1_dB;
-                iB_tot = iB_tot + nRx; % update total number of beams recorded so far for that swath
+            dtg_iS = find(iC==iS); % indices of datagrams for that swath
+            nB_tot = 0; % initialize total number of beams recorded so far for that swath
+            for iD = 1:numel(dtg_iS)
+                SD = sounding(dtg_iS(iD)); % soundings data for that datagram
+                nRx = numel(SD.soundingIndex); % total number of beams in this datagram
+                iB_dst = nB_tot + (1:nRx); % indices of beams in output arrays
+                fData.X8_BP_DepthZ(iB_dst,iS)               = SD.z_reRefPoint_m;
+                fData.X8_BP_AcrosstrackDistanceY(iB_dst,iS) = SD.y_reRefPoint_m;
+                fData.X8_BP_ReflectivityBS(iB_dst,iS)       = SD.reflectivity1_dB;
+                nB_tot = nB_tot + nRx; % update total number of beams recorded so far for this swath
             end
         end
         
+        % debug graph
+        disp_wc = 0;
+        if disp_wc
+            f = figure();
+            ax_z = axes(f,'outerposition',[0 0.66 1 0.3]);
+            imagesc(ax_z, -fData.X8_BP_DepthZ);
+            colorbar(ax_z); grid on; title(ax_z, 'bathy'); colormap(ax_z,'jet');
+            ax_y = axes(f,'outerposition',[0 0.33 1 0.3]);
+            imagesc(ax_y, fData.X8_BP_AcrosstrackDistanceY);
+            colorbar(ax_y); grid on; title(ax_y, 'across-track distance');
+            ax_bs = axes(f,'outerposition',[0 0 1 0.3]);
+            imagesc(ax_bs, fData.X8_BP_ReflectivityBS);
+            caxis(ax_bs, [prctile(fData.X8_BP_ReflectivityBS(:),1), prctile(fData.X8_BP_ReflectivityBS(:),99)]);
+            colorbar(ax_bs); grid on; title(ax_bs, 'BS (scaled 1st-99th percentile)'); colormap(ax_bs,'gray');
+        end
+
     end
     
     %% '#MWC - Multibeam (M) water (W) column (C) datagram'
     if isfield(KMALLdata,'EMdgmMWC') && ~isfield(fData,'WC_1D_Date')
-
+        
         % extract data
         header = [KMALLdata.EMdgmMWC.header];
         cmnPart = [KMALLdata.EMdgmMWC.cmnPart];
@@ -270,8 +290,9 @@ for iF = 1:nStruct
         fData.WC_1P_Date = dtg_date(iFirstDatagram); % date per swath
         fData.WC_1P_TimeSinceMidnightInMilliseconds = dtg_TSMIM(iFirstDatagram); % time per swath
         
-        % data per ping from first datagram
-        % ideally, check consistency between datagrams for a given ping
+        % data per ping
+        % here taken from first datagram. Ideally, check consistency
+        % between datagrams for a given ping
         fData.WC_1P_PingCounter               = swath_counter;
         fData.WC_1P_NumberOfDatagrams         = NaN; % unused anyway
         fData.WC_1P_NumberOfTransmitSectors   = NaN; % unused anyway
@@ -288,35 +309,14 @@ for iF = 1:nStruct
         fData.WC_TP_CenterFrequency      = NaN; % unused anyway
         fData.WC_TP_TransmitSectorNumber = NaN; % unused anyway
         
-        % initialize data per decimated beam and ping
+        % initialize data per (decimated) beam and ping
         fData.WC_BP_BeamPointingAngle      = nan(maxnBeams_sub,nSwaths);
         fData.WC_BP_StartRangeSampleNumber = nan(maxnBeams_sub,nSwaths);
         fData.WC_BP_NumberOfSamples        = nan(maxnBeams_sub,nSwaths);
         fData.WC_BP_DetectedRangeInSamples = zeros(maxnBeams_sub,nSwaths);
-        fData.WC_BP_TransmitSectorNumber   = nan(maxnBeams_sub,nSwaths);
-        fData.WC_BP_BeamNumber             = nan(maxnBeams_sub,nSwaths); % unused anyway
-        fData.WC_BP_SystemSerialNumber     = nan(maxnBeams_sub,nSwaths); % unused anyway
-        
-        % record data per beam and ping
-        for iS = 1:nSwaths
-            
-            BD = [KMALLdata.EMdgmMWC(iC==iS)]; % beamData_p for all datagrams making up that swath
-            iB_tot = 0; % total number of beams recorded so far for that swath
-            for iD = 1:numel(SD)
-                nRx = numel(SD(iD).soundingIndex); % number of beams in this datagram
-                iB = iB_tot+(1:nRx); % indices of beams for data storage
-                fData.X8_BP_DepthZ(iB,iS)               = SD(iD).z_reRefPoint_m;
-                fData.X8_BP_AcrosstrackDistanceY(iB,iS) = SD(iD).y_reRefPoint_m;
-                fData.X8_BP_ReflectivityBS(iB,iS)       = SD(iD).reflectivity1_dB;
-                iB_tot = iB_tot + nRx; % update total number of beams recorded so far for that swath
-            end
-            
-            
-            fData.WC_BP_BeamPointingAngle      = reshape(CFF_getfield([KMALLdata.EMdgmMWC.beamData_p],'beamPointAngReVertical_deg'),maxnBeams_sub,nSwaths);
-            fData.WC_BP_StartRangeSampleNumber = reshape(CFF_getfield([KMALLdata.EMdgmMWC.beamData_p],'startRangeSampleNum'),maxnBeams_sub,nSwaths);
-            fData.WC_BP_NumberOfSamples        = reshape(CFF_getfield([KMALLdata.EMdgmMWC.beamData_p],'numSampleData'),maxnBeams_sub,nSwaths);
-            fData.WC_BP_DetectedRangeInSamples = reshape(CFF_getfield([KMALLdata.EMdgmMWC.beamData_p],'detectedRangeInSamplesHighResolution'),maxnBeams_sub,nSwaths);
-        end
+        fData.WC_BP_TransmitSectorNumber   = NaN; % unused anyway
+        fData.WC_BP_BeamNumber             = NaN; % unused anyway
+        fData.WC_BP_SystemSerialNumber     = NaN; % unused anyway
         
         % Definition of Kongsberg's KMALL water-column data format. We keep
         % it exactly like this to save disk space.
@@ -345,24 +345,28 @@ for iF = 1:nStruct
             'ping_group_start', ping_group_start, ...
             'ping_group_end', ping_group_end);
         
-        % was phase recorded?
-        phaseFlags = CFF_getfield([KMALLdata.EMdgmMWC.rxInfo],'phaseFlag');
-        if all(phaseFlags==1)
+        % was phase recorded
+        dtg_phaseFlag = [rxInfo.phaseFlag];
+        if all(dtg_phaseFlag==0)
+            phaseFlag = 0;
+        elseif all(dtg_phaseFlag==1)
             phaseFlag = 1;
-        elseif all(phaseFlags==2)
+        elseif all(dtg_phaseFlag==2)
             phaseFlag = 2;
         else
-            % also here if flag is not consistent between pings
-            phaseFlag = 0;
+            % hopefully this error should never occur. Otherwise it's
+            % fixable but have to change the code a bit.
+            error('phase flag is inconsistent across ping records in this file.')
         end
         
         % record phase data, if available
         if phaseFlag
             
-            % raw Phase data format
+            % two different formats for raw Phase, depending on the value
+            % of the flag.
             if phaseFlag==1
                 raw_WCph_Class = 'int8';
-                raw_WCph_Factor = 180/128;
+                raw_WCph_Factor = 180./128;
             else
                 raw_WCph_Class = 'int16';
                 raw_WCph_Factor = 0.01;
@@ -388,10 +392,6 @@ for iF = 1:nStruct
         % need to fopen the source file to grab the data
         fid = fopen(KMALLfilename,'r','l');
         
-        % initialize ping group counter, to use to specify which memmapfile
-        % to fill. We start in the first.
-        iG = 1;
-        
         % debug graph
         disp_wc = 0;
         if disp_wc
@@ -407,73 +407,107 @@ for iF = 1:nStruct
             end
         end
         
-        % position of start of data in each beam
-        WC_BP_sampleDataPIF = reshape(CFF_getfield([KMALLdata.EMdgmMWC.beamData_p],'sampleDataPositionInFile'),maxnBeams_sub,nSwaths);
+        % initialize ping group number
+        iG = 1;
         
-        % now get data for each ping
-        for iP = 1:nSwaths
+        % in each swath...
+        for iS = 1:nSwaths
             
-            % update ping group counter if needed
-            if iP > ping_group_end(iG)
+            % ping group number is the index of the memmaped file in which
+            % that swath's data will be saved.
+            if iS > ping_group_end(iG)
                 iG = iG+1;
             end
             
-            % initialize amplitude and phase matrices for that ping
+            % (re-)initialize amplitude and phase arrays for that swath
             Mag_tmp = raw_WCamp_Nanval.*ones(maxnSamples_groups(iG),maxnBeams_sub,raw_WCamp_Class);
             if phaseFlag
                 Ph_tmp = raw_WCph_Nanval.*ones(maxnSamples_groups(iG),maxnBeams_sub,raw_WCph_Class);
             end
             
-            % in each beam
-            for iB = 1:nBeams(iP)
+            % data for one swath can be spread over several datagrams,
+            % typically when using dual Rx systems, so we're going to loop
+            % over all datagrams to grab this swath's entire data
+            dtg_iS = find(iC==iS); % indices of datagrams for that swath
+            nB_tot = 0; % initialize total number of beams recorded so far for that swath
+            iB_src_start = 1; % index of first beam to read in a datagram, start with 1 and to be updated later
+            
+            % in each datagram...
+            for iD = 1:numel(dtg_iS)
                 
-                % get to start of record
-                dpif = WC_BP_sampleDataPIF(iB,iP);
-                fseek(fid,dpif,-1);
+                % beamData_p for this datagram
+                BD = KMALLdata.EMdgmMWC(dtg_iS(iD)).beamData_p;
                 
-                % read data
-                sR = fData.WC_BP_StartRangeSampleNumber(iB,iP);
-                nS = fData.WC_BP_NumberOfSamples(iB,iP);
-                if phaseFlags(iP) == 0
-                    % Only nS records of amplitude of 1 byte
-                    Mag_tmp(sR+1:sR+nS,iB) = fread(fid, nS, 'int8=>int8',0);
-                elseif phaseFlags(iP) == 1
-                    % XXX this case was not tested yet. Find data for it
-                    % nS records of amplitude of 1 byte alternated with nS
-                    % records of phase of 1 byte
-                    Mag_tmp(sR+1:sR+nS,iB) = fread(fid, nS, 'int8=>int8',1);
-                    fseek(fid,dpif+1,-1); % rewind to after the first amplitude record
-                    Ph_tmp(sR+1:sR+nS,iB) = fread(fid, nS, 'int8=>int8',1);
-                else
-                    % XXX this case was not tested yet. Find data for it
-                    % nS records of amplitude of 1 byte alternated with nS
-                    % records of phase of 2 bytes
-                    Mag_tmp(sR+1:sR+nS,iB) = fread(fid, nS, 'int8=>int8',2);
-                    fseek(fid,dpif+1,-1); % rewind to after the first amplitude record
-                    Ph_tmp(sR+1:sR+nS,iB) = fread(fid, nS, 'int16=>int16',1);
+                % important variables for data to grab
+                nRx = numel(BD.beamPointAngReVertical_deg); % total number of beams in this datagram
+                iB_src = iB_src_start:db_sub:nRx; % indices of beams to read in this datagram
+                nB = numel(iB_src); % number of beams to record from this datagram
+                iB_dst = nB_tot + (1:nB); % indices of those beams in output arrays
+                
+                % record data per beam
+                fData.WC_BP_BeamPointingAngle(iB_dst,iS)      = BD.beamPointAngReVertical_deg(iB_src);
+                fData.WC_BP_StartRangeSampleNumber(iB_dst,iS) = BD.startRangeSampleNum(iB_src);
+                fData.WC_BP_NumberOfSamples(iB_dst,iS)        = BD.numSampleData(iB_src);
+                fData.WC_BP_DetectedRangeInSamples(iB_dst,iS) = BD.detectedRangeInSamplesHighResolution(iB_src);
+                
+                % in each beam...
+                for iB = 1:nB
+                    
+                    % data size
+                    sR = BD.startRangeSampleNum(iB_src(iB)); % start range sample number
+                    nS = BD.numSampleData(iB_src(iB)); % number of samples in this beam
+                    nS_sub = ceil(nS/dr_sub); % number of samples we're going to record
+                    
+                    % get to start of amplitude block
+                    dpif = BD.sampleDataPositionInFile(iB_src(iB));
+                    fseek(fid,dpif,-1);
+                    
+                    % amplitude block is nS records of 1 byte each.
+                    Mag_tmp(sR+1:sR+nS_sub,iB_dst(iB)) = fread(fid, nS_sub, 'int8=>int8',dr_sub-1); % read with decimation
+                    
+                    if phaseFlag
+                        % go to start of phase block
+                        fseek(fid,dpif+nS,-1);
+                        
+                        if phaseFlag == 1
+                            % phase block is nS records of 1 byte each.
+                            Ph_tmp(sR+1:sR+nS_sub,iB_dst(iB)) = fread(fid, nS_sub, 'int8=>int8',dr_sub-1); % read with decimation
+                        else
+                            % phase block is nS records of 2 bytes each.
+                            % XXX not tested yet. Find suitable data files
+                            Ph_tmp(sR+1:sR+nS_sub,iB_dst(iB)) = fread(fid, nS_sub, 'int16=>int16',2*dr_sub-2); % read with decimation
+                        end
+                    end
                 end
+                
+                % update variables before reading next datagram, if
+                % necessary
+                nB_tot = nB_tot + nB; % total number of beams recorded so far for this swath
+                iB_src_start = iB_src(end) - nRx + db_sub; % index of first beam to read in next datagram
+                
             end
             
             % debug graph
             if disp_wc
                 % display amplitude
                 imagesc(ax_mag,double(Mag_tmp).*raw_WCamp_Factor);
-                colorbar
-                title(sprintf('Ping %i/%i, WCD amplitude',iP,nSwaths));
+                colorbar(ax_mag)
+                title(ax_mag, sprintf('Ping %i/%i, WCD amplitude',iS,nSwaths));
                 % display phase
                 if phaseFlag
                     imagesc(ax_phase,double(Ph_tmp).*raw_WCph_Factor);
-                    colorbar
+                    colorbar(ax_phase)
+                    title(ax_phase, 'WCD phase');
                 end
                 drawnow;
             end
             
-            % finished reading this ping's WC data. Store the data in the
+            % finished reading this swath's WC data. Store the data in the
             % appropriate binary file, at the appropriate ping, through the
             % memory mapping
-            fData.WC_SBP_SampleAmplitudes{iG}.Data.val(:,:,iP-ping_group_start(iG)+1) = Mag_tmp;
+            fData.WC_SBP_SampleAmplitudes{iG}.Data.val(:,:,iS-ping_group_start(iG)+1) = Mag_tmp;
             if phaseFlag
-                fData.WC_SBP_SamplePhase{iG}.Data.val(:,:,iP-ping_group_start(iG)+1) = Ph_tmp;
+                fData.WC_SBP_SamplePhase{iG}.Data.val(:,:,iS-ping_group_start(iG)+1) = Ph_tmp;
             end
             
         end
@@ -506,7 +540,7 @@ for iF = 1:nStruct
         
         % number of entries to record
         nD = numel(idx_t);
-
+        
         % get date and time-since-midnight-in-milleseconds from header
         [dtg_date,dtg_TSMIM] = CFF_get_date_and_TSMIM_from_kmall_header(header); % date and time per datagram
         fData.Po_1D_Date = dtg_date(idx_t);
@@ -560,10 +594,6 @@ for ii = 1:size(yo,1)
     
 end
 
-end
-
-function values = CFF_getfield(S, fieldname)
-values = [S(:).(fieldname)];
 end
 
 function [KM_date, TSMIM] = CFF_get_date_and_TSMIM_from_kmall_header(header)
