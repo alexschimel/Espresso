@@ -1,4 +1,14 @@
 function [gpu_comp,g] = get_gpu_comp_stat()
+%FUNCTION_NAME  One-line description
+%
+%   Optional multiple lines of information giving more details about the
+%   function.
+%
+%   See also ESPRESSO.
+
+%   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
+%   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
+%   2017-2021; Last revision: 21-07-2021
 
 % initialize negative results
 g = [];
@@ -27,6 +37,7 @@ try
             gpu_comp = 0;
         end
     end
+    
 catch err
     
     % a message of hope...

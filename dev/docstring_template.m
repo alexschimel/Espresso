@@ -1,4 +1,24 @@
-function Espresso_user_folder = Espresso_user_folder()
+function [output1,output2] = function_name(input1,input2,input3)
+%FUNCTION_NAME  One-line description
+%
+%   See also ESPRESSO.
+
+%   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
+%   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
+%   2017-2021; Last revision: 21-07-2021
+
+
+
+
+
+
+
+
+
+
+
+
+
 %FUNCTION_NAME  One-line description of what the function performs
 %
 %   Optional multiple lines of information giving more details about the
@@ -22,5 +42,3 @@ function Espresso_user_folder = Espresso_user_folder()
 %   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
 %   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
 %   2017-2021; Last revision: 21-07-2021
-
-Espresso_user_folder = regexprep(userpath,'MATLAB','Espresso');

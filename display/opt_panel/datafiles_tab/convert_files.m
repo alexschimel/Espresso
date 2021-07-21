@@ -1,21 +1,11 @@
-%% convert_files.m
-%
-% Convert raw data files to CoFFee format (fData)
-%
-%% Help
-%
-% *AUTHOR, AFFILIATION & COPYRIGHT*
-%
-% * 2021-06-01: Updated docstring (alex)
-% * 2021-05-??: Support kmall started (alex)
-% * ????-??-??: first version
-%
-% Alexandre Schimel (NGU, NIWA), Yoann Ladroit (NIWA). 
-% Type |help Espresso.m| for copyright information.
-
-
-%% Function
 function convert_files(files_to_convert, flag_force_convert)
+%CONVERT_FILES  Convert raw data files to CoFFee format (fData)
+%
+%   See also ESPRESSO.
+
+%   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
+%   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
+%   2017-2021; Last revision: 21-07-2021
 
 % NOTE: HARD-CODED PARAMETERS subsampling factors:
 dr_sub = 1; % none at this stage, subsampling occuring at processing

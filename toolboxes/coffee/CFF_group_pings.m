@@ -1,16 +1,13 @@
-%% CFF_group_pings.m
-%
-% Makes groups of pings based on the max number of samples in each ping.
-%
-%% Help
-%
-% *AUTHOR, AFFILIATION & COPYRIGHT*
-%
-% Alexandre Schimel (NGU), Yoann Ladroit (NIWA). 
-% Type |help Espresso.m| for copyright information.
-
-%% Function
 function [maxNSamples_groups,ping_group_start,ping_group_end] = CFF_group_pings(num_samp_per_dtgrm, ping_counter, dtgrm_ping_number)
+%CFF_GROUP_PINGS  Makes groups of pings based on number of samples
+%
+%   Makes groups of pings based on the max number of samples in each ping.
+%
+%   See also ESPRESSO.
+
+%   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
+%   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
+%   2017-2021; Last revision: 21-07-2021
 
 % get the maximum number of samples for each ping
 if iscell(num_samp_per_dtgrm)
@@ -61,7 +58,7 @@ num_groups = numel(idx_new_group);
 maxNSamples_groups = nan(1,num_groups);
 for uig = 1:num_groups
     % find datagrams in this group of pings
-    ix = ismember(dtgrm_ping_number,ping_group_start(uig):ping_group_end(uig));
+    ix = (dtgrm_ping_number>=ping_group_start(uig))&(dtgrm_ping_number<=ping_group_end(uig));
     if iscell(num_samp_per_dtgrm)
         maxNSamples_groups(uig) = max(cellfun(@(x) max(x),num_samp_per_dtgrm(ix)));
     else

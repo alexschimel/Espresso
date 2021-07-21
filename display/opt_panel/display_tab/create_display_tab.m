@@ -1,4 +1,11 @@
-function load_display_tab(main_figure,parent_tab_group)
+function create_display_tab(main_figure,parent_tab_group)
+%CREATE_DISPLAY_TAB  Creates display tab in Espresso Control panel
+%
+%   See also UPDATE_DISPLAY_TAB, INITIALIZE_DISPLAY, ESPRESSO.
+
+%   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
+%   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
+%   2017-2021; Last revision: 21-07-2021
 
 % getappdata
 if isappdata(main_figure,'display_tab')
@@ -299,7 +306,7 @@ pointerBehavior.traverseFcn = @(figHandle, currentPoint) set(figHandle, 'Pointer
 iptSetPointerBehavior(display_tab_comp.d_line_max,pointerBehavior);
 iptSetPointerBehavior(display_tab_comp.d_line_min,pointerBehavior);
 
-% 
+%
 setappdata(main_figure,'display_tab',display_tab_comp);
 
 end

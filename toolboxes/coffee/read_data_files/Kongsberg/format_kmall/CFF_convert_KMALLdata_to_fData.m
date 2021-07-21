@@ -1,34 +1,31 @@
-%% CFF_convert_KMALLdata_to_fData.m
-%
-% Function description XXX
-%
-%% Help
-%
-% DEV NOTE: kmall format doesn't fit the fData structure to date (13th July
-% 2021). fData is based on three dimensions ping x beam x sample, but the
-% lowest-level unit in kmall is the "swath" to accomodate dual- and
-% multi-swath operating modes. For example, in dual-swath mode, a single Tx
-% transducer will transmit 2 pulses to create two along-swathes, and in
-% kmall those two swathes are recorded with the same ping counter because
-% they were produced at about the same time.
-% To deal with this, we're going to create new "swath numbers" based on the
-% original ping number and swath counter for a ping.
-% For example a ping #832 made up of four swathes counted 0-3 will have new
-% "swath numbers" of 832.00, 832.01, 832.02, and 832.03. We will maintain
-% the current "ping" nomenclature in fData, but using those swath numbers.
-% Note that if we have single-swath data, then the swath number matches the
-% ping number (832).
-% Note that this is made more complicated by the fact that an individual
-% swathe can have its data on multiple consecutive datagrams, as different
-% "Rx fans" (i.e multiple Rx heads) are recorded on separate datagrams.
-%
-% *AUTHOR, AFFILIATION & COPYRIGHT*
-%
-% Alexandre Schimel (NGU), Yoann Ladroit (NIWA).
-% Type |help Espresso.m| for copyright information.
-
-%% Function
 function fData = CFF_convert_KMALLdata_to_fData(KMALLdataGroup,varargin)
+%CFF_CONVERT_KMALLDATA_TO_FDATA  Convert kmall data to the CoFFee format
+%
+%   DEV NOTE: kmall format doesn't fit the fData structure to date (13th
+%   July 2021). fData is based on three dimensions ping x beam x sample,
+%   but the lowest-level unit in kmall is the "swath" to accomodate dual-
+%   and multi-swath operating modes. For example, in dual-swath mode, a
+%   single Tx transducer will transmit 2 pulses to create two
+%   along-swathes, and in kmall those two swathes are recorded with the
+%   same ping counter because they were produced at about the same time. 
+%   To deal with this, we're going to create new "swath numbers" based on
+%   the original ping number and swath counter for a ping.
+%   For example a ping #832 made up of four swathes counted 0-3 will have
+%   new "swath numbers" of 832.00, 832.01, 832.02, and 832.03. We will
+%   maintain the current "ping" nomenclature in fData, but using those
+%   swath numbers.
+%   Note that if we have single-swath data, then the swath number matches
+%   the ping number (832). 
+%   Note that this is made more complicated by the fact that an individual
+%   swathe can have its data on multiple consecutive datagrams, as
+%   different "Rx fans" (i.e multiple Rx heads) are recorded on separate
+%   datagrams.
+%
+%   See also ESPRESSO.
+
+%   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
+%   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
+%   2017-2021; Last revision: 21-07-2021
 
 
 %% input parsing
@@ -505,7 +502,11 @@ for iF = 1:nStruct
             % finished reading this swath's WC data. Store the data in the
             % appropriate binary file, at the appropriate ping, through the
             % memory mapping
+            try
             fData.WC_SBP_SampleAmplitudes{iG}.Data.val(:,:,iS-ping_group_start(iG)+1) = Mag_tmp;
+            catch
+                pi
+            end
             if phaseFlag
                 fData.WC_SBP_SamplePhase{iG}.Data.val(:,:,iS-ping_group_start(iG)+1) = Ph_tmp;
             end

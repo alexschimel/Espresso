@@ -1,48 +1,18 @@
-%% update_path.m
-%
-% Add subfolders to Matlab path
-%
-%% Help
-%
-% *USE*
-%
-% TODO: write longer description of function
-%
-% *INPUT VARIABLES*
-%
-% * |input_variable_1|: TODO: write description and info on variable
-%
-% *OUTPUT VARIABLES*
-%
-% * |output_variable_1|: TODO: write description and info on variable
-%
-% *RESEARCH NOTES*
-%
-% TODO: write research notes
-%
-% *NEW FEATURES*
-%
-% * 2017-10-25: first version (Yoann Ladroit)
-%
-% *EXAMPLE*
-%
-% TODO: write examples
-%
-% *AUTHOR, AFFILIATION & COPYRIGHT*
-%
-% Yoann Ladroit, NIWA. Type |help Espresso.m| for copyright information.
-
-%% Function
 function update_path(path)
+%UPDATE_PATH  Add subfolders relevant to Espresso to Matlab path
+%
+%   See also ESPRESSO.
+
+%   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
+%   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
+%   2017-2021; Last revision: 21-07-2021
 
 addpath(path);
+addpath(genpath(fullfile(path,'classes')));
 addpath(genpath(fullfile(path,'display')));
 addpath(genpath(fullfile(path,'icons')));
 addpath(genpath(fullfile(path,'io')));
-addpath(genpath(fullfile(path,'toolboxes')));
-addpath(genpath(fullfile(path,'classes')));
-addpath(genpath(fullfile(path,'general')));
 addpath(genpath(fullfile(path,'processing')));
-
+addpath(genpath(fullfile(path,'toolboxes')));
 
 end

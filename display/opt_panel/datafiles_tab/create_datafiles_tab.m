@@ -1,17 +1,11 @@
-%% create_datafiles_tab.m
-%
-% Creates "Data files" tab (#1) in Espresso's Control Panel. Also has
-% callback functions for when interacting with the tab's contents.
-%
-%% Help
-%
-% *AUTHOR, AFFILIATION & COPYRIGHT*
-%
-% Yoann Ladroit, Alexandre Schimel NIWA. Type |help Espresso.m| for
-% copyright information.
-
-%% Function
 function create_datafiles_tab(main_figure,parent_tab_group)
+%CREATE_DATAFILES_TAB  Creates datafiles tab in Espresso Control panel
+%
+%   See also UPDATE_DATAFILES_TAB, INITIALIZE_DISPLAY, ESPRESSO.
+
+%   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
+%   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
+%   2017-2021; Last revision: 21-07-2021
 
 %% create tab variable
 switch parent_tab_group.Type
@@ -271,7 +265,7 @@ switch answer
         % here anyway
         callback_press_process_button(src,evt,main_figure);
 end
-    
+
 end
 
 

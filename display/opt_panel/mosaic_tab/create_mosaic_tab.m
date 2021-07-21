@@ -1,42 +1,11 @@
-%% load_mosaic_tab.m
+function create_mosaic_tab(main_figure,parent_tab_group)
+%CREATE_MOSAIC_TAB  Creates mosaic tab in Espresso Control panel
 %
-% Creates "Mosaicking" tab (#4) in Espresso's Control Panel. Also has
-% callback functions for when interacting with the tab's contents.
-%
-%% Help
-%
-% *USE*
-%
-% TODO: write longer description of function
-%
-% *INPUT VARIABLES*
-%
-% * |input_variable_1|: TODO: write description and info on variable
-%
-% *OUTPUT VARIABLES*
-%
-% * |output_variable_1|: TODO: write description and info on variable
-%
-% *RESEARCH NOTES*
-%
-% TODO: write research notes
-%
-% *NEW FEATURES*
-%
-% * 2018-10-05: general editing and commenting (Alex Schimel)
-% * 2017-10-25: first version (Yoann Ladroit)
-%
-% *EXAMPLE*
-%
-% TODO: write examples
-%
-% *AUTHOR, AFFILIATION & COPYRIGHT*
-%
-% Yoann Ladroit, Alexandre Schimel NIWA. Type |help Espresso.m| for
-% copyright information.
+%   See also UPDATE_MOSAIC_TAB, INITIALIZE_DISPLAY, ESPRESSO.
 
-%% Function
-function load_mosaic_tab(main_figure,parent_tab_group)
+%   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
+%   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
+%   2017-2021; Last revision: 21-07-2021
 
 %% create tab variable
 switch parent_tab_group.Type
@@ -243,7 +212,7 @@ switch evt.Indices(2)
         if ~isnan(evt.NewData) && evt.NewData>=mosaics(idx_mosaic).best_res
             
             % initialize a new mosaic with bounds of old mosaic but new
-            % resolution 
+            % resolution
             tmp_mosaic = init_mosaic(mosaics(idx_mosaic).E_lim,mosaics(idx_mosaic).N_lim,evt.NewData);
             
             % new resolution and blank mosaic grid
@@ -272,6 +241,7 @@ update_map_tab(main_figure,0,1,0,[]);
 
 end
 
+
 %%
 % Callback when clicking the Create/New button for a new mosaic
 %
@@ -282,9 +252,6 @@ replace_interaction(main_figure,'interaction','WindowButtonDownFcn',  'id',1,'in
 replace_interaction(main_figure,'interaction','WindowButtonMotionFcn','id',1,'interaction_fcn',{@disp_cursor_info,main_figure},'pointer','cross');
 
 end
-
-
-
 
 %%
 % Callback when ...

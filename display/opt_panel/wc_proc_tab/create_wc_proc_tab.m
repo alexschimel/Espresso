@@ -1,43 +1,18 @@
-%% load_wc_proc_tab.m
+function create_wc_proc_tab(main_figure,parent_tab_group)
+%CREATE_WC_PROC_TAB  Creates wc_proc tab in Espresso Control panel
 %
-% Creates "WC Processing" tab (#3) in Espresso's Control Panel. Also has
-% callback functions for when interacting with the tab's contents.
+%    Also has callback functions for when interacting with the tab's
+%    contents.
 %
-%% Help
+%    *DVPT NOTES*
+%     * XXX: check that if asking for "process", redo the "process" from
+%     scratch
 %
-% *USE*
-%
-% TODO: write longer description of function
-%
-% *INPUT VARIABLES*
-%
-% * |input_variable_1|: TODO: write description and info on variable
-%
-% *OUTPUT VARIABLES*
-%
-% * |output_variable_1|: TODO: write description and info on variable
-%
-% *DVPT NOTES*
-%
-% * XXX: check that if asking for "process", redo the "process" from
-% scratch
-%
-% *NEW FEATURES*
-%
-% * 2018-10-05: general editing and commenting (Alex Schimel)
-% * 2017-10-25: first version (Yoann Ladroit)
-%
-% *EXAMPLE*
-%
-% TODO: write examples
-%
-% *AUTHOR, AFFILIATION & COPYRIGHT*
-%
-% Yoann Ladroit, Alexandre Schimel NIWA. Type |help Espresso.m| for
-% copyright information.
+%   See also INITIALIZE_DISPLAY, ESPRESSO.
 
-%% Function
-function load_wc_proc_tab(main_figure,parent_tab_group)
+%   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
+%   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
+%   2017-2021; Last revision: 21-07-2021
 
 
 %% create tab variable

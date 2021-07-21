@@ -1,6 +1,14 @@
-%THIS IS A PRELIMINARY VERSION THAT ONLY POPULATES STUFF ABSOLUTELY
-%NECESSARY FOR ESPRESSO TO DISPLAY T50 DATA
 function [fData,update_flag] = CFF_convert_S7Kdata_to_fData(S7KdataGroup,varargin)
+%CFF_CONVERT_S7KDATA_TO_FDATA  Convert all data to the CoFFee format
+%
+%   THIS IS A PRELIMINARY VERSION THAT ONLY POPULATES STUFF ABSOLUTELY
+%   NECESSARY FOR ESPRESSO TO DISPLAY T50 DATA
+%
+%   See also ESPRESSO.
+
+%   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
+%   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
+%   2017-2021; Last revision: 21-07-2021
 
 %% input parsing
 

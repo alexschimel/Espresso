@@ -1,82 +1,11 @@
-%% this_function_name.m
+function create_feature_list_tab(main_figure,parent_tab_group)
+%CREATE_FEATURE_LIST_TAB  Creates feature_list tab in Espresso Swath panel
 %
-% _This section contains a very short description of the function, for the
-% user to know this function is part of the software and what it does for
-% it. Example below to replace. Delete these lines XXX._
-%
-% Template of ESP3 function header. XXX
-%
-%% Help
-%
-% *USE*
-%
-% _This section contains a more detailed description of what the function
-% does and how to use it, for the interested user to have an overall
-% understanding of its function. Example below to replace. Delete these
-% lines XXX._
-%
-% This is a text file containing the basic comment template to add at the
-% start of any new ESP3 function to serve as function help. XXX
-%
-% *INPUT VARIABLES*
-%
-% _This section contains bullet points of input variables with description
-% and information. Put input variable and other valid entries or defaults
-% between | symbols so it shows as monospace. Information section to
-% contain, in order: requirement (i.e. Required/Optional/Paramter), valid
-% type (e.g. Num, Positive num, char, 1xN cell array, etc.) and default
-% value if there is one (e.g. Default: '10'). Example below to replace.
-% Delete these lines XXX._
-%
-% * |input_variable_1|: Description (Information). XXX
-% * |input_variable_2|: Description (Information). XXX
-% * |input_variable_3|: Description (Information). XXX
-%
-% *OUTPUT VARIABLES*
-%
-% _This section contains bullet points of output variables with description
-% and information. See input variables for template. Example below to
-% replace. Delete these lines XXX._
-%
-% * |output_variable_1|: Description (Information). XXX
-% * |output_variable_2|: Description (Information). XXX
-%
-% *DEVELOPMENT NOTES*
-%
-% _This section describes what features are temporary, needed future
-% developments and paper references. Example below to replace. Delete these
-% lines XXX._
-%
-% * research point 1. XXX
-% * research point 2. XXX
-%
-% *NEW FEATURES*
-%
-% _This section contains dates and descriptions of major updates. Example
-% below to replace. Delete these lines XXX._
-%
-% * YYYY-MM-DD: second version. Describes the update. XXX
-% * YYYY-MM-DD: first version. XXX
-%
-% *EXAMPLE*
-%
-% _This section contains examples of valid function calls. Note that
-% example lines start with 3 white spaces so that the publish function
-% shows them correctly as matlab code. Example below to replace. Delete
-% these lines XXX._
-%
-%   example_use_1; % comment on what this does. XXX
-%   example_use_2: % comment on what this line does. XXX
-%
-% *AUTHOR, AFFILIATION & COPYRIGHT*
-%
-% _This last section contains at least author name and affiliation. Delete
-% these lines XXX._
-%
-% Yoann Ladroit, Alexandre Schimel, NIWA. XXX
+%   See also UPDATE_FEATURE_LIST_TAB, INITIALIZE_DISPLAY, ESPRESSO.
 
-%% Function
-function load_feature_list_tab(main_figure,parent_tab_group)
+%   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
+%   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
+%   2017-2021; Last revision: 21-07-2021
 
 % disp_config = getappdata(main_figure,'disp_config');
 
@@ -164,7 +93,7 @@ if ~isempty(features)
     if numel(utmzone)>1
         error('code here to remove features to enforce single zone');
     end
-
+    
     % and add to disp_config
     disp_config = getappdata(main_figure,'disp_config');
     disp_config.MET_ellips = 'wgs84';
@@ -175,12 +104,12 @@ if ~isempty(features)
     % projection
     txt = sprintf('Existing features (in the "Features List" tab) define the projection for this session (ellipsoid: %s, UTM zone: %s), so that any data file to be loaded will be using this projection. If you want to reset this session''s projection so that data files will be loaded in their natural projection, you will first need to delete the existing features.', disp_config.MET_ellips, disp_config.MET_tmproj);
     warning(txt);
-
+    
     % all good? save/overwrite features into main figure
     setappdata(main_figure,'features',features);
-
+    
 end
-                
+
 % trigger an update of the feature list tab
 update_feature_list_tab(main_figure);
 
@@ -299,8 +228,8 @@ table_out=[];
 for ii = 1:numel(idx_exp)
     
     output_file = [sprintf('%s_%i_%s',features(idx_exp(ii)).Class,features(idx_exp(ii)).ID,features(idx_exp(ii)).Description) '.shp'];
-
-    geostruct=features(idx_exp(ii)).feature_to_geostruct();  
+    
+    geostruct=features(idx_exp(ii)).feature_to_geostruct();
     
     geostruct.Files={};
     geostruct.PingStart=[];
@@ -323,24 +252,24 @@ for ii = 1:numel(idx_exp)
         end
     end
     geostruct.Files=strjoin(geostruct.Files,';');
-   
+    
     if ~isempty( geostruct.PingStart)
         geostruct.PingStart=sprintf('%.0f;',geostruct.PingStart);
         geostruct.PingStart(end)='';
     else
-        geostruct.PingStart=''; 
+        geostruct.PingStart='';
     end
     
     if ~isempty( geostruct.PingEnd)
-    geostruct.PingEnd=sprintf('%.0f;',geostruct.PingEnd);
-    geostruct.PingEnd(end)='';
+        geostruct.PingEnd=sprintf('%.0f;',geostruct.PingEnd);
+        geostruct.PingEnd(end)='';
     else
-        geostruct.PingEnd=''; 
+        geostruct.PingEnd='';
     end
-
+    
     if ~isempty( geostruct.BottomDepth)
-    geostruct.BottomDepth=sprintf('%.0f;',geostruct.BottomDepth);
-    geostruct.BottomDepth(end)='';
+        geostruct.BottomDepth=sprintf('%.0f;',geostruct.BottomDepth);
+        geostruct.BottomDepth(end)='';
     else
         geostruct.BottomDepth='';
     end
@@ -362,15 +291,15 @@ for ii = 1:numel(idx_exp)
     if isempty(table_out)
         table_out=struct2table(geostruct,'AsArray',1);
     else
-         table_tmp=struct2table(geostruct,'AsArray',1);
-         table_out=[table_out;table_tmp];
+        table_tmp=struct2table(geostruct,'AsArray',1);
+        table_out=[table_out;table_tmp];
     end
-
+    
 end
 
 if ~isempty(table_out)
-     output_file_csv = fullfile(folder_name,[sprintf('%s_saved_features_%s',datestr(now,'yyyymmddHHMMSS')) '.csv']);
-     writetable(table_out,output_file_csv);
+    output_file_csv = fullfile(folder_name,[sprintf('%s_saved_features_%s',datestr(now,'yyyymmddHHMMSS')) '.csv']);
+    writetable(table_out,output_file_csv);
 end
 fprintf('Export to %s finished\n',folder_name);
 end
@@ -400,8 +329,8 @@ if isempty(feature.Polygon)
 else
     % get vertices in stack display
     [~,ip] = min(sqrt((intersection.Vertices(:,1)-easting).^2+(intersection.Vertices(:,2)-northing).^2),[],2);
-
-    idx_pings = [nanmin(ip) nanmax(ip)]; 
+    
+    idx_pings = [nanmin(ip) nanmax(ip)];
     bot_depth =  nanmean(nanmean(fData.X_BP_bottomUpDist(:,idx_pings(1):idx_pings(end))));
     
 end

@@ -1,34 +1,30 @@
-%% closefcn_clean_espresso.m
-%
-% Callback function when Espresso's main figure is closed
-%
-%% Help
-%
-% *NEW FEATURES*
-%
-% * 2017-10-25: first version (Yoann Ladroit)
-%
-% *AUTHOR, AFFILIATION & COPYRIGHT*
-%
-% Yoann Ladroit, Alexandre Schimel NIWA. Type |help Espresso.m| for
-% copyright information.
-
-%% Function
 function closefcn_clean_espresso(main_figure,~)
+%CLOSEFCN_CLEAN_ESPRESSO  Terminate Espresso session
+%
+%   See also ESPRESSO.
 
+%   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
+%   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
+%   2017-2021; Last revision: 21-07-2021
+
+% disp
 fprintf('Closing Espresso...\n');
-logfile = main_figure.UserData.logfile;
-% fData = getappdata(main_figure,'fData');
+
+% delete figures
 ext_figs = getappdata(main_figure,'ext_figs');
 delete(ext_figs);
+logfile = main_figure.UserData.logfile;
 delete(main_figure);
-clear fData
 
+% final disp
 fprintf('Done. Find a log of this output at %s.\n\n',logfile);
+
+% stop diary
 diary off
 
+% give reader a second to read that last line
 if isdeployed()
-    pause(1); % give reader time to read that last line
+    pause(1); 
 end
 
 end

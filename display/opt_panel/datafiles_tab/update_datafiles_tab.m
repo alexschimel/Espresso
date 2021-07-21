@@ -1,16 +1,11 @@
-%% update_datafiles_tab.m
-%
-% Runs to update "Data raw_files" tab (#1) in Espresso's Control Panel. 
-%
-%% Help
-%
-% *AUTHOR, AFFILIATION & COPYRIGHT*
-%
-% Yoann Ladroit, Alexandre Schimel NIWA. Type |help Espresso.m| for
-% copyright information.
-
-%% Function
 function update_datafiles_tab(main_figure)
+%UPDATE_DATAFILES_TAB  Updates datafiles tab in Espresso Control panel
+%
+%   See also CREATE_DATAFILES_TAB, INITIALIZE_DISPLAY, ESPRESSO.
+
+%   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
+%   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
+%   2017-2021; Last revision: 21-07-2021
 
 % get relevant stuff from main figure
 file_tab_comp = getappdata(main_figure,'file_tab');

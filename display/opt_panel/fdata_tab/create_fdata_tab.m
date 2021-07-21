@@ -1,42 +1,12 @@
-%% load_fdata_tab.m
+function create_fdata_tab(main_figure,parent_tab_group)
+%CREATE_FDATA_TAB  Creates fdata tab in Espresso Control panel
 %
-% Creates "Loaded lines" tab (#2) in Espresso's Control Panel. Also has
-% callback functions for when interacting with the tab's contents.
-%
-%% Help
-%
-% *USE*
-%
-% TODO: write longer description of function
-%
-% *INPUT VARIABLES*
-%
-% * |input_variable_1|: TODO: write description and info on variable
-%
-% *OUTPUT VARIABLES*
-%
-% * |output_variable_1|: TODO: write description and info on variable
-%
-% *RESEARCH NOTES*
-%
-% TODO: write research notes
-%
-% *NEW FEATURES*
-%
-% * 2018-10-05: general editing and commenting (Alex Schimel)
-% * 2017-10-25: first version (Yoann Ladroit)
-%
-% *EXAMPLE*
-%
-% TODO: write examples
-%
-% *AUTHOR, AFFILIATION & COPYRIGHT*
-%
-% Yoann Ladroit, Alexandre Schimel NIWA. Type |help Espresso.m| for
-% copyright information.
+%   See also UPDATE_FDATA_TAB, INITIALIZE_DISPLAY, ESPRESSO.
 
-%% Function
-function load_fdata_tab(main_figure,parent_tab_group)
+%   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
+%   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
+%   2017-2021; Last revision: 21-07-2021
+
 
 switch parent_tab_group.Type
     case 'uitabgroup'
@@ -81,13 +51,11 @@ update_fdata_tab(main_figure);
 
 end
 
+
 %% CALLBACKS
-
-
 
 %%
 % Callback when selecting a line in the table
-%
 function cell_select_cback(src,evt,main_figure)
 
 % indices of selected line
@@ -102,8 +70,7 @@ end
 if any(unique(selected_row)==3)&&numel(unique(selected_row))==1
     return;
 end
-    
-   
+
 % update the selected lines in fdata_tab
 fdata_tab_comp = getappdata(main_figure,'fdata_tab');
 fdata_tab_comp.selected_idx = unique(selected_idx);
@@ -129,6 +96,7 @@ end
 
 end
 
+%%
 function go_to_lines_cback(~,~,main_figure)
 
 fdata_tab_comp = getappdata(main_figure,'fdata_tab');
