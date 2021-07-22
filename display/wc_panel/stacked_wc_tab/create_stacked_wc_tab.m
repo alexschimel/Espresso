@@ -6,7 +6,7 @@ function create_stacked_wc_tab(main_figure,parent_tab_group)
 %   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
 %   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
 %   2017-2021; Last revision: 21-07-2021
-s
+
 disp_config = getappdata(main_figure,'disp_config');
 
 switch parent_tab_group.Type

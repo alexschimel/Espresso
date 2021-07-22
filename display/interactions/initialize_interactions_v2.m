@@ -43,10 +43,10 @@ end
 setptr(main_figure,'arrow');
 
 % Set normal interactions in the figure
-interactions.WindowButtonDownFcn(1)   = iptaddcallback(main_figure,'WindowButtonDownFcn',{@move_map_cback,main_figure});
-interactions.KeyPressFcn(1)           = iptaddcallback(main_figure,'KeyPressFcn',{@shortcuts_func,main_figure});
-interactions.WindowScrollWheelFcn(1)  = iptaddcallback(main_figure,'WindowScrollWheelFcn',{@scroll_fcn_callback,main_figure});
-interactions.WindowButtonMotionFcn(1) = iptaddcallback(main_figure,'WindowButtonMotionFcn',{@disp_cursor_info,main_figure});
+interactions.WindowButtonDownFcn(1)   = iptaddcallback(main_figure,'WindowButtonDownFcn',{@move_map_cback,main_figure});       % left-click on map, for panning
+interactions.KeyPressFcn(1)           = iptaddcallback(main_figure,'KeyPressFcn',{@shortcuts_func,main_figure});               % press keyboard key, for shortcuts
+interactions.WindowScrollWheelFcn(1)  = iptaddcallback(main_figure,'WindowScrollWheelFcn',{@scroll_fcn_callback,main_figure}); % mouse scroll, for zoom
+interactions.WindowButtonMotionFcn(1) = iptaddcallback(main_figure,'WindowButtonMotionFcn',{@disp_cursor_info,main_figure});   % move cursor, for navigation display
 
 % add interactions to appdata
 setappdata(main_figure,'interactions_id',interactions);

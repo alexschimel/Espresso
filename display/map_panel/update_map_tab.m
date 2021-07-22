@@ -22,13 +22,8 @@ auto_zoom_extent_flag = p.Results.auto_zoom_extent_flag;
 update_line_index     = p.Results.update_line_index;
 update_poly           = p.Results.update_poly;
 
-% display on devpt version
-if ~isdeployed()
-    disp('Update Map Tab');
-end
-
 % up_wc will be 0 if the function finishes before updating all objects (ie.
-% sliding windows etc), so that we not open wc tabs in that case.
+% sliding windows etc), so that we do not open wc tabs in that case.
 up_wc = 0;
 
 % exit if no data loaded
@@ -111,7 +106,8 @@ for i = update_line_index(:)'
         [~,fname,ext] = fileparts(fData.ALLfilename{1});
         user_data.Filename = [fname ext];
         
-        % draw line navigation and ID it
+        % draw line navigation, with filename, ID, and callback when
+        % clicking on it
         handle_plot_1 = plot(ax,fData.X_1P_pingE,fData.X_1P_pingN,...
             'Tag',tag_id_nav,...
             'Visible','on',...
@@ -136,10 +132,10 @@ for i = update_line_index(:)'
         % combine the two
         handle_plot = [handle_plot_1 handle_plot_2];
         
-        % set hand pointer when on that line
-        pointerBehavior.enterFcn    = [];
-        pointerBehavior.exitFcn     = @(src, evt) exit_plot_fcn(src, evt,handle_plot);
-        pointerBehavior.traverseFcn = @(src, evt) traverse_plot_fcn(src, evt,handle_plot);
+        % set pointer interaction with the line
+        pointerBehavior.enterFcn    = []; % Called when the mouse pointer moves over the object.
+        pointerBehavior.exitFcn     = @(src, evt) exit_plot_fcn(src, evt,handle_plot); % Called when the mouse pointer leaves the object. 
+        pointerBehavior.traverseFcn = @(src, evt) traverse_plot_fcn(src, evt,handle_plot); % Called once when the mouse pointer moves over the object, and called again each time the mouse moves within the object. 
         iptSetPointerBehavior(handle_plot,pointerBehavior);
         
         % draw circle as start of line
@@ -400,7 +396,8 @@ else
     idx_pings_ori=[];
 end
 
-if ~any(ip==idx_pings_ori)||disp_config.Fdata_ID~=ID_ori||update_poly
+if ~any(ip==idx_pings_ori) || disp_config.Fdata_ID~=ID_ori || update_poly
+    
     [new_vert,idx_pings,idx_angles] = poly_vertices_from_fData(fData,disp_config,[]);
     
     % save all of these in usrdata for later retrieval in stacked view
@@ -485,32 +482,40 @@ end
 
 %%
 function traverse_plot_fcn(src,~,hplot)
+%TRAVERSE_PLOT_FCN Called when mouse pointer on a line
+
 set(src, 'Pointer', 'hand');
 ax = ancestor(hplot(1),'axes');
 cp = ax.CurrentPoint;
 objt = findobj(ax,'Tag','tooltipt');
 xlim = get(ax,'XLim');
 dx = diff(xlim)/1e2;
+
+txt = hplot(1).UserData.Filename; % tooltip text
+ttpos = [cp(1,1)+dx,cp(1,2)]; % tooltip position
+
 if isempty(objt)
-    text(ax,cp(1,1)+dx,cp(1,2),hplot(1).UserData.Filename,'Tag','tooltipt','EdgeColor','k','BackgroundColor','y','VerticalAlignment','Bottom','Interpreter','none');
+    % tip doesn't exist yet, create it
+    text(ax,ttpos(1),ttpos(2),txt,...
+        'Tag','tooltipt',...
+        'EdgeColor','k',...
+        'BackgroundColor','y',...
+        'VerticalAlignment','Bottom',...
+        'Interpreter','none');
 else
-    set(objt,'Position',[cp(1,1)+dx,cp(1,2)],'String',hplot(1).UserData.Filename);
+    % update existing tip's position and text
+    set(objt,'Position',ttpos,...
+        'String',txt);
 end
-% obj = findobj(ax,'Tag','tooltip');
-% if isempty(obj)
-%
-%     plot(ax,cp(1,1),cp(1,2),'Marker','o','MarkerEdgeColor','r','MarkerFaceColor','k','MarkerSize',6,'Tag','tooltip');
-% else
-%      set(obj,'XData',cp(1,1),'YData',cp(1,2));
-% end
+
 end
 
 %%
 function exit_plot_fcn(src,~,hplot)
-set(src, 'Pointer', 'hand');
+%EXIT_PLOT_FCN Called when mouse pointer leaves a line
+
+set(src, 'Pointer', 'arrow');
 ax = ancestor(hplot(1),'axes');
-% obj = findobj(ax,'Tag','tooltip');
-% delete(obj);
 objt = findobj(ax,'Tag','tooltipt');
 delete(objt);
 end

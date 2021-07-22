@@ -17,17 +17,15 @@ if ~isdeployed()
     disp('ListenIPing');
 end
 
-%profile on;
 % update all lines on main map without changing zoom
+update_poly = strcmpi(src.Name,'StackPingWidth')||strcmpi(src.Name,'StackAngularWidth');
+up_wc = update_map_tab(main_figure,0,0,0,[],update_poly);
 
-force_up=strcmpi(src.Name,'StackPingWidth')||strcmpi(src.Name,'StackAngularWidth');
-up_wc=update_map_tab(main_figure,0,0,0,[],force_up);
 if up_wc>0
     % update wc and stacked views
     update_wc_tab(main_figure);
-    update_stacked_wc_tab(main_figure,force_up);
+    update_stacked_wc_tab(main_figure,update_poly);
     display_features(main_figure,{},{'wc_tab' 'stacked_wc_tab'});
 end
-%  profile off;
-%  profile viewer;
+
 end

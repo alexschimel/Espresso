@@ -211,7 +211,7 @@ switch fig_anc.SelectionType
 
                 if ~ismember(disp_config.Fdata_ID , IDs)
                     disp_config.Fdata_ID = IDs(1);
-                    disp_config.Iping = 1;
+                    disp_config.Iping = 1; % calls listenIping
                     return;
                 end
 
@@ -236,7 +236,7 @@ switch fig_anc.SelectionType
 
                 if ~ismember(disp_config.Fdata_ID, IDs)
                     disp_config.Fdata_ID = IDs(1);
-                    disp_config.Iping = 1;
+                    disp_config.Iping = 1; % calls listenIping
                     return;
                 end
 

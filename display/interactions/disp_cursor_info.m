@@ -28,7 +28,7 @@ IDs=cellfun(@(c) c.ID,fData_tot);
 
 if ~ismember(disp_config.Fdata_ID , IDs)
     disp_config.Fdata_ID = IDs(1);
-    disp_config.Iping = 1;
+    disp_config.Iping = 1; % calls listenIping
     return;
 end
 

@@ -33,7 +33,6 @@ if isfield(fData,'X_PB_beamPointingAngleRad')
     % indices of beams to keep for computation of stack view
     idx_angles = ~( angle_lim(1)<=fData.X_PB_beamPointingAngleRad(:,idx_pings) & angle_lim(2)>=fData.X_PB_beamPointingAngleRad(:,idx_pings) );
     
-    
     % next, list the pinge we'll actually use to form the rough polygon
     poly_vert_num = 20; % approximate max number of vertices composing the polygon on each side
     dp_sub = ceil(numel(idx_pings)./poly_vert_num);

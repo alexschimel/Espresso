@@ -109,22 +109,22 @@ classdef display_config_cl <handle
         end
         
         function cleanup(obj,main_figure)
-            % general clean-up of the main figure
+            % detect and clean up mismatches between disp_config and data
+            % available.
             
             fData_tot = getappdata(main_figure,'fData');
             
-            % re-initialize if there are no data to display
+            % 1. check there are data
+            % if there are no data, re-initialize disp_config and exit
             if isempty(fData_tot)
-                % clear all visible data
-                no_data_clear_all_displays(main_figure);
-                % reinitialize disp_config
                 disp_config = display_config_cl();
                 setappdata(main_figure,'disp_config',disp_config);
                 return;
             end
             
-            % disp_config "Fdata_ID" should not exceed total number of
-            % fData loaded
+            % 2. check fData_ID is correct
+            % if disp_config's Fdata_ID is not in the list of existing
+            % data, reset it to the first file and exit
             IDs = cellfun(@(c) c.ID,fData_tot);
             if ~ismember(obj.Fdata_ID, IDs)
                 obj.Fdata_ID = IDs(1);
@@ -132,10 +132,11 @@ classdef display_config_cl <handle
                 return;
             end
             
+            % 3. check iping is correct
             % Iping should not be superior to total number of pings in
             % current fData
             fData = fData_tot{obj.Fdata_ID == IDs};
-            datagramSource = fData.MET_datagramSource;
+            datagramSource = CFF_get_datagramSource(fData);
             nPings = numel(fData.(sprintf('%s_1P_PingCounter',datagramSource)));
             if obj.Iping > nPings
                 obj.Iping = 1;
