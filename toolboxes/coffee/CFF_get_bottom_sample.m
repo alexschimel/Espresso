@@ -37,9 +37,9 @@ clear p
 
 if strcmp(which,'processed') && isfield(fData,sprintf('X_BP_bottomSample_%s',datagramSource))
     % extracting already processed (and possibly filtered) bottom sample
-    X_BP_bottomSample = fData.(sprintf('X_BP_bottomSample_%s',datagramSource)); %in sample number
+    X_BP_bottomSample = fData.(sprintf('X_BP_bottomSample_%s',datagramSource)); % in sample number
 else
     % extracting raw bottom sample
-    X_BP_bottomSample = fData.(sprintf('%s_BP_DetectedRangeInSamples',datagramSource)); %in sample number
+    X_BP_bottomSample = fData.(sprintf('%s_BP_DetectedRangeInSamples',datagramSource)); % in sample number
     X_BP_bottomSample(X_BP_bottomSample==0) = NaN; 
 end

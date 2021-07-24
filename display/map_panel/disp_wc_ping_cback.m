@@ -23,15 +23,22 @@ switch current_figure.SelectionType
         % get ID of selection
         switch src.Type
             case 'line'
-                % clicking on nag line
+                % clicking on nav line
                 ID = str2double(src.Tag(1:end-4));
             case 'image'
                 % clicking on grid
                 ID = str2double(src.Tag(1:end-3));
         end
         
+        % check if line is active
+        idx_fData = find(IDs_tot==ID);
+        fdata_tab_comp = getappdata(main_figure,'fdata_tab');
+        idx_active_lines = cell2mat(fdata_tab_comp.table.Data(:,3));
+        if ~idx_active_lines(idx_fData)
+            return
+        end
+        
         % get fdata of selected line
-        idx_fData = (IDs_tot==ID);
         fData = fData_tot{idx_fData};
         
         % find nearest ping, and calculate horizontal distance from

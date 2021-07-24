@@ -1,5 +1,11 @@
-%% Function
 function mem = CFF_memory_available(varargin)
+%CFF_MEMORY_AVAILABLE  Memory available guaranteed to hold data
+%
+%   See also GET_GPU_COMP_STAT, ESPRESSO.
+
+%   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
+%   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
+%   2017-2021; Last revision: 21-07-2021
 
 if ispc
     

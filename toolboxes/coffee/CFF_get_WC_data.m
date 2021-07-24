@@ -26,19 +26,6 @@
 % * |db_sub|: Optional. Description (Information). Default 1. XXX
 % * |output_format|: Optional. Description (Information). 'raw' or 'true'
 % (default) XXX
-
-% *OUTPUT VARIABLES*
-%
-% XXX
-%
-% * |data|: Description (Information). XXX
-%
-% *DEVELOPMENT NOTES*
-%
-% XXX
-%
-% * research point 1. XXX
-% * research point 2. XXX
 %
 % *NEW FEATURES*
 %
@@ -47,19 +34,12 @@
 % the conversion not hard-coded anymore but obtained from fData
 % * YYYY-MM-DD: first version. XXX
 %
-% *EXAMPLE*
-%
-% XXX
-%
-% *AUTHOR, AFFILIATION & COPYRIGHT*
-%
-% Yoann Ladroit, Alexandre Schimel NIWA. Type |help Espresso.m| for
-% copyright information.
+
 
 %% Function
 function data_tot = CFF_get_WC_data(fData,fieldN,varargin)
 
-% input parsing
+% input parser
 p = inputParser;
 addRequired(p,'fieldN',@ischar);
 addOptional(p,'iPing',[],@(x) isnumeric(x) ||isempty(x));
@@ -72,70 +52,82 @@ parse(p,fieldN,varargin{:})
 iPing  = round(p.Results.iPing);
 iBeam  = p.Results.iBeam;
 iRange = p.Results.iRange;
+dr_sub = p.Results.dr_sub;
+db_sub = p.Results.db_sub;
+output_format = p.Results.output_format;
 
-dg = CFF_get_datagramSource(fData);
-
-if isempty(iPing)
-    iPing = 1:cellfun(@(x) nansum(size(x.Data.val,3)),fData.(fieldN));
-end
-
-% exit clauses
 if ~isfield(fData,fieldN)
     data_tot = [];
     return;
 end
+
+dg = CFF_get_datagramSource(fData);
 if ~ismember(dg,{'WC','AP'})
     data_tot = [];
     return;
 end
 
-p_end   =  fData.(sprintf('%s_n_end',dg));
-p_start =  fData.(sprintf('%s_n_start',dg));
-
-pingCounter = fData.(sprintf('%s_1P_PingCounter',dg));
-p_end(p_end>numel(pingCounter))     = numel(pingCounter);
-p_start(p_start>numel(pingCounter)) = numel(pingCounter);
-
-ping_group_start = pingCounter(p_start);
-ping_group_end = pingCounter(p_end);
-
-istart = find( ping_group_start<=nanmin(pingCounter(iPing)), 1, 'last' );
-iend   = find( ping_group_end>=nanmax(pingCounter(iPing)), 1, 'first' );
-
+if isempty(iPing)
+    iPing = 1:cellfun(@(x) nansum(size(x.Data.val,3)),fData.(fieldN));
+end
 if isempty(iBeam)
     iBeam = 1:cellfun(@(x) nanmax(size(x.Data.val,2)),fData.(fieldN));
 end
-
 if isempty(iRange)
     iRange = 1:cellfun(@(x) nanmax(size(x.Data.val,1)),fData.(fieldN));
 end
 
-data_tot = nan(ceil(numel(iRange)/p.Results.dr_sub),ceil(numel(iBeam)/p.Results.db_sub),numel(iPing),'single');
+% finding relevant groups of pings
+p_start = fData.(sprintf('%s_n_start',dg));
+p_end   = fData.(sprintf('%s_n_end',dg));
+pingCounter = fData.(sprintf('%s_1P_PingCounter',dg));
+p_end(p_end>numel(pingCounter))     = numel(pingCounter);
+p_start(p_start>numel(pingCounter)) = numel(pingCounter);
+
+% indices of first and last group of pings where requested data is found
+istart = find(p_start<=nanmin(iPing),1,'last');
+iend   = find(p_end>=nanmax(iPing),1,'first');
+
+% init data output
+data_tot = nan(ceil(numel(iRange)/dr_sub),ceil(numel(iBeam)/db_sub),numel(iPing),'single');
+
+% init ???
 ip = 0;
-% f = figure();
-% ax = axes(f);
+
+% debug graph
+debug_disp = 0;
+if debug_disp
+    f = figure();
+    ax = axes(f);
+end
+
+% read through each memmapped file
 for ig = istart:iend
     
-    iRange_tmp = iRange;
-    iBeam_tmp = iBeam;
-    iPing_tmp = pingCounter(iPing);
+    % indices of data to grab, with decimation
+    iRange_src = iRange(1):dr_sub:min([iRange(end) size(fData.(fieldN){ig}.Data.val,1)]);
+    iBeam_src  = iBeam(1):db_sub:min([iBeam(end) size(fData.(fieldN){ig}.Data.val,2)]);
     
-    iPing_tmp_gr = intersect(iPing_tmp,ping_group_start(ig):ping_group_end(ig));
+
+%     iPing_src = pingCounter(iPing);
+%     iPing_src_gr = intersect(iPing_src,ping_group_start(ig):ping_group_end(ig));
+%     iPing_src = iPing_src_gr-ping_group_start(ig)+1;
+%     iPing_src(iPing_src>size(fData.(fieldN){ig}.Data.val,3)) = [];
     
-    iPing_tmp = iPing_tmp_gr-ping_group_start(ig)+1;
-    iRange_tmp(iRange_tmp>size(fData.(fieldN){ig}.Data.val,1)) = [];
-    iBeam_tmp(iBeam_tmp>size(fData.(fieldN){ig}.Data.val,2))   = [];
-    iPing_tmp(iPing_tmp>size(fData.(fieldN){ig}.Data.val,3))   = [];
+    iPing_src = intersect(iPing,p_start(ig):p_end(ig));
+    iPing_src = iPing_src - p_start(ig) + 1;
     
-    if isempty(iRange_tmp)||isempty(iBeam_tmp)||isempty(iPing_tmp)
+    
+    if isempty(iRange_src)||isempty(iBeam_src)||isempty(iPing_src)
         data_tot = [];
         continue;
     end
     
-    data = fData.(fieldN){ig}.Data.val(iRange_tmp(1):p.Results.dr_sub:iRange_tmp(end),iBeam_tmp(1):p.Results.db_sub:iBeam_tmp(end),iPing_tmp);
+    % grab data
+    data = fData.(fieldN){ig}.Data.val(iRange_src,iBeam_src,iPing_src);
     
-    %% transform to true values if required
-    switch p.Results.output_format
+    % transform to true values if required
+    switch output_format
         
         case 'true'
             
@@ -152,9 +144,9 @@ for ig = istart:iend
             if numel(Fact)>1
                 Fact = Fact(ig);
             end
-                
+            
             % get offset (doesn't exist for older format, one per memmap
-            % file in the new format) 
+            % file in the new format)
             offset_fieldname = sprintf('%s_1_%s_Offset',dg,fieldname);
             if isfield(fData, offset_fieldname)
                 Offset = fData.(offset_fieldname);
@@ -174,7 +166,7 @@ for ig = istart:iend
                 % reset NaN value
                 data(data==single(Nanval)) = single(NaN);
                 
-                % decode data, mnimizing calculation time
+                % decode data, minimizing calculation time
                 if Fact~=1 && Offset~=0
                     data = data*Fact+Offset;
                 elseif Fact~=1 && Offset==0
@@ -184,19 +176,23 @@ for ig = istart:iend
                 end
                 
             end
-          
+            
     end
     
-    %     for i = 1:size(data_tot,3)
-    %         imagesc(ax,squeeze(data(:,:,i)));
-    %         drawnow;
-    %     end
+    if debug_disp
+        for ii = 1:size(data_tot,3)
+            imagesc(ax,squeeze(data(:,:,ii)));
+            drawnow;
+        end
+    end
     
+    % add to full array
     data_tot(1:size(data,1),1:(size(data,2)),ip+(1:(size(data,3)))) = data;
+    
+    % update ?
     ip = ip + (size(data,3));
     
 end
-
 
 
 

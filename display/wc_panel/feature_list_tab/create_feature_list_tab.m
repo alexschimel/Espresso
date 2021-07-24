@@ -304,10 +304,11 @@ end
 fprintf('Export to %s finished\n',folder_name);
 end
 
-function [idx_pings,bot_depth]=interesect_feature_with_lines(feature,fData)
+function [idx_pings,bot_depth] = interesect_feature_with_lines(feature,fData)
+
 idx_pings=[];
 bot_depth=0;
-[vert_poly,~,~]=poly_vertices_from_fData(fData,[],[]);
+[vert_poly,~,~] = poly_vertices_from_fData(fData,[],[]);
 [intersection,features_intersecting] = feature_intersect_polygon(feature,polyshape(vert_poly));
 
 if isempty(features_intersecting)

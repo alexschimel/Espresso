@@ -446,7 +446,7 @@ end
 
              case 'stacked_wc'
                  % add it as a new feature
-                 [vert_poly,~,~]=poly_vertices_from_fData(fData,disp_config,round(x_min):round(x_max));
+                 [vert_poly,~,~] = poly_vertices_from_fData(fData,disp_config,round(x_min):round(x_max));
                 
                  new_feature = feature_cl('Polygon',polyshape(vert_poly),'Zone',disp_config.get_zone(),'ID',ID,'Depth_min',abs(y_min),'Depth_max',abs(y_max));
                  

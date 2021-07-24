@@ -371,45 +371,36 @@ end
 %% SLIDING WINDOW POLYGON
 
 IDs = cellfun(@(c) c.ID,fData_tot);
-
-if ~ismember(disp_config.Fdata_ID , IDs)
+if ~ismember(disp_config.Fdata_ID,IDs)
     return;
 end
-
 fData = fData_tot{disp_config.Fdata_ID==IDs};
 
-% save info in usrdata as an ID
-usrdata.ID = fData.ID;
-%wc_tab_comp  = getappdata(main_figure,'wc_tab');
-display_tab_comp = getappdata(main_figure,'display_tab');
-wc_str = display_tab_comp.data_disp.String;
-str_disp = wc_str{display_tab_comp.data_disp.Value};
-usrdata.str_disp = str_disp;
-
-% if isempty(new_vert)
-%     return;
-% end
-if isfield(map_tab_comp.ping_window.UserData,'idx_pings')
-    idx_pings_ori=map_tab_comp.ping_window.UserData.idx_pings;
-    ID_ori=map_tab_comp.ping_window.UserData.ID;
-else
-    idx_pings_ori=[];
-end
-
-if ~any(ip==idx_pings_ori) || disp_config.Fdata_ID~=ID_ori || update_poly
+% update sliding window polygon only if...
+if update_poly || ... % forcing update
+        ~isfield(map_tab_comp.ping_window.UserData,'idx_pings') || ... % polygon doesn't exist yet
+        disp_config.Fdata_ID~=map_tab_comp.ping_window.UserData.ID || ... % we changed line
+        ~any(ip==map_tab_comp.ping_window.UserData.idx_pings) % ping is outside current polygon
+        
+    % data type
+    display_tab_comp = getappdata(main_figure,'display_tab');
+    wc_str = display_tab_comp.data_disp.String;
+    str_disp = wc_str{display_tab_comp.data_disp.Value};
     
+    % get polygon vertices and indeices of pings and beams
     [new_vert,idx_pings,idx_angles] = poly_vertices_from_fData(fData,disp_config,[]);
     
-    % save all of these in usrdata for later retrieval in stacked view
-    usrdata.idx_pings  = idx_pings;
-    usrdata.idx_angles = idx_angles;
+    % save all of these in UserData for later retrieval in stacked view
+    UserData = struct();
+    UserData.ID = fData.ID;
+    UserData.str_disp = str_disp;
+    UserData.idx_pings  = idx_pings;
+    UserData.idx_angles = idx_angles;
+    map_tab_comp.ping_window.UserData = UserData;
     
     % update vertices and tag in sliding window polygon
     map_tab_comp.ping_window.Shape.Vertices = new_vert;
     map_tab_comp.ping_window.Tag = sprintf('%.0f0_pingwindow',fData.ID);
-    
-    % add usrdata for later retrieval in stacked view
-    map_tab_comp.ping_window.UserData = usrdata;
     
     % update xlim and ylim
     xlim(1) = nanmin(xlim(1),nanmin(new_vert(:,1)));
