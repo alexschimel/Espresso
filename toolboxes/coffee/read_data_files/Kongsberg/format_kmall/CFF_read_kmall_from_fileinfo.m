@@ -274,7 +274,6 @@ for iDatag = datagToParse'
                         % Only nS records of amplitude of 1 byte
                         Mag_tmp(sR+1:sR+nS,iB) = fread(fid, nS, 'int8=>int8',0);
                     elseif phaseFlag == 1
-                        % XXX this case was not tested yet. Find data for it
                         % nS records of amplitude of 1 byte alternated with nS
                         % records of phase of 1 byte
                         Mag_tmp(sR+1:sR+nS,iB) = fread(fid, nS, 'int8=>int8',1);
@@ -297,20 +296,20 @@ for iDatag = datagToParse'
                 figure;
                 if ~phaseFlag
                     % amplitude only
-                    imagesc(WC);
+                    imagesc(Mag_tmp);
                     xlabel('beam number');
                     ylabel('sample number');
                     grid on; colorbar
                     title('KMALL Multibeam Water Column datagram contents: amplitude only');
                 else
                     % amplitude
-                    subplot(121); imagesc(WC);
+                    subplot(121); imagesc(Mag_tmp);
                     xlabel('beam number');
                     ylabel('sample number');
                     grid on; colorbar
                     title('KMALL Multibeam Water Column datagram contents: amplitude');
                     % phase
-                    subplot(121); imagesc(Ph);
+                    subplot(121); imagesc(Ph_tmp);
                     xlabel('beam number');
                     ylabel('sample number');
                     grid on; colorbar

@@ -171,14 +171,17 @@ for iF = 1:nStruct
         % DEV NOTE: note we don't decimate beam data here as we do for
         % water-column data
         
+        % remove duplicate datagrams
+        EMdgmMRZ = CFF_remove_duplicate_KMALL_datagrams(KMALLdata.EMdgmMRZ);
+        
         % extract data
-        header  = [KMALLdata.EMdgmMRZ.header];
-        cmnPart  = [KMALLdata.EMdgmMRZ.cmnPart];
-        rxInfo   = [KMALLdata.EMdgmMRZ.rxInfo];
-        sounding = [KMALLdata.EMdgmMRZ.sounding];
+        header  = [EMdgmMRZ.header];
+        cmnPart  = [EMdgmMRZ.cmnPart];
+        rxInfo   = [EMdgmMRZ.rxInfo];
+        sounding = [EMdgmMRZ.sounding];
         
         % number of datagrams
-        nDatag = numel(KMALLdata.EMdgmMRZ);
+        nDatag = numel(cmnPart);
         
         % number of pings
         dtg_pingCnt = [cmnPart.pingCnt]; % actual ping number for each datagram
@@ -247,8 +250,9 @@ for iF = 1:nStruct
             colorbar(ax_y); grid on; title(ax_y, 'across-track distance');
             ax_bs = axes(f,'outerposition',[0 0 1 0.3]);
             imagesc(ax_bs, fData.X8_BP_ReflectivityBS);
-            caxis(ax_bs, [prctile(fData.X8_BP_ReflectivityBS(:),1), prctile(fData.X8_BP_ReflectivityBS(:),99)]);
-            colorbar(ax_bs); grid on; title(ax_bs, 'BS (scaled 1st-99th percentile)'); colormap(ax_bs,'gray');
+            caxis(ax_bs, [prctile(fData.X8_BP_ReflectivityBS(:),5), prctile(fData.X8_BP_ReflectivityBS(:),95)]);
+            colorbar(ax_bs); grid on; title(ax_bs, 'BS (scaled 5-95th percentile)'); colormap(ax_bs,'gray');
+            drawnow;
         end
 
     end
@@ -256,13 +260,16 @@ for iF = 1:nStruct
     %% '#MWC - Multibeam (M) water (W) column (C) datagram'
     if isfield(KMALLdata,'EMdgmMWC') && ~isfield(fData,'WC_1D_Date')
         
+        % remove duplicate datagrams
+        EMdgmMWC = CFF_remove_duplicate_KMALL_datagrams(KMALLdata.EMdgmMWC);
+        
         % extract data
-        header = [KMALLdata.EMdgmMWC.header];
-        cmnPart = [KMALLdata.EMdgmMWC.cmnPart];
-        rxInfo  = [KMALLdata.EMdgmMWC.rxInfo];
+        header = [EMdgmMWC.header];
+        cmnPart = [EMdgmMWC.cmnPart];
+        rxInfo  = [EMdgmMWC.rxInfo];
         
         % number of datagrams
-        nDatag = numel(KMALLdata.EMdgmMWC);
+        nDatag = numel(EMdgmMWC);
         
         % number of pings
         dtg_pingCnt = [cmnPart.pingCnt]; % actual ping number for each datagram
@@ -278,7 +285,7 @@ for iF = 1:nStruct
         maxnBeams_sub = ceil(maxnBeams/db_sub); % maximum number of beams TO READ per swath
         
         % number of samples
-        dtg_nSamples = arrayfun(@(idx) [KMALLdata.EMdgmMWC(idx).beamData_p(:).numSampleData], 1:nDatag, 'UniformOutput', false); % number of samples per ping per datagram
+        dtg_nSamples = arrayfun(@(idx) [EMdgmMWC(idx).beamData_p(:).numSampleData], 1:nDatag, 'UniformOutput', false); % number of samples per ping per datagram
         [maxnSamples_groups, ping_group_start, ping_group_end] = CFF_group_pings(dtg_nSamples, swath_counter, dtg_swathCnt); % making groups of pings to limit size of memmaped files
         maxnSamples_groups = ceil(maxnSamples_groups/dr_sub); % maximum number of samples TO READ, per group.
         
@@ -433,7 +440,7 @@ for iF = 1:nStruct
             for iD = 1:numel(dtg_iS)
                 
                 % beamData_p for this datagram
-                BD = KMALLdata.EMdgmMWC(dtg_iS(iD)).beamData_p;
+                BD = EMdgmMWC(dtg_iS(iD)).beamData_p;
                 
                 % important variables for data to grab
                 nRx = numel(BD.beamPointAngReVertical_deg); % total number of beams in this datagram
@@ -502,11 +509,7 @@ for iF = 1:nStruct
             % finished reading this swath's WC data. Store the data in the
             % appropriate binary file, at the appropriate ping, through the
             % memory mapping
-            try
             fData.WC_SBP_SampleAmplitudes{iG}.Data.val(:,:,iS-ping_group_start(iG)+1) = Mag_tmp;
-            catch
-                pi
-            end
             if phaseFlag
                 fData.WC_SBP_SamplePhase{iG}.Data.val(:,:,iS-ping_group_start(iG)+1) = Ph_tmp;
             end
@@ -560,6 +563,41 @@ end
 
 end
 
+
+%%
+function out_EM_struct = CFF_remove_duplicate_KMALL_datagrams(in_EM_struct)
+% DEV NOTE: In an official Kongsberg dataset of KMALL EM304 data, I found
+% that the files had some MRZ datagrams in duplicate. Not sure how common
+% it is, but the conversion code ends up duplicating the data too. Instead
+% of modifying the code to be considering the possibility of duplicates,
+% it's easier to look for them at the start and remove them before parsing. 
+% In the examples I found, it would be sufficient to check for the set
+% unicity of the cmnPart fields pingCnt, rxFanIndex, and
+% swathAlongPosition. But since I'm not sure yet of what all the fields in
+% cmnPart are for, and since this code will DISCARD data, it's safer to use
+% all the fields in the test for set unicity.
+
+if isfield(in_EM_struct, 'cmnPart')
+ 
+    cmnPart_table = struct2table([in_EM_struct.cmnPart]);
+    [~, ia, ~] = unique(cmnPart_table,'rows', 'stable');
+    idx_duplicates = ~ismember(1:size(cmnPart_table,1), ia);
+    
+    if any(idx_duplicates)
+        % note for devs to figure how common duplicates are.
+        fprintf('DEV NOTE: KMALL struct has %i duplicate datagrams.\n',sum(idx_duplicates));
+    end
+    
+    out_EM_struct = in_EM_struct(~idx_duplicates);
+    
+else
+    out_EM_struct = in_EM_struct;
+end
+
+end
+
+
+%%
 function out_struct = CFF_read_TRAI(ASCIIdata, TRAI_code)
 
 out_struct = struct;
@@ -597,6 +635,8 @@ end
 
 end
 
+
+%%
 function [KM_date, TSMIM] = CFF_get_date_and_TSMIM_from_kmall_header(header)
 
 % get values
