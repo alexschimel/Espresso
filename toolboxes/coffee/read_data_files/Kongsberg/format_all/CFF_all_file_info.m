@@ -1,25 +1,20 @@
-%% CFF_all_file_info.m
+function ALLfileinfo = CFF_all_file_info(ALLfilename)
+%CFF_ALL_FILE_INFO  Records basic info about contents of .all file
 %
-% Records basic info about the datagrams contained in one Kongsberg EM
-% series binary data file in .all format (.all or .wcd)
+%   Records basic info about the datagrams contained in one Kongsberg EM
+%   series binary data file in .all format (.all or .wcd)
 %
-%% Help
+%   ALLfileinfo = CFF_ALL_FILE_INFO(ALLfilename) opens file ALLfilename and
+%   reads through the start of each datagram to get basic information about
+%   it, and store it all in ALLfileinfo.
 %
-% *USE*
+%   *INPUT VARIABLES*
+%   * |ALLfilename|: Required. String filename to parse (extension in .all
+%   or .wcd)
 %
-% ALLfileinfo = CFF_all_file_info(ALLfilename) opens file ALLfilename and
-% reads through the start of each datagram to get basic information about
-% it, and store it all in ALLfileinfo.
-%
-% *INPUT VARIABLES*
-%
-% * |ALLfilename|: Required. String filename to parse (extension in .all or
-% .wcd)
-%
-% *OUTPUT VARIABLES*
-%
-% * |ALLfileinfo|: structure containing information about datagrams in
-% ALLfilename, with fields:
+%   *OUTPUT VARIABLES*
+%   * |ALLfileinfo|: structure containing information about datagrams in
+%   ALLfilename, with fields:
 %     * |ALLfilename|: input file name
 %     * |filesize|: file size in bytes
 %     * |datagsizeformat|: endianness of the datagram size field 'b' or 'l'
@@ -44,36 +39,21 @@
 %     * |timeSinceMidnightInMilliseconds|: time since midnight in
 %     milliseconds
 %
-% *DEVELOPMENT NOTES*
+%   *DEVELOPMENT NOTES*
+%   * The code currently lists the EM model numbers supported as a test for
+%   sync. Add your model number in the list if it is not currently there
+%   (and if the parsing works). It would be better to remove this test and
+%   try to sync on ETX and Checksum instead.
+%   * Check regularly with Kongsberg doc to keep updated with new
+%   datagrams.
 %
-% * The code currently lists the EM model numbers supported as a test for
-% sync. Add your model number in the list if it is not currently there (and
-% if the parsing works). It would be better to remove this test and try to
-% sync on ETX and Checksum instead.
-% * Check regularly with Kongsberg doc to keep updated with new datagrams.
-%
-% *NEW FEATURES*
-%
-% * 2021-05-26: updated docstring
-% * 2018-10-11: updated docstring before adding to Coffee v3
-% * 2017-10-17: changed way filesize is calculated without it reading the
-% entire file
-% * 2017-06-29: updated docstring
-% * 2015-09-30: first version, inspired from convert_all_to_mat
-%
-% *EXAMPLE*
-%
-% ALLfilename = '.\data\EM2040c\0001_20140213_052736_Yolla.all';
-% ALLfileinfo = CFF_all_file_info(ALLfilename);
-%
-% *AUTHOR, AFFILIATION & COPYRIGHT*
-%
-% Alexandre Schimel (NGU, NIWA, Deakin Uni, Uni of Waikato), Yoann Ladroit
-% (NIWA).
-% Type |help CoFFee.m| for copyright information.
+%   See also ESPRESSO.
 
-%% Function
-function ALLfileinfo = CFF_all_file_info(ALLfilename)
+%   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
+%   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
+%   2017-2021; Last revision: 27-07-2021
+
+
 
 %% supported systems:
 % see help for info
@@ -331,7 +311,7 @@ while 1
         case 85
             datagTypeText = 'SOUND SPEED PROFILE (55H)';
             try i85=i85+1; catch, i85=1; end
-            counter = i85;   
+            counter = i85;
         case 87
             datagTypeText = 'KONGSBERG MARITIME SSP OUTPUT DATAGRAM (057H)';
             try i87=i87+1; catch, i87=1; end

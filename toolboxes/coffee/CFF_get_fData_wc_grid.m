@@ -1,6 +1,14 @@
-% get gridded data from fData. If 3D grid, option possible to only take
-% data within specified vertical bounds.
 function data = CFF_get_fData_wc_grid(fData, field, d_lim_sonar_ref, d_lim_bottom_ref)
+%CFF_GET_FDATA_WC_GRID  Get gridded data from fData.
+%
+%   If 3D grid, option possible to only take data within specified vertical
+%   bounds.
+%
+%   See also ESPRESSO.
+
+%   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
+%   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
+%   2017-2021; Last revision: 27-07-2021
 
 if ~iscell(field)
     field = {field};

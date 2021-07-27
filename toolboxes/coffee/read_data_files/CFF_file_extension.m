@@ -1,38 +1,21 @@
-%% CFF_file_extension.m
+function ext = CFF_file_extension(filename)
+%CFF_FILE_EXTENSION  Get extension of file(s)
 %
-% Get extension of file(s)
+%   ext = CFF_FILE_EXTENSION(filename) returns the STRING extension of
+%   input STRING filename.
 %
-%% Help
+%   ext = CFF_FILE_EXTENSION(filename) returns a cell array of STRING
+%   extensions of input cell array of STRING filenames.
 %
-% *INPUT VARIABLES*
-%
-% * |filename|: Required. One strong filename, or cell array of string
-% filenames.
-%
-% *OUTPUT VARIABLES*
-%
-% * |ext|: String filename extension, or cell array of string filenames
-% extension
-%
-% *DEVELOPMENT NOTES*
-%
-% *NEW FEATURES*
-%
-% * 2021-05-21: extend to multiple files. Alex
-% * 2018-10-11: added header. Alex
-% * YYYY-MM-DD: first version. XXX
-%
-% *EXAMPLE*
-%
+%   *EXAMPLE*
 %   ext = CFF_file_extension('f.mat'); % returns 'mat'
 %   ext = CFF_file_extension({'f.mat', 'g.bin'}); % returns {'mat','bin'}
 %
-% *AUTHOR, AFFILIATION & COPYRIGHT*
-%
-% Alex Schimel, Waikato University, Deakin University, NIWA, NGU.
+%   See also ESPRESSO.
 
-%% Function
-function ext = CFF_file_extension(filename)
+%   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
+%   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
+%   2017-2021; Last revision: 27-07-2021
 
 if ischar(filename)
     [~,~,ext] = fileparts(filename);

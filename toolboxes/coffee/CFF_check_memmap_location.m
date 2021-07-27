@@ -1,4 +1,12 @@
-function [fData_temp,dirchange_flag]=CFF_check_memmap_location(fData_temp,fields,folder_for_converted_data)
+function [fData_temp,dirchange_flag] = CFF_check_memmap_location(fData_temp,fields,folder_for_converted_data)
+%CFF_CHECK_MEMMAP_LOCATION  One-line description
+%
+%   See also ESPRESSO.
+
+%   Authors: Yoann Ladroit (NIWA, yoann.ladroit@niwa.co.nz) and Alex
+%   Schimel (NIWA, alexandre.schimel@niwa.co.nz)
+%   2017-2021; Last revision: 27-07-2021
+
 dirchange_flag=0;
 for ifi=1:numel(fields)
     

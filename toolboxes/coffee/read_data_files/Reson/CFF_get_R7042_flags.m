@@ -1,4 +1,11 @@
 function [flags,sample_size,mag_fmt,phase_fmt] = CFF_get_R7042_flags(flag_dec)
+%CFF_GET_R7042_FLAGS  One-line description
+%
+%   See also ESPRESSO.
+
+%   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
+%   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
+%   2017-2021; Last revision: 27-07-2021
 
 if isnumeric(flag_dec)
     flag_bin = dec2bin(flag_dec, 32);
@@ -107,9 +114,9 @@ else
         % would screw the code as we read the data in bytes,
         % aka multiples of 8 bits. We would need to modify the
         % code to work per bit if we ever had such a case.
-%         sample_size = 5;
-%         phase_fmt = 'int8';
-%         mag_fmt = 'int32';
+        %         sample_size = 5;
+        %         phase_fmt = 'int8';
+        %         mag_fmt = 'int32';
         % Anyway, throw error if you ever get here and look for
         % more information about data format...
         

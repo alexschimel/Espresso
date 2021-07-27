@@ -1,4 +1,29 @@
 function [S7Kdata,datagrams_parsed_idx] = CFF_read_s7k(S7Kfilename, varargin)
+%CFF_READ_S7K  Read s7k file
+%
+%   Reads contents of one Teledyne-Reson binary data file in .s7k format,
+%   allowing choice on which type of datagrams to parse.
+%
+%   S7Kdata = CFF_READ_S7K(S7Kfilename) reads all datagrams in a
+%   Teledyne-Reson file (extension .s7k) S7Kfilenamem, and store them in
+%   S7Kdata.
+%
+%   S7Kdata = CFF_READ_S7K(S7Kfilename,datagrams) reads only those
+%   datagrams in S7Kfilename that are specified by datagrams, and store
+%   them in S7Kdata.
+%
+%   S7Kdata = CFF_READ_S7K(S7Kfilename,'datagrams',datagrams) does
+%   the same.
+%
+%   Note this function will extract all datagram types of interest. For
+%   more control (say you only want the first ten depth datagrams and the
+%   last position datagram), use CFF_READ_S7K_FROM_FILEINFO.
+%
+%   See also CFF_S7K_FILE_INFO, CFF_READ_S7K_FROM_FILEINFO, ESPRESSO.
+
+%   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
+%   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
+%   2017-2021; Last revision: 27-07-2021
 
 %% input parsing
 

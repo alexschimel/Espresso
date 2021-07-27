@@ -1,74 +1,45 @@
-%% CFF_compute_ping_navigation.m
-%
-% Interpolates navigation data from ancillary sensors to ping time (i.e.
-% Easting, Northing, Height, Grid Convergence, Heading, Speed).
-%
-%% Help
-%
-% *USE*
-%
-% _This section contains a more detailed description of what the function
-% does and how to use it, for the interested user to have an overall
-% understanding of its function. Example below to replace. Delete these
-% lines XXX._
-%
-% TODO: write longer description of function
-%
-% *INPUT VARIABLES*
-%
-% * |fData|: Required. Structure for the storage of kongsberg EM series
-% multibeam data in a format more convenient for processing. The data is
-% recorded as fields coded "a_b_c" where "a" is a code indicating data
-% origing, "b" is a code indicating data dimensions, and "c" is the data
-% name. See the help of function CFF_convert_ALLdata_to_fData.m for
-% description of codes.
-% * |datagramSource| (optional): 'De', 'SI', 'WC', etc... as the
-% source datagram to use for time/date/pingcounter. If not specified,
-% function will look in order for "De", "X8" or "WC". Returns error if
-% can't find any of these three.
-% * |ellips| (optional): see "CFF_ll2tm.m" for options. If not
-% specified, function will use 'wgs84'
-% * |tmproj| (optional): see "CFF_ll2tm.m" for options. If not
-% specified, function will use the UTM projection for the first position
-% fix location.
-% * |navLat| (optional): navigation latency to introduce, in
-% milliseconds. If not specified, function will use navLat = 0;
-%
-% *OUTPUT VARIABLES*
-%
-% * |fData|: fData structure updated with ping navigation fields
-%
-% *DEVELOPMENT NOTES*
-%
-% * new developments needed: this function is to obtain best info on sonar
-% location (E,N,H) and orientation (azimuth, depression, heading) at time
-% of ping. In the future, maybe develop here to accept SBET.
-% * function formerly named CFF_process_ping.m
-%
-% *NEW FEATURES*
-%
-% * 2018-10-11: Added speed. Updated header before adding to Coffee v3
-% * 2017-10-06: new header update
-% * 2017-10-06: saving as new version (v2) because change in order of
-% dimensions
-% * 2014-02-28: first version Code adapted from old processing scripts
-%
-% *EXAMPLE*
-%
-% _This section contains examples of valid function calls. Note that
-% example lines start with 3 white spaces so that the publish function
-% shows them correctly as matlab code. Example below to replace. Delete
-% these lines XXX._
-%
-%   example_use_1; % comment on what this does. XXX
-%   example_use_2: % comment on what this line does. XXX
-%
-% *AUTHOR, AFFILIATION & COPYRIGHT*
-%
-% Alexandre Schimel, Waikato University, Deakin University, NIWA.
-
-%% Function
 function [fData] = CFF_compute_ping_navigation(fData,varargin)
+%CFF_COMPUTE_PING_NAVIGATION  Interpolates navigation data to ping time
+%
+%   Interpolates navigation data from ancillary sensors to ping time (i.e.
+%   Easting, Northing, Height, Grid Convergence, Heading, Speed).
+%
+%   *INPUT VARIABLES
+%   * |fData|: Required. Structure for the storage of kongsberg EM series
+%   multibeam data in a format more convenient for processing. The data is
+%   recorded as fields coded "a_b_c" where "a" is a code indicating data
+%   origing, "b" is a code indicating data dimensions, and "c" is the data
+%   name. See the help of function CFF_convert_ALLdata_to_fData.m for
+%   description of codes.
+%   * |datagramSource| (optional): 'De', 'SI', 'WC', etc... as the
+%   source datagram to use for time/date/pingcounter. If not specified,
+%   function will look in order for "De", "X8" or "WC". Returns error if
+%   can't find any of these three.
+%   * |ellips| (optional): see "CFF_ll2tm.m" for options. If not
+%   specified, function will use 'wgs84'
+%   * |tmproj| (optional): see "CFF_ll2tm.m" for options. If not
+%   specified, function will use the UTM projection for the first position
+%   fix location.
+%   * |navLat| (optional): navigation latency to introduce, in
+%   milliseconds. If not specified, function will use navLat = 0;
+%
+%   *OUTPUT VARIABLES*
+%   * |fData|: fData structure updated with ping navigation fields
+%
+%   *DEVELOPMENT NOTES*
+%   * new developments needed: this function is to obtain best info on
+%   sonar location (E,N,H) and orientation (azimuth, depression, heading)
+%   at time of ping. In the future, maybe develop here to accept SBET.
+%   * function formerly named CFF_process_ping.m
+%
+%   See also ESPRESSO.
+
+%   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
+%   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
+%   2017-2021; Last revision: 27-07-2021
+
+
+
 
 %% 0. INITIALIZE
 datagramSource = [];

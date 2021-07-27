@@ -1,20 +1,17 @@
-%% CFF_check_ALLfilename.m
-%
-% Check that input file(s) exist(s) and are likely Kongsberg raw data files
-% in the .all format. 
-%
-%% Help
-%
-% *AUTHOR, AFFILIATION & COPYRIGHT*
-%
-% Alexandre Schimel (NGU, NIWA), Yoann Ladroit (NIWA). 
-% Type |help CoFFee.m| for copyright information.
-
-%% Function
 function out = CFF_check_ALLfilename(rawfilename)
+%CFF_CHECK_ALLFILENAME  Check file exists and has all extension
+%
+%   Check that input file(s) exist(s) and are likely Kongsberg raw data
+%   files in the .all format.
+%
+%   See also ESPRESSO.
+
+%   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
+%   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
+%   2017-2021; Last revision: 27-07-2021
 
 if ischar(rawfilename)
-    % single file. 
+    % single file.
     % Check extension is valid, and that file exists.
     
     is_ext_valid = any(strcmpi(CFF_file_extension(rawfilename),{'.all','.wcd'}));

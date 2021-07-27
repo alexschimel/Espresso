@@ -1,11 +1,19 @@
 function out_struct = CFF_read_EMdgmSPO(fid, dgmVersion_warning_flag)
-% #SPO - Struct of position sensor datagram.
+%CFF_READ_EMDGMSPO  Read kmall structure #SPO
 %
-% Data from active sensor will be motion corrected if indicated by
-% operator. Motion correction is applied to latitude, longitude, speed,
-% course and ellipsoidal height.
+%   #SPO - Struct of position sensor datagram.
 %
-% Verified correct for kmall versions H,I
+%   Data from active sensor will be motion corrected if indicated by
+%   operator. Motion correction is applied to latitude, longitude, speed,
+%   course and ellipsoidal height.
+%
+%   Verified correct for kmall versions H,I
+%
+%   See also CFF_READ_KMALL_FROM_FILEINFO, ESPRESSO.
+
+%   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
+%   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
+%   2017-2021; Last revision: 27-07-2021
 
 out_struct.header = CFF_read_EMdgmHeader(fid);
 
@@ -53,7 +61,7 @@ out_struct.posFixQuality_m = fread(fid,1,'float');
 % Motion corrected (if enabled in K-Controller) data as used in depth
 % calculations. Referred to vessel reference point. Unit decimal degree.
 % For Rev H: Parameter is set to define UNAVAILABLE_LATITUDE if sensor
-% inactive.  
+% inactive.
 out_struct.correctedLat_deg = fread(fid,1,'double');
 
 % Motion corrected (if enabled in K-Controller) data as used in depth
@@ -63,26 +71,26 @@ out_struct.correctedLat_deg = fread(fid,1,'double');
 out_struct.correctedLong_deg = fread(fid,1,'double');
 
 % Speed over ground. Unit m/s. Motion corrected (if enabled in
-% K-Controller) data as used in depth calculations. 
+% K-Controller) data as used in depth calculations.
 % For Rev H: If unavailable or from inactive sensor, value set to define
-% UNAVAILABLE_SPEED. 
-% For Rev I: If unavailable, the value set to define UNAVAILABLE_SPEED. 
+% UNAVAILABLE_SPEED.
+% For Rev I: If unavailable, the value set to define UNAVAILABLE_SPEED.
 out_struct.speedOverGround_mPerSec = fread(fid,1,'float');
 
 % Course over ground. Unit degree. Motion corrected (if enabled in
 % K-Controller) data as used in depth calculations.
 % For Rev H: If unavailable or from inactive sensor, value set to define
-% UNAVAILABLE_COURSE. 
-% For Rev I: If unavailable, the value set to define UNAVAILABLE_COURSE. 
+% UNAVAILABLE_COURSE.
+% For Rev I: If unavailable, the value set to define UNAVAILABLE_COURSE.
 out_struct.courseOverGround_deg = fread(fid,1,'float');
 
 % Height of vessel reference point above the ellipsoid. Unit meter. Motion
 % corrected (if enabled in K-Controller) data as used in depth
-% calculations. 
+% calculations.
 % For Rev H: If unavailable or from inactive sensor, value set to define
 % UNAVAILABLE_ELLIPSOIDHEIGHT.
 % For Rev I: If unavailable, value set to define
-% UNAVAILABLE_ELLIPSOIDHEIGHT. 
+% UNAVAILABLE_ELLIPSOIDHEIGHT.
 out_struct.ellipsoidHeightReRefPoint_m = fread(fid,1,'float');
 
 % Position data as received from sensor, i.e. uncorrected for motion etc.

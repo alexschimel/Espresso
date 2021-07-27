@@ -1,7 +1,15 @@
 function out_struct = CFF_read_EMdgmScommon(fid)
-% Sensor (S) output datagram - common part for all external sensors.
+%CFF_READ_EMDGMSCOMMON  Read common part of Sensor struct of kmall file
 %
-% Verified correct for kmall versions H,I
+%   Sensor (S) output datagram - common part for all external sensors.
+%
+%   Verified correct for kmall versions H,I
+%
+%   See also CFF_READ_KMALL_FROM_FILEINFO, ESPRESSO.
+
+%   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
+%   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
+%   2017-2021; Last revision: 27-07-2021
 
 % Size in bytes of current struct.
 out_struct.numBytesCmnPart = fread(fid,1,'uint16');

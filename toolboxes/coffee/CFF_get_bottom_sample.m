@@ -1,14 +1,20 @@
 function X_BP_bottomSample = CFF_get_bottom_sample(fData,varargin)
+%CFF_GET_BOTTOM_SAMPLE  Get the bottom sample (per ping and beam) in fData
 %
-% Get the bottom sample (per ping and beam) in fData. Precise the
-% 'datagramSource' as either 'WC', 'AP', 'De', 'X8'. By default using the
-% fData datagramSource. Also precise 'which' as either 'raw' (raw bottom
-% sample) or 'processed' (as recorded after georeferencing and possibly
-% filtering) (default).
+%   Get the bottom sample (per ping and beam) in fData. Precise the
+%   'datagramSource' as either 'WC', 'AP', 'De', 'X8'. By default using the
+%   fData datagramSource. Also precise 'which' as either 'raw' (raw bottom
+%   sample) or 'processed' (as recorded after georeferencing and possibly
+%   filtering) (default).
+%   Not precising anything returns as the original code did, aka, using the
+%   fData datagramsource, and the processed version if it exists, or else
+%   the raw one.
 %
-% Not precising anything returns as the original code did, aka, using the
-% fData datagramsource, and the processed version if it exists, or else the
-% raw one.
+%   See also ESPRESSO.
+
+%   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
+%   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
+%   2017-2021; Last revision: 27-07-2021
 
 % initialize input parser
 p = inputParser;
@@ -17,7 +23,7 @@ p = inputParser;
 validate_fData = @isstruct;
 addRequired(p,'fData',validate_fData);
 
-% 'datagramSource': 
+% 'datagramSource':
 validate_datagramSource = @(x) ismember(x,{'WC','AP','De','X8'});
 default_datagramSource = CFF_get_datagramSource(fData);
 addOptional(p,'datagramSource',default_datagramSource,validate_datagramSource);
@@ -41,5 +47,5 @@ if strcmp(which,'processed') && isfield(fData,sprintf('X_BP_bottomSample_%s',dat
 else
     % extracting raw bottom sample
     X_BP_bottomSample = fData.(sprintf('%s_BP_DetectedRangeInSamples',datagramSource)); % in sample number
-    X_BP_bottomSample(X_BP_bottomSample==0) = NaN; 
+    X_BP_bottomSample(X_BP_bottomSample==0) = NaN;
 end

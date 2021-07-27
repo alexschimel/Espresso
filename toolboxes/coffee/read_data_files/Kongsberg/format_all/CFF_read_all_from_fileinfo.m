@@ -1,23 +1,19 @@
-%% CFF_read_all_from_fileinfo.m
+function ALLdata = CFF_read_all_from_fileinfo(ALLfilename, ALLfileinfo,varargin)
+%CFF_READ_ALL_FROM_FILEINFO  Read contents of all file
 %
-% Reads contents of one Kongsberg EM series binary data file in .all format
-% (.all or .wcd), using ALLfileinfo to indicate which datagrams to be
-% parsed. 
+%   Reads contents of one Kongsberg EM series binary data file in .all
+%   format (.all or .wcd), using ALLfileinfo to indicate which datagrams to
+%   be parsed.
 %
-%% Help
+%   ALLdata = CFF_READ_ALL_FROM_FILEINFO(ALLfilename, ALLfileinfo) reads
+%   all datagrams in ALLfilename for which ALLfileinfo.parsed equals 1, and
+%   store them in ALLdata.
 %
-% *USE*
-%
-% ALLdata = CFF_read_all_from_fileinfo(ALLfilename, ALLfileinfo) reads all
-% datagrams in ALLfilename for which ALLfileinfo.parsed equals 1, and store
-% them in ALLdata.
-%
-% *INPUT VARIABLES*
-%
-% * |ALLfilename|: Required. String filename to parse (extension in .all or
-% .wcd). 
-% * |ALLfileinfo|: structure containing information about datagrams in
-% ALLfilename, with fields:  
+%   *INPUT VARIABLES*
+%   * |ALLfilename|: Required. String filename to parse (extension in .all
+%   or .wcd).
+%   * |ALLfileinfo|: structure containing information about datagrams in
+%   ALLfilename, with fields:
 %     * |ALLfilename|: input file name
 %     * |filesize|: file size in bytes
 %     * |datagsizeformat|: endianness of the datagram size field 'b' or 'l'
@@ -25,59 +21,41 @@
 %     * |datagNumberInFile|: number of datagram in file
 %     * |datagPositionInFile|: position of beginning of datagram in file
 %     * |datagTypeNumber|: for each datagram, SIMRAD datagram type in
-%     decimal 
+%     decimal
 %     * |datagTypeText|: for each datagram, SIMRAD datagram type
-%     description 
+%     description
 %     * |parsed|: 0 for each datagram at this stage. To be later turned to
-%     1 for parsing 
+%     1 for parsing
 %     * |counter|: the counter of this type of datagram in the file (ie
 %     first datagram of that type is 1 and last datagram is the total
 %     number of datagrams of that type)
 %     * |number|: the number/counter found in the datagram (usually
-%     different to counter) 
+%     different to counter)
 %     * |size|: for each datagram, datagram size in bytes
 %     * |syncCounter|: for each datagram, the number of bytes founds
 %     between this datagram and the previous one (any number different than
 %     zero indicates a sync error)
 %     * |emNumber|: EM Model number (eg 2045 for EM2040c)
 %     * |date|: datagram date in YYYMMDD
-%     * |timeSinceMidnightInMilliseconds|: time since midnight in msecs 
+%     * |timeSinceMidnightInMilliseconds|: time since midnight in msecs
 %
-% *OUTPUT VARIABLES*
+%   *OUTPUT VARIABLES*
+%   * |ALLdata|: structure containing the data. Each field corresponds a
+%   different type of datagram. The field |ALLdata.info| contains a copy of
+%   ALLfileinfo described above.
 %
-% * |ALLdata|: structure containing the data. Each field corresponds a
-% different type of datagram. The field |ALLdata.info| contains a copy of
-% ALLfileinfo described above.
+%   *DEVELOPMENT NOTES*
+%   * PU Status output datagram structure seems different to the datagram
+%   manual description. Find the good description.#edit 21aug2013: updated
+%   to Rev Q. Need to be checked though.
+%   * The parsing code for some datagrams still need to be coded. To
+%   update.
 %
-% *DEVELOPMENT NOTES*
-%
-% * PU Status output datagram structure seems different to the datagram
-% manual description. Find the good description.#edit 21aug2013: updated to
-% Rev Q. Need to be checked though.
-% * The parsing code for some datagrams still need to be coded. To update.
-%
-% *NEW FEATURES*
-%
-% * 2018-10-11: updated header before adding to Coffee v3
-% * 2018: added amplitude and phase datagram
-% * 2017-06-29: header cleaned up. Changed ALLfile for ALLdata internally
-% for consistency with other functions
-% * 2015-09-30: first version taking from last version of
-% convert_all_to_mat
-%
-% *EXAMPLE*
-%
-% ALLfilename = '.\data\EM2040c\0001_20140213_052736_Yolla.all';
-% info = CFF_all_file_info(ALLfilename);
-% info.parsed(:)=1; % to save all the datagrams
-% ALLdata = CFF_read_all_from_fileinfo(ALLfilename, info);
-%
-% *AUTHOR, AFFILIATION & COPYRIGHT*
-%
-% Alexandre Schimel, Waikato University, Deakin University, NIWA.
+%   See also ESPRESSO.
 
-%% Function
-function ALLdata = CFF_read_all_from_fileinfo(ALLfilename, ALLfileinfo,varargin)
+%   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
+%   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
+%   2017-2021; Last revision: 27-07-2021
 
 
 %% Input arguments management using inputParser
@@ -960,14 +938,14 @@ for iDatag = datagToParse'
             % This datagram's data is too to be stored in memory. Instead,
             % we record the metadata and the position-in-file location of
             % the data, which be extracted and stored in binary format at
-            % the next stage of data conversion. 
+            % the next stage of data conversion.
             % -------------------------------------------------------------
             
             % parsing
             ALLdata.EM_WaterColumn.NumberOfBytesInDatagram(i107) = nbDatag;
             
             % position at STX identifier
-            pos_1 = ftell(fid); 
+            pos_1 = ftell(fid);
             
             % fields already read
             ALLdata.EM_WaterColumn.STX(i107)                             = stxDatag;
@@ -995,7 +973,7 @@ for iDatag = datagToParse'
             ALLdata.EM_WaterColumn.Spare3(i107)                      = fread(fid,1,'uint8');
             
             % --- repeat cycle #1 -----------------------------------------
-            % Ntx entries of 6 bits 
+            % Ntx entries of 6 bits
             temp = ftell(fid);
             C = 6;
             Ntx = ALLdata.EM_WaterColumn.NumberOfTransmitSectors(i107);
@@ -1008,7 +986,7 @@ for iDatag = datagToParse'
             ALLdata.EM_WaterColumn.Spare{i107}                = fread(fid,Ntx,'uint8',C-1);
             fseek(fid,1-C,'cof'); % we need to come back after last jump
             % --- end of repeat cycle #1 ----------------------------------
-
+            
             % --- repeat cycle #2 -----------------------------------------
             % Nrx entries of a possibly variable number of bits.
             Nrx = ALLdata.EM_WaterColumn.NumberOfBeamsInThisDatagram(i107);
@@ -1023,7 +1001,7 @@ for iDatag = datagToParse'
             ALLdata.EM_WaterColumn.DetectedRangeInSamples{i107}  = nan(1,Nrx);
             ALLdata.EM_WaterColumn.TransmitSectorNumber2{i107}   = nan(1,Nrx);
             ALLdata.EM_WaterColumn.BeamNumber{i107}              = nan(1,Nrx);
-            ALLdata.EM_WaterColumn.SampleAmplitudePosition{i107} = nan(1,Nrx); 
+            ALLdata.EM_WaterColumn.SampleAmplitudePosition{i107} = nan(1,Nrx);
             Ns = zeros(1,Nrx);
             
             % now parse the data
@@ -1046,7 +1024,7 @@ for iDatag = datagToParse'
                     % ALLdata.EM_WaterColumn.SampleAmplitude{i107}{jj} = fread(fid,Ns(jj),'int8');
                     % But instead, we're only going to record the position
                     % of the start of data:
-                    ALLdata.EM_WaterColumn.SampleAmplitudePosition{i107}(jj) = ftell(fid); 
+                    ALLdata.EM_WaterColumn.SampleAmplitudePosition{i107}(jj) = ftell(fid);
                     
                     % and since we did not read that data, we need to
                     % move manually onto the next beam:
@@ -1055,7 +1033,7 @@ for iDatag = datagToParse'
                 catch
                     
                     % if there's any issue in the recording, flag and exit
-                    % the loop 
+                    % the loop
                     ALLdata.EM_WaterColumn.NumberOfSamples{i107}(jj) = 0;
                     Ns(jj) = 0;
                     wc_parsing_error = 1;
@@ -1074,7 +1052,7 @@ for iDatag = datagToParse'
             % "spare byte if required to get even length (always 0 if used)"
             if floor((Nrx*10+sum(Ns))/2) == (Nrx*10+sum(Ns))/2
                 % all data parsed so far is an even number. Since ETX is 1
-                % byte, add a spare byte here 
+                % byte, add a spare byte here
                 ALLdata.EM_WaterColumn.Spare4(i107) = double(typecast(tmp_end(1),'uint8'));
                 
                 % and remove it from tmp_end
@@ -1184,14 +1162,14 @@ for iDatag = datagToParse'
             % This datagram's data is too to be stored in memory. Instead,
             % we record the metadata and the position-in-file location of
             % the data, which be extracted and stored in binary format at
-            % the next stage of data conversion. 
+            % the next stage of data conversion.
             % -------------------------------------------------------------
             
             % parsing
             ALLdata.EM_AmpPhase.NumberOfBytesInDatagram(i114) = nbDatag;
             
             % position at STX identifier
-            pos_1 = ftell(fid); 
+            pos_1 = ftell(fid);
             
             % fields already read
             ALLdata.EM_AmpPhase.STX(i114)                             = stxDatag;
@@ -1219,7 +1197,7 @@ for iDatag = datagToParse'
             ALLdata.EM_AmpPhase.Spare3(i114)                      = fread(fid,1,'uint8');
             
             % --- repeat cycle #1 -----------------------------------------
-            % Ntx entries of 6 bits 
+            % Ntx entries of 6 bits
             temp = ftell(fid);
             C = 6;
             Ntx = ALLdata.EM_AmpPhase.NumberOfTransmitSectors(i114);
@@ -1284,7 +1262,7 @@ for iDatag = datagToParse'
                 catch
                     
                     % if there's any issue in the recording, flag and exit
-                    % the loop 
+                    % the loop
                     ALLdata.EM_AmpPhase.NumberOfSamples{i114}(jj) = 0;
                     Ns(jj) = 0;
                     wc_parsing_error = 1;

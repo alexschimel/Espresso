@@ -1,11 +1,20 @@
 function out_struct = CFF_read_EMdgmCHE(fid, dgmVersion_warning_flag)
-% #CHE - Struct of compatibility heave sensor datagram.
+%CFF_READ_EMDGMCHE  Read kmall structure #CHE
 %
-% Used for backward compatibility with .all datagram format. Sent before
-% #MWC (water column datagram) datagram if compatibility mode is enabled.
-% The multibeam datagram body is common with the #MWC datagram.
+%   #CHE - Struct of compatibility heave sensor datagram.
 %
-% Verified correct for kmall versions H,I
+%   Used for backward compatibility with .all datagram format. Sent before
+%   #MWC (water column datagram) datagram if compatibility mode is enabled.
+%   The multibeam datagram body is common with the #MWC datagram.
+%
+%   Verified correct for kmall versions H,I
+%
+%   See also CFF_READ_KMALL_FROM_FILEINFO, ESPRESSO.
+
+%   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
+%   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
+%   2017-2021; Last revision: 27-07-2021
+
 
 out_struct.header = CFF_read_EMdgmHeader(fid);
 

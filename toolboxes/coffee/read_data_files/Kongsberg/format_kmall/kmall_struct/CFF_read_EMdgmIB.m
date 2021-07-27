@@ -1,9 +1,17 @@
 function out_struct = CFF_read_EMdgmIB(fid, dgmVersion_warning_flag)
-% #IB - Results from online built in test (BIST). Definition used for three
-% different BIST datagrams, i.e. #IBE (BIST Error report), #IBR (BIST
-% reply) or #IBS (BIST short reply).
+%CFF_READ_EMDGMIB  Read kmall structure #IB
 %
-% Verified correct for kmall versions H,I
+%   #IB - Results from online built in test (BIST). Definition used for
+%   three different BIST datagrams, i.e. #IBE (BIST Error report), #IBR
+%   (BIST reply) or #IBS (BIST short reply).
+%
+%   Verified correct for kmall versions H,I
+%
+%   See also CFF_READ_KMALL_FROM_FILEINFO, ESPRESSO.
+
+%   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
+%   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
+%   2017-2021; Last revision: 27-07-2021
 
 out_struct.header = CFF_read_EMdgmHeader(fid);
 

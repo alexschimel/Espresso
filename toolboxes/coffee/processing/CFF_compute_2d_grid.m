@@ -1,4 +1,11 @@
 function [gridN, gridE, gridNan] = CFF_compute_2d_grid(fData,varargin)
+%CFF_COMPUTE_2D_GRID  One-line description
+%
+%   See also ESPRESSO.
+
+%   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
+%   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
+%   2017-2021; Last revision: 27-07-2021
 
 % init
 p = inputParser;
@@ -27,12 +34,7 @@ N_idx = floor((N(idx_keep)-gridN(1))/res)+1;
 subs = single([N_idx E_idx]);               % indices in the temp grid of each data point
 sz   = single([numel(gridN) numel(gridE)]); % size of ouptut
 
-% generate empty grid 
+% generate empty grid
 gridNan = accumarray(subs,ones(numel(E(idx_keep)),1),sz,@(x) sum(x),0);
 gridNan = gridNan==0;
-
-
-
-
-
 

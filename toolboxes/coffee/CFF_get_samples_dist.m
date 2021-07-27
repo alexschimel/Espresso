@@ -13,9 +13,9 @@ function [sampleAcrossDistance,sampleUpwardsDistance] = CFF_get_samples_dist(sam
 %
 %   * |sampleRange|: Required. A SBP matrix (or SB for 1 ping, or 1BP for a
 %   common sample across all beams and pings, etc.) of each sample's range
-%   (in m) from the sonar  
+%   (in m) from the sonar
 %   * |beamPointingAngle|: Required. A BP matrix (or B1 for 1 ping) of beam
-%   pointing angle in each ping/beam 
+%   pointing angle in each ping/beam
 %
 %   *OUTPUT VARIABLES*
 %

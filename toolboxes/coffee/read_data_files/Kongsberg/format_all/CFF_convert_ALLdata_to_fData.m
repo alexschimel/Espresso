@@ -1,27 +1,25 @@
 function fData = CFF_convert_ALLdata_to_fData(ALLdataGroup,varargin)
-%CFF_CONVERT_ALLDATA_TO_FDATA  Convert .all data to the CoFFee format
+%CFF_CONVERT_ALLDATA_TO_FDATA  Convert all data to the CoFFee format
 %
 %   Converts Kongsberg EM series data FROM the ALLdata format (read by
-%   CFF_read_all) TO the fData format used in processing.
+%   CFF_READ_ALL) TO the CoFFee fData format used in processing.
 %
 %   fData = CFF_CONVERT_ALLDATA_TO_FDATA(ALLdata) converts the contents of
 %   one ALLdata structure to a structure in the fData format.
 %
-%   fData = CFF_CONVERT_ALLDATA_TO_FDATA({ALLdata;WCDdata}) converts two
-%   ALLdata structures into one fData sructure. This type of input is
-%   obtained from running CFF_read_all on a Kongsberg pair of files
-%   (.all/.wcd).
+%   fData = CFF_CONVERT_ALLDATA_TO_FDATA(ALLdataGroup) converts an array of
+%   two ALLdata structures into one fData sructure. The pair of structure
+%   must correspond to an .all/.wcd pair of files. Do not try to use this
+%   feature to convert ALLdata structures from different acquisition files.
+%   It will not work. Convert each into its own fData structure.
 %
 %   Note that the ALLdata structures are converted to fData in the order
 %   they are in input, and that the first ones take precedence. Aka in the
-%   example above, if WCDdata contains a type of datagram that is already
-%   in ALLdata, they will NOT be converted. This is to avoid doubling up
-%   the data that may exist in duplicate in the two input files. Order the
-%   ALLdata structures in input in order of desired precedence.
-%
-%   Do not try to use this feature to convert ALLdata structures from
-%   different acquisition files. It will not work. Convert each into its
-%   own fData structure. 
+%   example above, if the second structure contains a type of datagram that
+%   is already in the first, they will NOT be converted. This is to avoid
+%   doubling up the data that may exist in duplicate in the pair of raw
+%   files. You need to order the ALLdata structures in input in order of
+%   desired precedence.
 %
 %   fData = CFF_CONVERT_ALLDATA_TO_FDATA(ALLdata,dr_sub,db_sub) operates
 %   the conversion with a sub-sampling of the water-column data (either WC
@@ -30,7 +28,6 @@ function fData = CFF_convert_ALLdata_to_fData(ALLdataGroup,varargin)
 %   fData = CFF_CONVERT_ALLDATA_TO_FDATA(ALLdata,10,2).
 %
 %   *INPUT VARIABLES*
-%
 %   * |ALLdataGroup|: Required. ALLdata structure or cells of ALLdata
 %   structures.
 %   * |dr_sub|: Optional. Scalar for decimation in range. Default: 1 (no
@@ -40,7 +37,6 @@ function fData = CFF_convert_ALLdata_to_fData(ALLdataGroup,varargin)
 %   * |fData|: Optional. Existing fData structure to add to.
 %
 %   *OUTPUT VARIABLES*
-%
 %   * |fData|: structure for the storage of kongsberg EM series multibeam
 %   data in a format more convenient for processing. The data is recorded
 %   as fields coded "a_b_c" where "a" is a code indicating data origing,
@@ -88,7 +84,6 @@ function fData = CFF_convert_ALLdata_to_fData(ALLdataGroup,varargin)
 %     obtained from subsequent functions.
 %
 %   *DEVELOPMENT NOTES*
-%
 %   * only water column data can be subsampled, all other datagrams are
 %   converted in full. To be consistent, develop code to subsample all
 %   datagrams as desired in parameters. Add a subsampling in pings while

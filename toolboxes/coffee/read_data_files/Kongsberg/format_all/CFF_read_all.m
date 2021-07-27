@@ -1,41 +1,38 @@
-%% CFF_read_all.m
+function [ALLdata,datagrams_parsed_idx] = CFF_read_all(ALLfilename, varargin)
+%CFF_READ_ALL  Read all file or pair of files
 %
-% Reads contents of one Kongsberg EM series binary data file in .all format
-% (.all or .wcd), or a pair of .all/.wcd files, allowing choice on which
-% type of datagrams to parse.
+%   Reads contents of one Kongsberg EM series binary data file in .all
+%   format (.all or .wcd), or a pair of .all/.wcd files, allowing choice on
+%   which type of datagrams to parse.
 %
-%% Help
+%   ALLdata = CFF_READ_ALL(ALLfilename) reads all datagrams in a Kongsberg
+%   file (extension .all or .wcd) ALLfilenamem, and store them in ALLdata.
 %
-% *USE*
+%   ALLdata = CFF_READ_ALL(ALLfilename,datagrams) reads only those
+%   datagrams in ALLfilename that are specified by datagrams, and store
+%   them in ALLdata.
 %
-% Considering ALLfilename is a Kongsberg file (extension .all or .wcd) that
-% exists, ALLdata = CFF_read_all(ALLfilename) reads all datagrams in
-% ALLfilename and store them in ALLdata.
+%   ALLdata = CFF_READ_ALL(ALLfilename,'datagrams',datagrams) does the
+%   same.
 %
-% ALLdata = CFF_read_all(ALLfilename,datagrams) reads only those
-% datagrams in ALLfilename that are specified by datagrams, and store them
-% in ALLdata.
+%   Considering ALLfilename is the common root filename of a .all/.wcd pair
+%   (that is, ALLfilename = 'myfile' for a myfile.all and myfile.wcd pair),
+%   then the above commands will extract the requested datagrams from the
+%   .wcd file and the remaining in the .all file.
 %
-% ALLdata = CFF_read_all(ALLfilename,'datagrams',datagrams) does the same.
+%   Note this function will extract all datagram types of interest. For
+%   more control (say you only want the first ten depth datagrams and the
+%   last position datagram), use CFF_READ_ALL_FROM_FILEINFO.
 %
-% Considering ALLfilename is the common root filename of a .all/.wcd pair
-% (that is, ALLfilename = 'myfile' for a myfile.all and myfile.wcd pair),
-% then the above commands will extract the requested datagrams from the
-% .wcd file and the remaining in the .all file.
-%
-% Note this function will extract all datagram types of interest. For more
-% control (say you only want the first ten depth datagrams and the last
-% position datagram), use CFF_read_all_from_fileinfo.
-%
-% *INPUT VARIABLES*
-%
-% * |ALLfilename|: Required. String filename to parse (extension in .all or
-% .wcd and existing file) OR the common root filename of a .all/.wcd pair.
-% * |datagrams|: Optional. character string, or cell array of character
-% string, or numeric values designating the types of datagrams to be
-% parsed. If character string or cell array of character string, the string
-% must match the datagTypeText of the datagram. If numeric, it must matches
-% the datagTypeNumber. The possible values are:
+%   *INPUT VARIABLES*
+%   * |ALLfilename|: Required. String filename to parse (extension in .all
+%   or .wcd and existing file) OR the common root filename of a .all/.wcd
+%   pair.
+%   * |datagrams|: Optional. character string, or cell array of character
+%   string, or numeric values designating the types of datagrams to be
+%   parsed. If character string or cell array of character string, the
+%   string must match the datagTypeText of the datagram. If numeric, it
+%   must match the datagTypeNumber. The possible values are:
 %     datagTypeNumber = 49. datagTypeText = 'PU STATUS OUTPUT (31H)';
 %     datagTypeNumber = 65. datagTypeText = 'ATTITUDE (41H)';
 %     datagTypeNumber = 67. datagTypeText = 'CLOCK (43H)';
@@ -57,11 +54,10 @@
 %     datagTypeNumber = 110. datagTypeText = 'NETWORK ATTITUDE VELOCITY DATAGRAM 110 (6EH)';
 %     datagTypeNumber = 114. datagTypeText = 'AMPLITUDE AND PHASE WC DATAGRAM 114 (72H)';
 %
-% *OUTPUT VARIABLES*
-%
-% * |ALLdata|: structure containing the data. Each field corresponds a
-% different type of datagram. The field |ALLfileinfo| is a structure
-% containing information about datagrams in ALLfilename, with fields:
+%   *OUTPUT VARIABLES*
+%   * |ALLdata|: structure containing the data. Each field corresponds a
+%   different type of datagram. The field |ALLfileinfo| is a structure
+%   containing information about datagrams in ALLfilename, with fields:
 %     * |ALLfilename|: input file name
 %     * |filesize|: file size in bytes
 %     * |datagsizeformat|: endianness of the datagram size field 'b' or 'l'
@@ -86,40 +82,20 @@
 %     * |emNumber|: EM Model number (eg 2045 for EM2040c)
 %     * |date|: datagram date in YYYMMDD
 %     * |timeSinceMidnightInMilliseconds|: time since midnight in msecs
-% * |datagrams_parsed_idx|: array of logical values of the same dimension
-% as input |datagrams| indicating which of these datagrams have been parsed
-% (1) or not (0). If no datagrams were specified in input, this output is
-% empty.
+%   * |datagrams_parsed_idx|: array of logical values of the same dimension
+%   as input |datagrams| indicating which of these datagrams have been
+%   parsed (1) or not (0). If no datagrams were specified in input, this
+%   output is empty.
 %
-% *DEVELOPMENT NOTES*
+%   *DEVELOPMENT NOTES*
+%   * Research notes for CFF_ALL_FILE_INFO.m and
+%   CFF_READ_ALL_FROM_FILEINFO.m apply.
 %
-% * Research notes for CFF_all_file_info.m and CFF_read_all_from_fileinfo.m
-% apply.
-%
-% *NEW FEATURES*
-%
-% * 2021-06-01: fixed bug when requesting to read a single datagram type
-% (alex) 
-% * 2018-10-31: updated to read pair of .all/.wcd files.
-% * 2018-10-11: updated header before adding to Coffee v3
-% * 2017-06-28: first version. Adapated from CFF_convert_all_to_mat_v2.m
-%
-% *EXAMPLE*
-%
-% ALLfilename = '.\data\EM2040c\0001_20140213_052736_Yolla.all';
-% ALLdata = CFF_read_all(ALLfilename); % read all datagrams
-% ALLdata = CFF_read_all(ALLfilename, 'ATTITUDE (41H)'); % read only attitude datagrams
-% ALLdata = CFF_read_all(ALLfilename, {'ATTITUDE (41H)','POSITION (50H)'}); % read attitude and position datagrams
-% ALLdata = CFF_read_all(ALLfilename, [65,80]); % same, but using datagram type numbers intead of names
-% ALLdata = CFF_read_all(ALLfilename,'datagrams',[65,80]); % same, but using proper input variable name
-%
-% *AUTHOR, AFFILIATION & COPYRIGHT*
-%
-% Alexandre Schimel, Waikato University, Deakin University, NIWA.
-% Yoann Ladroit, NIWA.
+%   See also CFF_ALL_FILE_INFO, CFF_READ_ALL_FROM_FILEINFO, ESPRESSO.
 
-%% Function
-function [ALLdata,datagrams_parsed_idx] = CFF_read_all(ALLfilename, varargin)
+%   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
+%   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
+%   2017-2021; Last revision: 27-07-2021
 
 
 %% Input arguments management
@@ -226,7 +202,7 @@ if numel(ALLfilename)>1
     % parse only if we requested to read all datagrams (in which case, the
     % second file might have datagrams not read in the first and we need to
     % grab those) OR if we requested a specific set of datagrams and didn't
-    % get them all from the first file. 
+    % get them all from the first file.
     if isempty(datagrams_to_parse) || ~all(datagrams_parsed_idx)
         
         % Get info in second file

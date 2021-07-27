@@ -1,26 +1,13 @@
-%% CFF_is_fData_version_current.m
-%
-% Check if fData version of an input fData.mat file is the current code
-% version.
-%
-%% Help
-%
-% *USE*
-%
-% input can be either the filepath to a fData.mat file, OR a fData
-% structure.
-%
-% *NEW FEATURES*
-%
-% * 2021-05-24: first version (Alex)
-%
-% *AUTHOR, AFFILIATION & COPYRIGHT*
-%
-% Yoann Ladroit, Alexandre Schimel NIWA. Type |help Espresso.m| for
-% copyright information.
-
-%% Function
 function bool = CFF_is_fData_version_current(fdata_input)
+%CFF_IS_FDATA_VERSION_CURRENT  Check if fData version of input is current
+%
+%   Input can be either the filepath to a fData.mat file, OR a fData structure.
+%
+%   See also ESPRESSO.
+
+%   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
+%   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
+%   2017-2021; Last revision: 24-05-2021
 
 % version if the fData file
 fdata_ver = CFF_get_fData_version(fdata_input);

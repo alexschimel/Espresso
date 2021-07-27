@@ -1,43 +1,28 @@
-%% CFF_get_WC_data.m
-%
-% Function to grab water column data in a fData structure, possibly
-% subsampled in range or beams, or any pings required, in raw format or
-% true value.
-%
-%% Help
-%
-% *USE*
-%
-% XXX
-%
-% *INPUT VARIABLES*
-%
-% XXX
-%
-% * |fData|: Required. Structure for the storage of kongsberg EM series
-% multibeam data in a format more convenient for processing. The data is
-% recorded as fields coded "a_b_c" where "a" is a code indicating data
-% origing, "b" is a code indicating data dimensions, and "c" is the data
-% name. See the help of function CFF_convert_ALLdata_to_fData.m for
-% description of codes.
-% * |fieldN|: Required. Description (Information). XXX
-% * |iPing|: Optional. Description (Information). Default []. XXX
-% * |dr_sub|: Optional. Description (Information). Default 1. XXX
-% * |db_sub|: Optional. Description (Information). Default 1. XXX
-% * |output_format|: Optional. Description (Information). 'raw' or 'true'
-% (default) XXX
-%
-% *NEW FEATURES*
-%
-% * 2018-10-11: header
-% * 2018-10-08: introduced option to extract data as raw or true. Info for
-% the conversion not hard-coded anymore but obtained from fData
-% * YYYY-MM-DD: first version. XXX
-%
-
-
-%% Function
 function data_tot = CFF_get_WC_data(fData,fieldN,varargin)
+%CFF_GET_WC_DATA  Grab water column data in a fData structure
+%
+%   Grab water column data in a fData structure, possibly subsampled in
+%   range or beams, or any pings required, in raw format or true value.
+%
+%   *INPUT VARIABLES*
+%   * |fData|: Required. Structure for the storage of kongsberg EM series
+%   multibeam data in a format more convenient for processing. The data is
+%   recorded as fields coded "a_b_c" where "a" is a code indicating data
+%   origing, "b" is a code indicating data dimensions, and "c" is the data
+%   name. See the help of function CFF_convert_ALLdata_to_fData.m for
+%   description of codes.
+%   * |fieldN|: Required. Description (Information). XXX
+%   * |iPing|: Optional. Description (Information). Default []. XXX
+%   * |dr_sub|: Optional. Description (Information). Default 1. XXX
+%   * |db_sub|: Optional. Description (Information). Default 1. XXX
+%   * |output_format|: Optional. Description (Information). 'raw' or 'true'
+%   (default) XXX
+%
+%   See also ESPRESSO.
+
+%   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
+%   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
+%   2017-2021; Last revision: 08-10-2018
 
 % input parser
 p = inputParser;

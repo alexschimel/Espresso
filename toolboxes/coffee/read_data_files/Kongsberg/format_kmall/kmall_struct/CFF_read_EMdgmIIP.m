@@ -1,9 +1,17 @@
 function out_struct = CFF_read_EMdgmIIP(fid, dgmVersion_warning_flag)
-% Definition of #IIP datagram containing installation parameters and sensor
-% format settings.
-% Details in separate document Installation parameters
+%CFF_READ_EMDGMIIP  Read kmall structure #IIP
 %
-% Verified correct for kmall versions H,I
+%   Definition of #IIP datagram containing installation parameters and
+%   sensor format settings.
+%   Details in separate document Installation parameters
+%
+%   Verified correct for kmall versions H,I
+%
+%   See also CFF_READ_KMALL_FROM_FILEINFO, ESPRESSO.
+
+%   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
+%   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
+%   2017-2021; Last revision: 27-07-2021
 
 out_struct.header = CFF_read_EMdgmHeader(fid);
 

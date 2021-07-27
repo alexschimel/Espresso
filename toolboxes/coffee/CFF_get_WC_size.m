@@ -1,4 +1,11 @@
 function [nSamples, nBeams, nPings] = CFF_get_WC_size(fData,varargin)
+%CFF_GET_WC_SIZE  One-line description
+%
+%   See also ESPRESSO.
+
+%   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
+%   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
+%   2017-2021; Last revision: 27-07-2021
 
 % get source datagram
 if ~isempty(varargin) && ~isempty(varargin{1})

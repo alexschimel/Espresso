@@ -1,13 +1,40 @@
 function fData = CFF_convert_KMALLdata_to_fData(KMALLdataGroup,varargin)
 %CFF_CONVERT_KMALLDATA_TO_FDATA  Convert kmall data to the CoFFee format
 %
-%   DEV NOTE: kmall format doesn't fit the fData structure to date (13th
-%   July 2021). fData is based on three dimensions ping x beam x sample,
-%   but the lowest-level unit in kmall is the "swath" to accomodate dual-
-%   and multi-swath operating modes. For example, in dual-swath mode, a
-%   single Tx transducer will transmit 2 pulses to create two
-%   along-swathes, and in kmall those two swathes are recorded with the
-%   same ping counter because they were produced at about the same time. 
+%   Converts Kongsberg EM series data FROM the KMALLdata format (read by
+%   CFF_READ_KMALL) TO the CoFFee fData format used in processing.
+%
+%   fData = CFF_CONVERT_KMALLDATA_TO_FDATA(KMALLdata) converts the contents
+%   of one KMALLdata structure to a structure in the fData format.
+%
+%   fData = CFF_CONVERT_KMALLDATA_TO_FDATA(KMALLdataGroup) converts an
+%   array of two KMALLdata structures into one fData sructure. The pair of
+%   structure must correspond to an .kmall/.kmwcd pair of files. Do not try
+%   to use this feature to convert KMALLdata structures from different
+%   acquisition files. It will not work. Convert each into its own fData
+%   structure.
+%
+%   Note that the KMALLdata structures are converted to fData in the order
+%   they are in input, and that the first ones take precedence. Aka in the
+%   example above, if the second structure contains a type of datagram that
+%   is already in the first, they will NOT be converted. This is to avoid
+%   doubling up the data that may exist in duplicate in the pair of raw
+%   files. You need to order the KMALLdata structures in input in order of
+%   desired precedence.
+%
+%   fData = CFF_CONVERT_KMALLDATA_TO_FDATA(KMALLdata,dr_sub,db_sub)
+%   operates the conversion with a sub-sampling of the water-column data
+%   (either WC or AP datagrams) in range and in beams. For example, to
+%   sub-sample range by a factor of 10 and beams by a factor of 2, use:
+%   fData = CFF_CONVERT_KMALLDATA_TO_FDATA(KMALLdata,10,2).
+
+%   DEV NOTE: To date (July 2021), the fData format is based on three
+%   dimensions ping x beam x sample, but the lowest-level unit in kmall is
+%   the "swath" to accomodate dual-and multi-swath operating modes. For
+%   example, in dual-swath mode, a single Tx transducer will transmit 2
+%   pulses to create two along-swathes, and in kmall those two swathes are
+%   recorded with the same ping counter because they were produced at about
+%   the same time. 
 %   To deal with this, we're going to create new "swath numbers" based on
 %   the original ping number and swath counter for a ping.
 %   For example a ping #832 made up of four swathes counted 0-3 will have

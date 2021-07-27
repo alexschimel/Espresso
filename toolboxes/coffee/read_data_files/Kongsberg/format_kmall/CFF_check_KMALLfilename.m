@@ -1,17 +1,14 @@
-%% CFF_check_KMALLfilename.m
-%
-% Check that input file(s) exist(s) and are likely Kongsberg raw data files
-% in the .kmall format. 
-%
-%% Help
-%
-% *AUTHOR, AFFILIATION & COPYRIGHT*
-%
-% Alexandre Schimel (NGU, NIWA), Yoann Ladroit (NIWA). 
-% Type |help CoFFee.m| for copyright information.
-
-%% Function
 function out = CFF_check_KMALLfilename(rawfilename)
+%CFF_CHECK_KMALLFILENAME  Check file exists and has kmall extension
+%
+%   Check that input file(s) exist(s) and are likely Kongsberg raw data
+%   files in the .kmall format.
+%
+%   See also ESPRESSO.
+
+%   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
+%   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
+%   2017-2021; Last revision: 27-07-2021
 
 if ischar(rawfilename)
     % single file. 

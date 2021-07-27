@@ -1,4 +1,11 @@
 function datagramSource = CFF_get_datagramSource(fData,varargin)
+%CFF_GET_DATAGRAMSOURCE  Get the code of the source datagram
+%
+%   See also ESPRESSO.
+
+%   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
+%   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
+%   2017-2021; Last revision: 27-07-2021
 
 % init output
 datagramSource = [];

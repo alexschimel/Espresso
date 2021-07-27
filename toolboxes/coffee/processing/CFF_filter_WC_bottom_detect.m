@@ -1,83 +1,53 @@
-%% CFF_filter_WC_bottom_detect.m
-%
-% Filter the bottom detect in watercolumn data
-%
-%% Help
-%
-% *USE*
-%
-% fData = CFF_filter_WC_bottom_detect(fData,varargin) gets the bottom
-% sample in fData (fData.X_BP_bottomSample) and filter it according to
-% parameters in varargin. The end result is an updated X_BP_bottomSample
-% field.
-%
-% X_BP_bottomSample is initially created with function
-% CFF_georeference_WC_bottom_detect.m from raw data. This function then filters
-% that result and overwrite that field, allowing for using it several times
-% in a row if desired.
-%
-% *INPUT VARIABLES*
-%
-% * |fData|: Required. Structure for the storage of kongsberg EM series
-% multibeam data in a format more convenient for processing. The data is
-% recorded as fields coded "a_b_c" where "a" is a code indicating data
-% origing, "b" is a code indicating data dimensions, and "c" is the data
-% name. See the help of function CFF_convert_ALLdata_to_fData.m for
-% description of codes. 
-% * |method|: Optional/parameters. Either 'filter' to apply median filter
-% to all bottom detects (default), or 'flag' to find & delete bad bottom
-% detects.
-% * |pingBeamWindowSize|: Optional/parameters. The number of pings and
-% beams to define neighbours to each bottom detect. 1x2 int array, valid
-% entries zero or positive. Set 0 to use just current ping, inf for all
-% pings (long computing time). Set 0 to use just current beam, inf for all
-% beams (long computing time). Default: [5,5].
-%
-% * |maxHorizDist|: Optional/parameters. Maximum horizontal distance to
-% consider neighbours. valid entries: numeric, non-zero, positive. Use inf
-% to indicate NOT using a max horizontal distance (default)
-%
-% * |flagParams|: Optional/parameters. Struct with fields 'type' (char,
-% valid entries 'all' or 'median'); 'variable' (char, valid entries 'slope',
-% 'eucliDist' or 'vertDist'); and 'threshold' (num).  
-%
-% * |interpolate|: Optional/parameters. Interpolate missing values or not.
-% char, valid entries 'yes' (default) or 'no'.
-%
-% *OUTPUT VARIABLES*
-%
-% * |fData|: fData structure with updated "X_BP_bottomSample" field.
-%
-% *DEVELOPMENT NOTES*
-%
-% * Not too happy with how the filtering changes values in outer beams.
-% Look into it....
-%
-% *NEW FEATURES*
-%
-% * 2018-10-11: clean-up for CoFFee v3
-% * 2017-10-10: new v2 functions because of dimensions swap (Alex Schimel)
-% * 2016-12-01: Using the new "X_PB_bottomSample" field in fData rather
-% than "b1"
-% * 2016-11-07: First version. Code taken from CFF_filter_watercolumn.m
-%
-% *EXAMPLE*
-%
-% _This section contains examples of valid function calls. Note that
-% example lines start with 3 white spaces so that the publish function
-% shows them correctly as matlab code. Example below to replace. Delete
-% these lines XXX._ 
-%
-%   example_use_1; % comment on what this does. XXX
-%   example_use_2: % comment on what this line does. XXX
-%
-% *AUTHOR, AFFILIATION & COPYRIGHT*
-%
-% Alexandre Schimel, Waikato University, Deakin University, NIWA. Yoann
-% Ladroit, NIWA. 
-
-%% function
 function [fData] = CFF_filter_WC_bottom_detect(fData,varargin)
+%CFF_FILTER_WC_BOTTOM_DETECT  Filter the bottom detect in watercolumn data
+%
+%   fData = CFF_filter_WC_bottom_detect(fData,varargin) gets the bottom
+%   sample in fData (fData.X_BP_bottomSample) and filter it according to
+%   parameters in varargin. The end result is an updated X_BP_bottomSample
+%   field.
+%
+%   X_BP_bottomSample is initially created with function
+%   CFF_georeference_WC_bottom_detect.m from raw data. This function then
+%   filters that result and overwrite that field, allowing for using it
+%   several times in a row if desired.
+%
+%   *INPUT VARIABLES*
+%
+%   * |fData|: Required. Structure for the storage of kongsberg EM series
+%   multibeam data in a format more convenient for processing. The data is
+%   recorded as fields coded "a_b_c" where "a" is a code indicating data
+%   origing, "b" is a code indicating data dimensions, and "c" is the data
+%   name. See the help of function CFF_convert_ALLdata_to_fData.m for
+%   description of codes.
+%   * |method|: Optional/parameters. Either 'filter' to apply median filter
+%   to all bottom detects (default), or 'flag' to find & delete bad bottom
+%   detects.
+%   * |pingBeamWindowSize|: Optional/parameters. The number of pings and
+%   beams to define neighbours to each bottom detect. 1x2 int array, valid
+%   entries zero or positive. Set 0 to use just current ping, inf for all
+%   pings (long computing time). Set 0 to use just current beam, inf for
+%   all beams (long computing time). Default: [5,5].
+%   * |maxHorizDist|: Optional/parameters. Maximum horizontal distance to
+%   consider neighbours. valid entries: numeric, non-zero, positive. Use
+%   inf to indicate NOT using a max horizontal distance (default)
+%   * |flagParams|: Optional/parameters. Struct with fields 'type' (char,
+%   valid entries 'all' or 'median'); 'variable' (char, valid entries
+%   'slope', 'eucliDist' or 'vertDist'); and 'threshold' (num).
+%   * |interpolate|: Optional/parameters. Interpolate missing values or
+%   not. char, valid entries 'yes' (default) or 'no'.
+%
+%   *OUTPUT VARIABLES*
+%   * |fData|: fData structure with updated "X_BP_bottomSample" field.
+%
+%   *DEVELOPMENT NOTES*
+%   * Not too happy with how the filtering changes values in outer beams.
+%   Look into it....
+%
+%   See also ESPRESSO.
+
+%   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
+%   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
+%   2017-2021; Last revision: 27-07-2021
 
 %% INPUT PARSER
 
@@ -89,7 +59,7 @@ p = inputParser;
 validate_fData = @isstruct;
 addRequired(p,'fData',validate_fData);
 
-% 'method': 
+% 'method':
 validate_method = @(x) ismember(x,{'filter','flag'});
 default_method = 'filter';
 addOptional(p,'method',default_method,validate_method);
@@ -124,7 +94,7 @@ maxHorizDist       = p.Results.maxHorizDist;
 flagParams         = p.Results.flagParams;
 interpolateFlag    = p.Results.interpolate;
 clear p
-  
+
 
 %% PRE-PROCESSING
 

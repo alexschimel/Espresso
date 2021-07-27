@@ -1,5 +1,11 @@
-%% Function
 function fData = CFF_grid_2D_fields_data(fData,varargin)
+%CFF_GRID_2D_FIELDS_DATA  One-line description
+%
+%   See also ESPRESSO.
+
+%   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
+%   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
+%   2017-2021; Last revision: 27-07-2021
 
 % init
 p = inputParser;

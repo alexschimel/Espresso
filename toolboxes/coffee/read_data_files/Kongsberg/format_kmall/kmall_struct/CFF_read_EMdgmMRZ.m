@@ -1,24 +1,32 @@
 function out_struct = CFF_read_EMdgmMRZ(fid, dgmVersion_warning_flag)
-% #MRZ - Multibeam Raw Range and Depth datagram. The datagram also contains
-% seabed image data.
+%CFF_READ_EMDGMMRZ  Read kmall structure #MRZ
 %
-% Datagram consists of several structs. The MRZ datagram replaces several
-% old datagrams: raw range (N 78), depth (XYZ 88), seabed image (Y 89)
-% datagram, quality factor (O 79) and runtime (R 52).
+%   #MRZ - Multibeam Raw Range and Depth datagram. The datagram also
+%   contains seabed image data.
 %
-% Depths points (x,y,z) are calculated in meters, georeferred to the
-% position of the vessel reference point at the time of the first
-% transmitted pulse of the ping. The depth point coordinates x and y are in
-% the surface coordinate system (SCS), and are also given as delta latitude
-% and delta longitude, referred to origo of the VCS/SCS, at the time of the
-% midpoint of the first transmitted pulse of the ping (equals time used in
-% the datagram header timestamp).
-% See Coordinate systems for introduction to spatial reference points and
-% coordinate systems. Reference points are also described in Reference
-% points and offsets. Explanation of the xyz reference points is also
-% illustrated in the figure below.
+%   Datagram consists of several structs. The MRZ datagram replaces several
+%   old datagrams: raw range (N 78), depth (XYZ 88), seabed image (Y 89)
+%   datagram, quality factor (O 79) and runtime (R 52).
 %
-% Verified correct for kmall versions H,I
+%   Depths points (x,y,z) are calculated in meters, georeferred to the
+%   position of the vessel reference point at the time of the first
+%   transmitted pulse of the ping. The depth point coordinates x and y are
+%   in the surface coordinate system (SCS), and are also given as delta
+%   latitude and delta longitude, referred to origo of the VCS/SCS, at the
+%   time of the midpoint of the first transmitted pulse of the ping (equals
+%   time used in the datagram header timestamp).
+%   See Coordinate systems for introduction to spatial reference points and
+%   coordinate systems. Reference points are also described in Reference
+%   points and offsets. Explanation of the xyz reference points is also
+%   illustrated in the figure below.
+%
+%   Verified correct for kmall versions H,I
+%
+%   See also CFF_READ_KMALL_FROM_FILEINFO, ESPRESSO.
+
+%   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
+%   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
+%   2017-2021; Last revision: 27-07-2021
 
 out_struct.header = CFF_read_EMdgmHeader(fid);
 
@@ -113,7 +121,7 @@ out_struct.depthMode = fread(fid,1,'uint8');
 out_struct.subDepthMode = fread(fid,1,'uint8');
 
 % Achieved distance between swaths, in percent relative to required swath
-% distance. 
+% distance.
 % 0 = function is not used
 % 100 = achieved swath distance equals required swath distance.
 out_struct.distanceBtwSwath = fread(fid,1,'uint8');

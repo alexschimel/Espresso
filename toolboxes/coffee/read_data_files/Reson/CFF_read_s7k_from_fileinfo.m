@@ -1,22 +1,18 @@
-%% CFF_read_s7k_from_fileinfo.m
+function S7Kdata = CFF_read_s7k_from_fileinfo(S7Kfilename, S7Kfileinfo,varargin)
+%CFF_READ_S7K_FROM_FILEINFO  Read contents of s7k file
 %
-% Reads contents of one Kongsberg EM series binary .s7k or .wcd data file,
-% using S7Kfileinfo to indicate which datagrams to be parsed.
+%   Reads contents of one Kongsberg EM series binary .s7k or .wcd data
+%   file, using S7Kfileinfo to indicate which datagrams to be parsed. 
 %
-%% Help
+%   S7Kdata = CFF_READ_S7K_FROM_FILEINFO(S7Kfilename, S7Kfileinfo) reads
+%   s7k datagrams in S7Kfilename for which S7Kfileinfo.parsed equals 1, and
+%   store them in S7Kdata.
 %
-% *USE*
-%
-% S7Kdata = CFF_read_s7k_from_fileinfo(S7Kfilename, S7Kfileinfo) reads s7k
-% datagrams in S7Kfilename for which S7Kfileinfo.parsed equals 1, and store
-% them in S7Kdata.
-%
-% *INPUT VARIABLES*
-%
-% * |S7Kfilename|: Required. String filename to parse (extension in .s7k or
-% .wcd).
-% * |S7Kfileinfo|: structure containing information about datagrams in
-% S7Kfilename, with fields:
+%   *INPUT VARIABLES*
+%   * |S7Kfilename|: Required. String filename to parse (extension in
+%   .s7k).
+%   * |S7Kfileinfo|: structure containing information about datagrams in
+%   S7Kfilename, with fields:
 %     * |S7Kfilename|: input file name
 %     * |filesize|: file size in bytes
 %     * |datagsizeformat|: endianness of the datagram size field 'b' or 'l'
@@ -42,41 +38,23 @@
 %     * |date|: datagram date in YYYMMDD
 %     * |timeSinceMidnightInMilliseconds|: time since midnight in msecs
 %
-% *OUTPUT VARIABLES*
+%   *OUTPUT VARIABLES*
+%   * |S7Kdata|: structure containing the data. Each field corresponds a
+%   different type of datagram. The field |S7Kdata.info| contains a copy of
+%   S7Kfileinfo described above.
 %
-% * |S7Kdata|: structure containing the data. Each field corresponds a
-% different type of datagram. The field |S7Kdata.info| contains a copy of
-% S7Kfileinfo described above.
+%   *DEVELOPMENT NOTES*
+%   * PU Status output datagram structure seems different to the datagram
+%   manual description. Find the good description.#edit 21aug2013: updated
+%   to Rev Q. Need to be checked though. 
+%   * The parsing code for some datagrams still need to be coded. To
+%   update. 
 %
-% *DEVELOPMENT NOTES*
-%
-% * PU Status output datagram structure seems different to the datagram
-% manual description. Find the good description.#edit 21aug2013: updated to
-% Rev Q. Need to be checked though.
-% * The parsing code for some datagrams still need to be coded. To update.
-%
-% *NEW FEATURES*
-%
-% * 2018-10-11: updated header before adding to Coffee v3
-% * 2018: added amplitude and phase datagram
-% * 2017-06-29: header cleaned up. Changed S7Kfile for S7Kdata internally
-% for consistency with other functions
-% * 2015-09-30: first version taking from last version of
-% convert_s7k_to_mat
-%
-% *EXAMPLE*
-%
-% S7Kfilename = '.\data\EM2040c\0001_20140213_052736_Yolla.s7k';
-% info = CFF_s7k_file_info(S7Kfilename);
-% info.parsed(:)=1; % to save all the datagrams
-% S7Kdata = CFF_read_s7k_from_fileinfo(S7Kfilename, info);
-%
-% *AUTHOR, AFFILIATION & COPYRIGHT*
-%
-% Alexandre Schimel, Waikato University, Deakin University, NIWA.
+%   See also ESPRESSO.
 
-%% Function
-function S7Kdata = CFF_read_s7k_from_fileinfo(S7Kfilename, S7Kfileinfo,varargin)
+%   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
+%   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
+%   2017-2021; Last revision: 27-07-2021
 
 
 %% inputparser

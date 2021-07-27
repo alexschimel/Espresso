@@ -1,9 +1,17 @@
 function out_struct = CFF_read_EMdgmSVP(fid, dgmVersion_warning_flag)
-% #SVP - Sound Velocity Profile. Data from sound velocity profile or from
-% CTD profile. Sound velocity is measured directly or estimated,
-% respectively.
+%CFF_READ_EMDGMSVP  Read kmall structure #SVP
 %
-% Verified correct for kmall versions H,I
+%   #SVP - Sound Velocity Profile. Data from sound velocity profile or from
+%   CTD profile. Sound velocity is measured directly or estimated,
+%   respectively.
+%
+%   Verified correct for kmall versions H,I
+%
+%   See also CFF_READ_KMALL_FROM_FILEINFO, ESPRESSO.
+
+%   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
+%   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
+%   2017-2021; Last revision: 27-07-2021
 
 out_struct.header = CFF_read_EMdgmHeader(fid);
 

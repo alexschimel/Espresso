@@ -1,4 +1,11 @@
 function [Reson_files,fileroot_reshaped] = CFF_get_Reson_files(fileroot)
+%CFF_GET_RESON_FILES  One-line description
+%
+%   See also ESPRESSO.
+
+%   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
+%   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
+%   2017-2021; Last revision: 27-07-2021
 
 if ischar(fileroot)
     fileroot = {fileroot};

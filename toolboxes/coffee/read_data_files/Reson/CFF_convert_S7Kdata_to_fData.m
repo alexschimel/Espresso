@@ -1,8 +1,23 @@
 function [fData,update_flag] = CFF_convert_S7Kdata_to_fData(S7KdataGroup,varargin)
-%CFF_CONVERT_S7KDATA_TO_FDATA  Convert all data to the CoFFee format
+%CFF_CONVERT_S7KDATA_TO_FDATA  Convert s7k data to the CoFFee format
 %
-%   THIS IS A PRELIMINARY VERSION THAT ONLY POPULATES STUFF ABSOLUTELY
-%   NECESSARY FOR ESPRESSO TO DISPLAY T50 DATA
+%   Converts Teledyne-Reson data FROM the S7Kdata format (read by
+%   CFF_READ_S7K) TO the CoFFee fData format used in processing. NOTE THIS
+%   IS A PRELIMINARY VERSION THAT ONLY POPULATES STUFF ABSOLUTELY NECESSARY
+%   FOR ESPRESSO TO DISPLAY T50 DATA.
+%
+%   fData = CFF_CONVERT_S7KDATA_TO_FDATA(S7Kdata) converts the contents of
+%   one S7Kdata structure to a structure in the fData format.
+%
+%   fData = CFF_CONVERT_S7KDATA_TO_FDATA(S7KdataGroup) converts an array of
+%   S7Kdata structures into one fData sructure. The structures must
+%   correspond to the same raw data file.
+%
+%   fData = CFF_CONVERT_S7KDATA_TO_FDATA(S7Kdata,dr_sub,db_sub) operates
+%   the conversion with a sub-sampling of the water-column data in range
+%   and in beams. For example, to sub-sample range by a factor of 10 and
+%   beams by a factor of 2, use: 
+%   fData = CFF_CONVERT_S7KDATA_TO_FDATA(S7Kdata,10,2).
 %
 %   See also ESPRESSO.
 
@@ -358,8 +373,8 @@ for iF = 1:nStruct
                     
                 end
                 
-               
-               
+                
+                
                 
             end
         end
@@ -391,7 +406,7 @@ for iF = 1:nStruct
                 % maxNSamples = nanmax(S7Kdata.R7042_CompressedWaterColumn.FirstSample+cellfun(@nanmax,S7Kdata.R7042_CompressedWaterColumn.NumberOfSamples));
                 dtg_nSamples = S7Kdata.R7042_CompressedWaterColumn.NumberOfSamples; % number of samples per datagram and beam
                 [maxNSamples_groups, ping_group_start, ping_group_end] = CFF_group_pings(dtg_nSamples,pingNumber,pingNumber); % making groups of pings to limit size of memmaped files
-
+                
                 % read data per ping from first datagram of each ping
                 fData.AP_1P_Date                            = S7Kdata.R7042_CompressedWaterColumn.Date;
                 fData.AP_1P_TimeSinceMidnightInMilliseconds = S7Kdata.R7042_CompressedWaterColumn.TimeSinceMidnightInMilliseconds;
@@ -499,7 +514,7 @@ for iF = 1:nStruct
                     if iP > ping_group_end(iG)
                         iG = iG+1;
                     end
-                  
+                    
                     % data per Tx sector
                     nTransmitSectors = fData.AP_1P_NumberOfTransmitSectors(1,iP); % number of transmit sectors in this ping
                     fData.AP_TP_TiltAngle(1:nTransmitSectors,iP)            = zeros(nTransmitSectors,1);
@@ -514,13 +529,13 @@ for iF = 1:nStruct
                     fData.AP_BP_DetectedRangeInSamples(S7Kdata.R7027_RAWdetection.BeamDescriptor{iP}+1,iP) = round(S7Kdata.R7027_RAWdetection.DetectionPoint{iP}/flags.downsamplingDivisor);
                     fData.AP_BP_TransmitSectorNumber(iBeam,iP)   = 1;
                     fData.AP_BP_BeamNumber(iBeam,iP)             = S7Kdata.R7004_7kBeamGeometry.N(iP); % from R7004??? XXX
-                 
+                    
                     % initialize amplitude and phase matrices
                     Mag_tmp = ones(maxNSamples_groups(iG),maxnBeams,mag_fmt)*eval([mag_fmt '(-inf)']);
                     if ~flags.magnitudeOnly
                         Ph_tmp = zeros(maxNSamples_groups(iG),maxnBeams,phase_fmt);
                     end
-
+                    
                     % number of samples for each beam in this ping
                     nSamples = S7Kdata.R7042_CompressedWaterColumn.NumberOfSamples{iP};
                     
@@ -629,7 +644,7 @@ for iF = 1:nStruct
                     end
                     
                 end
-
+                
             end
             
         end

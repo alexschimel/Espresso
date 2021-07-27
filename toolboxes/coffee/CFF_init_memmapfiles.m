@@ -1,25 +1,19 @@
-%% CFF_init_memmapfiles.m
-%
-% Initializes data-containing memmap files
-%
-%% Help
-%
-% *USE*
-%
-% Create one or several empty binary files of the right size to store ONE
-% type of an upcoming large data, link it as a memmap file into a fData
-% field, and add info as additional fData fields. 
-% This function is to be used with the proper varargin parameters
-% to initialize the binary files (and link them to fData) with empty
-% values, prior to reading the acoustic data and filling the binary files.
-%
-% *AUTHOR, AFFILIATION & COPYRIGHT*
-%
-% Alexandre Schimel (NGU), Yoann Ladroit (NIWA).
-% Type |help Espresso.m| for copyright information.
-
-%% Function
 function fData = CFF_init_memmapfiles(fData,varargin)
+%CFF_INIT_MEMMAPFILES  Initializes data-containing memmap files
+%
+%   Create one or several empty binary files of the right size to store ONE
+%   type of an upcoming large data, link it as a memmap file into a fData
+%   field, and add info as additional fData fields. 
+%   This function is to be used with the proper varargin parameters
+%   to initialize the binary files (and link them to fData) with empty
+%   values, prior to reading the acoustic data and filling the binary
+%   files.
+%
+%   See also ESPRESSO.
+
+%   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
+%   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
+%   2017-2021; Last revision: 27-07-2021
 
 %% input parser
 p = inputParser;

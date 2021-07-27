@@ -1,43 +1,18 @@
-%% CFF_converted_data_folder.m
-%
-% Gets the path to the folder for data converted by CoFFee from a raw
-% filename.
-%
-%% Help
-%
-% *USE*
-%
-% wc_dir = CFF_converted_data_folder(files_full) returns the folder path
-% X/Coffee_files/filename/ for filename X/filename.ext. ALso works with
-% cell arrays of string filenames.
-%
-% *INPUT VARIABLES*
-%
-% * |files_full|: Required. Description (Information). XXX
-%
-% *OUTPUT VARIABLES*
-%
-% * |wc_dir|: Description (Information). XXX
-%
-% *DEVELOPMENT NOTES*
-%
-% * Formerly "get_wc_dir.m" then revamped
-%
-% *NEW FEATURES*
-%
-% * 2018-10-11: first version.
-%
-% *EXAMPLE*
-%
-%   example_use_1; % comment on what this does. XXX
-%   example_use_2: % comment on what this line does. XXX
-%
-% *AUTHOR, AFFILIATION & COPYRIGHT*
-%
-% Yoann Ladroit, Alexandre Schimel, NIWA.
-
-%% Function
 function wc_dir = CFF_converted_data_folder(rawfileslist)
+%CFF_CONVERTED_DATA_FOLDER  One-line description
+%
+%   Gets the path to the folder for data converted by CoFFee from a raw
+%   filename.
+%
+%   wc_dir = CFF_CONVERTED_DATA_FOLDER(rawfileslist) returns the folder
+%   path 'X/Coffee_files/filename/' for input filename 'X/filename.ext'.
+%   Also works with cell arrays of string filenames.
+%
+%   See also ESPRESSO.
+
+%   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
+%   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
+%   2017-2021; Last revision: 11-10-2018
 
 if isempty(rawfileslist)
     wc_dir = [];

@@ -1,43 +1,19 @@
-%% CFF_read_kmall_from_fileinfo.m
-%
-% Reads contents of one Kongsberg EM series binary data file in .kmall
-% format (.kmall or .kmwcd), using KMALLfileinfo to indicate which
-% datagrams to be parsed. 
-%
-%% Help
-%
-% *USE*
-%
-% XXX
-%
-% *INPUT VARIABLES*
-%
-% XXX
-%
-% *OUTPUT VARIABLES*
-%
-% XXX
-%
-% *DEVELOPMENT NOTES*
-%
-% XXX
-%
-% *NEW FEATURES*
-%
-% * 2021-06-01: added MRZ and MWC parsing (Alex)
-% * 2021-05-26: first version (Alex)
-%
-% *EXAMPLE*
-%
-% XXX
-%
-% *AUTHOR, AFFILIATION & COPYRIGHT*
-%
-% Alexandre Schimel (NGU), Yoann Ladroit (NIWA).
-% Type |help CoFFee.m| for copyright information.
-
-%% Function
 function KMALLdata = CFF_read_kmall_from_fileinfo(KMALLfilename,KMALLfileinfo,varargin)
+%CFF_READ_KMALL_FROM_FILEINFO  Read contents of kmall file
+%
+%   Reads contents of one Kongsberg EM series binary data file in .kmall
+%   format (.kmall or .kmwcd), using KMALLfileinfo to indicate which
+%   datagrams to be parsed. 
+%
+%   KMALLdata = CFF_READ_KMALL_FROM_FILEINFO(KMALLfilename, KMALLfileinfo)
+%   reads all datagrams in KMALLfilename for which KMALLfileinfo.parsed
+%   equals 1, and store them in KMALLdata.
+%
+%   See also ESPRESSO.
+
+%   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
+%   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
+%   2017-2021; Last revision: 27-07-2021
 
 global DEBUG;
 

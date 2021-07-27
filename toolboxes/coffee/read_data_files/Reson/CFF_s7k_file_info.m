@@ -1,24 +1,19 @@
-%% CFF_s7k_file_info.m
+function S7Kfileinfo = CFF_s7k_file_info(S7Kfilename)
+%CFF_S7K_FILE_INFO  Records basic info about contents of .s7k file
 %
-% Records basic info about the datagrams contained in one binary raw data
-% file in the Teledyne-Reson format .s7k.
+%   Records basic info about the datagrams contained in one binary raw data
+%   file in the Teledyne-Reson format .s7k.
 %
-%% Help
+%   S7Kfileinfo = CFF_S7K_FILE_INFO(S7Kfilename) opens file S7Kfilename and
+%   reads through the start of each datagram to get basic information about
+%   it, and store it all in S7Kfileinfo.
 %
-% *USE*
+%   *INPUT VARIABLES*
+%   * |S7Kfilename|: Required. String filename to parse (extension in .s7k)
 %
-% S7Kfileinfo = CFF_s7k_file_info(S7Kfilename) opens file S7Kfilename and
-% reads through the start of each datagram to get basic information about
-% it, and store it all in S7Kfileinfo.
-%
-% *INPUT VARIABLES*
-%
-% * |S7Kfilename|: Required. String filename to parse (extension in .s7k)
-%
-% *OUTPUT VARIABLES*
-%
-% * |S7Kfileinfo|: structure containing information about records in
-% S7Kfilename, with fields:
+%   *OUTPUT VARIABLES*
+%   * |S7Kfileinfo|: structure containing information about records in
+%   S7Kfilename, with fields:
 %     * |S7Kfilename|: input file name
 %     * |filesize|: file size in bytes
 %     * |datagsizeformat|: endianness of the datagram size field. Always
@@ -52,27 +47,15 @@
 %     * |parsed|: flag for whether the record has been parsed. Initiated
 %     at 0 at this stage. To be later turned to 1 for parsing.
 %
-% *DEVELOPMENT NOTES*
+%   *DEVELOPMENT NOTES*
+%   * Check regularly with Reson doc to keep updated with new datagrams.
 %
-% * Check regularly with Reson doc to keep updated with new datagrams.
-%
-% *NEW FEATURES*
-%
-% * 2021-05-26: docstring updated
-% * ????-??-??: first version, inspired from CFF_all_file_info.m
-%
-% *EXAMPLE*
-%
-% S7Kfilename = '.\data\EM2040c\0001_20140213_052736_Yolla.s7k';
-% S7Kfileinfo = CFF_s7k_file_info(S7Kfilename);
-%
-% *AUTHOR, AFFILIATION & COPYRIGHT*
-%
-% Alexandre Schimel (NGU, NIWA), Yoann Ladroit (NIWA). 
-% Type |help CoFFee.m| for copyright information.
+%   See also ESPRESSO.
 
-%% Function
-function S7Kfileinfo = CFF_s7k_file_info(S7Kfilename)
+%   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
+%   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
+%   2017-2021; Last revision: 27-07-2021
+
 
 %% Input arguments management using inputParser
 p = inputParser;

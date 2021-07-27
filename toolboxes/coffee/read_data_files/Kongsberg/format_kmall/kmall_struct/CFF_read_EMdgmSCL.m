@@ -1,7 +1,15 @@
 function out_struct = CFF_read_EMdgmSCL(fid, dgmVersion_warning_flag)
-% #SCL - CLock datagram.
+%CFF_READ_EMDGMSCL  Read kmall structure #SCL
 %
-% Verified correct for kmall versions H,I
+%   #SCL - CLock datagram.
+%
+%   Verified correct for kmall versions H,I
+%
+%   See also CFF_READ_KMALL_FROM_FILEINFO, ESPRESSO.
+
+%   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
+%   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
+%   2017-2021; Last revision: 27-07-2021
 
 out_struct.header = CFF_read_EMdgmHeader(fid);
 

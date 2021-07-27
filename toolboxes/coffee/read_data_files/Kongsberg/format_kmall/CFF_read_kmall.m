@@ -1,28 +1,30 @@
-%% CFF_read_kmall.m
-%
-% Reads contents of one Kongsberg EM series binary data file in .kmall
-% format (.kmall or .kmwcd), or a pair of .kmall/.kmwcd files, allowing
-% choice on which type of datagrams to parse.
-%
-%% Help
-%
-% *INPUT VARIABLES*
-%
-% XXX
-% 
-% *NEW FEATURES*
-%
-% * 2021-06-01: fixed bug when requesting to read a single datagram type.
-% Updated docstring (alex)
-% * 2021-05-??: first version (alex)
-%
-% *AUTHOR, AFFILIATION & COPYRIGHT*
-%
-% Alexandre Schimel (NGU), Yoann Ladroit (NIWA). 
-% Type |help Espresso.m| for copyright information.
-
-%% Function
 function [KMALLdata,datagrams_parsed_idx] = CFF_read_kmall(KMALLfilename, varargin)
+%CFF_READ_KMALL  Read kmall file or pair of files
+%
+%   Reads contents of one Kongsberg EM series binary data file in .kmall
+%   format (.kmall or .kmwcd), or a pair of .kmall/.kmwcd files, allowing
+%   choice on which type of datagrams to parse.
+%
+%   KMALLdata = CFF_READ_KMALL(KMALLfilename) reads all datagrams in a
+%   Kongsberg file (extension .kmall or .kmwcd) KMALLfilenamem, and store
+%   them in KMALLdata.
+%
+%   KMALLdata = CFF_READ_KMALL(KMALLfilename,datagrams) reads only those
+%   datagrams in KMALLfilename that are specified by datagrams, and store
+%   them in KMALLdata.
+%
+%   KMALLdata = CFF_READ_KMALL(KMALLfilename,'datagrams',datagrams) does
+%   the same.
+%
+%   Note this function will extract all datagram types of interest. For
+%   more control (say you only want the first ten depth datagrams and the
+%   last position datagram), use CFF_READ_KMALL_FROM_FILEINFO.
+%
+%   See also CFF_KMALL_FILE_INFO, CFF_READ_KMALL_FROM_FILEINFO, ESPRESSO.
+
+%   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
+%   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
+%   2017-2021; Last revision: 01-06-2021
 
 
 %% Input parsing
@@ -157,5 +159,5 @@ if numel(KMALLfilename)>1
         KMALLdata = {KMALLdata KMALLdata2};
         
     end
-
+    
 end

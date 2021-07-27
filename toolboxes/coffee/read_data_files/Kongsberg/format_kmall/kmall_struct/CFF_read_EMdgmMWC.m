@@ -1,8 +1,16 @@
 function out_struct = CFF_read_EMdgmMWC(fid, dgmVersion_warning_flag)
-% #MWC - Multibeam Water Column Datagram. Entire datagram containing
-% several sub structs.
+%CFF_READ_EMDGMMWC  Read kmall structure #MWC
 %
-% Verified correct for kmall versions H,I
+%   #MWC - Multibeam Water Column Datagram. Entire datagram containing
+%   several sub structs.
+%
+%   Verified correct for kmall versions H,I
+%
+%   See also CFF_READ_KMALL_FROM_FILEINFO, ESPRESSO.
+
+%   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
+%   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
+%   2017-2021; Last revision: 27-07-2021
 
 out_struct.header = CFF_read_EMdgmHeader(fid);
 
@@ -173,7 +181,7 @@ for iRx = 1:Nrx
     % % array is numSampleData * int8_t. Amplitude array is followed by
     % % phase information if phaseFlag >0. Use (numSampleData * int8_t) to
     % % jump to next beam, or to start of phase info for this beam, if
-    % % phase flag > 0. 
+    % % phase flag > 0.
     % out_struct.sampleAmplitude05dB_p = fread(fid,Ns,'int8');
     %
     % switch phaseFlag
@@ -200,7 +208,7 @@ for iRx = 1:Nrx
     
     % ------------------ OPTION 2: SAVING POSITION IN FILE ----------------
     % instead of reading file as above, we save the position in file for
-    % later reading. 
+    % later reading.
     pif = ftell(fid);
     out_struct.sampleDataPositionInFile(iRx) = pif;
     

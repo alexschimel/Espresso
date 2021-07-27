@@ -1,82 +1,11 @@
-%% CFF_mask_WC_data_CORE.m
-%
-% _This section contains a very short description of the function, for the
-% user to know this function is part of the software and what it does for
-% it. Example below to replace. Delete these lines XXX._
-%
-% Template of ESP3 function header. XXX
-%
-%% Help
-%
-% *USE*
-%
-% _This section contains a more detailed description of what the function
-% does and how to use it, for the interested user to have an overall
-% understanding of its function. Example below to replace. Delete these
-% lines XXX._
-%
-% This is a text file containing the basic comment template to add at the
-% start of any new ESP3 function to serve as function help. XXX
-%
-% *INPUT VARIABLES*
-%
-% _This section contains bullet points of input variables with description
-% and information. Put input variable and other valid entries or defaults
-% between | symbols so it shows as monospace. Information section to
-% contain, in order: requirement (i.e. Required/Optional/Paramter), valid
-% type (e.g. Num, Positive num, char, 1xN cell array, etc.) and default
-% value if there is one (e.g. Default: '10'). Example below to replace.
-% Delete these lines XXX._
-%
-% * |input_variable_1|: Description (Information). XXX
-% * |input_variable_2|: Description (Information). XXX
-% * |input_variable_3|: Description (Information). XXX
-%
-% *OUTPUT VARIABLES*
-%
-% _This section contains bullet points of output variables with description
-% and information. See input variables for template. Example below to
-% replace. Delete these lines XXX._
-%
-% * |output_variable_1|: Description (Information). XXX
-% * |output_variable_2|: Description (Information). XXX
-%
-% *DEVELOPMENT NOTES*
-%
-% _This section describes what features are temporary, needed future
-% developments and paper references. Example below to replace. Delete these
-% lines XXX._
-%
-% * research point 1. XXX
-% * research point 2. XXX
-%
-% *NEW FEATURES*
-%
-% _This section contains dates and descriptions of major updates. Example
-% below to replace. Delete these lines XXX._
-%
-% * YYYY-MM-DD: second version. Describes the update. XXX
-% * YYYY-MM-DD: first version. XXX
-%
-% *EXAMPLE*
-%
-% _This section contains examples of valid function calls. Note that
-% example lines start with 3 white spaces so that the publish function
-% shows them correctly as matlab code. Example below to replace. Delete
-% these lines XXX._
-%
-%   example_use_1; % comment on what this does. XXX
-%   example_use_2: % comment on what this line does. XXX
-%
-% *AUTHOR, AFFILIATION & COPYRIGHT*
-%
-% _This last section contains at least author name and affiliation. Delete
-% these lines XXX._
-%
-% Yoann Ladroit, Alexandre Schimel, NIWA. XXX
-
-%% Function
 function data = CFF_mask_WC_data_CORE(data, fData, blockPings, varargin)
+%CFF_MASK_WC_DATA_CORE  One-line description
+%
+%   See also ESPRESSO.
+
+%   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
+%   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
+%   2017-2021; Last revision: 27-07-2021
 
 % input parsing
 try mask_angle = varargin{1};
@@ -91,11 +20,11 @@ try mask_bottomrange = varargin{3};
 catch
     mask_bottomrange = inf; % default
 end
-try mypolygon = varargin{4}; 
+try mypolygon = varargin{4};
 catch
     mypolygon = []; % default
 end
-try mask_ping = varargin{5}; 
+try mask_ping = varargin{5};
 catch
     mask_ping = 100; % default
 end
@@ -159,7 +88,7 @@ if ~isinf(mask_bottomrange)
     
     % beamwidth including beam steering
     psi = beamwidth./cos(abs(theta)).^2/2;
-
+    
     % transition between normal and grazing incidence
     %         theta_lim = psi/2;
     %         idx_normal = abs(theta) < theta_lim;
@@ -183,9 +112,9 @@ if ~isinf(mask_bottomrange)
     % the beam footprint, and bottom.
     M_2 = ( sin(abs(theta)) - sin(abs(theta)-psi/2) ) .* fData.X_BP_bottomRange(:,blockPings);
     
-    %% let's try another approach. 
+    %% let's try another approach.
     % Let's approximate the range at which the beam footprint starts as the
-    % minimum range within +-X beams around beam of interest    
+    % minimum range within +-X beams around beam of interest
     M_3 = nan(size(fData.X_BP_bottomRange(:,blockPings)));
     for ip = 1:length(blockPings)
         
@@ -242,7 +171,7 @@ end
 
 % MASK 5: PINGS REMOVAL
 if mask_ping<100
-
+    
     % for now we will use the percentage of faulty bottom detects as a
     % threshold to mask the ping. Aka, if mask_ping=10, then we
     % will mask the  ping if 10% or more of its bottom detects are
@@ -254,7 +183,7 @@ if mask_ping<100
     % * mask_ping = 7 to remove all but perfect pings
     % * mask_ping between 10 and 20 to allow pings with a few missing detect
     % * mask_ping > 20 to remove only the most severly affected pings
-
+    
     % extract needed data
     faulty_bottom = fData.(sprintf('%s_BP_DetectedRangeInSamples',datagramSource))(:,blockPings)==0;
     

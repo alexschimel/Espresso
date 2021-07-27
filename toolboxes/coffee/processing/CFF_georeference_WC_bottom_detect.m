@@ -1,70 +1,27 @@
-%% CFF_georeference_WC_bottom_detect.m
-%
-% Get range, swathe coordinates (across and upwards distance from sonar),
-% and projected coordinates (easting, northing, height) of the bottom
-% detect samples
-%
-%% Help
-%
-% *USE*
-%
-% _This section contains a more detailed description of what the function
-% does and how to use it, for the interested user to have an overall
-% understanding of its function. Example below to replace. Delete these
-% lines XXX._
-%
-% This is a text file containing the basic comment template to add at the
-% start of any new ESP3 function to serve as function help. XXX
-%
-% *INPUT VARIABLES*
-%
-% * |fData|: Required. Structure for the storage of kongsberg EM series
-% multibeam data in a format more convenient for processing. The data is
-% recorded as fields coded "a_b_c" where "a" is a code indicating data
-% origing, "b" is a code indicating data dimensions, and "c" is the data
-% name. See the help of function CFF_convert_ALLdata_to_fData.m for
-% description of codes.
-%
-% *OUTPUT VARIABLES*
-%
-% * |fData|: fData structure updated with bottom detect georeferencing
-% fields
-%
-% *DEVELOPMENT NOTES*
-%
-% * Function formerly named CFF_process_WC_bottom_detect.m
-%
-% *NEW FEATURES*
-%
-% * 2018-10-12: using default datagramSource. Not in input anymore.
-% * 2018-10-11: Moved the georeferencing part into its own subfunction.
-% Updated header before adding to Coffee v3
-% * 2018-10-04: updated varargin management to find datagramSource, to
-% match CFF_compute_ping_navigation
-% * 2017-10-10: removed the saving of beampointinganglerad (Alex Schimel)
-% * 2017-10-10: New function recorded as v2 because of the changes in
-% dimensions. Also, changed to match the latest changes in
-% CFF_process_watercolumn_v2.m including the use of bsxfun to avoid repmat.
-% Also updated the header (Alex Schimel).
-% * 2016-12-01: First version. Code taken from CFF_process_watercolumn.m
-% (Alex Schimel)
-%
-% *EXAMPLE*
-%
-% _This section contains examples of valid function calls. Note that
-% example lines start with 3 white spaces so that the publish function
-% shows them correctly as matlab code. Example below to replace. Delete
-% these lines XXX._
-%
-%   example_use_1; % comment on what this does. XXX
-%   example_use_2: % comment on what this line does. XXX
-%
-% *AUTHOR, AFFILIATION & COPYRIGHT*
-%
-% Alexandre Schimel, NIWA.
-
-%% Function
 function [fData] = CFF_georeference_WC_bottom_detect(fData)
+%CFF_GEOREFERENCE_WC_BOTTOM_DETECT  One-line description
+%
+%   Get range, swathe coordinates (across and upwards distance from sonar),
+%   and projected coordinates (easting, northing, height) of the bottom
+%   detect samples
+%
+%   *INPUT VARIABLES*
+%   * |fData|: Required. Structure for the storage of kongsberg EM series
+%   multibeam data in a format more convenient for processing. The data is
+%   recorded as fields coded "a_b_c" where "a" is a code indicating data
+%   origing, "b" is a code indicating data dimensions, and "c" is the data
+%   name. See the help of function CFF_convert_ALLdata_to_fData.m for
+%   description of codes.
+%
+%   *OUTPUT VARIABLES*
+%   * |fData|: fData structure updated with bottom detect georeferencing
+%   fields
+%
+%   See also ESPRESSO.
+
+%   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
+%   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
+%   2017-2021; Last revision: 27-07-2021
 
 %% info extraction
 

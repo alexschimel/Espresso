@@ -1,10 +1,18 @@
 function out_struct = CFF_read_EMdgmIOP(fid, dgmVersion_warning_flag)
-% Definition of #IOP datagram containing runtime parameters, exactly as
-% chosen by operator in the K-Controller/SIS menus.
-% For detailed description of text strings, see the separate document
-% Runtime parameters set by operator.
+%CFF_READ_EMDGMIOP  Read kmall structure #IOP
 %
-% Verified correct for kmall versions H,I
+%   Definition of #IOP datagram containing runtime parameters, exactly as
+%   chosen by operator in the K-Controller/SIS menus.
+%   For detailed description of text strings, see the separate document
+%   Runtime parameters set by operator.
+%
+%   Verified correct for kmall versions H,I
+%
+%   See also CFF_READ_KMALL_FROM_FILEINFO, ESPRESSO.
+
+%   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
+%   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
+%   2017-2021; Last revision: 27-07-2021
 
 out_struct.header = CFF_read_EMdgmHeader(fid);
 

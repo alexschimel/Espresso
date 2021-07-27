@@ -1,18 +1,15 @@
-%% CFF_are_raw_files_loaded.m
-%
-% List the files available for the app in input folder. Files are available
-% only if the pair .all/.wcd exists. Also returns whether these pairs have
-% been converted to .mat format.
-%
-%% Help
-%
-% *AUTHOR, AFFILIATION & COPYRIGHT*
-%
-% Yoann Ladroit, Alexandre Schimel NIWA. Type |help Espresso.m| for
-% copyright information.
-
-%% Function
 function idx_loaded = CFF_are_raw_files_loaded(rawfileslist, fData)
+%CFF_ARE_RAW_FILES_LOADED  One-line description
+%
+%   List the files available for the app in input folder. Files are
+%   available only if the pair .all/.wcd exists. Also returns whether these
+%   pairs have been converted to .mat format.
+%
+%   See also ESPRESSO.
+
+%   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
+%   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
+%   2017-2021; Last revision: 27-07-2021
 
 % exit if no input
 if isempty(rawfileslist)

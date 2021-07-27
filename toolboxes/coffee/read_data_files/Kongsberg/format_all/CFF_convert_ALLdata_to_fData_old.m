@@ -1,60 +1,58 @@
-%% CFF_convert_ALLdata_to_fData.m
+function [fData,update_flag] = CFF_convert_ALLdata_to_fData(ALLdataGroup,varargin)
+%CFF_CONVERT_ALLDATA_TO_FDATA  One-line description
 %
-% Converts the Kongsberg EM series data files in ALLdata format (containing
-% the KONGSBERG datagrams) to the fData format used in processing.
+%   Converts the Kongsberg EM series data files in ALLdata format
+%   (containing the KONGSBERG datagrams) to the fData format used in
+%   processing.
 %
-%% Help
+%   fData = CFF_CONVERT_ALLDATA_TO_FDATA(ALLdata) converts the contents of
+%   one ALLdata structure to a structure in the fData format.
 %
-% *USE*
+%   fData = CFF_CONVERT_ALLDATA_TO_FDATA({ALLdata;WCDdata}) converts two
+%   ALLdata structures into one fData sructure. While many more structures
+%   can thus be loaded, this is typically done because ALLdata structures
+%   exist on a per-file basis and Kongsberg raw data often come in pairs of
+%   files: one .all and one .wcd. Note that the ALLdata structures are
+%   converted to fData in the order they are in input, and that the first
+%   ones take precedence, aka in the example above, if WCDdata contains a
+%   type of datagram that is already in ALLdata, they will NOT be
+%   converted. 
+%   This is to avoid doubling up. Order the ALLdata structures in input in
+%   order of desired precedence. DO NOT use this feature to convert ALLdata
+%   structures from different acquisition files. It will not work. Convert
+%   each into its own fData structure.
 %
-% fData = CFF_convert_ALLdata_to_fData(ALLdata) converts the contents of
-% one ALLdata structure to a structure in the fData format.
+%   fData = CFF_CONVERT_ALLDATA_TO_FDATA(ALLdata,10,2) operates the
+%   conversion with sub-sampling in range and in beams. For example, to
+%   sub-sample range by a factor of 10 and beams by a factor of 2, use
+%   fData = CFF_CONVERT_ALLDATA_TO_FDATA(ALLdata,10,2). 
+% 
+%   [fData,update_flag] = CFF_CONVERT_ALLDATA_TO_FDATA(ALLdata,1,1,fData)
+%   takes the result of a precedent conversion in input to allow
+%   potentially saving time. The function will start by loading the result
+%   of the precedent conversion, check that what you're trying to add to it
+%   comes from the same raw data source, and add to fData only those types
+%   of datagrams that may be missing. If fData has been modified, it will
+%   return a update_flag=1. If the output is the same and no modification
+%   occured, then it will return a update_flag=0. NOTE: If the decimation
+%   factors in input are different to those used in the input fData, then
+%   the data WILL be updated. This is actually the main use of this
+%   feature...
 %
-% fData = CFF_convert_ALLdata_to_fData({ALLdata;WCDdata}) converts two
-% ALLdata structures into one fData sructure. While many more structures
-% can thus be loaded, this is typically done because ALLdata structures
-% exist on a per-file basis and Kongsberg raw data often come in pairs of
-% files: one .all and one .wcd. Note that the ALLdata structures are
-% converted to fData in the order they are in input, and that the first
-% ones take precedence, aka in the example above, if WCDdata contains a
-% type of datagram that is already in ALLdata, they will NOT be converted.
-% This is to avoid doubling up. Order the ALLdata structures in input in
-% order of desired precedence. DO NOT use this feature to convert ALLdata
-% structures from different acquisition files. It will not work. Convert
-% each into its own fData structure.
+%   *INPUT VARIABLES*
+%   * |ALLdataGroup|: Required. ALLdata structure or cells of ALLdata
+%   structures.
+%   * |dr_sub|: Optional. Scalar for decimation in range. Default: 1 (no
+%   decimation).
+%   * |db_sub|: Optional. Scalar for decimation in beams. Default: 1 (no
+%   decimation).
+%   * |fData|: Optional. Existing fData structure to add to.
 %
-% fData = CFF_convert_ALLdata_to_fData(ALLdata,10,2) operates the
-% conversion with sub-sampling in range and in beams. For example, to
-% sub-sample range by a factor of 10 and beams by a factor of 2, use fData
-% = CFF_convert_ALLdata_to_fData(ALLdata,10,2).
-%
-% [fData,update_flag] = CFF_convert_ALLdata_to_fData(ALLdata,1,1,fData);
-% takes the result of a precedent conversion in input to allow potentially
-% saving time. The function will start by loading the result of the
-% precedent conversion, check that what you're trying to add to it comes
-% from the same raw data source, and add to fData only those types of
-% datagrams that may be missing. If fData has been modified, it will return
-% a update_flag=1. If the output is the same and no modification occured,
-% then it will return a update_flag=0. NOTE: If the decimation factors in
-% input are different to those used in the input fData, then the data
-% WILL be updated. This is actually the main use of this feature...
-%
-% *INPUT VARIABLES*
-%
-% * |ALLdataGroup|: Required. ALLdata structure or cells of ALLdata
-% structures.
-% * |dr_sub|: Optional. Scalar for decimation in range. Default: 1 (no
-% decimation).
-% * |db_sub|: Optional. Scalar for decimation in beams. Default: 1 (no
-% decimation).
-% * |fData|: Optional. Existing fData structure to add to.
-%
-% *OUTPUT VARIABLES*
-%
-% * |fData|: structure for the storage of kongsberg EM series multibeam
-% data in a format more convenient for processing. The data is recorded as
-% fields coded "a_b_c" where "a" is a code indicating data origing, "b" is
-% a code indicating data dimensions, and "c" is the data name.
+%   *OUTPUT VARIABLES*
+%   * |fData|: structure for the storage of kongsberg EM series multibeam
+%   data in a format more convenient for processing. The data is recorded
+%   as fields coded "a_b_c" where "a" is a code indicating data origing,
+%   "b" is a code indicating data dimensions, and "c" is the data name.
 %     * a: code indicating data origin:
 %         * IP: installation parameters
 %         * Ru: Runtime Parameters
@@ -96,53 +94,14 @@
 %     * c: data type, obtained from the original variable name in the
 %     Kongsberg datagram, or from the user's imagination for derived data
 %     obtained from subsequent functions.
-% * |update_flag|: 1 if a fData was given in input and was modified with
-% this function
+%   * |update_flag|: 1 if a fData was given in input and was modified with
+%   this function
 %
-% *DEVELOPMENT NOTES*
-%
-% * only water column data can be subsampled, all other datagrams are
-% converted in full. To be consistent, develop code to subsample all
-% datagrams as desired in parameters. Add a subsampling in pings while
-% you're at it.
-% * Have not tested the loading of data from 'EM_Depth' and
-% 'EM_SeabedImage' in the new format version (v2). Might need debugging.
-% * Since v2, a few major changes including change in order of dimensions.
-% * Based on CFF_convert_mat_to_fabc_v2
-%
-% *NEW FEATURES*
-%
-% * 2018-10-11: updated header before adding to Coffee v3
-% * 2018-10-09: started adding runtime params
-% * 2017-10-04: complete re-ordering of dimensions, no backward
-% * 2017-09-28: updated header to new format, and updated contents, in
-% preparation for revamping to handle large water-column data
-% * 2014-04-28: Fixed watercolumn data parsing for when some
-% datagrams are missing. height datagram supported
-% * ????-??-??: Added support for XYZ88, seabed image 89 and WC
-% * ????-??-??: Splitted seabed image samples per beam. Still not sorted
-% * ????-??-??: Made all types of datagram optional
-% * ????-??-??: Improved comments and general code
-% * ????-??-??: Changed data origin codes to two letters
-% * ????-??-??: Recording ASCII parameters as well
-% * ????-??-??: Reading sound speed profile
-%
-% % *EXAMPLE*
-%
-% ALLfilename = '.\data\EM2040c\0001_20140213_052736_Yolla.all';
-% MATfilename = '0001_20140213_052736_Yolla.mat';
-% info = CFF_all_file_info(ALLfilename);
-% info.parsed(:)=1; % to save all the datagrams
-% ALLdata = CFF_read_all_from_fileinfo(ALLfilename, info);
-% fData = CFF_convert_ALLdata_to_fData(ALLdata);
-%
-% *AUTHOR, AFFILIATION & COPYRIGHT*
-%
-% Alexandre Schimel,Deakin University, NIWA.
-% Yoann Ladroit, NIWA.
+%   See also ESPRESSO.
 
-%% Function
-function [fData,update_flag] = CFF_convert_ALLdata_to_fData(ALLdataGroup,varargin)
+%   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
+%   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
+%   2017-2021; Last revision: 27-07-2021
 
 %% input parsing
 

@@ -1,41 +1,37 @@
-%% CFF_kmall_file_info.m
+function KMALLfileinfo = CFF_kmall_file_info(KMALLfilename)
+%CFF_KMALL_FILE_INFO  Records basic info about contents of .kmall file
 %
-% Records basic info about the datagrams contained in one Kongsberg EM
-% series binary data file in .kmall format (.kmall or .kmwcd)
+%   Records basic info about the datagrams contained in one Kongsberg EM
+%   series binary data file in .kmall format (.kmall or .kmwcd).
 %
-%% Help
+%   KMALLfileinfo = CFF_KMALL_FILE_INFO(KMALLfilename) opens file
+%   KMALLfilename and reads through the start of each datagram to get basic
+%   information about it, and store it all in KMALLfileinfo.
 %
-% *USE*
+%   *INPUT VARIABLES*
+%   * |KMALLfilename|: Required. String filename to parse (extension in
+%   .kmall or .kmwcd) 
 %
-% KMALLfileinfo = CFF_kmall_file_info(KMALLfilename) opens file
-% KMALLfilename and reads through the start of each datagram to get basic
-% information about it, and store it all in KMALLfileinfo.
-%
-% *INPUT VARIABLES*
-%
-% * |KMALLfilename|: Required. String filename to parse (extension in
-% .kmall or .kmwcd) 
-%
-% *OUTPUT VARIABLES*
-%
-% * |KMALLfileinfo|: structure containing information about datagrams in
-% KMALLfilename, with fields:
+%   *OUTPUT VARIABLES*
+%   * |KMALLfileinfo|: structure containing information about datagrams in
+%   KMALLfilename, with fields:
 %     * |file_name|: input file name
 %     * |file_size|: file size in bytes
 %     * |dgm_num|: number of datagram in file
-%     * |dgm_type_code|: datagram type as string, e.g. '#IIP' (Kongsberg .kmall
-%     format)
-%     * |dgm_type_text|: datagram type description (Kongsberg .kmall format)
-%     * |dgm_type_version|: version for this type of datagram, as int (Kongsberg
+%     * |dgm_type_code|: datagram type as string, e.g. '#IIP' (Kongsberg
 %     .kmall format)
+%     * |dgm_type_text|: datagram type description (Kongsberg .kmall
+%     format) 
+%     * |dgm_type_version|: version for this type of datagram, as int
+%     (Kongsberg .kmall format)
 %     * |dgm_counter|: counter for this type and version of datagram
 %     in the file. There should not be multiple versions of a same type in
 %     a same file, but we never know...
 %     * |dgm_start_pif|: position of beginning of datagram in
 %     file 
 %     * |dgm_size|: datagram size in bytes
-%     * |dgm_sys_ID|: System ID. Parameter used for separating datagrams from
-%     different echosounders.
+%     * |dgm_sys_ID|: System ID. Parameter used for separating datagrams
+%     from different echosounders.
 %     * |dgm_EM_ID|: Echo sounder identity, e.g. 124, 304, 712, 2040,
 %     2045 (EM 2040C)
 %     * |sync_counter|: number of bytes found between this datagram and the
@@ -44,33 +40,17 @@
 %     * |parsed|: flag for whether the datagram has been parsed. Initiated
 %     at 0 at this stage. To be later turned to 1 for parsing.
 %
-% *DEVELOPMENT NOTES*
-%
-% * NA
-%
-% *NEW FEATURES*
-%
-% * 2021-05-26: first version, inspired from CFF_all_file_info.m and
-% CFF_s7k_file_info.m. (Alex)
-%
-% *EXAMPLE*
-%
-% KMALLfilename = '.\data\EM304\0000_20200428_101105_ShipName.kmall';
-% KMALLfileinfo = CFF_kmall_file_info(KMALLfilename);
-%
-% *AUTHOR, AFFILIATION & COPYRIGHT*
-%
-% Alexandre Schimel (NGU), Yoann Ladroit (NIWA). 
-% Type |help CoFFee.m| for copyright information.
+%   See also ESPRESSO.
 
-%% Function
-function KMALLfileinfo = CFF_kmall_file_info(KMALLfilename)
+%   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
+%   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
+%   2017-2021; Last revision: 27-07-2021
 
 %% Input arguments management using inputParser
 p = inputParser;
 
-% KMALLfilename to parse as only required argument. Test for file existence and
-% extension.
+% KMALLfilename to parse as only required argument. Test for file existence
+% and extension.
 argName = 'KMALLfilename';
 argCheck = @(x) CFF_check_KMALLfilename(x);
 addRequired(p,argName,argCheck);

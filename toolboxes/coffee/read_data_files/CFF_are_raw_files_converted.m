@@ -1,26 +1,18 @@
-%% CFF_are_raw_files_converted.m
-%
-% Check if one or a list of raw files are already converted.
-%
-%% Help
-%
-% *USE*
-%
-% For each input file, the test for conversion includes whether the
-% corresponding fData.mat file exists, and if its version matches the
-% current fData version. If the version does not match, then the file is
-% officially NOT converted. 
-%
-% If any file was converted but has the wrong version, it sets the output
-% flag flag_outdated_fdata to one.
-%
-% *AUTHOR, AFFILIATION & COPYRIGHT*
-%
-% Alexandre Schimel (NGU, NIWA), Yoann Ladroit (NIWA).
-% Type |help Espresso.m| for copyright information.
-
-%% Function
 function [idx_converted,flag_outdated_fdata] = CFF_are_raw_files_converted(rawfileslist)
+%CFF_ARE_RAW_FILES_CONVERTED  Check if raw files are already converted.
+%
+%   For each input file, the test for conversion includes whether the
+%   corresponding fData.mat file exists, and if its version matches the
+%   current fData version. If the version does not match, then the file is
+%   officially NOT converted.
+%   If any file was converted but has the wrong version, it sets the output
+%   flag flag_outdated_fdata to one.
+%
+%   See also ESPRESSO.
+
+%   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
+%   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
+%   2017-2021; Last revision: 27-07-2021
 
 % exit if no input
 if isempty(rawfileslist)
