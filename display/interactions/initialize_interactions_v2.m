@@ -20,7 +20,7 @@ if isempty(interactions)
     interactions.WindowKeyReleaseFcn   = nan(1,2); % End user releases a key while the pointer is on the figure or any of its child objects.
     interactions.KeyReleaseFcn         = nan(1,2);
     interactions.WindowScrollWheelFcn  = nan(1,2); % End user turns the mouse wheel while the pointer is on the figure.
-
+    
 else
     % re-initialize
     

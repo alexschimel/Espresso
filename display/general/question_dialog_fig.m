@@ -1,4 +1,11 @@
-function answer=question_dialog_fig(main_figure,tt_str,str_quest,varargin)
+function answer = question_dialog_fig(main_figure,tt_str,str_quest,varargin)
+%QUESTION_DIALOG_FIG  One-line description
+%
+%   See also ESPRESSO.
+
+%   Authors: Yoann Ladroit (NIWA, yoann.ladroit@niwa.co.nz) and Alex
+%   Schimel (NIWA, alexandre.schimel@niwa.co.nz)
+%   2017-2021; Last revision: 27-07-2021
 
 p = inputParser;
 
@@ -28,9 +35,6 @@ else
     cmap=[];
 end
 
-
-
-
 s_str=numel(str_quest);
 nb_lines=ceil(s_str*8/400);
 
@@ -41,7 +45,7 @@ bt_w=nanmax([nansum(cellfun(@numel,opt))*8,50]);
 box_w=nanmax(str_b_w+10,numel(opt)*(bt_w+10)+10);
 
 main_figure_center = [main_figure.Position(1) + main_figure.Position(3)/2, main_figure.Position(2) + main_figure.Position(4)/2];
-    
+
 QuestFig = figure('units','pixels',...
     'Position',[main_figure_center(1) main_figure_center(2) box_w 100+(nb_lines-1)*10],...
     'WindowStyle','modal',...

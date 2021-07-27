@@ -1,4 +1,11 @@
 function no_data_clear_all_displays(main_figure)
+%NO_DATA_CLEAR_ALL_DISPLAYS  Clear all displays in Espresso
+%
+%   See also ESPRESSO.
+
+%   Authors: Yoann Ladroit (NIWA, yoann.ladroit@niwa.co.nz) and Alex
+%   Schimel (NIWA, alexandre.schimel@niwa.co.nz)
+%   2017-2021; Last revision: 27-07-2021
 
 % clear ping swathe line on map
 map_tab_comp = getappdata(main_figure,'Map_tab');

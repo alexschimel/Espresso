@@ -1,6 +1,11 @@
 function [lat_str,lon_str] = latlon2str(lat,lon)
+%LATLON2STR  Convert lat long from numeric to string
+%
+%   See also ESPRESSO.
 
-
+%   Authors: Yoann Ladroit (NIWA, yoann.ladroit@niwa.co.nz) and Alex
+%   Schimel (NIWA, alexandre.schimel@niwa.co.nz)
+%   2017-2021; Last revision: 27-07-2021
 
 if lon>180||lon<0
     e0w='W';
@@ -26,8 +31,5 @@ lon_min=(abs(lon)-abs(lon_deg))*60;
 
 lat_str=sprintf('%d%c %05.2f'' %s',lat_deg,char(hex2dec('00BA')),lat_min,n0s);
 lon_str=sprintf('%d%c %05.2f'' %s',lon_deg,char(hex2dec('00BA')),lon_min,e0w);
-
-
-
 
 end

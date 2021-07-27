@@ -24,7 +24,7 @@ diary off
 
 % give reader a second to read that last line
 if isdeployed()
-    pause(1); 
+    pause(1);
 end
 
 end

@@ -1,4 +1,11 @@
 function scroll_fcn_callback(src,callbackdata,main_figure)
+%SCROLL_FCN_CALLBACK  One-line description
+%
+%   See also ESPRESSO.
+
+%   Authors: Yoann Ladroit (NIWA, yoann.ladroit@niwa.co.nz) and Alex
+%   Schimel (NIWA, alexandre.schimel@niwa.co.nz)
+%   2017-2021; Last revision: 27-07-2021
 
 map_tab_comp = getappdata(main_figure,'Map_tab');
 

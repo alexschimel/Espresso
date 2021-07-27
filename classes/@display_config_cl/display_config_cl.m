@@ -1,11 +1,11 @@
 classdef display_config_cl <handle
-    %DISPLAY_CONFIG_CL  One-line description
+    %DISPLAY_CONFIG_CL  Information about current display on Espresso
     %
     %   See also ESPRESSO.
     
     %   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
     %   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
-    %   2017-2021; Last revision: 21-07-2021
+    %   2017-2021; Last revision: 27-07-2021
     
     properties (SetObservable = true)
         AcrossDist         % Across distance for pointer
@@ -29,6 +29,7 @@ classdef display_config_cl <handle
     
     methods
         function obj = display_config_cl(varargin)
+            % instantiation method
             
             % input parser
             p = inputParser;
@@ -52,7 +53,7 @@ classdef display_config_cl <handle
             parse(p,varargin{:});
             results = p.Results;
             
-            % add to object
+            
             props = fieldnames(results);
             for i = 1:length(props)
                 obj.(props{i}) = results.(props{i});

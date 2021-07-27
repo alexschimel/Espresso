@@ -1,79 +1,23 @@
-    %% feature_cl.m
-%
-% Class for Espresso features (polygon and points)
-%
-%% Help
-%
-% *PROPERTIES*
-%
-% * |Unique_ID|: Unique ID defined at creation.
-% * |Class|: Class of object as per types xml file (Default: "unidentified").
-% * |Description|: Free-text (Default: empty).
-% * |Polygon|: Polyshape if the feature is a polygon, empty if a point (Default: empty).
-% * |Point|: Two-element vector if the feature is a point, empty if a polygon (Default: empty).
-% * |Zone|: UTM zone in numeric (minus if southern hemisphere) (Default: empty).
-% * |Depth_min|: Minimum depth (Default: 0).
-% * |Depth_max|: Maximum depth (Default: 1e4).
-% * |ID|: Auto-incremented integer to count features (Default: 1).
-%
-% *METHODS*
-%
-% _This section contains bullet points of output variables with description
-% and information. See input variables for template. Example below to
-% replace. Delete these lines XXX._
-%
-% * |output_variable_1|: Description (Information). XXX
-% * |output_variable_2|: Description (Information). XXX
-%
-% *DEVELOPMENT NOTES*
-%
-% _This section describes what features are temporary, needed future
-% developments and paper references. Example below to replace. Delete these
-% lines XXX._
-%
-% * research point 1. XXX
-% * research point 2. XXX
-%
-% *NEW FEATURES*
-%
-% _This section contains dates and descriptions of major updates. Example
-% below to replace. Delete these lines XXX._
-%
-% * YYYY-MM-DD: second version. Describes the update. XXX
-% * YYYY-MM-DD: first version. XXX
-%
-% *EXAMPLE*
-%
-% _This section contains examples of valid function calls. Note that
-% example lines start with 3 white spaces so that the publish function
-% shows them correctly as matlab code. Example below to replace. Delete
-% these lines XXX._
-%
-%   example_use_1; % comment on what this does. XXX
-%   example_use_2: % comment on what this line does. XXX
-%
-% *AUTHOR, AFFILIATION & COPYRIGHT*
-%
-% _This last section contains at least author name and affiliation. Delete
-% these lines XXX._
-%
-% Yoann Ladroit, Alexandre Schimel, NIWA. XXX
-
-%% Function
 classdef feature_cl
+    %FEATURE_CL  Information for Espresso features (polygon, points)
+    %
+    %   See also ESPRESSO.
+    
+    %   Authors: Yoann Ladroit (NIWA, yoann.ladroit@niwa.co.nz) and Alex
+    %   Schimel (NIWA, alexandre.schimel@niwa.co.nz)
+    %   2017-2021; Last revision: 27-07-2021
     
     properties
-        % default properties
-        Unique_ID = char(java.util.UUID.randomUUID);
-        Class = 'unidentified'; % empty class by default
-        Description = ' ';
-        Polygon = []; % polyshape if the feature is a polygon, empty if a point
-        Point = [] ; % two-element vector if the feature is a point, empty if a polygon
-        Zone = ' '; % UTM zone
-        Depth_min = 0;
-        Depth_max = 1e4;
-        ID = 1;
+        Class = 'unidentified'; % Class of object as per types xml file
+        Depth_min = 0; % Minimum depth
+        Depth_max = 1e4; % Maximum depth
+        Description = ' '; % Free text
+        ID = 1; % Auto-incremented integer to count features
+        Point = [] ; % Two-element vector if the feature is a point, empty if a polygon
+        Polygon = []; % Polyshape if the feature is a polygon, empty if a point
         shapefile = [];
+        Unique_ID = char(java.util.UUID.randomUUID); % Unique ID defined at creation
+        Zone = ' '; % UTM zone in numeric (minus if southern hemisphere)
     end
     
     methods
@@ -84,22 +28,20 @@ classdef feature_cl
             % input parser
             p = inputParser;
             check_class = @(class) ismember(class,init_feature_class());
-            addParameter(p,'Unique_ID',char(java.util.UUID.randomUUID),@ischar);
             addParameter(p,'Class','unidentified',check_class);
-            addParameter(p,'Description',' ',@ischar);
-            addParameter(p,'Zone',1,@isnumeric);
-            addParameter(p,'Polygon',[]);
-            addParameter(p,'Point',[]);
             addParameter(p,'Depth_min',0,@isnumeric);
             addParameter(p,'Depth_max',1e4,@isnumeric);
+            addParameter(p,'Description',' ',@ischar);
             addParameter(p,'ID',1,@isnumeric);
+            addParameter(p,'Point',[]);
+            addParameter(p,'Polygon',[]);
             addParameter(p,'shapefile',[],@(x) isfile(x)||isempty(x));
+            addParameter(p,'Unique_ID',char(java.util.UUID.randomUUID),@ischar);
+            addParameter(p,'Zone',1,@isnumeric);
             parse(p,varargin{:});
             
-            % get properties
+            % add to object
             props = properties(obj);
-            
-            % add input properties to object
             for i = 1:length(props)
                 if isfield(p.Results,props{i})
                     obj.(props{i}) = p.Results.(props{i});

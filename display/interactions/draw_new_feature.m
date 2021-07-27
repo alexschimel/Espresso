@@ -1,82 +1,12 @@
-%% this_function_name.m
-%
-% _This section contains a very short description of the function, for the
-% user to know this function is part of the software and what it does for
-% it. Example below to replace. Delete these lines XXX._
-%
-% Template of ESP3 function header. XXX
-%
-%% Help
-%
-% *USE*
-%
-% _This section contains a more detailed description of what the function
-% does and how to use it, for the interested user to have an overall
-% understanding of its function. Example below to replace. Delete these
-% lines XXX._
-%
-% This is a text file containing the basic comment template to add at the
-% start of any new ESP3 function to serve as function help. XXX
-%
-% *INPUT VARIABLES*
-%
-% _This section contains bullet points of input variables with description
-% and information. Put input variable and other valid entries or defaults
-% between | symbols so it shows as monospace. Information section to
-% contain, in order: requirement (i.e. Required/Optional/Paramter), valid
-% type (e.g. Num, Positive num, char, 1xN cell array, etc.) and default
-% value if there is one (e.g. Default: '10'). Example below to replace.
-% Delete these lines XXX._
-%
-% * |input_variable_1|: Description (Information). XXX
-% * |input_variable_2|: Description (Information). XXX
-% * |input_variable_3|: Description (Information). XXX
-%
-% *OUTPUT VARIABLES*
-%
-% _This section contains bullet points of output variables with description
-% and information. See input variables for template. Example below to
-% replace. Delete these lines XXX._
-%
-% * |output_variable_1|: Description (Information). XXX
-% * |output_variable_2|: Description (Information). XXX
-%
-% *DEVELOPMENT NOTES*
-%
-% _This section describes what features are temporary, needed future
-% developments and paper references. Example below to replace. Delete these
-% lines XXX._
-%
-% * research point 1. XXX
-% * research point 2. XXX
-%
-% *NEW FEATURES*
-%
-% _This section contains dates and descriptions of major updates. Example
-% below to replace. Delete these lines XXX._
-%
-% * YYYY-MM-DD: second version. Describes the update. XXX
-% * YYYY-MM-DD: first version. XXX
-%
-% *EXAMPLE*
-%
-% _This section contains examples of valid function calls. Note that
-% example lines start with 3 white spaces so that the publish function
-% shows them correctly as matlab code. Example below to replace. Delete
-% these lines XXX._
-%
-%   example_use_1; % comment on what this does. XXX
-%   example_use_2: % comment on what this line does. XXX
-%
-% *AUTHOR, AFFILIATION & COPYRIGHT*
-%
-% _This last section contains at least author name and affiliation. Delete
-% these lines XXX._
-%
-% Yoann Ladroit, Alexandre Schimel, NIWA. XXX
-
-%% Function
 function draw_new_feature(~,~,main_figure)
+%DRAW_NEW_FEATURE  Draw new feature in Espresso
+%
+%   See also ESPRESSO.
+
+%   Authors: Yoann Ladroit (NIWA, yoann.ladroit@niwa.co.nz) and Alex
+%   Schimel (NIWA, alexandre.schimel@niwa.co.nz)
+%   2017-2021; Last revision: 27-07-2021
+
 
 % get data
 disp_config = getappdata(main_figure,'disp_config');
@@ -165,7 +95,7 @@ switch fig_anc.SelectionType
         col_line = 'r';
         x_box = xinit(1);
         y_box = xinit(1);
-
+        
         % now that a polygon has been started, replace figure callbacks for
         % mouse motion and mouse click to continue/finalize it
         switch ah.Tag
@@ -176,7 +106,7 @@ switch fig_anc.SelectionType
                 
                 % add coordinates as text
                 txt = text(ah,xinit(1),yinit(1),sprintf('%.6f,%.6f',lat,lon),'color',col_line,'Tag','feature_temp');
-
+                
                 replace_interaction(main_figure,'interaction','WindowButtonMotionFcn','id',2,'interaction_fcn',@wbmcb_ext);
                 replace_interaction(main_figure,'interaction','WindowButtonDownFcn','id',1,'interaction_fcn',@wbdcb_ext);
             case 'wc'
@@ -185,14 +115,14 @@ switch fig_anc.SelectionType
                 txt = text(ah,xinit(1),yinit(1),sprintf('%.2f m',yinit(1)),'color',col_line,'Tag','feature_temp');
                 replace_interaction(main_figure,'interaction','WindowButtonMotionFcn','id',2,'interaction_fcn',@wbmcb);
                 replace_interaction(main_figure,'interaction','WindowButtonUpFcn','id',1,'interaction_fcn',@wbucb_wc);
-
+                
             case 'stacked_wc'
                 u = 1;
                 hp = line(ah,xinit(1),yinit(1),'color',col_line,'linewidth',1,'Tag','feature_temp');
                 txt = text(ah,xinit(1),yinit(1),sprintf('%.2f m',yinit(1)),'color',col_line,'Tag','feature_temp');
                 replace_interaction(main_figure,'interaction','WindowButtonMotionFcn','id',2,'interaction_fcn',@wbmcb);
                 replace_interaction(main_figure,'interaction','WindowButtonUpFcn','id',1,'interaction_fcn',@wbucb_wc);
-
+                
         end
         
     case 'alt'
@@ -208,13 +138,13 @@ switch fig_anc.SelectionType
                 new_feature.feature_to_shapefile(fullfile(Espresso_user_folder,'feature_files'));
                 
             case 'stacked_wc'
-
+                
                 if ~ismember(disp_config.Fdata_ID , IDs)
                     disp_config.Fdata_ID = IDs(1);
                     disp_config.Iping = 1; % calls listenIping
                     return;
                 end
-
+                
                 fData = fData_tot{disp_config.Fdata_ID ==IDs};
                 
                 iping = round(cp(1,1));
@@ -233,13 +163,13 @@ switch fig_anc.SelectionType
                 
                 fData_tot = getappdata(main_figure,'fData');
                 IDs = cellfun(@(c) c.ID,fData_tot);
-
+                
                 if ~ismember(disp_config.Fdata_ID, IDs)
                     disp_config.Fdata_ID = IDs(1);
                     disp_config.Iping = 1; % calls listenIping
                     return;
                 end
-
+                
                 fData = fData_tot{disp_config.Fdata_ID ==IDs};
                 
                 depth = abs(cp(1,2));
@@ -267,7 +197,7 @@ end
 
 
 %% nested subfunctions %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
- function wbmcb(~,~)
+    function wbmcb(~,~)
         cp = ah.CurrentPoint;
         
         if cp(1,1)<x_lim(1) || cp(1,1)>x_lim(end) || cp(1,2)<y_lim(1) || cp(1,2)>y_lim(end)
@@ -276,7 +206,7 @@ end
         
         X = [xinit(1),cp(1,1)];
         Y = [yinit(1),cp(1,2)];
-
+        
         x_min = nanmin(X);
         x_min = nanmax(x_lim(1),x_min);
         
@@ -298,7 +228,7 @@ end
             set(hp,'XData',x_box,'YData',y_box,'Tag','reg_temp');
         else
             hp = plot(ah,x_box,x_box,'color',col_line,'linewidth',1,'Tag','reg_temp');
-        end 
+        end
         
         if isvalid(txt)
             set(txt,'position',[cp(1,1) cp(1,2) 0],'string',str_txt);
@@ -350,7 +280,7 @@ end
                 
                 xinit(id_rem) = [];
                 yinit(id_rem) = [];
-
+                
                 % update/create polygon plot
                 if isvalid(hp)
                     set(hp,'XData',xinit,'YData',yinit);
@@ -388,7 +318,7 @@ end
     end
 
 
-     function wbucb_wc(~,~)
+    function wbucb_wc(~,~)
         
         replace_interaction(main_figure,'interaction','WindowButtonMotionFcn','id',2);
         replace_interaction(main_figure,'interaction','WindowButtonUpFcn','id',1);
@@ -413,8 +343,8 @@ end
         
         x_max=nanmax(x_box);
         x_max=round(nanmin(x_lim(end),x_max));
-           
- 
+        
+        
         delete(txt);
         delete(hp);
         fData_tot = getappdata(main_figure,'fData');
@@ -429,8 +359,8 @@ end
         fData = fData_tot{disp_config.Fdata_ID ==IDs};
         
         
-         switch ah.Tag
-  
+        switch ah.Tag
+            
             case 'wc'
                 % add it as a new feature
                 [~,i_beam_max]=nanmin(abs(fData.X_BP_bottomAcrossDist(:,disp_config.Iping)-x_max));
@@ -440,19 +370,19 @@ end
                 ipings=ipings+sum(ipings<1);
                 ipings=ipings-sum(ipings>numel(fData.X_1P_pingE));
                 poly=polyshape(...
-                [fData.X_BP_bottomEasting(i_beam_min,ipings(1)) fData.X_BP_bottomEasting(i_beam_max,ipings(1)) fData.X_BP_bottomEasting(i_beam_max,ipings(end)) fData.X_BP_bottomEasting(i_beam_min,ipings(end))],...
-                [fData.X_BP_bottomNorthing(i_beam_min,ipings(1)) fData.X_BP_bottomNorthing(i_beam_max,ipings(1)) fData.X_BP_bottomNorthing(i_beam_max,ipings(end)) fData.X_BP_bottomNorthing(i_beam_min,ipings(end))]);
+                    [fData.X_BP_bottomEasting(i_beam_min,ipings(1)) fData.X_BP_bottomEasting(i_beam_max,ipings(1)) fData.X_BP_bottomEasting(i_beam_max,ipings(end)) fData.X_BP_bottomEasting(i_beam_min,ipings(end))],...
+                    [fData.X_BP_bottomNorthing(i_beam_min,ipings(1)) fData.X_BP_bottomNorthing(i_beam_max,ipings(1)) fData.X_BP_bottomNorthing(i_beam_max,ipings(end)) fData.X_BP_bottomNorthing(i_beam_min,ipings(end))]);
                 new_feature = feature_cl('Polygon',poly,'Zone',disp_config.get_zone(),'ID',ID,'Depth_min',abs(y_min),'Depth_max',abs(y_max));
-
-             case 'stacked_wc'
-                 % add it as a new feature
-                 [vert_poly,~,~] = poly_vertices_from_fData(fData,disp_config,round(x_min):round(x_max));
                 
-                 new_feature = feature_cl('Polygon',polyshape(vert_poly),'Zone',disp_config.get_zone(),'ID',ID,'Depth_min',abs(y_min),'Depth_max',abs(y_max));
-                 
+            case 'stacked_wc'
+                % add it as a new feature
+                [vert_poly,~,~] = poly_vertices_from_fData(fData,disp_config,round(x_min):round(x_max));
+                
+                new_feature = feature_cl('Polygon',polyshape(vert_poly),'Zone',disp_config.get_zone(),'ID',ID,'Depth_min',abs(y_min),'Depth_max',abs(y_max));
+                
         end
-         % finalize new feature
-         
+        % finalize new feature
+        
         save_new_feature();
     end
 
@@ -477,10 +407,10 @@ end
         yinit(isnan(yinit)|yinit==0) = [];
         
         % remove all points outside of the map
-%         xinit(xinit>x_lim(end)) = x_lim(end);
-%         xinit(xinit<x_lim(1)) = x_lim(1);
-%         yinit(yinit>y_lim(end)) = y_lim(end);
-%         yinit(yinit<y_lim(1)) = y_lim(1);
+        %         xinit(xinit>x_lim(end)) = x_lim(end);
+        %         xinit(xinit<x_lim(1)) = x_lim(1);
+        %         yinit(yinit>y_lim(end)) = y_lim(end);
+        %         yinit(yinit<y_lim(1)) = y_lim(1);
         
         % if only 1 or 2 vertices after that, delete the polygon as
         % incomplete

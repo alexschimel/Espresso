@@ -1,16 +1,11 @@
-%% clean_delete_fdata.m
-%
-% Function description XXX
-%
-%% Help
-%
-% *AUTHOR, AFFILIATION & COPYRIGHT*
-%
-% Yoann Ladroit, Alexandre Schimel NIWA. Type |help Espresso.m| for
-% copyright information.
-
-%% Function
 function clean_delete_fdata(wc_dir)
+%CLEAN_DELETE_FDATA  Delete a fData including all memmapped files
+%
+%   See also ESPRESSO.
+
+%   Authors: Yoann Ladroit (NIWA, yoann.ladroit@niwa.co.nz) and Alex
+%   Schimel (NIWA, alexandre.schimel@niwa.co.nz)
+%   2017-2021; Last revision: 27-07-2021
 
 % if wc_dir does not exist, exit here
 if ~isfolder(wc_dir)

@@ -1,8 +1,13 @@
 function replace_interaction(curr_fig,varargin)
+%REPLACE_INTERACTION  One-line description
+%
+%   See also ESPRESSO.
+
+%   Authors: Yoann Ladroit (NIWA, yoann.ladroit@niwa.co.nz) and Alex
+%   Schimel (NIWA, alexandre.schimel@niwa.co.nz)
+%   2017-2021; Last revision: 10-12-2018
 
 % replace_interaction(curr_fig,'interaction','WindowButtonDownFcn','id',1,'interaction_fcn',{@zoom_in_callback,curr_fig},'pointer','glassplus');
-
-%% parsing inputs
 
 % list of valid interaction types
 interact_fields = {'WindowButtonDownFcn',... % End user presses a mouse button while the pointer is in the figure window.

@@ -1,5 +1,5 @@
 function resize_espresso(main_figure,~)
-%FUNCTION_NAME  resize Espresso main figure
+%RESIZE_ESPRESSO  Resize Espresso main figure
 %
 %   Callback function of the main figure
 %
