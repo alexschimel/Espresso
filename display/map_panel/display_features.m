@@ -3,10 +3,9 @@ function display_features(main_figure,IDs_to_up,axes_to_up)
 %
 %   See also ESPRESSO.
 
-%   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
-%   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
-%   2017-2021; Last revision: 21-07-2021
-
+%   Authors: Yoann Ladroit (NIWA, yoann.ladroit@niwa.co.nz) and Alex
+%   Schimel (NIWA, alexandre.schimel@niwa.co.nz)
+%   2017-2021; Last revision: 27-07-2021
 
 if ~iscell(IDs_to_up)
     IDs_to_up = {};
@@ -210,8 +209,8 @@ end
 
 end
 
-%% Subfunctions
 
+%%
 function draw_feature_on_fan_display(ax,feature,ibeam,isin,col)
 
 range_lim = get(ax,'YLim');
@@ -255,7 +254,7 @@ new_feature.draw_feature(ax,col);
 end
 
 
-
+%%
 function draw_feature_on_stacked_display(ax,intersection,feature,easting,northing,col)
 
 % extents
@@ -289,7 +288,7 @@ else
     % feature is a polygon
     
     poly_regions = intersection.regions;
-   
+    
     for ireg = 1:numel(poly_regions)
         
         % find closest ping nav to each vertex

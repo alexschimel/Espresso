@@ -102,7 +102,7 @@ for nF = 1:n_files
                 % * water-column (107)
                 % * Amplitude and Phase (114)
                 datagrams_to_parse = [73 80 82 88 107 114];
-               
+                
                 % step 1: read
                 [EMdata,datags_parsed_idx] = CFF_read_all(file_to_convert, datagrams_to_parse);
                 textprogressbar(50);
@@ -146,18 +146,18 @@ for nF = 1:n_files
                 textprogressbar(50);
                 
                 % if not all datagrams were found at this point, message and abort
-%                 if ~all(datags_parsed_idx)
-%                     if ~any((datags_parsed_idx(7:8)))
-%                         textprogressbar('File does not contain water-column datagrams (either R7018 or R7042). Check file contents. Conversion aborted.');
-%                         continue;
-%                     elseif ~any(datags_parsed_idx(1:2))
-%                         textprogressbar('File does not contain position datagrams (either R1015 or R1003). Check file contents. Conversion aborted.');
-%                         continue;
-%                     elseif ~all(datags_parsed_idx(3:6))
-%                         textprogressbar('File does not contain all necessary datagrams. Check file contents. Conversion aborted.');
-%                         continue;
-%                     end
-%                 end
+                %                 if ~all(datags_parsed_idx)
+                %                     if ~any((datags_parsed_idx(7:8)))
+                %                         textprogressbar('File does not contain water-column datagrams (either R7018 or R7042). Check file contents. Conversion aborted.');
+                %                         continue;
+                %                     elseif ~any(datags_parsed_idx(1:2))
+                %                         textprogressbar('File does not contain position datagrams (either R1015 or R1003). Check file contents. Conversion aborted.');
+                %                         continue;
+                %                     elseif ~all(datags_parsed_idx(3:6))
+                %                         textprogressbar('File does not contain all necessary datagrams. Check file contents. Conversion aborted.');
+                %                         continue;
+                %                     end
+                %                 end
                 
                 if datags_parsed_idx(end)
                     datagramSource = 'AP';

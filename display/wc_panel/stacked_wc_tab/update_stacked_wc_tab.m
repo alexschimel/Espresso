@@ -93,12 +93,12 @@ if up_stacked_wc_bool
         case 'Phase'
             fieldN = sprintf('%s_SBP_SamplePhase',datagramSource);
     end
-
+    
     % First, find the indices of pings, beams, and samples we need to
-    % extract from the memmapped files. 
+    % extract from the memmapped files.
     
     % For pings, we'll just extract the indices of pings making up the
-    % stack. 
+    % stack.
     nPings = numel(iPings);
     
     % For beams, we'll extract the set of beams between the smallest index
@@ -202,7 +202,7 @@ if up_stacked_wc_bool
                 amp_al(:,blockPings) = block_stack;
         end
     end
-
+    
     % distance down (in m)
     switch stack_mode
         case 'depth'

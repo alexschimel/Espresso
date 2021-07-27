@@ -7,6 +7,7 @@ function update_datafiles_tab(main_figure)
 %   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
 %   2017-2021; Last revision: 21-07-2021
 
+
 % get relevant stuff from main figure
 file_tab_comp = getappdata(main_figure,'file_tab');
 fData = getappdata(main_figure,'fData');

@@ -1,17 +1,11 @@
-%% load_files.m
-%
-% Load converted data (fData) into Espresso
-%
-%% Help
-%
-% *AUTHOR, AFFILIATION & COPYRIGHT*
-%
-% Alexandre Schimel (NGU, NIWA), Yoann Ladroit (NIWA). 
-% Type |help Espresso.m| for copyright information.
-
-
-%% Function
 function [fData, disp_config] = load_files(fData, files_to_load, disp_config)
+%LOAD_FILES  Load converted data (fData) into Espresso
+%
+%   See also ESPRESSO.
+
+%   Authors: Yoann Ladroit (NIWA, yoann.ladroit@niwa.co.nz) and Alex
+%   Schimel (NIWA, alexandre.schimel@niwa.co.nz)
+%   2017-2021; Last revision: 27-07-2021
 
 % general timer
 timer_start = now;

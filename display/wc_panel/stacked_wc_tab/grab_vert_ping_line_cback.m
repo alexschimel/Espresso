@@ -1,6 +1,12 @@
-
-%% Function
 function grab_vert_ping_line_cback(src,evt,main_figure)
+%GRAB_VERT_PING_LINE_CBACK  One-line description
+%
+%   See also ESPRESSO.
+
+%   Authors: Yoann Ladroit (NIWA, yoann.ladroit@niwa.co.nz) and Alex
+%   Schimel (NIWA, alexandre.schimel@niwa.co.nz)
+%   2017-2021; Last revision: 27-07-2021
+
 % profile on;
 fData_tot = getappdata(main_figure,'fData');
 

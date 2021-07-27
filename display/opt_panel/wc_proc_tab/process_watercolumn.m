@@ -1,4 +1,11 @@
 function fData_tot = process_watercolumn(fData_tot, idx_fData, procpar)
+%PROCESS_WATERCOLUMN  One-line description
+%
+%   See also ESPRESSO.
+
+%   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
+%   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
+%   2017-2021; Last revision: 27-07-2021
 
 % Water-column data takes A LOT of space. Because of this, the original
 % data are limited in resolution so that they could be stored with less

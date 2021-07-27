@@ -1,5 +1,12 @@
-%% Callback when pressing the process button
 function callback_press_process_button(~,~,main_figure)
+%CALLBACK_PRESS_PROCESS_BUTTON  Called when pressing the process button
+%
+%   See also ESPRESSO.
+
+%   Authors: Yoann Ladroit (NIWA, yoann.ladroit@niwa.co.nz) and Alex
+%   Schimel (NIWA, alexandre.schimel@niwa.co.nz)
+%   2017-2021; Last revision: 27-07-2021
+
 
 % get data from main figure
 fData_tot = getappdata(main_figure,'fData');

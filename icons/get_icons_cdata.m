@@ -1,39 +1,11 @@
-%% get_icons_cdata.m
-%
-% Load icons
-%
-%% Help
-%
-% *USE*
-%
-% TODO: write longer description of function
-%
-% *INPUT VARIABLES*
-%
-% * |input_variable_1|: TODO: write description and info on variable
-%
-% *OUTPUT VARIABLES*
-%
-% * |output_variable_1|: TODO: write description and info on variable
-%
-% *RESEARCH NOTES*
-%
-% TODO: write research notes
-%
-% *NEW FEATURES*
-%
-% * 2017-10-25: first version (Yoann Ladroit)
-%
-% *EXAMPLE*
-%
-% TODO: write examples
-%
-% *AUTHOR, AFFILIATION & COPYRIGHT*
-%
-% Yoann Ladroit, NIWA. Type |help Espresso.m| for copyright information.
-
-%% Function
 function icon = get_icons_cdata(icon_dir)
+%GET_ICONS_CDATA  Load icons
+%
+%   See also ESPRESSO.
+
+%   Authors: Yoann Ladroit (NIWA, yoann.ladroit@niwa.co.nz) and Alex
+%   Schimel (NIWA, alexandre.schimel@niwa.co.nz)
+%   2017-2021; Last revision: 25-10-2017
 
 icon.folder = iconRead(fullfile(icon_dir,'foldericon.gif'));
 
@@ -56,8 +28,8 @@ icon.edit_bot = iconRead(fullfile(icon_dir,'edit_bot.png'));
 % icon.ruler = iconRead(fullfile(icon_dir,'ruler.png'));
 % icon.create_reg = iconRead(fullfile(icon_dir,'create_reg.png'));
 % icon.brush = iconRead(fullfile(icon_dir,'brush.png'));
- icon.up = iconRead(fullfile(icon_dir,'greenarrowicon.png'));
- icon.down = iconRead(fullfile(icon_dir,'greenarrowicon_d.png'));
+icon.up = iconRead(fullfile(icon_dir,'greenarrowicon.png'));
+icon.down = iconRead(fullfile(icon_dir,'greenarrowicon_d.png'));
 % icon.prev_lay = icon.next_lay(:,(16:-1:1),:);
 
 end

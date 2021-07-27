@@ -134,8 +134,8 @@ for i = update_line_index(:)'
         
         % set pointer interaction with the line
         pointerBehavior.enterFcn    = []; % Called when the mouse pointer moves over the object.
-        pointerBehavior.exitFcn     = @(src, evt) exit_plot_fcn(src, evt,handle_plot); % Called when the mouse pointer leaves the object. 
-        pointerBehavior.traverseFcn = @(src, evt) traverse_plot_fcn(src, evt,handle_plot); % Called once when the mouse pointer moves over the object, and called again each time the mouse moves within the object. 
+        pointerBehavior.exitFcn     = @(src, evt) exit_plot_fcn(src, evt,handle_plot); % Called when the mouse pointer leaves the object.
+        pointerBehavior.traverseFcn = @(src, evt) traverse_plot_fcn(src, evt,handle_plot); % Called once when the mouse pointer moves over the object, and called again each time the mouse moves within the object.
         iptSetPointerBehavior(handle_plot,pointerBehavior);
         
         % draw circle as start of line
@@ -381,7 +381,7 @@ if update_poly || ... % forcing update
         ~isfield(map_tab_comp.ping_window.UserData,'idx_pings') || ... % polygon doesn't exist yet
         disp_config.Fdata_ID~=map_tab_comp.ping_window.UserData.ID || ... % we changed line
         ~any(ip==map_tab_comp.ping_window.UserData.idx_pings) % ping is outside current polygon
-        
+    
     % data type
     display_tab_comp = getappdata(main_figure,'display_tab');
     wc_str = display_tab_comp.data_disp.String;
