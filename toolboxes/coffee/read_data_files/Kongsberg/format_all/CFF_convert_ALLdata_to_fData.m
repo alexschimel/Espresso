@@ -1024,20 +1024,20 @@ for iF = 1:nStruct
                         fseek(fid_all,pos,'bof');
                         
                         % read amplitude data
-                        tmp = fread(fid_all,nSamp_sub,'uint16',2); % XXX it's missing dr_sub
+                        tmp = fread(fid_all,nSamp_sub,'uint16',2); % XXX1 it's missing dr_sub
                         
                         % transform amplitude data
-                        SB2_temp((1:(nSamp_sub)),iBeams(iB)) = int16(20*log10(single(tmp)*0.0001)*200); % what is this transformation? XXX
+                        SB2_temp((1:(nSamp_sub)),iBeams(iB)) = int16(20*log10(single(tmp)*0.0001)*200); % what is this transformation? XXX2
                         
                         % get to the start of phase data
                         pos = pos+2;
                         fseek(fid_all,pos,'bof');
                         
                         % read phase data
-                        tmp = fread(fid_all,nSamp_sub,'int16',2);  % XXX it's missing dr_sub
+                        tmp = fread(fid_all,nSamp_sub,'int16',2);  % XXX1 it's missing dr_sub
                         
                         % transform phase data
-                        Ph_temp((1:(nSamp_sub)),iBeams(iB)) = int16(-0.0001*single(tmp)*30/pi*180); % what is this transformation? XXX
+                        Ph_temp((1:(nSamp_sub)),iBeams(iB)) = int16(-0.0001*single(tmp)*30/pi*180); % what is this transformation? XXX2
                         
                     end
                 end

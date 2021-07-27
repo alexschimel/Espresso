@@ -138,7 +138,7 @@ for iDatag = datagToParse'
             
             % parsing
             % SOMETHING WRONG WITH THIS DATAGRAM, NEW TEMPLATE? REWRITE
-            % USING LATEST KONGSBERG DOCUMENTATION XXX
+            % USING LATEST KONGSBERG DOCUMENTATION XXX1
             %             ALLdata.EM_PUStatus.STX(i49)                                    = stxDatag;
             %             ALLdata.EM_PUStatus.TypeOfDatagram(i49)                         = datagTypeNumber;
             %             ALLdata.EM_PUStatus.EMModelNumber(i49)                          = emNumber;
@@ -1312,7 +1312,7 @@ for iDatag = datagToParse'
                     end
                 end
                 
-                i114 = i114-1; % XXX if we do that, then we'll rewrite over the blank record we just entered??
+                i114 = i114-1; % XXX1 if we do that, then we'll rewrite over the blank record we just entered??
                 parsed = 0;
                 
             end

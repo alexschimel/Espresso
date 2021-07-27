@@ -7,7 +7,7 @@ function mosaic = init_mosaic(E_lim,N_lim,res,mode)
 %   Schimel (NIWA, alexandre.schimel@niwa.co.nz)
 %   2017-2021; Last revision: 27-07-2021
 
-% XXX clean this up with an input parser
+% XXX3 clean this up with an input parser
 mosaic.name     = 'New Mosaic';
 mosaic.E_lim    = E_lim;
 mosaic.N_lim    = N_lim;

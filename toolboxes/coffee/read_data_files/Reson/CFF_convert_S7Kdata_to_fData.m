@@ -103,7 +103,7 @@ for iF = 1:nStruct
     
     % Make sure we don't update fData with datagrams from different
     % sources
-    % XXX clean up that display later
+    % XXX3 clean up that display later
     if ~ismember(S7Kdata.S7Kfilename,fData.ALLfilename)
         fprintf('Cannot add different files to this structure.\n')
         continue;
@@ -260,10 +260,10 @@ for iF = 1:nStruct
                 fData.Ru_1D_Date                            = S7Kdata.R7000_SonarSettings.Date;
                 fData.Ru_1D_TimeSinceMidnightInMilliseconds = S7Kdata.R7000_SonarSettings.TimeSinceMidnightInMilliseconds;
                 fData.Ru_1D_PingCounter                     = S7Kdata.R7000_SonarSettings.PingNumber;
-                % the rest to code... XXX
+                % the rest to code... XXX2
                 fData.Ru_1D_TransmitPowerReMaximum          = pow2db(S7Kdata.R7000_SonarSettings.PowerSelection);
                 fData.Ru_1D_ReceiveBeamwidth                = S7Kdata.R7000_SonarSettings.ReceiveBeamWidthRad/pi*180;
-                % the rest to code... XXX
+                % the rest to code... XXX2
                 
             end
         end
@@ -528,7 +528,7 @@ for iF = 1:nStruct
                     fData.AP_BP_NumberOfSamples(iBeam,iP)        = round(S7Kdata.R7042_CompressedWaterColumn.NumberOfSamples{iP});
                     fData.AP_BP_DetectedRangeInSamples(S7Kdata.R7027_RAWdetection.BeamDescriptor{iP}+1,iP) = round(S7Kdata.R7027_RAWdetection.DetectionPoint{iP}/flags.downsamplingDivisor);
                     fData.AP_BP_TransmitSectorNumber(iBeam,iP)   = 1;
-                    fData.AP_BP_BeamNumber(iBeam,iP)             = S7Kdata.R7004_7kBeamGeometry.N(iP); % from R7004??? XXX
+                    fData.AP_BP_BeamNumber(iBeam,iP)             = S7Kdata.R7004_7kBeamGeometry.N(iP); % from R7004??? XXX1
                     
                     % initialize amplitude and phase matrices
                     Mag_tmp = ones(maxNSamples_groups(iG),maxnBeams,mag_fmt)*eval([mag_fmt '(-inf)']);
@@ -554,7 +554,7 @@ for iF = 1:nStruct
                     start_sample = S7Kdata.R7042_CompressedWaterColumn.FirstSample(iP)+1;
                     
                     % read beam by beam
-                    for jj = 1:S7Kdata.R7004_7kBeamGeometry.N(iP)  % from R7004??? XXX
+                    for jj = 1:S7Kdata.R7004_7kBeamGeometry.N(iP)  % from R7004??? XXX1
                         
                         % get data for that beam
                         idx_pp = S7Kdata.R7042_CompressedWaterColumn.SampleStartPositionInFile{iP}(jj):(S7Kdata.R7042_CompressedWaterColumn.SampleStartPositionInFile{iP}(jj)+nSamples(jj)*sample_size-1);

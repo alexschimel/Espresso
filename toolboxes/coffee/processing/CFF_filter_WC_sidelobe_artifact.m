@@ -17,7 +17,7 @@ function [fData] = CFF_filter_WC_sidelobe_artifact(fData)
 %
 %   *DEVELOPMENT NOTES*
 %   * IMPORTANT: only method 2 has been updated. All other methods don't
-%   work. to update XXX.
+%   work. to update XXX2.
 %   * dataset have three dimensions: ping #, beam # and sample #.
 %   Calculating the average backcatter level across samples, would allow
 %   us to spot the beams that have constantly higher or lower energy in a

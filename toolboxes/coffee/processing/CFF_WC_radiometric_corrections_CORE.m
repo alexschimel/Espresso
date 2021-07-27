@@ -1,26 +1,3 @@
-%% CFF_WC_radiometric_corrections_CORE.m
-%
-% _This section contains a very short description of the function, for the
-% user to know this function is part of the software and what it does for
-% it. Example below to replace. Delete these lines XXX._
-%
-% Template of ESP3 function header. XXX
-%
-%% Help
-%
-% *USE*
-%
-% _This section contains a more detailed description of what the function
-% does and how to use it, for the interested user to have an overall
-% understanding of its function. Example below to replace. Delete these
-% lines XXX._
-%
-% This is a text file containing the basic comment template to add at the
-% start of any new ESP3 function to serve as function help. XXX
-%
-% *INPUT VARIABLES*
-%
-% _This section contains bullet points of input variables with description
 function data = CFF_WC_radiometric_corrections_CORE(data, fData, pings, radiomcorr_output)
 %CFF_WC_RADIOMETRIC_CORRECTIONS_CORE  One-line description
 %
@@ -30,6 +7,7 @@ function data = CFF_WC_radiometric_corrections_CORE(data, fData, pings, radiomco
 %   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
 %   2017-2021; Last revision: 27-07-2021
 
+% XXX1 Need to code radiometric corrections for KMALL
 
 %% Transmit Power level reduction
 % This is the "mammal protection" setting, which is recorded in Runtime
@@ -44,7 +22,7 @@ else
     % they are triggered with any change for example. Will likely need to
     % extract and compare the time of Ru and WC datagrams to find which db
     % offset applies to which pings.
-    % ... TO DO XXX
+    % ... TO DO XXX1
     % for now we will just take the first value and apply to everything
     % so that processing can continue...
     warning('Transmit Power level reduction not constant within the file. Radiometric correction inappropriate');
@@ -94,6 +72,5 @@ ranges = CFF_get_samples_range( (1:nSamples)', fData.(sprintf('%s_BP_StartRangeS
 % apply to data
 data = data + Xcorr.*log10(ranges) + TPRM;
 
-% TO DO XXX
 % Still need to correct for C, but probably need to do all constant terms
-% then.
+% then. XXX1

@@ -48,6 +48,11 @@ function fData = CFF_convert_KMALLdata_to_fData(KMALLdataGroup,varargin)
 %   different "Rx fans" (i.e multiple Rx heads) are recorded on separate
 %   datagrams.
 %
+%   NOTE: a new "inspection" mode with alternating low/high frequency trips
+%   up the code. To fix eventually when needed XXX2
+%   There also seem to be some issues with location of bottom on some
+%   dual head data. To fix eventually XXX1
+%
 %   See also ESPRESSO.
 
 %   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
@@ -186,7 +191,8 @@ for iF = 1:nStruct
         % echo for its removal. However these are absent from #IOP
         % datagrams in kmall.
         %
-        % values below are set at some random value. to find and fix XXX
+        % values below are set at some random value. to find and fix
+        % urgently XXX1 
         fData.Ru_1D_TransmitPowerReMaximum = 0; % MRZ seem to have several values to do proper radiometric correction
         fData.Ru_1D_ReceiveBeamwidth       = 1; %
         
@@ -505,7 +511,8 @@ for iF = 1:nStruct
                             Ph_tmp(sR+1:sR+nS_sub,iB_dst(iB)) = fread(fid, nS_sub, 'int8=>int8',dr_sub-1); % read with decimation
                         else
                             % phase block is nS records of 2 bytes each.
-                            % XXX not tested yet. Find suitable data files
+                            % XXX1 case not tested yet. Find suitable data
+                            % files 
                             Ph_tmp(sR+1:sR+nS_sub,iB_dst(iB)) = fread(fid, nS_sub, 'int16=>int16',2*dr_sub-2); % read with decimation
                         end
                     end

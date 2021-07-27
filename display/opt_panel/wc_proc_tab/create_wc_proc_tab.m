@@ -5,7 +5,7 @@ function create_wc_proc_tab(main_figure,parent_tab_group)
 %    contents.
 %
 %    *DVPT NOTES*
-%     * XXX: check that if asking for "process", redo the "process" from
+%     * XXX2: check that if asking for "process", redo the "process" from
 %     scratch
 %
 %   See also INITIALIZE_DISPLAY, ESPRESSO.

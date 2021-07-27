@@ -94,7 +94,7 @@ if ~isinf(mask_bottomrange)
     %         idx_normal = abs(theta) < theta_lim;
     %         idx_grazing = ~idx_normal;
     %
-    % length of bottom echo? XXX
+    % length of bottom echo? XXX1
     % M = zeros(size(theta),'single');
     % M(idx_normal)  = ( 1./cos(theta(idx_normal)+psi(idx_normal)/2)   - 1./cos(theta(idx_normal)) ) .* fData.X_BP_bottomRange(idx_normal,blockPings);
     % M(idx_grazing) = 2*( sin(theta(idx_grazing)+psi(idx_grazing)/2) - sin(theta(idx_grazing)-psi(idx_grazing)/2) ) .* fData.X_BP_bottomRange(idx_grazing,blockPings);

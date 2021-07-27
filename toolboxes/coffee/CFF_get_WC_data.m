@@ -11,12 +11,12 @@ function data_tot = CFF_get_WC_data(fData,fieldN,varargin)
 %   origing, "b" is a code indicating data dimensions, and "c" is the data
 %   name. See the help of function CFF_convert_ALLdata_to_fData.m for
 %   description of codes.
-%   * |fieldN|: Required. Description (Information). XXX
-%   * |iPing|: Optional. Description (Information). Default []. XXX
-%   * |dr_sub|: Optional. Description (Information). Default 1. XXX
-%   * |db_sub|: Optional. Description (Information). Default 1. XXX
+%   * |fieldN|: Required. Description (Information).
+%   * |iPing|: Optional. Description (Information). Default []. 
+%   * |dr_sub|: Optional. Description (Information). Default 1.
+%   * |db_sub|: Optional. Description (Information). Default 1.
 %   * |output_format|: Optional. Description (Information). 'raw' or 'true'
-%   (default) XXX
+%   (default)
 %
 %   See also ESPRESSO.
 

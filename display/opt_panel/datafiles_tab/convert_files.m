@@ -172,17 +172,16 @@ for nF = 1:n_files
             case 'Kongsberg_kmall'
                 
                 % relevant datagrams:
-                % XXX TO BE DEFINED, FOR NOW JUST TESTING READING DATAGRAMS
                 % dg_wc = {'#IIP'}; % Installation Parameters only
                 % dg_wc = {'#IOP'}; % Runtime parameters only
                 % dg_wc = {'#SPO'}; % Position only
                 % dg_wc = {'#MRZ'}; % Bathy and BS only
                 % dg_wc = {'#MWC'}; % WCD only
-                % dg_wc = {'#IIP','#IOP','#SPO','#MRZ','#MWC'}; % all five above
-                dg_wc = {}; % everything
+                dg_wc = {'#IIP','#IOP','#SPO','#MRZ','#MWC'}; % all five above
+                % dg_wc = {}; % everything, for test
                 
                 [EMdata,datags_parsed_idx] = CFF_read_kmall(file_to_convert, dg_wc);
-                datagramSource = 'WC'; % XXX to update this datagramsource business eventually
+                datagramSource = 'WC'; % XXX1 to update this confusing datagramsource business eventually
                 
                 % step 2: convert
                 fData = CFF_convert_KMALLdata_to_fData(EMdata,dr_sub,db_sub);

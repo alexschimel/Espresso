@@ -256,7 +256,7 @@ for iDatag = datagToParse'
                         fseek(fid,dpif+1,-1); % rewind to after the first amplitude record
                         Ph_tmp(sR+1:sR+nS,iB) = fread(fid, nS, 'int8=>int8',1);
                     else
-                        % XXX this case was not tested yet. Find data for it
+                        % XXX1 this case was not tested yet. Find data for it
                         % nS records of amplitude of 1 byte alternated with nS
                         % records of phase of 2 bytes
                         Mag_tmp(sR+1:sR+nS,iB) = fread(fid, nS, 'int8=>int8',2);

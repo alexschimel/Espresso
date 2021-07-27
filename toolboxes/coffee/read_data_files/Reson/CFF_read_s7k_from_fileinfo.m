@@ -524,7 +524,7 @@ for iDatag = datagToParse'
             else
                 warning('%s: unexpected CS size',fieldname);
             end
-            % check data integrity with checksum... TO DO XXX
+            % check data integrity with checksum... TO DO XXX2
             
             % confirm parsing
             parsed = 1;
@@ -583,7 +583,7 @@ for iDatag = datagToParse'
                     end
                 end
                 
-                i7042 = i7042-1; % XXX if we do that, then we'll rewrite over the blank record we just entered??
+                i7042 = i7042-1; % XXX1 if we do that, then we'll rewrite over the blank record we just entered??
                 
                 continue;
             end
@@ -667,7 +667,7 @@ for iDatag = datagToParse'
                 else
                     warning('%s: unexpected CS size',fieldname);
                 end
-                % check data integrity with checksum... TO DO XXX
+                % check data integrity with checksum... TO DO XXX2
                 
                 % confirm parsing
                 parsed = 1;
@@ -686,7 +686,7 @@ for iDatag = datagToParse'
                     end
                 end
                 
-                i7042 = i7042-1; % XXX if we do that, then we'll rewrite over the blank record we just entered??
+                i7042 = i7042-1; % XXX1 if we do that, then we'll rewrite over the blank record we just entered??
                 parsed = 0;
                 
             end
@@ -745,7 +745,7 @@ for iDatag = datagToParse'
             else
                 warning('%s: unexpected CS size',fieldname);
             end
-            % check data integrity with checksum... TO DO XXX
+            % check data integrity with checksum... TO DO XXX2
             
             % confirm parsing
             parsed = 1;

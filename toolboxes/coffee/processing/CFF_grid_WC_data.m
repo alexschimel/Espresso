@@ -8,13 +8,13 @@ function fData = CFF_grid_WC_data(fData,varargin)
 %   origing, "b" is a code indicating data dimensions, and "c" is the data
 %   name. See the help of function CFF_convert_ALLdata_to_fData.m for
 %   description of codes.
-%   * |grid_horz_res|: Description (Information). Default: 1 XXX
-%   * |grid_vert_res|: Description (Information). Default: 1 XXX
-%   * |grid_type|: Description (Information). '2D' or '3D' (default) XXX
-%   * |dr_sub|: Description (Information). Default: 4 XXX
-%   * |db_sub|: Description (Information). Default: 2 XXX
-%   * |e_lim|: Description (Information). Default: [] XXX
-%   * |n_lim|: Description (Information). Default: [] XXX
+%   * |grid_horz_res|: Description (Information). Default: 1 
+%   * |grid_vert_res|: Description (Information). Default: 1
+%   * |grid_type|: Description (Information). '2D' or '3D' (default) 
+%   * |dr_sub|: Description (Information). Default: 4
+%   * |db_sub|: Description (Information). Default: 2
+%   * |e_lim|: Description (Information). Default: [] 
+%   * |n_lim|: Description (Information). Default: []
 %
 %   *OUTPUT VARIABLES*
 %   * |fData|: fData structure updated with fields for gridded data

@@ -184,7 +184,7 @@ for iF = 1:nStruct
     
     % Make sure we don't update fData with datagrams from different
     % sources
-    % XXX clean up that display later
+    % XXX2 clean up that display later
     if ~ismember(ALLdata.ALLfilename,fData.ALLfilename)
         fprintf('Cannot add different files to this structure.\n')
         continue;
@@ -273,10 +273,10 @@ for iF = 1:nStruct
             fData.Ru_1D_Date                            = ALLdata.EM_Runtime.Date;
             fData.Ru_1D_TimeSinceMidnightInMilliseconds = ALLdata.EM_Runtime.TimeSinceMidnightInMilliseconds;
             fData.Ru_1D_PingCounter                     = ALLdata.EM_Runtime.PingCounter;
-            % the rest to code... XXX
+            % the rest to code... XXX3
             fData.Ru_1D_TransmitPowerReMaximum          = ALLdata.EM_Runtime.TransmitPowerReMaximum;
             fData.Ru_1D_ReceiveBeamwidth                = ALLdata.EM_Runtime.ReceiveBeamwidth;
-            % the rest to code... XXX
+            % the rest to code... XXX3
             
         end
         
@@ -1114,11 +1114,11 @@ for iF = 1:nStruct
                                 
                                 fseek(fid_all,ALLdata.EM_AmpPhase.SamplePhaseAmplitudePosition{iDatagrams(iD)}(idx_beams(iB)),'bof');
                                 tmp = fread(fid_all,Ns_sub,'uint16',2);
-                                SB2_temp((1:(Ns_sub)),iBeams(iB)) = int16(20*log10(single(tmp)*0.0001)*200); % what is this transformation? XXX
+                                SB2_temp((1:(Ns_sub)),iBeams(iB)) = int16(20*log10(single(tmp)*0.0001)*200); % what is this transformation? XXX2
                                 
                                 fseek(fid_all,ALLdata.EM_AmpPhase.SamplePhaseAmplitudePosition{iDatagrams(iD)}(idx_beams(iB))+2,'bof');
                                 tmp = fread(fid_all,Ns_sub,'int16',2);
-                                Ph_temp((1:(Ns_sub)),iBeams(iB)) = int16(-0.0001*single(tmp)*30/pi*180); % what is this transformation? XXX
+                                Ph_temp((1:(Ns_sub)),iBeams(iB)) = int16(-0.0001*single(tmp)*30/pi*180); % what is this transformation? XXX2
                                 
                             end
                         end

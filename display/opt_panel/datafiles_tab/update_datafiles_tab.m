@@ -46,8 +46,7 @@ new_entry(idx_converted & ~idx_loaded, 1) = cellfun(@(x) strcat('<html><FONT col
 new_entry(idx_converted & idx_loaded, 1) = cellfun(@(x) strcat('<html><FONT color="Green"><b>',x,'</b></html>'),new_entry(idx_converted&idx_loaded,1),'UniformOutput',0);
 
 % ideally, also differentiate the loaded files between those that have been
-% processed already, and those that didn't... XXX
-
+% already processed, and that did not XXX2
 
 %% update file_tab_comp
 file_tab_comp.table_main.Data = new_entry;

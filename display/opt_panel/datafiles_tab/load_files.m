@@ -194,19 +194,20 @@ for nF = 1:n_files
         % Time-tag that fData
         fData_temp.ID = str2double(datestr(now,'yyyymmddHHMMSSFFF'));
         
-        %     % If data have already been processed, load the binary file into fData
-        %     % NOTE: if data have already been processed, the fData and the binary
-        %     % files should already exist and should already been attached, without
-        %     % need to re-memmap them... So verify if there is actual need for this
-        %     % part... XXX
-        %     wc_dir = CFF_converted_data_folder(fData_temp.ALLfilename{1});
-        %     WaterColumnProcessed_file = fullfile(wc_dir,'X_SBP_WaterColumnProcessed.dat');
-        %     if isfile(WaterColumnProcessed_file)
-        %         [nSamples,nBeams,nPings] = size(fData_temp.([datagramSource '_SBP_SampleAmplitudes']).Data.val);
-        %         fData_temp.X_SBP_WaterColumnProcessed = memmapfile(WaterColumnProcessed_file, 'Format',{'int8' [nSamples nBeams nPings] 'val'},'repeat',1,'writable',true);
-        %     end
+        % If data have already been processed, load the binary file into
+        % fData  
+        % NOTE: if data have already been processed, the fData and the
+        % binary files should already exist and should already been
+        % attached, without need to re-memmap them... So verify if there is
+        % actual need for this part... XXX1. For now putting it as comment
+        % wc_dir = CFF_converted_data_folder(fData_temp.ALLfilename{1});
+        % WaterColumnProcessed_file = fullfile(wc_dir,'X_SBP_WaterColumnProcessed.dat');
+        % if isfile(WaterColumnProcessed_file)
+        %   [nSamples,nBeams,nPings] = size(fData_temp.([datagramSource '_SBP_SampleAmplitudes']).Data.val);
+        %   fData_temp.X_SBP_WaterColumnProcessed = memmapfile(WaterColumnProcessed_file, 'Format',{'int8' [nSamples nBeams nPings] 'val'},'repeat',1,'writable',true);
+        % end
         
-        % why pause here? XXX
+        % why pause here? XXX2
         pause(1e-3);
         
         % add this file's data to the full fData
