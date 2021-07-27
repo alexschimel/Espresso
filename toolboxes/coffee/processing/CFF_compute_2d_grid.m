@@ -1,7 +1,7 @@
 function [gridN, gridE, gridNan] = CFF_compute_2d_grid(fData,varargin)
-%CFF_COMPUTE_2D_GRID  One-line description
+%CFF_COMPUTE_2D_GRID  Prepare blank grid for 2D data
 %
-%   See also ESPRESSO.
+%   See also CFF_GRID_2D_FIELDS_DATA, ESPRESSO.
 
 %   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
 %   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)

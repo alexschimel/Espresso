@@ -600,16 +600,18 @@ end
 
 %%
 function out_EM_struct = CFF_remove_duplicate_KMALL_datagrams(in_EM_struct)
-% DEV NOTE: In an official Kongsberg dataset of KMALL EM304 data, I found
-% that the files had some MRZ datagrams in duplicate. Not sure how common
-% it is, but the conversion code ends up duplicating the data too. Instead
-% of modifying the code to be considering the possibility of duplicates,
-% it's easier to look for them at the start and remove them before parsing. 
+% DEV NOTE: I have found occurences of duplicate MRZ datagrams in some test
+% files. Not sure how common it is, but the conversion code ends up
+% duplicating the data too. Instead of modifying the code everywhere to be
+% always considering the possibility of duplicates, it's easier to look for
+% them at the start and remove them before parsing.
 % In the examples I found, it would be sufficient to check for the set
 % unicity of the cmnPart fields pingCnt, rxFanIndex, and
-% swathAlongPosition. But since I'm not sure yet of what all the fields in
-% cmnPart are for, and since this code will DISCARD data, it's safer to use
-% all the fields in the test for set unicity.
+% swathAlongPosition. But the range of cases covered by the kmall format
+% can be complicated (including systems with dual Rx heads and dual Tx
+% heads in multi-swath mode!!! see documentation of EMdgmMbody_def) so to
+% be entierely safe, we will instead use ALL the fields of cmnPart in a
+% test for set unicity.
 
 if isfield(in_EM_struct, 'cmnPart')
  

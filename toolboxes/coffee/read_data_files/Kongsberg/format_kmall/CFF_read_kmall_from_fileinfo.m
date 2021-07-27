@@ -126,7 +126,7 @@ for iDatag = datagToParse'
             end
             try iIBE=iIBE+1; catch, iIBE=1; dtg_warn_flag = 1; end
             
-            % in progress...
+            % to do maybe one day... XXX3
             % KMALLdata.EMdgmIBE(iIBE) = CFF_read_EMdgmIBE(fid, dtg_warn_flag);
             
             parsed = 0;
@@ -138,7 +138,7 @@ for iDatag = datagToParse'
             end
             try iIBR=iIBR+1; catch, iIBR=1; dtg_warn_flag = 1; end
             
-            % in progress...
+            % to do maybe one day... XXX3
             % KMALLdata.EMdgmIBR(iIBR) = CFF_read_EMdgmIBR(fid, dtg_warn_flag);
             
             parsed = 0;
@@ -150,7 +150,7 @@ for iDatag = datagToParse'
             end
             try iIBS=iIBS+1; catch, iIBS=1; dtg_warn_flag = 1; end
             
-            % in progress...
+            % to do maybe one day... XXX3
             % KMALLdata.EMdgmIBS(iIBS) = CFF_read_EMdgmIBS(fid, dtg_warn_flag);
             
             parsed = 0;
@@ -170,7 +170,14 @@ for iDatag = datagToParse'
             parsed = 1;
             
             if DEBUG
-                figure;
+                
+                % create or grab and clear figure
+                try
+                    figure(f_MRZ);
+                    clf
+                catch
+                    f_MRZ = figure();
+                end
                 
                 num_beams = KMALLdata.EMdgmMRZ(iMRZ).rxInfo.numSoundingsMaxMain ...
                     +  KMALLdata.EMdgmMRZ(iMRZ).rxInfo.numExtraDetectionClasses;
@@ -183,7 +190,7 @@ for iDatag = datagToParse'
                 plot([KMALLdata.EMdgmMRZ(iMRZ).sounding.detectionUncertaintyHor_m]);
                 xlabel('beam number')
                 legend('Ifremer quality fact.', 'Vert. uncert. (m)', 'Horz. uncert. (m)');
-                title('Detection info')
+                title(sprintf('%s\n#MRZ datagram #%i contents\nDetection info', CFF_file_name(KMALLdata.KMALLfilename,1),iMRZ),'Interpreter','none');
                 grid on
                 xlim([1 num_beams])
                 
@@ -215,6 +222,8 @@ for iDatag = datagToParse'
                 ylabel('Vert. dist z (m)')
                 title('Georeferenced depth points')
                 grid on
+                
+                drawnow;
             end
             
         case 'MWC'
@@ -233,7 +242,7 @@ for iDatag = datagToParse'
                 % save pif
                 pif_save = ftell(fid);
                 
-                % get water-column amplitude for this ping and phase if it
+                % get water-column amplitude for this ping (and phase if it
                 % exists)
                 max_samples = max([KMALLdata.EMdgmMWC(iMWC).beamData_p.startRangeSampleNum] ...
                     + [KMALLdata.EMdgmMWC(iMWC).beamData_p.numSampleData]);
@@ -268,29 +277,37 @@ for iDatag = datagToParse'
                 % reset pif
                 fseek(fid, pif_save,-1);
                 
+                % create or grab and clear figure
+                try
+                    figure(f_MWC);
+                    clf
+                catch
+                    f_MWC = figure();
+                end
+               
                 % plot
-                figure;
                 if ~phaseFlag
                     % amplitude only
                     imagesc(Mag_tmp);
                     xlabel('beam number');
                     ylabel('sample number');
                     grid on; colorbar
-                    title('KMALL Multibeam Water Column datagram contents: amplitude only');
+                    title(sprintf('%s\n#MWC datagram #%i contents\nAmplitude only', CFF_file_name(KMALLdata.KMALLfilename,1), iMWC),'Interpreter','none');
                 else
                     % amplitude
                     subplot(121); imagesc(Mag_tmp);
                     xlabel('beam number');
                     ylabel('sample number');
                     grid on; colorbar
-                    title('KMALL Multibeam Water Column datagram contents: amplitude');
+                    title(sprintf('%s\n#MWC datagram #%i contents\nAmplitude', CFF_file_name(KMALLdata.KMALLfilename,1), iMWC),'Interpreter','none');
                     % phase
                     subplot(121); imagesc(Ph_tmp);
                     xlabel('beam number');
                     ylabel('sample number');
                     grid on; colorbar
-                    title('KMALL Multibeam Water Column datagram contents: phase');
+                    title('Phase');
                 end
+                drawnow;
                
             end
             
@@ -335,14 +352,24 @@ for iDatag = datagToParse'
                 velocity = [KMALLdata.EMdgmSVP(iSVP).sensorData.soundVelocity_mPerSec];
                 temp     = [KMALLdata.EMdgmSVP(iSVP).sensorData.temp_C];
                 salinity = [KMALLdata.EMdgmSVP(iSVP).sensorData.salinity];
-                figure;
+                
+                % create or grab and clear figure
+                try
+                    figure(f_SVP);
+                    clf
+                catch
+                    f_SVP = figure();
+                end
+                
+                % plot
                 subplot(131); plot(velocity,-depth,'.-');
                 ylabel('depth (m)'); xlabel('sound velocity (m/s)'); grid on
                 subplot(132); plot(temp,-depth,'.-');
                 ylabel('depth (m)'); xlabel('temperature (C)'); grid on
-                title(sprintf('%s\nSound Velocity Profile datagram contents',KMALLdata.KMALLfilename));
+                title(sprintf('%s\n#SVP datagram #%i contents', CFF_file_name(KMALLdata.KMALLfilename,1), iSVP),'Interpreter','none');
                 subplot(133); plot(salinity,-depth,'.-');
                 ylabel('depth (m)'); xlabel('salinity'); grid on
+                drawnow;
             end
             
         case 'SVT'
@@ -352,7 +379,7 @@ for iDatag = datagToParse'
             end
             try iSVT=iSVT+1; catch, iSVT=1; dtg_warn_flag = 1; end
             
-            % in progress...
+            % to do maybe one day... XXX3
             % KMALLdata.EMdgmSVT(iSVT) = CFF_read_EMdgmSVT(fid, dtg_warn_flag);
             
             parsed = 0;
@@ -375,7 +402,7 @@ for iDatag = datagToParse'
             end
             try iSDE=iSDE+1; catch, iSDE=1; dtg_warn_flag = 1; end
             
-            % in progress...
+            % to do maybe one day... XXX3
             % KMALLdata.EMdgmSDE(iSDE) = CFF_read_EMdgmSDE(fid, dtg_warn_flag);
             
             parsed = 0;
@@ -427,7 +454,7 @@ for iDatag = datagToParse'
             end
             try iFCF=iFCF+1; catch, iFCF=1; dtg_warn_flag = 1; end
             
-            % in progress...
+            % to do maybe one day... XXX3
             % KMALLdata.EMdgmFCF(iFCF) = CFF_read_EMdgmFCF(fid, dtg_warn_flag);
             
             parsed = 0;

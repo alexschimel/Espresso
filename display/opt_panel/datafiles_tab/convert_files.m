@@ -146,18 +146,18 @@ for nF = 1:n_files
                 textprogressbar(50);
                 
                 % if not all datagrams were found at this point, message and abort
-                %                 if ~all(datags_parsed_idx)
-                %                     if ~any((datags_parsed_idx(7:8)))
-                %                         textprogressbar('File does not contain water-column datagrams (either R7018 or R7042). Check file contents. Conversion aborted.');
-                %                         continue;
-                %                     elseif ~any(datags_parsed_idx(1:2))
-                %                         textprogressbar('File does not contain position datagrams (either R1015 or R1003). Check file contents. Conversion aborted.');
-                %                         continue;
-                %                     elseif ~all(datags_parsed_idx(3:6))
-                %                         textprogressbar('File does not contain all necessary datagrams. Check file contents. Conversion aborted.');
-                %                         continue;
-                %                     end
-                %                 end
+                if ~all(datags_parsed_idx)
+                    if ~any((datags_parsed_idx(7:8)))
+                        textprogressbar('File does not contain water-column datagrams (either R7018 or R7042). Check file contents. Conversion aborted.');
+                        continue;
+                    elseif ~any(datags_parsed_idx(1:2))
+                        textprogressbar('File does not contain position datagrams (either R1015 or R1003). Check file contents. Conversion aborted.');
+                        continue;
+                    elseif ~all(datags_parsed_idx(3:6))
+                        textprogressbar('File does not contain all necessary datagrams. Check file contents. Conversion aborted.');
+                        continue;
+                    end
+                end
                 
                 if datags_parsed_idx(end)
                     datagramSource = 'AP';
@@ -180,7 +180,17 @@ for nF = 1:n_files
                 dg_wc = {'#IIP','#IOP','#SPO','#MRZ','#MWC'}; % all five above
                 % dg_wc = {}; % everything, for test
                 
+                % step 1: read
                 [EMdata,datags_parsed_idx] = CFF_read_kmall(file_to_convert, dg_wc);
+                textprogressbar(50);
+                
+                % if not all datagrams were found at this point, message and abort
+                if ~isempty(dg_wc) && ~all(datags_parsed_idx)
+                    strdisp = sprintf('File is missing necessary datagrams (%s). Conversion aborted.', strjoin(dg_wc(~datags_parsed_idx),', '));
+                    textprogressbar(strdisp);
+                    continue
+                end
+                
                 datagramSource = 'WC'; % XXX1 to update this confusing datagramsource business eventually
                 
                 % step 2: convert
