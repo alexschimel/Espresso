@@ -268,6 +268,9 @@ if update_cax > 0
                     if contains(obj_wc_img(uii).Tag,'_wc') && strcmpi(obj_wc_img(uii).Visible,'On')
                         data = obj_wc_img(uii).CData;
                         cax = [nanmin(prctile(data(:),2),cax(1)) nanmax(prctile(data(:),95),cax(2))];
+                        if all(cax==0)
+                            cax = [0 1];
+                        end
                     end
                 end
                 
