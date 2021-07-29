@@ -212,6 +212,7 @@ for iF = 1:nStruct
         cmnPart  = [EMdgmMRZ.cmnPart];
         rxInfo   = [EMdgmMRZ.rxInfo];
         sounding = [EMdgmMRZ.sounding];
+        % CFF_get_kmall_TxRx_info(cmnPart) % evaluate to get info for debugging
         
         % number of datagrams
         nDatag = numel(cmnPart);
@@ -300,6 +301,7 @@ for iF = 1:nStruct
         header = [EMdgmMWC.header];
         cmnPart = [EMdgmMWC.cmnPart];
         rxInfo  = [EMdgmMWC.rxInfo];
+        % CFF_get_kmall_TxRx_info(cmnPart) % evaluate to get info for debugging
         
         % number of datagrams
         nDatag = numel(EMdgmMWC);
@@ -688,3 +690,75 @@ TSMIM = milliseconds(timeofday(dt));
 
 end
 
+function str = CFF_get_kmall_TxRx_info(cmnPart)
+
+% Single or Dual Tx
+iTx = unique([cmnPart.txTransducerInd]);
+if numel(iTx)==1 && iTx==0
+    str = 'Single Tx, ';
+elseif numel(iTx)==2 && all(iTx==[0,1])
+    str = 'Dual Tx, ';
+else
+    str = '??? Tx, ';
+end
+
+% Single or Dual Rx
+iRx = unique([cmnPart.numRxTransducers]);
+iRx2 = unique([cmnPart.rxTransducerInd]);
+if numel(iRx)==1 && iRx==1
+    % should be single
+    if numel(iRx2)==1 && iRx2==0
+        % confirmed
+        str = [str, 'Single Rx, '];
+    else
+        % unconfirmed
+        str = [str, '??? Rx, '];
+    end
+elseif numel(iRx)==1 && iRx==2
+    % should be dual
+    if numel(iRx2)==2 && all(iRx2==[0,1])
+        % confirmed
+        str = [str, 'Dual Rx, '];
+    else
+        % unconfirmed
+        str = [str, '??? Rx, '];
+    end
+else
+    str = [str, '??? Rx, '];
+end
+
+% Single or Multi Swath
+iSw = unique([cmnPart.swathsPerPing]);
+iSw2 = unique([cmnPart.swathAlongPosition]);
+if numel(iSw)==1 && iSw==1
+    % should be single
+    if numel(iSw2)==1 && iSw2==0
+        % confirmed
+        str = [str, 'Single Swath.'];
+    else
+        % unconfirmed
+        str = [str, '??? Swath.'];
+    end
+elseif numel(iSw)==1 && iSw==2
+    % should be dual
+    if numel(iSw2)==2 && all(iSw2==[0,1])
+        % confirmed
+        str = [str, 'Dual Swath.'];
+    else
+        % unconfirmed
+        str = [str, '??? Swath.'];
+    end
+elseif numel(iSw)==1 && iSw>2
+    % should be multi (more than 2)
+    if numel(iSw2)==iSw && all(iSw2==[0:iSw-1])
+        % confirmed
+        str = [str, sprintf('Multi Swath (%i).',iSw)];
+    else
+        % unconfirmed
+        str = [str, '??? Swath.'];
+    end
+else
+    str = [str, '??? Swath.'];
+end
+
+end

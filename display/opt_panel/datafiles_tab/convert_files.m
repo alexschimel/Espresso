@@ -172,13 +172,21 @@ for nF = 1:n_files
             case 'Kongsberg_kmall'
                 
                 % relevant datagrams:
-                % dg_wc = {'#IIP'}; % Installation Parameters only
-                % dg_wc = {'#IOP'}; % Runtime parameters only
-                % dg_wc = {'#SPO'}; % Position only
-                % dg_wc = {'#MRZ'}; % Bathy and BS only
-                % dg_wc = {'#MWC'}; % WCD only
-                dg_wc = {'#IIP','#IOP','#SPO','#MRZ','#MWC'}; % all five above
-                % dg_wc = {}; % everything, for test
+                % * #IIP Installation Parameters
+                % * #IOP Runtime parameters
+                % * #SPO Position
+                % * #MRZ Bathy and BS
+                % * #MWC Water-column Data
+                dg_wc = {'#IIP','#IOP','#SPO','#MRZ','#MWC'};
+                
+                % for test/debug:
+                % warning('DEBUGGING!') % uncomment this if using one below
+                % dg_wc = {'#IIP'};
+                % dg_wc = {'#IOP'};
+                % dg_wc = {'#SPO'};
+                % dg_wc = {'#MRZ'};
+                % dg_wc = {'#MWC'};
+                % dg_wc = {}; % everything
                 
                 % step 1: read
                 [EMdata,datags_parsed_idx] = CFF_read_kmall(file_to_convert, dg_wc);
