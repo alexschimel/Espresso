@@ -55,7 +55,7 @@ function ALLdata = CFF_read_all_from_fileinfo(ALLfilename, ALLfileinfo,varargin)
 
 %   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
 %   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
-%   2017-2021; Last revision: 27-07-2021
+%   2017-2021; Last revision: 30-07-2021
 
 
 %% Input arguments management using inputParser
@@ -521,7 +521,45 @@ for iDatag = datagToParse'
             try i79=i79+1; catch, i79=1; end
             
             % parsing
-            % ...to write...
+            ALLdata.EM_QualityFactor79.NumberOfBytesInDatagram(i79)         = nbDatag;
+            ALLdata.EM_QualityFactor79.STX(i79)                             = stxDatag;
+            ALLdata.EM_QualityFactor79.TypeOfDatagram(i79)                  = datagTypeNumber;
+            ALLdata.EM_QualityFactor79.EMModelNumber(i79)                   = emNumber;
+            ALLdata.EM_QualityFactor79.Date(i79)                            = date;
+            ALLdata.EM_QualityFactor79.TimeSinceMidnightInMilliseconds(i79) = timeSinceMidnightInMilliseconds;
+            ALLdata.EM_QualityFactor79.PingCounter(i79)                     = number;
+            ALLdata.EM_QualityFactor79.SystemSerialNumber(i79)              = systemSerialNumber;
+            
+            ALLdata.EM_QualityFactor79.NumberOfReceiveBeams(i79)      = fread(fid,1,'uint16'); %Nrx
+            ALLdata.EM_QualityFactor79.NumberOfParametersPerBeam(i79) = fread(fid,1,'uint8'); %Npar
+            ALLdata.EM_QualityFactor79.Spare(i79)                     = fread(fid,1,'uint8');
+            
+            % Repeate cycle. Nrx entries of: 4*Npar bits
+            % DEV NOTE: This code was written July '21 based on Rev W of
+            % the .all datagrams documentation, which lists the IFREMER QF
+            % as the ONLY parameter in this loop, but the format makes
+            % provision for additional parameters using "Npar". The code
+            % written below SHOULD work whatever the number of parameters
+            % but will only read the IMREMER QF. To read additional
+            % parameters, you'll need to modify the code to make it like
+            % other loops including fseek between data types and fseek
+            % after the final jump.
+            Nrx = ALLdata.EM_QualityFactor79.NumberOfReceiveBeams(i79);
+            Npar = ALLdata.EM_QualityFactor79.NumberOfParametersPerBeam(i79);
+            C = 4*Npar;
+            ALLdata.EM_QualityFactor79.IFREMERqualityFactor{i79} = fread(fid,Nrx,'float32',C-4);
+
+            ALLdata.EM_QualityFactor79.Spare2(i79)   = fread(fid,1,'uint8');
+            ALLdata.EM_QualityFactor79.ETX(i79)      = fread(fid,1,'uint8');
+            ALLdata.EM_QualityFactor79.CheckSum(i79) = fread(fid,1,'uint16');
+            
+            % ETX check
+            if ALLdata.EM_QualityFactor79.ETX(i79)~=3
+                error('wrong ETX value (ALLdata.EM_QualityFactor79)');
+            end
+            
+            % confirm parsing
+            parsed = 1;
             
         case 80 % 'POSITION (50H)'
             if ~(isempty(p.Results.OutputFields)||any(strcmp('EM_Position',p.Results.OutputFields)))
@@ -707,14 +745,14 @@ for iDatag = datagToParse'
             % repeat cycle: N entries of 8 bits
             temp = ftell(fid);
             N = ALLdata.EM_SoundSpeedProfile.NumberOfEntries(i85);
-            ALLdata.EM_SoundSpeedProfile.Depth{i85}                                         = fread(fid,N,'uint32',8-4);
+            ALLdata.EM_SoundSpeedProfile.Depth{i85}      = fread(fid,N,'uint32',8-4);
             fseek(fid,temp+4,'bof'); % to next data type
-            ALLdata.EM_SoundSpeedProfile.SoundSpeed{i85}                                    = fread(fid,N,'uint32',8-4);
+            ALLdata.EM_SoundSpeedProfile.SoundSpeed{i85} = fread(fid,N,'uint32',8-4);
             fseek(fid,4-8,'cof'); % we need to come back after last jump
             
-            ALLdata.EM_SoundSpeedProfile.SpareByte(i85)                                         = fread(fid,1,'uint8');
-            ALLdata.EM_SoundSpeedProfile.ETX(i85)                                               = fread(fid,1,'uint8');
-            ALLdata.EM_SoundSpeedProfile.CheckSum(i85)                                          = fread(fid,1,'uint16');
+            ALLdata.EM_SoundSpeedProfile.SpareByte(i85) = fread(fid,1,'uint8');
+            ALLdata.EM_SoundSpeedProfile.ETX(i85)       = fread(fid,1,'uint8');
+            ALLdata.EM_SoundSpeedProfile.CheckSum(i85)  = fread(fid,1,'uint16');
             
             % ETX check
             if ALLdata.EM_SoundSpeedProfile.ETX(i85)~=3
