@@ -225,9 +225,7 @@ for iF = 1:nStruct
         nSwaths = numel(swath_counter); % total number of swaths in file
         
         % number of beams
-        dtg_Nrx = [rxInfo.numSoundingsMaxMain]; % max nb of "main" soundings per datagram
-        dtg_Nd = [rxInfo.numExtraDetections]; % nb of extra detections per datagram
-        dtg_nBeams = dtg_Nrx + dtg_Nd; % total number of beams per datagram
+        dtg_nBeams = [rxInfo.numSoundingsMaxMain]; % number of beams per datagram ("main soundings" only. Ignoring "extra detections")
         nBeams = arrayfun(@(idx) sum(dtg_nBeams(iC==idx)), 1:nSwaths); % total number of beams per swath
         maxnBeams = nanmax(nBeams); % maximum number of "beams per swath" in the file
         
@@ -263,12 +261,12 @@ for iF = 1:nStruct
             nB_tot = 0; % initialize total number of beams recorded so far for that swath
             for iD = 1:numel(dtg_iS)
                 SD = sounding(dtg_iS(iD)); % soundings data for that datagram
-                nRx = numel(SD.soundingIndex); % total number of beams in this datagram
-                iB_dst = nB_tot + (1:nRx); % indices of beams in output arrays
-                fData.X8_BP_DepthZ(iB_dst,iS)               = SD.z_reRefPoint_m;
-                fData.X8_BP_AcrosstrackDistanceY(iB_dst,iS) = SD.y_reRefPoint_m;
-                fData.X8_BP_ReflectivityBS(iB_dst,iS)       = SD.reflectivity1_dB;
-                nB_tot = nB_tot + nRx; % update total number of beams recorded so far for this swath
+                nB = dtg_nBeams(dtg_iS(iD)); % number of actual beams in this datagram (ignoring "extra detections")
+                iB_dst = nB_tot + (1:nB); % indices of beams in output arrays
+                fData.X8_BP_DepthZ(iB_dst,iS)               = SD.z_reRefPoint_m(1:nB);
+                fData.X8_BP_AcrosstrackDistanceY(iB_dst,iS) = SD.y_reRefPoint_m(1:nB);
+                fData.X8_BP_ReflectivityBS(iB_dst,iS)       = SD.reflectivity1_dB(1:nB);
+                nB_tot = nB_tot + nB; % update total number of beams recorded so far for this swath
             end
         end
         

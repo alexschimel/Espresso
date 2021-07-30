@@ -47,13 +47,13 @@ end
 
 out_struct.rxInfo = CFF_read_EMdgmMRZ_rxInfo(fid);
 
-Nd = out_struct.rxInfo.numExtraDetectionClasses;
-for iD = 1:Nd
+Ndc = out_struct.rxInfo.numExtraDetectionClasses;
+for iD = 1:Ndc
     out_struct.extraDetClassInfo(iD) = CFF_read_EMdgmMRZ_extraDetClassInfo(fid);
 end
 
 Nrx = out_struct.rxInfo.numSoundingsMaxMain;
-
+Nd  = out_struct.rxInfo.numExtraDetections;
 % DEV NOTE: Normally, if following stricly the "struct" organization of
 % kmall data, we would read ONE "sounding" struct per beam, using a for
 % loop over all soundings. However, this was taking too much time because

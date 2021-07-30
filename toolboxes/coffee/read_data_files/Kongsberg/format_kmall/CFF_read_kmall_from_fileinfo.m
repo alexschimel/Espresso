@@ -180,7 +180,7 @@ for iDatag = datagToParse'
                 end
                 
                 num_beams = KMALLdata.EMdgmMRZ(iMRZ).rxInfo.numSoundingsMaxMain ...
-                    +  KMALLdata.EMdgmMRZ(iMRZ).rxInfo.numExtraDetectionClasses;
+                    +  KMALLdata.EMdgmMRZ(iMRZ).rxInfo.numExtraDetections;
                 
                 % detection info
                 subplot(221);
@@ -208,19 +208,22 @@ for iDatag = datagToParse'
                 % range and angle
                 subplot(223);
                 plot([KMALLdata.EMdgmMRZ(iMRZ).sounding.beamAngleReRx_deg], ...
-                    [KMALLdata.EMdgmMRZ(iMRZ).sounding.twoWayTravelTime_sec]);
+                    [KMALLdata.EMdgmMRZ(iMRZ).sounding.twoWayTravelTime_sec],'.');
                 xlabel('beam angle re. Rx (deg)')
                 ylabel('two-way travel time (s)')
+                set(gca, 'YDir','reverse');
                 title('Range and angle')
                 grid on
                 
                 % georeferenced depth points
                 subplot(224);
                 plot([KMALLdata.EMdgmMRZ(iMRZ).sounding.y_reRefPoint_m], ...
-                    [KMALLdata.EMdgmMRZ(iMRZ).sounding.z_reRefPoint_m]);
+                    [KMALLdata.EMdgmMRZ(iMRZ).sounding.z_reRefPoint_m],'.');
                 xlabel('Horz. dist y (m)')
                 ylabel('Vert. dist z (m)')
+                set(gca, 'YDir','reverse')
                 title('Georeferenced depth points')
+                axis equal
                 grid on
                 
                 drawnow;
