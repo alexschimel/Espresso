@@ -7,7 +7,6 @@ function data = CFF_WC_radiometric_corrections_CORE(data, fData, pings, radiomco
 %   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
 %   2017-2021; Last revision: 27-07-2021
 
-% XXX1 Need to code radiometric corrections for KMALL
 
 %% Transmit Power level reduction
 % This is the "mammal protection" setting, which is recorded in Runtime

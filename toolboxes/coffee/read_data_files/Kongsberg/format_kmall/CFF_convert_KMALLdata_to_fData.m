@@ -176,27 +176,6 @@ for iF = 1:nStruct
         
     end
     
-    %% '#IOP - Runtime parameters as chosen by operator'
-    if isfield(KMALLdata,'EMdgmIOP') && ~isfield(fData,'Ru_1D_Date')
-        
-        % number of entries
-        % nD = numel(KMALLdata.EMdgmIOP);
-        
-        % get date and time-since-midnight-in-milleseconds from header
-        [fData.Ru_1D_Date, fData.Ru_1D_TimeSinceMidnightInMilliseconds] = CFF_get_date_and_TSMIM_from_kmall_header([KMALLdata.EMdgmIOP.header]);
-        
-        % DEV NOTE: In the .all format, we only record two fields from the "Runtime
-        % Parameters" datagram: "TransmitPowerReMaximum" for radiometric
-        % corrections, and "ReceiveBeamwidth" for estimation of the bottom
-        % echo for its removal. However these are absent from #IOP
-        % datagrams in kmall.
-        %
-        % values below are set at some random value. to find and fix
-        % urgently XXX1 
-        fData.Ru_1D_TransmitPowerReMaximum = 0; % MRZ seem to have several values to do proper radiometric correction
-        fData.Ru_1D_ReceiveBeamwidth       = 1; %
-        
-    end
     
     %% '#MRZ - Multibeam (M) raw range (R) and depth(Z) datagram'
     if isfield(KMALLdata,'EMdgmMRZ') && ~isfield(fData,'X8_1D_Date')
@@ -206,14 +185,35 @@ for iF = 1:nStruct
         
         % remove duplicate datagrams
         EMdgmMRZ = CFF_remove_duplicate_KMALL_datagrams(KMALLdata.EMdgmMRZ);
-        
+
         % extract data
-        header  = [EMdgmMRZ.header];
+        header   = [EMdgmMRZ.header];
         cmnPart  = [EMdgmMRZ.cmnPart];
+        pingInfo = [EMdgmMRZ.pingInfo];
         rxInfo   = [EMdgmMRZ.rxInfo];
         sounding = [EMdgmMRZ.sounding];
         % CFF_get_kmall_TxRx_info(cmnPart) % evaluate to get info for debugging
         
+        % DEV NOTE: In the .all format, we only record two fields from the
+        % "Runtime Parameters" datagram: "TransmitPowerReMaximum" for
+        % radiometric corrections, and "ReceiveBeamwidth" for estimation of
+        % the bottom echo for its removal. In the .kmall format, these two
+        % values are found in the MRZ datagrams.
+        
+        % Receive beamwidth
+        Rx_BW = unique([pingInfo.receiveArraySizeUsed_deg]);
+        if numel(Rx_BW)>1
+            warning('This file has more than one Rx beamwidth recorded. Keeping only the first value');
+        end
+        fData.Ru_1D_ReceiveBeamwidth = Rx_BW(1);
+        
+        % Transmit Power Re Maximum
+        Tx_pow = unique([pingInfo.transmitPower_dB]);
+        if numel(Tx_pow)>1
+            warning('This file has more than one Tx Power recorded. Keeping only the first value');
+        end
+        fData.Ru_1D_TransmitPowerReMaximum = Tx_pow(1);
+                
         % number of datagrams
         nDatag = numel(cmnPart);
         

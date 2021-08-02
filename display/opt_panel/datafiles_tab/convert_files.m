@@ -173,16 +173,14 @@ for nF = 1:n_files
                 
                 % relevant datagrams:
                 % * #IIP Installation Parameters
-                % * #IOP Runtime parameters
                 % * #SPO Position
                 % * #MRZ Bathy and BS
                 % * #MWC Water-column Data
-                dg_wc = {'#IIP','#IOP','#SPO','#MRZ','#MWC'};
+                dg_wc = {'#IIP','#SPO','#MRZ','#MWC'};
                 
                 % for test/debug:
                 % warning('DEBUGGING!') % uncomment this if using one below
                 % dg_wc = {'#IIP'};
-                % dg_wc = {'#IOP'};
                 % dg_wc = {'#SPO'};
                 % dg_wc = {'#MRZ'};
                 % dg_wc = {'#MWC'};
