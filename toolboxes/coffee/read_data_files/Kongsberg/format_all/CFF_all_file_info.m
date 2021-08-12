@@ -1,4 +1,4 @@
-function ALLfileinfo = CFF_all_file_info(ALLfilename)
+function ALLfileinfo = CFF_all_file_info(ALLfilename, varargin)
 %CFF_ALL_FILE_INFO  Records basic info about contents of .all file
 %
 %   Records basic info about the datagrams contained in one Kongsberg EM
@@ -55,25 +55,37 @@ function ALLfileinfo = CFF_all_file_info(ALLfilename)
 
 
 
-%% supported systems:
-% see help for info
+%% HARD-CODED PARAMETERS
+
+% supported systems:
 emNumberList = [122; 300; 302; 304; 710; 712; 2040; 2045; 3000; 3002; 3020]; %2045 is 2040c
 
 
-%% Input arguments management using inputParser
+%% Input arguments management
 p = inputParser;
 
-% ALLfilename to parse as only required argument. Test for file existence and
-% extension.
+% name of the .all or .wcd file
 argName = 'ALLfilename';
 argCheck = @(x) CFF_check_ALLfilename(x);
 addRequired(p,argName,argCheck);
 
-% now parse inputs
-parse(p,ALLfilename)
+% information communication
+addParameter(p,'comms',CFF_Comms()); % no communication by default
+
+% parse inputs
+parse(p,ALLfilename,varargin{:});
 
 % and get results
 ALLfilename = p.Results.ALLfilename;
+if ischar(p.Results.comms)
+    comms = CFF_Comms(p.Results.comms);
+else
+    comms = p.Results.comms;
+end
+
+
+%% Start message
+comms.startMsg(sprintf('Recording basic info about %s',ALLfilename));
 
 
 %% Checking byte ordering
@@ -190,9 +202,10 @@ syncCounter = 0;
 while 1
     
     % new datagram begins, start reading
-    pif   = ftell(fid);
-    nbDatag = fread(fid,1,'uint32',datagsizeformat); % number of bytes in datagram
+    pif = ftell(fid);
     
+    % number of bytes in datagram
+    nbDatag = fread(fid,1,'uint32',datagsizeformat); 
     if isempty(nbDatag)
         % file finished, leave the loop
         break;
@@ -384,11 +397,18 @@ while 1
     % go to end of datagram
     fseek(fid,pif+4+nbDatag,-1);
     
+    % communicate progress
+    comms.progrVal(pif,filesize);
 end
-
 
 
 %% closing file
 fclose(fid);
+
+
+%% end message
+comms.endMsg('Done.');
+
+
 
 

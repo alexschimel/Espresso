@@ -100,23 +100,31 @@ function fData = CFF_convert_ALLdata_to_fData(ALLdataGroup,varargin)
 
 %% input parsing
 
-% init
+%% Input arguments management
 p = inputParser;
 
-% required
+% array of ALLdata structures
 addRequired(p,'ALLdataGroup',@(x) isstruct(x) || iscell(x));
 
-% optional
+% decimation factor in range and beam
 addOptional(p,'dr_sub',1,@(x) isnumeric(x)&&x>0);
 addOptional(p,'db_sub',1,@(x) isnumeric(x)&&x>0);
 
-% parse
+% information communication
+addParameter(p,'comms',CFF_Comms()); % no communication by default
+
+% parse inputs
 parse(p,ALLdataGroup,varargin{:})
 
-% get results
+% and get results
 ALLdataGroup = p.Results.ALLdataGroup;
 dr_sub = p.Results.dr_sub;
 db_sub = p.Results.db_sub;
+if ischar(p.Results.comms)
+    comms = CFF_Comms(p.Results.comms);
+else
+    comms = p.Results.comms;
+end
 clear p;
 
 
@@ -157,6 +165,10 @@ fData.MET_Fmt_version = CFF_get_current_fData_version();
 
 % initialize source filenames
 fData.ALLfilename = cell(1,nStruct);
+
+
+%% Start message
+comms.startMsg('Converting to fData format');
 
 
 %% take one ALLdata structure at a time and add its contents to fData
@@ -1068,4 +1080,10 @@ for iF = 1:nStruct
         
     end
     
+    % communicate progress
+    comms.progrVal(iF,nStruct);
+    
 end
+
+%% end message
+comms.endMsg('Done.');

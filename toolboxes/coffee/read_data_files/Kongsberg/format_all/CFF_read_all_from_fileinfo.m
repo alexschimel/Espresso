@@ -1,4 +1,4 @@
-function ALLdata = CFF_read_all_from_fileinfo(ALLfilename, ALLfileinfo,varargin)
+function ALLdata = CFF_read_all_from_fileinfo(ALLfilename, ALLfileinfo, varargin)
 %CFF_READ_ALL_FROM_FILEINFO  Read contents of all file
 %
 %   Reads contents of one Kongsberg EM series binary data file in .all
@@ -58,31 +58,43 @@ function ALLdata = CFF_read_all_from_fileinfo(ALLfilename, ALLfileinfo,varargin)
 %   2017-2021; Last revision: 30-07-2021
 
 
-%% Input arguments management using inputParser
+%% Input arguments management
 p = inputParser;
 
-% ALLfilename to parse as only required argument. Test for file existence and
-% extension.
+% name of the .all or .wcd file
 argName = 'ALLfilename';
-argCheck = @(x) exist(x,'file') && any(strcmp(CFF_file_extension(x),{'.all','.ALL','.wcd','.WCD'}));
+argCheck = @(x) CFF_check_ALLfilename(x);
 addRequired(p,argName,argCheck);
 
-% MATfilename output as only optional argument.
+% fileinfo from CFF_all_file_info containing indexes of datagrams to read
 argName = 'ALLfileinfo';
 argCheck = @isstruct;
 addRequired(p,argName,argCheck);
 
-% MATfilename output as only optional argument.
+% ?? XXX3
 argName = 'OutputFields';
 argCheck = @iscell;
 addParameter(p,argName,{},argCheck);
 
-% now parse inputs
+% information communication
+addParameter(p,'comms',CFF_Comms()); % no communication by default
+
+% parse inputs
 parse(p,ALLfilename,ALLfileinfo,varargin{:});
 
 % and get results
-ALLfilename = p.Results.ALLfilename;
-ALLfileinfo = p.Results.ALLfileinfo;
+ALLfilename  = p.Results.ALLfilename;
+ALLfileinfo  = p.Results.ALLfileinfo;
+OutputFields = p.Results.OutputFields;
+if ischar(p.Results.comms)
+    comms = CFF_Comms(p.Results.comms);
+else
+    comms = p.Results.comms;
+end
+
+
+%% Start message
+comms.startMsg(sprintf('Read data in %s',ALLfilename));
 
 
 %% Pre-reading
@@ -99,7 +111,7 @@ ALLdata.datagramsformat=datagramsformat;
 
 % Parse only datagrams indicated in ALLfileinfo
 datagToParse = find(ALLfileinfo.parsed==1);
-
+nDatagsToPars = numel(datagToParse);
 
 %% Reading datagrams
 for iDatag = datagToParse'
@@ -125,12 +137,11 @@ for iDatag = datagToParse'
     
     % reset the parsed switch
     parsed = 0;
-    
-    
+        
     switch datagTypeNumber
         
         case 49 % 'PU STATUS OUTPUT (31H)'
-            if ~(isempty(p.Results.OutputFields)||any(strcmp('EM_PUStatus',p.Results.OutputFields)))
+            if ~(isempty(OutputFields)||any(strcmp('EM_PUStatus',OutputFields)))
                 continue;
             end
             % counter for this type of datagram
@@ -194,7 +205,7 @@ for iDatag = datagToParse'
             %             parsed = 1;
             
         case 65 % 'ATTITUDE (41H)'
-            if ~(isempty(p.Results.OutputFields)||any(strcmp('EM_Attitude',p.Results.OutputFields)))
+            if ~(isempty(OutputFields)||any(strcmp('EM_Attitude',OutputFields)))
                 continue;
             end
             % counter for this type of datagram
@@ -241,7 +252,7 @@ for iDatag = datagToParse'
             parsed = 1;
             
         case 67 % 'CLOCK (43H)'
-            if ~(isempty(p.Results.OutputFields)||any(strcmp('EM_Clock',p.Results.OutputFields)))
+            if ~(isempty(OutputFields)||any(strcmp('EM_Clock',OutputFields)))
                 continue;
             end
             % counter for this type of datagram
@@ -272,7 +283,7 @@ for iDatag = datagToParse'
             parsed = 1;
             
         case 68 % 'DEPTH DATAGRAM (44H)'
-            if ~(isempty(p.Results.OutputFields)||any(strcmp('EM_Depth',p.Results.OutputFields)))
+            if ~(isempty(OutputFields)||any(strcmp('EM_Depth',OutputFields)))
                 continue;
             end
             % counter for this type of datagram
@@ -334,7 +345,7 @@ for iDatag = datagToParse'
             parsed = 1;
             
         case 70 % 'RAW RANGE AND BEAM ANGLE (F) (46H)'
-            if ~(isempty(p.Results.OutputFields)||any(strcmp('EM_RawRangeBeamAngle',p.Results.OutputFields)))
+            if ~(isempty(OutputFields)||any(strcmp('EM_RawRangeBeamAngle',OutputFields)))
                 continue;
             end
             % counter for this type of datagram
@@ -344,7 +355,7 @@ for iDatag = datagToParse'
             % ...to write...
             
         case 71 % 'SURFACE SOUND SPEED (47H)'
-            if ~(isempty(p.Results.OutputFields)||any(strcmp('EM_SurfaceSoundSpeed',p.Results.OutputFields)))
+            if ~(isempty(OutputFields)||any(strcmp('EM_SurfaceSoundSpeed',OutputFields)))
                 continue;
             end
             % counter for this type of datagram
@@ -383,7 +394,7 @@ for iDatag = datagToParse'
             parsed = 1;
             
         case 72 % 'HEADING (48H)'
-            if ~(isempty(p.Results.OutputFields)||any(strcmp('EM_Heading',p.Results.OutputFields)))
+            if ~(isempty(OutputFields)||any(strcmp('EM_Heading',OutputFields)))
                 continue;
             end
             % counter for this type of datagram
@@ -393,7 +404,7 @@ for iDatag = datagToParse'
             % ...to write...
             
         case 73 % 'INSTALLATION PARAMETERS - START (49H)'
-            if ~(isempty(p.Results.OutputFields)||any(strcmp('EM_InstallationStart',p.Results.OutputFields)))
+            if ~(isempty(OutputFields)||any(strcmp('EM_InstallationStart',OutputFields)))
                 continue;
             end
             % counter for this type of datagram
@@ -430,7 +441,7 @@ for iDatag = datagToParse'
             parsed = 1;
             
         case 78 % 'RAW RANGE AND ANGLE 78 (4EH)'
-            if ~(isempty(p.Results.OutputFields)||any(strcmp('EM_RawRangeAngle78',p.Results.OutputFields)))
+            if ~(isempty(OutputFields)||any(strcmp('EM_RawRangeAngle78',OutputFields)))
                 continue;
             end
             % counter for this type of datagram
@@ -514,7 +525,7 @@ for iDatag = datagToParse'
             parsed = 1;
             
         case 79 % 'QUALITY FACTOR DATAGRAM 79 (4FH)'
-            if ~(isempty(p.Results.OutputFields)||any(strcmp('EM_QF',p.Results.OutputFields)))
+            if ~(isempty(OutputFields)||any(strcmp('EM_QF',OutputFields)))
                 continue;
             end
             % counter for this type of datagram
@@ -562,7 +573,7 @@ for iDatag = datagToParse'
             parsed = 1;
             
         case 80 % 'POSITION (50H)'
-            if ~(isempty(p.Results.OutputFields)||any(strcmp('EM_Position',p.Results.OutputFields)))
+            if ~(isempty(OutputFields)||any(strcmp('EM_Position',OutputFields)))
                 continue;
             end
             % counter for this type of datagram
@@ -604,7 +615,7 @@ for iDatag = datagToParse'
             parsed = 1;
             
         case 82 % 'RUNTIME PARAMETERS (52H)'
-            if ~(isempty(p.Results.OutputFields)||any(strcmp('EM_Runtime',p.Results.OutputFields)))
+            if ~(isempty(OutputFields)||any(strcmp('EM_Runtime',OutputFields)))
                 continue;
             end
             % counter for this type of datagram
@@ -657,7 +668,7 @@ for iDatag = datagToParse'
             parsed = 1;
             
         case 83 % 'SEABED IMAGE DATAGRAM (53H)'
-            if ~(isempty(p.Results.OutputFields)||any(strcmp('EM_SeabedImage',p.Results.OutputFields)))
+            if ~(isempty(OutputFields)||any(strcmp('EM_SeabedImage',OutputFields)))
                 continue;
             end
             % counter for this type of datagram
@@ -721,7 +732,7 @@ for iDatag = datagToParse'
             parsed = 1;
             
         case 85 % 'SOUND SPEED PROFILE (55H)'
-            if ~(isempty(p.Results.OutputFields)||any(strcmp('EM_SoundSpeedProfile',p.Results.OutputFields)))
+            if ~(isempty(OutputFields)||any(strcmp('EM_SoundSpeedProfile',OutputFields)))
                 continue;
             end
             % counter for this type of datagram
@@ -763,7 +774,7 @@ for iDatag = datagToParse'
             parsed = 1;
             
         case 88 % 'XYZ 88 (58H)'
-            if ~(isempty(p.Results.OutputFields)||any(strcmp('EM_XYZ88',p.Results.OutputFields)))
+            if ~(isempty(OutputFields)||any(strcmp('EM_XYZ88',OutputFields)))
                 continue;
             end
             % counter for this type of datagram
@@ -834,7 +845,7 @@ for iDatag = datagToParse'
                 parsed = 1;
             end
         case 89 % 'SEABED IMAGE DATA 89 (59H)'
-            if ~(isempty(p.Results.OutputFields)||any(strcmp('EM_SeabedImage89',p.Results.OutputFields)))
+            if ~(isempty(OutputFields)||any(strcmp('EM_SeabedImage89',OutputFields)))
                 continue;
             end
             % counter for this type of datagram
@@ -889,7 +900,7 @@ for iDatag = datagToParse'
             parsed = 1;
             
         case 102 % 'RAW RANGE AND BEAM ANGLE (f) (66H)'
-            if ~(isempty(p.Results.OutputFields)||any(strcmp('EM_RawBeamRangeAngle',p.Results.OutputFields)))
+            if ~(isempty(OutputFields)||any(strcmp('EM_RawBeamRangeAngle',OutputFields)))
                 continue;
             end
             % counter for this type of datagram
@@ -899,7 +910,7 @@ for iDatag = datagToParse'
             % ...to write...
             
         case 104 % 'DEPTH (PRESSURE) OR HEIGHT DATAGRAM (68H)'
-            if ~(isempty(p.Results.OutputFields)||any(strcmp('EM_Height',p.Results.OutputFields)))
+            if ~(isempty(OutputFields)||any(strcmp('EM_Height',OutputFields)))
                 continue;
             end
             % counter for this type of datagram
@@ -929,7 +940,7 @@ for iDatag = datagToParse'
             parsed = 1;
             
         case 105 % 'INSTALLATION PARAMETERS -  STOP (69H)'
-            if ~(isempty(p.Results.OutputFields)||any(strcmp('EM_InstallationStop',p.Results.OutputFields)))
+            if ~(isempty(OutputFields)||any(strcmp('EM_InstallationStop',OutputFields)))
                 continue;
             end
             % counter for this type of datagram
@@ -966,7 +977,7 @@ for iDatag = datagToParse'
             parsed = 1;
             
         case 107 % 'WATER COLUMN DATAGRAM (6BH)'
-            if ~(isempty(p.Results.OutputFields)||any(strcmp('EM_WaterColumn',p.Results.OutputFields)))
+            if ~(isempty(OutputFields)||any(strcmp('EM_WaterColumn',OutputFields)))
                 continue;
             end
             % counter for this type of datagram
@@ -1135,7 +1146,7 @@ for iDatag = datagToParse'
             end
             
         case 110 % 'NETWORK ATTITUDE VELOCITY DATAGRAM 110 (6EH)'
-            if ~(isempty(p.Results.OutputFields)||any(strcmp('EM_NetworkAttitude',p.Results.OutputFields)))
+            if ~(isempty(OutputFields)||any(strcmp('EM_NetworkAttitude',OutputFields)))
                 continue;
             end
             % counter for this type of datagram
@@ -1190,7 +1201,7 @@ for iDatag = datagToParse'
             parsed = 1;
             
         case 114 %'AMPLITUDE AND PHASE WC DATAGRAM 114 (72H)';
-            if ~(isempty(p.Results.OutputFields)||any(strcmp('EM_AmpPhase',p.Results.OutputFields)))
+            if ~(isempty(OutputFields)||any(strcmp('EM_AmpPhase',OutputFields)))
                 continue;
             end
             % counter for this type of datagram
@@ -1364,6 +1375,9 @@ for iDatag = datagToParse'
     % modify parsed status in info
     ALLfileinfo.parsed(iDatag,1) = parsed;
     
+    % communicate progress
+    comms.progrVal(iDatag,nDatagsToPars);
+
 end
 
 
@@ -1395,6 +1409,10 @@ for ifif = 1:numel(All_fields)
     end
 end
 
+
 %% add info to parsed data
 ALLdata.info = ALLfileinfo;
 
+
+%% end message
+comms.endMsg('Done.');

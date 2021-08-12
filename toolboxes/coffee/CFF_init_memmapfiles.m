@@ -45,6 +45,11 @@ ping_group_end     = p.Results.ping_group_end;
 
 %% prep
 
+% create folder if it does not exist
+if ~isfolder(wc_dir)
+    mkdir(wc_dir);
+end
+
 % number of memmap files requested, one per group of pings
 num_files = numel(ping_group_start);
 

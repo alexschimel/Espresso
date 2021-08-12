@@ -101,31 +101,40 @@ function [ALLdata,datagrams_parsed_idx] = CFF_read_all(ALLfilename, varargin)
 %% Input arguments management
 p = inputParser;
 
-% ALLfilename to parse as required argument.
-% Check file existence
+% name of the .all or .wcd file (or pair)
 argName = 'ALLfilename';
 argCheck = @(x) CFF_check_ALLfilename(x);
 addRequired(p,argName,argCheck);
 
-% datagrams as optional argument.
-% Check that cell array
+% types of datagram to read
 argName = 'datagrams';
 argDefault = [];
 argCheck = @(x) isnumeric(x)||iscell(x)||(ischar(x)&&~strcmp(x,'datagrams')); % that last part allows the use of the couple name,param
 addOptional(p,argName,argDefault,argCheck);
 
-% now parse inputs
+% information communication
+addParameter(p,'comms',CFF_Comms()); % no communication by default
+
+% parse inputs
 parse(p,ALLfilename,varargin{:});
 
-% and get input variables from parser
+% and get results
 ALLfilename        = p.Results.ALLfilename;
 datagrams_to_parse = p.Results.datagrams;
+if ischar(p.Results.comms)
+    comms = CFF_Comms(p.Results.comms);
+else
+    comms = p.Results.comms;
+end
+
 
 
 %% PREP
 if ischar(ALLfilename)
     % single file .all OR .wcd. Convert filename to cell.
     ALLfilename = {ALLfilename};
+    % start message
+    comms.startMsg(sprintf('Read data in %s',ALLfilename{1}));
 else
     % matching file pair .all AND .wcd.
     % make sure .wcd is listed first because this function only reads in
@@ -135,6 +144,8 @@ else
     if strcmp(CFF_file_extension(ALLfilename{1}),'.all')
         ALLfilename = fliplr(ALLfilename);
     end
+    % start message
+    comms.startMsg(sprintf('Read data in pair %s/.all',ALLfilename{1}));
 end
 
 
@@ -142,6 +153,9 @@ end
 
 % Get info from first (or only) file
 info = CFF_all_file_info(ALLfilename{1});
+
+% communicate progress
+comms.progrVal(0.5,numel(ALLfilename));
 
 if isempty(datagrams_to_parse)
     % parse all datagrams in first file
@@ -195,7 +209,9 @@ end
 % read data
 ALLdata = CFF_read_all_from_fileinfo(ALLfilename{1}, info);
 
-
+% communicate progress
+comms.progrVal(1,numel(ALLfilename));
+    
 %% SECOND FILE (if any)
 if numel(ALLfilename)>1
     
@@ -207,6 +223,9 @@ if numel(ALLfilename)>1
         
         % Get info in second file
         info = CFF_all_file_info(ALLfilename{2});
+        
+        % communicate progress
+        comms.progrVal(1.5,numel(ALLfilename));
         
         if isempty(datagrams_to_parse)
             % parse all datagrams in second file which we didn't get in the
@@ -268,6 +287,15 @@ if numel(ALLfilename)>1
         ALLdata = {ALLdata ALLdata2};
         
     end
+    
+    % communicate progress
+    comms.progrVal(2,numel(ALLfilename));
+    
 end
+
+
+%% end message
+comms.endMsg('Done.');
+
 
 
