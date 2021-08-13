@@ -25,62 +25,51 @@ function [fData,update_flag] = CFF_convert_S7Kdata_to_fData(S7KdataGroup,varargi
 %   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
 %   2017-2021; Last revision: 21-07-2021
 
-%% input parsing
-
-% init
+%% Input arguments management
 p = inputParser;
 
 % required
 addRequired(p,'S7KdataGroup',@(x) isstruct(x) || iscell(x));
 
-% optional
+% decimation factor in range and beam
 addOptional(p,'dr_sub',1,@(x) isnumeric(x)&&x>0);
 addOptional(p,'db_sub',1,@(x) isnumeric(x)&&x>0);
-addOptional(p,'fData',{},@(x) isstruct(x) || iscell(x));
 
-% parse
+% parse inputs
 parse(p,S7KdataGroup,varargin{:})
 
-% get results
+% and get results
 S7KdataGroup = p.Results.S7KdataGroup;
 dr_sub = p.Results.dr_sub;
 db_sub = p.Results.db_sub;
-fData = p.Results.fData;
 clear p;
-
-
-
-%% pre-processing
 
 if ~iscell(S7KdataGroup)
     S7KdataGroup = {S7KdataGroup};
 end
 
+
+%% Prep
+
 % number of individual S7Kdata structures in input S7KdataGroup
 nStruct = length(S7KdataGroup);
 
-if isempty(fData)
-    
-    
-    % initialize FABC structure by writing in the raw data filenames to be
-    % added here
-    fData.ALLfilename = cell(1,nStruct);
-    for iF = 1:nStruct
-        fData.ALLfilename{iF} = S7KdataGroup{iF}.S7Kfilename;
-    end
-    
-    % add the decimation factors given here in input
-    fData.dr_sub = dr_sub;
-    fData.db_sub = db_sub;
-    
+% initialize fData, with current version number
+fData.MET_Fmt_version = CFF_get_current_fData_version();
+
+% initialize source filenames
+fData.ALLfilename = cell(1,nStruct);
+
+
+for iF = 1:nStruct
+    fData.ALLfilename{iF} = S7KdataGroup{iF}.S7Kfilename;
 end
 
+% add the decimation factors given here in input
+fData.dr_sub = dr_sub;
+fData.db_sub = db_sub;
 
-if ~isfield(fData,'MET_Fmt_version')&&~isempty(fData)
-    %added a version for fData
-    fData.MET_Fmt_version='0.0';
-end
-
+% XXX1 this calls Matlab version. To fix quick
 if ~strcmpi(ver,CFF_get_current_fData_version)
     f_reconvert = 1;
     update_mode = 0;
@@ -108,12 +97,6 @@ for iF = 1:nStruct
         fprintf('Cannot add different files to this structure.\n')
         continue;
     end
-    
-    % open the original raw file in case we need to grab WC data from it
-    fid = fopen(fData.ALLfilename{iF},'r',S7Kdata.datagramsformat);
-    
-    % get folder for converted data
-    wc_dir = CFF_converted_data_folder(fData.ALLfilename{iF});
     
     % now reading each type of datagram...
     
@@ -276,6 +259,7 @@ for iF = 1:nStruct
                 if update_mode
                     update_flag = 1;
                 end
+                
                 % get indices of first datagram for each ping
                 pingNumber=1:numel(S7Kdata.R7018_7kBeamformedData.SonarId);
                 maxnBeams=nanmax(S7Kdata.R7018_7kBeamformedData.N);
@@ -314,6 +298,14 @@ for iF = 1:nStruct
                 
                 [maxNSamples_groups,ping_group_start,ping_group_end]=CFF_group_pings(S7Kdata.R7018_7kBeamformedData.S,pingNumber,pingNumber);
                 
+                % The actual water-column data will not be saved in fData
+                % but in binary files. Get the output directory to store
+                % those files 
+                wc_dir = CFF_converted_data_folder(fData.ALLfilename{iF});
+                
+                % Clean up that folder first before adding anything to it
+                CFF_clean_delete_fdata(wc_dir);
+                
                 % save info about data format for later access
                 fData.WC_1_SampleAmplitudes_Class  = 'int16';
                 fData.WC_1_SampleAmplitudes_Nanval = intmin('int16');
@@ -322,6 +314,7 @@ for iF = 1:nStruct
                 fData.WC_1_SamplePhase_Nanval = 200;
                 fData.WC_1_SamplePhase_Factor = 1;
                 
+                % initialize data-holding binary files
                 fData = CFF_init_memmapfiles(fData, ...
                     'field', 'WC_SBP_SampleAmplitudes', ...
                     'wc_dir', wc_dir, ...
@@ -345,6 +338,11 @@ for iF = 1:nStruct
                     'MaxBeams', maxnBeams, ...
                     'ping_group_start', ping_group_start, ...
                     'ping_group_end', ping_group_end);
+                
+                % Also the samples data were not recorded in ALLdata, only
+                % their location in the source file, so we need to fopen
+                % the source file to grab the data.
+                fid = fopen(fData.ALLfilename{iF},'r',S7Kdata.datagramsformat);
                 
                 % initialize ping group counter, to use to specify which memmapfile
                 % to fill. We start in the first.
@@ -373,8 +371,8 @@ for iF = 1:nStruct
                     
                 end
                 
-                
-                
+                % close the original raw file
+                fclose(fid);
                 
             end
         end
@@ -437,6 +435,14 @@ for iF = 1:nStruct
                 % flags indicating what data are available
                 [flags,sample_size,mag_fmt,phase_fmt] = CFF_get_R7042_flags(S7Kdata.R7042_CompressedWaterColumn.Flags(1));
                 
+                % The actual water-column data will not be saved in fData
+                % but in binary files. Get the output directory to store
+                % those files 
+                wc_dir = CFF_converted_data_folder(fData.ALLfilename{iF});
+                
+                % Clean up that folder first before adding anything to it
+                CFF_clean_delete_fdata(wc_dir);
+                
                 % amplitude format
                 switch mag_fmt
                     case 'int8'
@@ -460,6 +466,7 @@ for iF = 1:nStruct
                     'ping_group_start', ping_group_start, ...
                     'ping_group_end', ping_group_end);
                 
+
                 % do the same for phase if it's available
                 if ~flags.magnitudeOnly
                     
@@ -486,6 +493,11 @@ for iF = 1:nStruct
                     
                 end
                 
+                % Also the samples data were not recorded in ALLdata, only
+                % their location in the source file, so we need to fopen
+                % the source file to grab the data.
+                fid = fopen(fData.ALLfilename{iF},'r',S7Kdata.datagramsformat);
+
                 % correct sampling frequency record
                 if flags.downsamplingType > 0
                     fData.AP_1P_SamplingFrequencyHz = fData.AP_1P_SamplingFrequencyHz./flags.downsamplingDivisor;
@@ -645,12 +657,13 @@ for iF = 1:nStruct
                     
                 end
                 
+                                
+                % close the original raw file
+                fclose(fid);
+                
             end
             
         end
-        
-        % close the original raw file
-        fclose(fid);
         
     end
     

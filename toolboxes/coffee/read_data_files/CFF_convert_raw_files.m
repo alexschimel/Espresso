@@ -2,12 +2,13 @@ function fDataGroup = CFF_convert_raw_files(files_to_convert,varargin)
 %CFF_CONVERT_RAW_FILES Summary of this function goes here
 %   Detailed explanation goes here
 
+
 %% Input arguments management
 p = inputParser;
 
 % list of files (or pairs of files) to convert
 argName = 'files_to_convert';
-argCheck = @(x) ischar(x) || iscell(x);
+argCheck = @(x) ~isempty(x) && (ischar(x) || iscell(x));
 addRequired(p,argName,argCheck);
 
 % what if file already converted? 0: to next file (default), 1: reconvert
@@ -51,32 +52,43 @@ else
 end
 clear p
 
-if isempty(files_to_convert)
-    return
-end
+
+%% Prep
+
+% start message
+comms.startMsg('Reading and converting file(s)');
 
 % number of files
-n_files = numel(files_to_convert);
+nFiles = numel(files_to_convert);
 
-% Start message
-if n_files == 1
-    comms.startMsg('Converting 1 raw data file (or pair of files)');
-else
-    comms.startMsg('Converting %i raw data files (or pairs of files)');
-end
+% general timer
+timer_start = now;
 
 % init output
-fDataGroup = nan(1,n_files);
+fDataGroup = cell(1,nFiles);
 
-% for each file
-for nF = 1:n_files
+% start progress
+comms.progrVal(0,nFiles);
+
+
+%% Read and convert files
+for iF = 1:nFiles
     
     % try-catch sequence to allow continuing to next file if one fails
     try
         
         % get the file (or pair of files) to convert
-        file_to_convert = files_to_convert{nF};
+        file_to_convert = files_to_convert{iF};
 
+        % display name for file (or pair of files)
+        if ischar(file_to_convert)
+            file_to_convert_disp = sprintf('file "%s"',file_to_convert);
+        else
+            % paired file
+            file_to_convert_disp = sprintf('pair of files "%s" and "%s"',file_to_convert{1},file_to_convert{2});
+        end
+        % fprintf('%i/%i: %s.\n',iF,nFiles,file_to_convert_disp);
+        
         % file format
         [~,~,f_ext] = fileparts(CFF_onerawfileonly(file_to_convert));
         if strcmpi(f_ext,'.all') || strcmpi(f_ext,'.wcd')
@@ -95,31 +107,22 @@ for nF = 1:n_files
         % management & display
         if isempty(file_format)
             % format not supported, on to next file.
-            comms.infoMsg(sprintf('Cannot convert file %i. Format (%s) not supported.',nF,f_ext));
+            comms.infoMsg(sprintf('Cannot convert file %i. Format (%s) not supported.',iF,f_ext));
             continue
         elseif bool_already_converted && ~reconvertFiles
             % already converted and not asking for reconversion, on to next
             % file. 
-            comms.infoMsg(sprintf('File %i already converted, and not asking for reconversion.\n',nF));
+            comms.infoMsg(sprintf('File %i already converted, and not asking for reconversion.',iF));
             continue
-        elseif bool_already_converted && flag_force_convert
+        elseif bool_already_converted && reconvertFiles
             % already converted and asking for reconversion, proceed.
-            comms.infoMsg(sprintf('File %i already converted. Started re-converting at %s.',nF,datestr(now)));
+            comms.infoMsg(sprintf('File %i already converted. Started re-converting at %s.',iF,datestr(now)));
         else
             % not yet converted, proceed.
-            comms.infoMsg(sprintf('Converting file %i at %s.',nF,datestr(now)));
+            comms.infoMsg(sprintf('Converting file %i at %s.',iF,datestr(now)));
         end
-        textprogressbar('...Progress: ');
-        textprogressbar(0);
-        tic
         
-        % First, clean up any existing converted data
-        wc_dir = CFF_converted_data_folder(file_to_convert);
-        clean_delete_fdata(wc_dir);
-        
-        % create output folder
-        mkdir(wc_dir);
-        
+        % reading and converting
         switch file_format
             case 'Kongsberg_all'
                 
@@ -134,13 +137,6 @@ for nF = 1:n_files
                 
                 % step 1: read
                 [EMdata,datags_parsed_idx] = CFF_read_all(file_to_convert, datagrams_to_parse);
-                textprogressbar(50);
-                
-                if datags_parsed_idx(end)
-                    datagramSource = 'AP';
-                else
-                    datagramSource = 'WC';
-                end
                 
                 % if not all datagrams were found at this point, message and abort
                 if nansum(datags_parsed_idx)<5
@@ -153,9 +149,14 @@ for nF = 1:n_files
                     end
                 end
                 
+                if datags_parsed_idx(end)
+                    datagramSource = 'AP';
+                else
+                    datagramSource = 'WC';
+                end
+                
                 % step 2: convert
                 fData = CFF_convert_ALLdata_to_fData(EMdata,dr_sub,db_sub);
-                textprogressbar(90);
                 
             case 'Reson_s7k'
                 
@@ -172,7 +173,6 @@ for nF = 1:n_files
                 
                 % step 1: read
                 [RESONdata, datags_parsed_idx] = CFF_read_s7k(file_to_convert,dg_wc);
-                textprogressbar(50);
                 
                 % if not all datagrams were found at this point, message and abort
                 if ~all(datags_parsed_idx)
@@ -196,7 +196,6 @@ for nF = 1:n_files
                 
                 % step 2: convert
                 fData = CFF_convert_S7Kdata_to_fData(RESONdata,dr_sub,db_sub);
-                textprogressbar(90);
                 
             case 'Kongsberg_kmall'
                 
@@ -217,7 +216,6 @@ for nF = 1:n_files
                 
                 % step 1: read
                 [EMdata,datags_parsed_idx] = CFF_read_kmall(file_to_convert, dg_wc);
-                textprogressbar(50);
                 
                 % if not all datagrams were found at this point, message and abort
                 if ~isempty(dg_wc) && ~all(datags_parsed_idx)
@@ -230,7 +228,6 @@ for nF = 1:n_files
                 
                 % step 2: convert
                 fData = CFF_convert_KMALLdata_to_fData(EMdata,dr_sub,db_sub);
-                textprogressbar(90);
                 
         end
         
@@ -239,31 +236,41 @@ for nF = 1:n_files
         
         % and save
         if saveFDataToDrive
+            % get output folder and create it if necessary
+            wc_dir = CFF_converted_data_folder(file_to_convert);
+            if ~isfolder(wc_dir)
+                mkdir(wc_dir);
+            end
             mat_fdata_file = fullfile(wc_dir, 'fData.mat');
             save(mat_fdata_file,'-struct','fData','-v7.3');
         end
         
         % add to group for output
-        fDataGroup(nF) = fData;
-        
-        % disp
-        textprogressbar(100)
-        fprintf(' Done. Duration: ~%.2f seconds.\n',toc);
+        fDataGroup{iF} = fData;
         
     catch err
-        fprintf('%s: ERROR converting %s\n',datestr(now,'HH:MM:SS'),file_to_convert_disp); % XXX3
+        
+        % display which file as this info is not in the error message
+        fprintf('%s: ERROR converting %s\n',datestr(now,'HH:MM:SS'),file_to_convert_disp);
         
         if abortOnError
-            % abort if requested
             rethrow(err);
         else
-            % continue to next file % XXX3
+            % print error information for developers before moving onto
+            % next file
             [~,f_temp,e_temp] = fileparts(err.stack(1).file);
-            err_str = sprintf('Error in file %s, line %d: %s',[f_temp e_temp],err.stack(1).line,err.message);
-            fprintf('%s\n\n',err_str);
+            fprintf('Error in %s (line %d): %s\n',[f_temp e_temp],err.stack(1).line,err.message);
         end
     end
+   
+    % communicate progress
+    comms.progrVal(iF,nFiles);
     
+end
+
+% output struct direclty if only one element
+if numel(fDataGroup)==1
+    fDataGroup = fDataGroup{1};
 end
 
 % general timer
@@ -272,6 +279,9 @@ duration_sec = (timer_end-timer_start)*24*60*60;
 duration_min = (timer_end-timer_start)*24*60;
 fprintf('Done. Total duration: ~%.2f seconds (~%.2f minutes).\n\n',duration_sec,duration_min);
 
+
+%% end message
+comms.endMsg('Done.');
 
 end
 

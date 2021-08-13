@@ -25,8 +25,7 @@ function [S7Kdata,datagrams_parsed_idx] = CFF_read_s7k(S7Kfilename, varargin)
 %   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
 %   2017-2021; Last revision: 27-07-2021
 
-%% input parsing
-
+%% Input arguments management
 p = inputParser;
 
 % S7Kfilename to parse as required argument.
@@ -53,6 +52,9 @@ if isempty(CFF_file_extension(S7Kfilename))
     S7Kfilename = [S7Kfilename,'.s7k'];
 end
 
+
+%% Processing
+
 % get info from file
 info = CFF_s7k_file_info(S7Kfilename);
 
@@ -69,15 +71,6 @@ else
     
     % find which datagrams can be read here
     datagrams_parsable_idx = ismember(datagrams_to_parse,datagrams_available);
-    
-    % some warnings
-    if ~any(datagrams_parsable_idx)
-        warning('None of the needed datagrams are in this file.');
-    else
-        if ~all(datagrams_parsable_idx)
-            warning('Some needed datagrams could not been found in this file.');
-        end
-    end
     
     % list datagrams to be parsed
     idx_to_parse = ismember(info.recordTypeIdentifier,datagrams_to_parse(datagrams_parsable_idx));

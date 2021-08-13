@@ -81,16 +81,6 @@ for nF = 1:n_files
         textprogressbar(0);
         tic
         
-        % First, clean up any existing converted data
-        wc_dir = CFF_converted_data_folder(file_to_convert);
-        clean_delete_fdata(wc_dir);
-        
-        % create output folder
-        mkdir(wc_dir);
-        
-        % define mat filename
-        mat_fdata_file = fullfile(wc_dir, 'fData.mat');
-        
         switch file_format
             case 'Kongsberg_all'
                 
@@ -209,12 +199,17 @@ for nF = 1:n_files
         fData.MET_datagramSource = CFF_get_datagramSource(fData,datagramSource);
         
         % and save
+        wc_dir = CFF_converted_data_folder(file_to_convert);
+        if ~isfolder(wc_dir)
+            mkdir(wc_dir);
+        end
+        mat_fdata_file = fullfile(wc_dir, 'fData.mat');
         save(mat_fdata_file,'-struct','fData','-v7.3');
         clear fData;
         
         % disp
         textprogressbar(100)
-        fprintf(' Done. Duration: ~%.2f seconds.\n',toc);
+        textprogressbar(sprintf(' Done. Duration: ~%.2f seconds.',toc));
         
     catch err
         fprintf('%s: ERROR converting %s\n',datestr(now,'HH:MM:SS'),file_to_convert_disp);

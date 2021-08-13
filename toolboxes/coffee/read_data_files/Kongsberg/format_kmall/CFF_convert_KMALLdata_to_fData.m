@@ -355,6 +355,13 @@ for iF = 1:nStruct
         fData.WC_BP_BeamNumber             = NaN; % unused anyway
         fData.WC_BP_SystemSerialNumber     = NaN; % unused anyway
         
+        % The actual water-column data will not be saved in fData but in
+        % binary files. Get the output directory to store those files 
+        wc_dir = CFF_converted_data_folder(KMALLfilename);
+                
+        % Clean up that folder first before adding anything to it
+        CFF_clean_delete_fdata(wc_dir);
+        
         % Definition of Kongsberg's KMALL water-column data format. We keep
         % it exactly like this to save disk space.
         % The sample amplitude are recorded in "int8" (signed integers from
@@ -364,10 +371,6 @@ for iF = 1:nStruct
         raw_WCamp_Class = 'int8';
         raw_WCamp_Factor = 1./2;
         raw_WCamp_Nanval = intmin(raw_WCamp_Class); % -128
-        
-        % also, that data will not be saved in fData but in binary files.
-        % Get the output directory to store memmaped files
-        wc_dir = CFF_converted_data_folder(KMALLfilename);
         
         % initialize data-holding binary files for Amplitude
         fData = CFF_init_memmapfiles(fData, ...
@@ -425,8 +428,9 @@ for iF = 1:nStruct
             
         end
         
-        % samples data from WC or AP datagrams were not recorded, so we
-        % need to fopen the source file to grab the data
+        % Also the samples data were not recorded in ALLdata, only their
+        % location in the source file, so we need to fopen the source file
+        % to grab the data.
         fid = fopen(KMALLfilename,'r','l');
         
         % debug graph

@@ -98,8 +98,6 @@ function fData = CFF_convert_ALLdata_to_fData(ALLdataGroup,varargin)
 %   2017-2021; Last revision: 21-07-2021
 
 
-%% input parsing
-
 %% Input arguments management
 p = inputParser;
 
@@ -127,22 +125,22 @@ else
 end
 clear p;
 
-
-%% pre-processing
-
 if isstruct(ALLdataGroup)
+    % just one structure
+    ALLdataGroup = {ALLdataGroup};
+end
+
+% check input
+if numel(ALLdataGroup)==1
     % single ALLdata structure
     
     % check it's from Kongsberg and that source file exist
-    has_ALLfilename = isfield(ALLdataGroup, 'ALLfilename');
-    if ~has_ALLfilename || ~CFF_check_ALLfilename(ALLdataGroup.ALLfilename)
+    has_ALLfilename = isfield(ALLdataGroup{1}, 'ALLfilename');
+    if ~has_ALLfilename || ~CFF_check_ALLfilename(ALLdataGroup{1}.ALLfilename)
         error('Invalid input');
     end
     
-    % if clear, turn to cell before processing further
-    ALLdataGroup = {ALLdataGroup};
-    
-elseif iscell(ALLdataGroup) && numel(ALLdataGroup)==2
+elseif numel(ALLdataGroup)==2
     % pair of ALLdata structures
     
     % check it's from a pair of Kongsberg all/wcd files and that source
@@ -157,6 +155,12 @@ else
     error('Invalid input');
 end
 
+
+%% Prep
+
+% start message
+comms.startMsg('Converting to fData format');
+
 % number of individual ALLdata structures in input ALLdataGroup
 nStruct = length(ALLdataGroup);
 
@@ -166,9 +170,8 @@ fData.MET_Fmt_version = CFF_get_current_fData_version();
 % initialize source filenames
 fData.ALLfilename = cell(1,nStruct);
 
-
-%% Start message
-comms.startMsg('Converting to fData format');
+% start progress
+comms.progrVal(0,nStruct);
 
 
 %% take one ALLdata structure at a time and add its contents to fData
@@ -562,14 +565,6 @@ for iF = 1:nStruct
     %% EM_WaterColumn
     if isfield(ALLdata,'EM_WaterColumn') && ~isfield(fData,'WC_1P_Date')
         
-        % samples data from WC or AP datagrams were not recorded, so we
-        % need to fopen the source file to grab the data
-        fid_all = fopen(fData.ALLfilename{iF},'r',ALLdata.datagramsformat);
-        
-        % also, that data will not be saved in fData but in binary files.
-        % Get the output directory to store those files 
-        wc_dir = CFF_converted_data_folder(fData.ALLfilename{iF});
-        
         % get the number of heads
         headNumber = unique(ALLdata.EM_WaterColumn.SystemSerialNumber,'stable');
         
@@ -683,6 +678,13 @@ for iF = 1:nStruct
         fData.WC_BP_BeamNumber             = nan(maxnBeams_sub,nPings);
         fData.WC_BP_SystemSerialNumber     = nan(maxnBeams_sub,nPings);
         
+        % The actual water-column data will not be saved in fData but in
+        % binary files. Get the output directory to store those files 
+        wc_dir = CFF_converted_data_folder(fData.ALLfilename{iF});
+        
+        % Clean up that folder first before adding anything to it
+        CFF_clean_delete_fdata(wc_dir);
+        
         % Definition of Kongsberg's water-column data format. We keep it
         % exactly like this to save disk space.
         % The raw data are recorded in "int8" (signed integers from -128 to
@@ -708,6 +710,11 @@ for iF = 1:nStruct
             'MaxBeams', maxnBeams_sub, ...
             'ping_group_start', ping_group_start, ...
             'ping_group_end', ping_group_end);
+        
+        % Also the samples data were not recorded in ALLdata, only their
+        % location in the source file, so we need to fopen the source file
+        % to grab the data.
+        fid_all = fopen(fData.ALLfilename{iF},'r',ALLdata.datagramsformat);
         
         % initialize ping group counter, to use to specify which memmapfile
         % to fill. We start in the first.
@@ -838,14 +845,6 @@ for iF = 1:nStruct
     %% EM_AmpPhase
     if isfield(ALLdata,'EM_AmpPhase') && ~isfield(fData,'AP_1P_Date')
         
-        % samples data from WC or AP datagrams were not recorded, so we
-        % need to fopen the source file to grab the data
-        fid_all = fopen(fData.ALLfilename{iF},'r',ALLdata.datagramsformat);
-        
-        % also, that data will not be saved in fData but in binary files.
-        % Get the output directory to store those files 
-        wc_dir = CFF_converted_data_folder(fData.ALLfilename{iF});
-        
         % get the number of heads
         headNumber = unique(ALLdata.EM_AmpPhase.SystemSerialNumber,'stable');
         % note we don't support multiple-head data for AP as we do for WC.
@@ -922,6 +921,13 @@ for iF = 1:nStruct
         fData.AP_BP_BeamNumber             = nan(maxnBeams_sub,nPings);
         % fData.AC_BP_SystemSerialNumber     = nan(maxnBeams_sub,nPings);
         
+        % The actual water-column data will not be saved in fData but in
+        % binary files. Get the output directory to store those files 
+        wc_dir = CFF_converted_data_folder(fData.ALLfilename{iF});
+        
+        % Clean up that folder first before adding anything to it
+        CFF_clean_delete_fdata(wc_dir);
+        
         % Definition of Kongsberg's amplitude-phase data format. We keep it
         % exactly like this to save disk space.
         raw_AP_Class = 'int16';
@@ -954,6 +960,11 @@ for iF = 1:nStruct
             'MaxBeams', maxnBeams_sub, ...
             'ping_group_start', ping_group_start, ...
             'ping_group_end', ping_group_end);
+        
+        % Also the samples data were not recorded in ALLdata, only their
+        % location in the source file, so we need to fopen the source file
+        % to grab the data.
+        fid_all = fopen(fData.ALLfilename{iF},'r',ALLdata.datagramsformat);
         
         % initialize ping group counter, to use to specify which memmapfile
         % to fill. We start in the first.

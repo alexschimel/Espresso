@@ -127,14 +127,10 @@ else
     comms = p.Results.comms;
 end
 
-
-
-%% PREP
+% check input
 if ischar(ALLfilename)
     % single file .all OR .wcd. Convert filename to cell.
     ALLfilename = {ALLfilename};
-    % start message
-    comms.startMsg(sprintf('Read data in %s',ALLfilename{1}));
 else
     % matching file pair .all AND .wcd.
     % make sure .wcd is listed first because this function only reads in
@@ -144,9 +140,23 @@ else
     if strcmp(CFF_file_extension(ALLfilename{1}),'.all')
         ALLfilename = fliplr(ALLfilename);
     end
-    % start message
-    comms.startMsg(sprintf('Read data in pair %s/.all',ALLfilename{1}));
 end
+
+
+%% Prep
+
+% number of files
+nFiles = numel(ALLfilename);
+
+% start message
+if nFiles == 1
+    comms.startMsg('Reading data in file');
+else
+    comms.startMsg('Reading data in pair of files');
+end
+
+% start progress
+comms.progrVal(0,nFiles);
 
 
 %% FIRST FILE
@@ -155,7 +165,7 @@ end
 info = CFF_all_file_info(ALLfilename{1});
 
 % communicate progress
-comms.progrVal(0.5,numel(ALLfilename));
+comms.progrVal(0.5,nFiles);
 
 if isempty(datagrams_to_parse)
     % parse all datagrams in first file
@@ -210,10 +220,11 @@ end
 ALLdata = CFF_read_all_from_fileinfo(ALLfilename{1}, info);
 
 % communicate progress
-comms.progrVal(1,numel(ALLfilename));
+comms.progrVal(1,nFiles);
     
+
 %% SECOND FILE (if any)
-if numel(ALLfilename)>1
+if nFiles>1
     
     % parse only if we requested to read all datagrams (in which case, the
     % second file might have datagrams not read in the first and we need to
@@ -225,7 +236,7 @@ if numel(ALLfilename)>1
         info = CFF_all_file_info(ALLfilename{2});
         
         % communicate progress
-        comms.progrVal(1.5,numel(ALLfilename));
+        comms.progrVal(1.5,nFiles);
         
         if isempty(datagrams_to_parse)
             % parse all datagrams in second file which we didn't get in the
@@ -289,7 +300,7 @@ if numel(ALLfilename)>1
     end
     
     % communicate progress
-    comms.progrVal(2,numel(ALLfilename));
+    comms.progrVal(2,nFiles);
     
 end
 

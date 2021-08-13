@@ -106,15 +106,20 @@ for uig = 1:num_files
     else
         % ideally, if file already exists, we should test to see if it has
         % the right "class [nSamples nBeams nPings]" before
-        % linking it after. Checking this means we should not have deleted
+        % linking it after. To do this we would need to not have deleted
         % the field before.
         %
-        % if it has the right size, fill it with NaNs.
+        % If it has the right class and size, fill it with NaNs. 
         %
-        % if it's not the right size, we should delete it and recreate it,
-        % but problem is we can't delete it as it's memmaped in the app.
-        % Anyway, something to thinks about on the day we want to consider
-        % that case...
+        % If it's not the right class or size, we should delete it and
+        % recreate a correct one, but it might get tricky as  we can't
+        % delete it if it's memmaped somewhere in the app. 
+        %
+        % Until we do this, this part here will assume that class and size
+        % are the same, and that preexisting data won't be an issue. 
+        %
+        % Anyway, something to think about on the day we encounter an issue
+        % here... XXX2
     end
     
     % memory map this binary file as a field in fData

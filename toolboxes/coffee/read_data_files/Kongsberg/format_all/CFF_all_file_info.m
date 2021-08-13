@@ -85,7 +85,7 @@ end
 
 
 %% Start message
-comms.startMsg(sprintf('Recording basic info about %s',ALLfilename));
+comms.startMsg('Listing datagrams in file');
 
 
 %% Checking byte ordering
@@ -196,6 +196,10 @@ kk = 0;
 % initializing synchronization counter: the number of bytes that needed to
 % be passed before this datagram appeared
 syncCounter = 0;
+
+
+%% Start progress
+comms.progrVal(0,filesize);
 
 
 %% Reading datagrams

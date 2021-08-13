@@ -93,25 +93,28 @@ else
 end
 
 
-%% Start message
-comms.startMsg(sprintf('Read data in %s',ALLfilename));
+%% Prep
 
+% start message
+comms.startMsg('Reading desired datagrams');
 
-%% Pre-reading
-
-% Get basic info for file opening
+% get basic info for file opening
 filesize = ALLfileinfo.filesize;
 datagsizeformat = ALLfileinfo.datagsizeformat;
 datagramsformat = ALLfileinfo.datagramsformat;
 ALLdata.ALLfilename=ALLfilename;
 ALLdata.datagramsformat=datagramsformat;
 
-% Open file
+% open file
 [fid,~] = fopen(ALLfilename, 'r',datagramsformat);
 
-% Parse only datagrams indicated in ALLfileinfo
+% parse only datagrams indicated in ALLfileinfo
 datagToParse = find(ALLfileinfo.parsed==1);
 nDatagsToPars = numel(datagToParse);
+
+% start progress
+comms.progrVal(0,nDatagsToPars);
+
 
 %% Reading datagrams
 for iDatag = datagToParse'

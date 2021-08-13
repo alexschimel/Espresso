@@ -23,7 +23,7 @@ end
 
 % list of names of converted files, if input were converted
 wc_dir = CFF_converted_data_folder(rawfileslist);
-mat_fdata_files = fullfile(wc_dir,'fdata.mat');
+mat_fdata_files = fullfile(wc_dir,'fData.mat');
 if ischar(mat_fdata_files)
     mat_fdata_files = {mat_fdata_files};
 end
