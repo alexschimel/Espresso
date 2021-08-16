@@ -340,7 +340,7 @@ for iF = 1:nStruct
     end
     
     
-    %% EM_Depth
+    %% EM_Depth XXX1 to update for dual head support
     if isfield(ALLdata,'EM_Depth') && ~isfield(fData,'De_1P_Date')
         
         nPings  = length(ALLdata.EM_Depth.TypeOfDatagram); % total number of pings in file
@@ -392,20 +392,62 @@ for iF = 1:nStruct
     %% EM_XYZ88
     if isfield(ALLdata,'EM_XYZ88') && ~isfield(fData,'X8_1P_Date')
         
-        nPings  = length(ALLdata.EM_XYZ88.TypeOfDatagram); % total number of pings in file
-        maxnBeams = max(ALLdata.EM_XYZ88.NumberOfBeamsInDatagram); % maximum beam number in file
+        % get the number of heads
+        headNumber = unique(ALLdata.EM_XYZ88.SystemSerialNumber,'stable');
         
-        fData.X8_1P_Date                            = ALLdata.EM_XYZ88.Date;
-        fData.X8_1P_TimeSinceMidnightInMilliseconds = ALLdata.EM_XYZ88.TimeSinceMidnightInMilliseconds;
-        fData.X8_1P_PingCounter                     = ALLdata.EM_XYZ88.PingCounter;
-        fData.X8_1P_HeadingOfVessel                 = ALLdata.EM_XYZ88.HeadingOfVessel;
-        fData.X8_1P_SoundSpeedAtTransducer          = ALLdata.EM_XYZ88.SoundSpeedAtTransducer*0.1;
-        fData.X8_1P_TransmitTransducerDepth         = ALLdata.EM_XYZ88.TransmitTransducerDepth;
-        fData.X8_1P_NumberOfBeamsInDatagram         = ALLdata.EM_XYZ88.NumberOfBeamsInDatagram;
-        fData.X8_1P_NumberOfValidDetections         = ALLdata.EM_XYZ88.NumberOfValidDetections;
-        fData.X8_1P_SamplingFrequencyInHz           = ALLdata.EM_XYZ88.SamplingFrequencyInHz;
+        % get ping numbers and datagrams indices
+        if numel(headNumber) == 1
+            % there should not be multiple datagrams per ping in
+            % single-head data, but taking unique here just in case there
+            % are duplicates datagrams
+            [pingCounters, idxDtg] = unique(ALLdata.EM_XYZ88.PingCounter,'stable');
+            idxDtg = idxDtg';
+        else
+            % in case there's more than one head, we're going to only keep
+            % pings for which we have data for all heads
+            pingCounters = unique(ALLdata.EM_XYZ88.PingCounter,'stable');
+            for iH = 2:numel(headNumber)
+                % pings for first head
+                pingCountersOtherhead = unique(ALLdata.EM_XYZ88.PingCounter(ALLdata.EM_XYZ88.SystemSerialNumber==headNumber(iH)),'stable');
+                pingCounters = intersect(pingCounters, pingCountersOtherhead);
+            end
+            
+            % get the index of first datagram per head for a given ping
+            % number
+            for iH = 1:length(headNumber)
+                idxDtg(iH,:) = arrayfun(@(x) find(ALLdata.EM_XYZ88.SystemSerialNumber==headNumber(iH) & ALLdata.EM_XYZ88.PingCounter==x, 1), pingCounters);
+            end
+            
+            % There is no index on head order, so sort them from portmost
+            % to starboardmost 
+            [~,I] = sort(cellfun(@(x) x(1), ALLdata.EM_XYZ88.AcrosstrackDistanceY(idxDtg(:,1))));
+            idxDtg = idxDtg(I,:);
+            headNumber = headNumber(I);
+        end
         
-        % initialize
+        % save ping numbers
+        fData.X8_1P_PingCounter = pingCounters;  
+
+        % for those fields, we only retain the value from the first head,
+        % although in practice for some fields, the values may be different
+        % across heads.
+        fData.X8_1P_Date                            = ALLdata.EM_XYZ88.Date(idxDtg(1,:));
+        fData.X8_1P_TimeSinceMidnightInMilliseconds = ALLdata.EM_XYZ88.TimeSinceMidnightInMilliseconds(idxDtg(1,:));
+        fData.X8_1P_HeadingOfVessel                 = ALLdata.EM_XYZ88.HeadingOfVessel(idxDtg(1,:));
+        fData.X8_1P_SoundSpeedAtTransducer          = ALLdata.EM_XYZ88.SoundSpeedAtTransducer(idxDtg(1,:))*0.1;
+        fData.X8_1P_TransmitTransducerDepth         = ALLdata.EM_XYZ88.TransmitTransducerDepth(idxDtg(1,:));
+        fData.X8_1P_SamplingFrequencyInHz           = ALLdata.EM_XYZ88.SamplingFrequencyInHz(idxDtg(1,:));
+        
+        % for those fields, we sum the values from 
+        fData.X8_1P_NumberOfBeamsInDatagram         = sum(ALLdata.EM_XYZ88.NumberOfBeamsInDatagram(idxDtg),1);
+        fData.X8_1P_NumberOfValidDetections         = sum(ALLdata.EM_XYZ88.NumberOfValidDetections(idxDtg),1);
+        
+        % save dimensions
+        nPings    = numel(pingCounters); % total number of pings in file
+        maxnBeams = max(fData.X8_1P_NumberOfBeamsInDatagram); % maximum beam number in file
+        
+        % initialize BP fields
+        fData.X8_B1_BeamNumber                   = (1:maxnBeams)';
         fData.X8_BP_DepthZ                       = nan(maxnBeams,nPings);
         fData.X8_BP_AcrosstrackDistanceY         = nan(maxnBeams,nPings);
         fData.X8_BP_AlongtrackDistanceX          = nan(maxnBeams,nPings);
@@ -415,28 +457,47 @@ for iF = 1:nStruct
         fData.X8_BP_DetectionInformation         = nan(maxnBeams,nPings);
         fData.X8_BP_RealTimeCleaningInformation  = nan(maxnBeams,nPings);
         fData.X8_BP_ReflectivityBS               = nan(maxnBeams,nPings);
-        fData.X8_B1_BeamNumber                   = (1:maxnBeams)';
+        fData.X8_BP_HeadSystemSerialNumber       = nan(maxnBeams,nPings);
         
-        for iP = 1:nPings
+        % and fill that data ping per ping
+        for iPOut = 1:nPings
             
-            nBeams = numel(cell2mat(ALLdata.EM_XYZ88.DepthZ(iP)));
+            % init number of beams recorded so far
+            nBeamTot = 0;
             
-            fData.X8_BP_DepthZ(1:nBeams,iP)                       = cell2mat(ALLdata.EM_XYZ88.DepthZ(iP));
-            fData.X8_BP_AcrosstrackDistanceY(1:nBeams,iP)         = cell2mat(ALLdata.EM_XYZ88.AcrosstrackDistanceY(iP));
-            fData.X8_BP_AlongtrackDistanceX(1:nBeams,iP)          = cell2mat(ALLdata.EM_XYZ88.AlongtrackDistanceX(iP));
-            fData.X8_BP_DetectionWindowLength(1:nBeams,iP)        = cell2mat(ALLdata.EM_XYZ88.DetectionWindowLength(iP));
-            fData.X8_BP_QualityFactor(1:nBeams,iP)                = cell2mat(ALLdata.EM_XYZ88.QualityFactor(iP));
-            fData.X8_BP_BeamIncidenceAngleAdjustment(1:nBeams,iP) = cell2mat(ALLdata.EM_XYZ88.BeamIncidenceAngleAdjustment(iP));
-            fData.X8_BP_DetectionInformation(1:nBeams,iP)         = cell2mat(ALLdata.EM_XYZ88.DetectionInformation(iP));
-            fData.X8_BP_RealTimeCleaningInformation(1:nBeams,iP)  = cell2mat(ALLdata.EM_XYZ88.RealTimeCleaningInformation(iP));
-            fData.X8_BP_ReflectivityBS(1:nBeams,iP)               = cell2mat(ALLdata.EM_XYZ88.ReflectivityBS(iP));
-            
+            % parse data per head
+            for iH = 1:numel(headNumber)
+                
+                % index of ping for this head in ALLdata
+                iPIn = find( ALLdata.EM_XYZ88.PingCounter==pingCounters(iPOut) & ...
+                    ALLdata.EM_XYZ88.SystemSerialNumber==headNumber(iH));
+                
+                % index of beams in output array
+                nBeamsIn = ALLdata.EM_XYZ88.NumberOfBeamsInDatagram(iPIn);
+                iBOut = nBeamTot + (1:nBeamsIn);
+                
+                fData.X8_BP_DepthZ(iBOut,iPOut)                       = ALLdata.EM_XYZ88.DepthZ{iPIn};
+                fData.X8_BP_AcrosstrackDistanceY(iBOut,iPOut)         = ALLdata.EM_XYZ88.AcrosstrackDistanceY{iPIn};
+                fData.X8_BP_AlongtrackDistanceX(iBOut,iPOut)          = ALLdata.EM_XYZ88.AlongtrackDistanceX{iPIn};
+                fData.X8_BP_DetectionWindowLength(iBOut,iPOut)        = ALLdata.EM_XYZ88.DetectionWindowLength{iPIn};
+                fData.X8_BP_QualityFactor(iBOut,iPOut)                = ALLdata.EM_XYZ88.QualityFactor{iPIn};
+                fData.X8_BP_BeamIncidenceAngleAdjustment(iBOut,iPOut) = ALLdata.EM_XYZ88.BeamIncidenceAngleAdjustment{iPIn};
+                fData.X8_BP_DetectionInformation(iBOut,iPOut)         = ALLdata.EM_XYZ88.DetectionInformation{iPIn};
+                fData.X8_BP_RealTimeCleaningInformation(iBOut,iPOut)  = ALLdata.EM_XYZ88.RealTimeCleaningInformation{iPIn};
+                fData.X8_BP_ReflectivityBS(iBOut,iPOut)               = ALLdata.EM_XYZ88.ReflectivityBS{iPIn};
+                
+                % add head number
+                fData.X8_BP_HeadSystemSerialNumber(iBOut,iPOut) = headNumber(iH);
+                
+                % update
+                nBeamTot = iBOut(end);
+            end
         end
         
     end
     
     
-    %% EM_SeabedImage
+    %% EM_SeabedImage XXX1 to update for dual head support
     if isfield(ALLdata,'EM_SeabedImage') && ~isfield(fData,'SI_1P_Date')
         
         nPings  = length(ALLdata.EM_SeabedImage.TypeOfDatagram); % total number of pings in file
@@ -499,7 +560,7 @@ for iF = 1:nStruct
     end
     
     
-    %% EM_SeabedImage89
+    %% EM_SeabedImage89  XXX1 to update for dual head support
     if isfield(ALLdata,'EM_SeabedImage89') && ~isfield(fData,'S8_1P_Date')
         
         nPings  = length(ALLdata.EM_SeabedImage89.TypeOfDatagram); % total number of pings in file
@@ -570,7 +631,7 @@ for iF = 1:nStruct
         
         % There are multiple datagrams per ping. Get the list of pings, and
         % the index of the first datagram for each ping 
-        if length(headNumber) == 1
+        if numel(headNumber) == 1
             % if only one head, it's simple
             [pingCounters, iFirstDatagram] = unique(ALLdata.EM_WaterColumn.PingCounter,'stable');
         else
@@ -848,7 +909,7 @@ for iF = 1:nStruct
         % get the number of heads
         headNumber = unique(ALLdata.EM_AmpPhase.SystemSerialNumber,'stable');
         % note we don't support multiple-head data for AP as we do for WC.
-        % To be coded if we ever come across it...
+        % To be coded if we ever come across it... XXX1
         
         % There are multiple datagrams per ping. Get the list of pings, and
         % the index of the first datagram for each ping 
