@@ -1,61 +1,62 @@
-function [idx_converted,flag_outdated_fdata] = CFF_are_raw_files_converted(rawfileslist)
+function [idxConverted,idxFDataUpToDate,idxHasWCD] = CFF_are_raw_files_converted(rawFilesList)
 %CFF_ARE_RAW_FILES_CONVERTED  Check if raw files are already converted.
 %
-%   For each input file, the test for conversion includes whether the
-%   corresponding fData.mat file exists, and if its version matches the
-%   current fData version. If the version does not match, then the file is
-%   officially NOT converted.
-%   If any file was converted but has the wrong version, it sets the output
-%   flag flag_outdated_fdata to one.
+%   [A,B,C] = CFF_ARE_RAW_FILES_CONVERTED(F) tests if each input file in F
+%   is converted to the fData format (A=1) or not (A=0). If the converted
+%   file exists, the function also tests if its version matches the 
+%   current fData version as defined in CFF_GET_CURRENT_FDATA_VERSION
+%   (B=1) or not (B=0). If the converted file exists, the function also
+%   tests if fData fields include AT LEAST ONE field in 'WC_' or 'AP_'
+%   (C=1) or not. If the converted file does not exist, the function
+%   returns B=NaN and C=NaN.
 %
-%   See also ESPRESSO.
+%   See also ESPRESSO, CFF_GET_CURRENT_FDATA_VERSION
 
-%   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
+%   Authors: Alex Schimel (NGU, alexandre.schimel@ngu.no) and Yoann
 %   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
-%   2017-2021; Last revision: 27-07-2021
+%   2017-2021; Last revision: 17-08-2021
 
 % exit if no input
-if isempty(rawfileslist)
-    idx_converted = [];
-    flag_outdated_fdata = [];
+if isempty(rawFilesList)
+    idxConverted = [];
+    idxFDataUpToDate = [];
+    idxHasWCD = [];
     return
 end
 
-% list of names of converted files, if input were converted
-wc_dir = CFF_converted_data_folder(rawfileslist);
-mat_fdata_files = fullfile(wc_dir,'fData.mat');
-if ischar(mat_fdata_files)
-    mat_fdata_files = {mat_fdata_files};
+% list of names of converted files, if inp'ut were converted
+fDataFolders = CFF_converted_data_folder(rawFilesList);
+fDataFiles = fullfile(fDataFolders,'fData.mat');
+if ischar(fDataFiles)
+    fDataFiles = {fDataFiles};
 end
-n_files = numel(mat_fdata_files);
+nFiles = numel(fDataFiles);
 
 % init output
-idx_converted = false(n_files, 1);
-flag_outdated_fdata = 0;
+idxConverted = false(nFiles, 1);
+idxFDataUpToDate = nan(nFiles, 1);
+idxHasWCD = nan(nFiles, 1);
 
 % test each file
-for ii = 1:n_files
+for ii = 1:nFiles
     
     % name of converted file
-    mat_fdata_file = mat_fdata_files{ii};
+    fDataFile = fDataFiles{ii};
     
     % check if converted file exists
-    flag_fdata_exist = isfile(mat_fdata_file);
+    idxConverted(ii,1) = isfile(fDataFile);
     
-    % if it does, check version in the file and compare with current
-    % conversion code version
-    if flag_fdata_exist
-        file_ver = CFF_get_fData_version(mat_fdata_file);
-        flag_fdata_ver_ok = strcmpi(file_ver,CFF_get_current_fData_version);
-        
-        % flag out the mismatch in version for output
-        if ~flag_fdata_ver_ok
-            flag_outdated_fdata = 1;
+    if idxConverted(ii,1)
+        % check version in the file and compare with current code version
+        fileVersion = CFF_get_fData_version(fDataFile);
+        if strcmpi(fileVersion,CFF_get_current_fData_version)
+            idxFDataUpToDate(ii,1) = 1;
         end
+        % check it has water-column data in it
+        matObj = matfile(fDataFile);
+        fields = fieldnames(matObj);
+        idxHasWCD(ii,1) = any(startsWith(fields,{'WC_','AP_'}));
     end
-    
-    % output
-    idx_converted(ii,1) = flag_fdata_exist && flag_fdata_ver_ok;
     
 end
 

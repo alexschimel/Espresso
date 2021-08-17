@@ -14,7 +14,7 @@ addRequired(p,argName,argCheck);
 % what if file already converted? 0: to next file (default), 1: reconvert
 addParameter(p,'reconvertFiles',0,@(x) mustBeMember(x,[0,1]));
 
-% what if error during conversion? 0: to next file (def), 1: abort
+% what if error during conversion? 0: to next file (default), 1: abort
 addParameter(p,'abortOnError',0,@(x) mustBeMember(x,[0,1]));
 
 % what if missing required dtgrms? 0: to next file (def), 1: convert anyway
@@ -28,7 +28,13 @@ addParameter(p,'dr_sub',1,@(x) isnumeric(x)&&x>0&&mod(x,1)==0);
 addParameter(p,'db_sub',1,@(x) isnumeric(x)&&x>0&&mod(x,1)==0);
 
 % save fData to hard-drive? 0: no (default), 1: yes
+% Note that if we convert for WCD processing, we will disregard that info
+% and save fData to drive anyway
 addParameter(p,'saveFDataToDrive',0,@(x) mustBeMember(x,[0,1]));
+
+% output fData? 0: no, 1: yes (default)
+% Unecessary in apps like Espresso, but useful in scripts
+addParameter(p,'outputFData',1,@(x) mustBeMember(x,[0,1]));
 
 % information communication (none by default)
 addParameter(p,'comms',CFF_Comms());
@@ -45,6 +51,7 @@ conversionType = p.Results.conversionType;
 dr_sub = p.Results.dr_sub;
 db_sub = p.Results.db_sub;
 saveFDataToDrive = p.Results.saveFDataToDrive;
+outputFData = p.Results.outputFData;
 if ischar(p.Results.comms)
     comms = CFF_Comms(p.Results.comms);
 else
@@ -65,7 +72,11 @@ nFiles = numel(files_to_convert);
 timer_start = now;
 
 % init output
-fDataGroup = cell(1,nFiles);
+if outputFData
+    fDataGroup = cell(1,nFiles);
+else
+    fDataGroup = [];
+end
 
 % start progress
 comms.progrVal(0,nFiles);
@@ -79,7 +90,7 @@ for iF = 1:nFiles
         
         % get the file (or pair of files) to convert
         file_to_convert = files_to_convert{iF};
-
+        
         % display name for file (or pair of files)
         if ischar(file_to_convert)
             file_to_convert_disp = sprintf('file "%s"',file_to_convert);
@@ -101,62 +112,118 @@ for iF = 1:nFiles
             file_format = [];
         end
         
-        % test if file already converted
-        bool_already_converted = CFF_are_raw_files_converted(file_to_convert);
-        
-        % management & display
-        if isempty(file_format)
-            % format not supported, on to next file.
-            comms.infoMsg(sprintf('Cannot convert file %i. Format (%s) not supported.',iF,f_ext));
-            continue
-        elseif bool_already_converted && ~reconvertFiles
-            % already converted and not asking for reconversion, on to next
-            % file. 
-            comms.infoMsg(sprintf('File %i already converted, and not asking for reconversion.',iF));
-            continue
-        elseif bool_already_converted && reconvertFiles
-            % already converted and asking for reconversion, proceed.
-            comms.infoMsg(sprintf('File %i already converted. Started re-converting at %s.',iF,datestr(now)));
+        % convert, reconvert, update, or ignore based on file status
+        [idxConverted,idxFDataUpToDate,idxHasWCD] = CFF_are_raw_files_converted(file_to_convert);
+        if ~idxConverted
+            % File is not converted yet: proceed with conversion.
+            comms.infoMsg(sprintf('Converting file %i',iF));
         else
-            % not yet converted, proceed.
-            comms.infoMsg(sprintf('Converting file %i at %s.',iF,datestr(now)));
+            % File has already been converted...
+            if reconvertFiles
+                % ...but asking for reconversion: proceed with
+                % reconversion.
+                comms.infoMsg(sprintf('Re-converting file %i',iF));
+            else
+                % ...and not asking for reconversion: examine its status a
+                % bit more in detail.
+                if ~idxFDataUpToDate || (strcmp(conversionType,'WCD') && ~idxHasWCD)
+                    % Converted file is unsuitable, as it's using an
+                    % outdated format OR it does not have the WCD data we
+                    % need: update it aka reconvert.
+                    comms.infoMsg(sprintf('Updating conversion of file %i',iF));
+                else
+                    % Converted file is suitable and doesn't need to be
+                    % reconverted.
+                    if outputFData
+                        % we need in in output, so load it now
+                        comms.infoMsg(sprintf('Loading already-converted file %i',iF));
+                        wc_dir = CFF_converted_data_folder(file_to_convert);
+                        mat_fdata_file = fullfile(wc_dir, 'fData.mat');
+                        fDataGroup{iF} = load(mat_fdata_file);
+                    else
+                        % we don't need in output, just ignore
+                        comms.infoMsg(sprintf('Ignoring already-converted file %i',iF));
+                    end
+                    % in both cases, move on to next file
+                    continue
+                end
+            end
         end
-        
-        % reading and converting
+         
+        % reading and converting depending on file format
         switch file_format
             case 'Kongsberg_all'
                 
-                % relevant datagrams:
-                % * installation parameters (73)
-                % * position (80)
-                % * runtime parameters (82)
-                % * X8 depth (88)
-                % * water-column (107)
-                % * Amplitude and Phase (114)
-                datagrams_to_parse = [73 80 82 88 107 114];
+                % datagram types to read
+                switch conversionType
+                    case 'WCD'
+                        dtgsAllRequired = [73, ... % installation parameters (73)
+                            80, ...                % position (80)
+                            82];                   % runtime parameters (82)
+                        dtgsOptional = 88;         % X8 depth (88)
+                        dtgsEitherOf = [107, ...   % water-column (107)
+                            114];                  % Amplitude and Phase (114)
+                        dtgs = sort(unique([dtgsAllRequired, dtgsOptional, dtgsEitherOf]));
+                    case 'Z&BS'
+                        dtgsAllRequired = [73, ... % installation parameters (73)
+                            80, ...                % position (80)
+                            82, ...                % runtime parameters (82)
+                            88];                   % X8 depth (88)
+                        dtgs = sort(unique(dtgsAllRequired));
+                end
                 
-                % step 1: read
-                [EMdata,datags_parsed_idx] = CFF_read_all(file_to_convert, datagrams_to_parse);
+                % conversion step 1: read what we can
+                [EMdata,iDtgsParsed] = CFF_read_all(file_to_convert, dtgs);
                 
-                % if not all datagrams were found at this point, message and abort
-                if nansum(datags_parsed_idx)<5
-                    if ~any(datags_parsed_idx(5:6)) && any(datags_parsed_idx(4:6))
-                        textprogressbar('File does not contain water-column datagrams. Conversion aborted.');
-                        continue;
-                    elseif  ~all(datags_parsed_idx(1:3)) || ~any(datags_parsed_idx(4:6))
-                        textprogressbar('File does not contain all necessary datagrams. Check file contents. Conversion aborted.');
+                % check if all required datagrams have been found
+                iDtgsRequired = ismember(dtgsAllRequired,dtgs(iDtgsParsed));
+                if ~all(iDtgsRequired)
+                    strdisp = sprintf('File is missing necessary datagram types (%s).',strjoin(string(dtgs(~iDtgsRequired)),', '));
+                    if convertEvenIfDtgrmsMissing
+                        % log message and resume conversion
+                        comms.infoMsg(strdisp);
+                    else
+                        % disp message and abort conversion
+                        strdisp = strcat(strdisp, ' Conversion aborted.');
+                        textprogressbar(strdisp);
                         continue;
                     end
                 end
                 
-                if datags_parsed_idx(end)
-                    datagramSource = 'AP';
-                else
-                    datagramSource = 'WC';
+                % for WCD, check if at least one type of water-column
+                % datagram has been found
+                if strcmp(conversionType,'WCD') && ~any(ismember(dtgsEitherOf,dtgs(iDtgsParsed)))
+                    strdisp = 'File does not contain water-column datagrams.';
+                    if convertEvenIfDtgrmsMissing
+                        comms.infoMsg(strdisp);
+                    else
+                        strdisp = strcat(strdisp, ' Conversion aborted.');
+                        textprogressbar(strdisp);
+                        continue;
+                    end
                 end
                 
-                % step 2: convert
+                % set datagram source
+                switch conversionType
+                    case 'WCD'
+                        % use AP if they exist
+                        if ismember(114,dtgs(iDtgsParsed))
+                            datagramSource = 'AP';
+                        else
+                            datagramSource = 'WC';
+                        end
+                    case 'Z&BS'
+                        datagramSource = 'X8';
+                end
+                
+                % conversion step 2: convert
                 fData = CFF_convert_ALLdata_to_fData(EMdata,dr_sub,db_sub);
+                
+                % add datagram source
+                fData.MET_datagramSource = CFF_get_datagramSource(fData,datagramSource);
+                
+                % sort fields by name
+                fData = orderfields(fData);
                 
             case 'Reson_s7k'
                 
@@ -172,23 +239,23 @@ for iF = 1:nFiles
                 dg_wc = [1015 1003 7000 7001 7004 7027 7018 7042];
                 
                 % step 1: read
-                [RESONdata, datags_parsed_idx] = CFF_read_s7k(file_to_convert,dg_wc);
+                [RESONdata, iDtgsParsed] = CFF_read_s7k(file_to_convert,dg_wc);
                 
                 % if not all datagrams were found at this point, message and abort
-                if ~all(datags_parsed_idx)
-                    if ~any((datags_parsed_idx(7:8)))
+                if ~all(iDtgsParsed)
+                    if ~any((iDtgsParsed(7:8)))
                         textprogressbar('File does not contain water-column datagrams (either R7018 or R7042). Check file contents. Conversion aborted.');
                         continue;
-                    elseif ~any(datags_parsed_idx(1:2))
+                    elseif ~any(iDtgsParsed(1:2))
                         textprogressbar('File does not contain position datagrams (either R1015 or R1003). Check file contents. Conversion aborted.');
                         continue;
-                    elseif ~all(datags_parsed_idx(3:6))
+                    elseif ~all(iDtgsParsed(3:6))
                         textprogressbar('File does not contain all necessary datagrams. Check file contents. Conversion aborted.');
                         continue;
                     end
                 end
                 
-                if datags_parsed_idx(end)
+                if iDtgsParsed(end)
                     datagramSource = 'AP';
                 else
                     datagramSource = 'WC';
@@ -196,6 +263,12 @@ for iF = 1:nFiles
                 
                 % step 2: convert
                 fData = CFF_convert_S7Kdata_to_fData(RESONdata,dr_sub,db_sub);
+                
+                % add datagram source
+                fData.MET_datagramSource = CFF_get_datagramSource(fData,datagramSource);
+                
+                % sort fields by name
+                fData = orderfields(fData);
                 
             case 'Kongsberg_kmall'
                 
@@ -215,11 +288,11 @@ for iF = 1:nFiles
                 % dg_wc = {}; % everything
                 
                 % step 1: read
-                [EMdata,datags_parsed_idx] = CFF_read_kmall(file_to_convert, dg_wc);
+                [EMdata,iDtgsParsed] = CFF_read_kmall(file_to_convert, dg_wc);
                 
                 % if not all datagrams were found at this point, message and abort
-                if ~isempty(dg_wc) && ~all(datags_parsed_idx)
-                    strdisp = sprintf('File is missing necessary datagrams (%s). Conversion aborted.', strjoin(dg_wc(~datags_parsed_idx),', '));
+                if ~isempty(dg_wc) && ~all(iDtgsParsed)
+                    strdisp = sprintf('File is missing necessary datagrams (%s). Conversion aborted.', strjoin(dg_wc(~iDtgsParsed),', '));
                     textprogressbar(strdisp);
                     continue
                 end
@@ -229,13 +302,15 @@ for iF = 1:nFiles
                 % step 2: convert
                 fData = CFF_convert_KMALLdata_to_fData(EMdata,dr_sub,db_sub);
                 
+                % add datagram source
+                fData.MET_datagramSource = CFF_get_datagramSource(fData,datagramSource);
+                
+                % sort fields by name
+                fData = orderfields(fData);
         end
         
-        % add datagram source
-        fData.MET_datagramSource = CFF_get_datagramSource(fData,datagramSource);
-        
-        % and save
-        if saveFDataToDrive
+        % save fData to drive
+        if saveFDataToDrive || strcmp(conversionType,'WCD')
             % get output folder and create it if necessary
             wc_dir = CFF_converted_data_folder(file_to_convert);
             if ~isfolder(wc_dir)
@@ -246,7 +321,10 @@ for iF = 1:nFiles
         end
         
         % add to group for output
-        fDataGroup{iF} = fData;
+        if outputFData
+            fDataGroup{iF} = fData;
+        end
+        clear fData
         
     catch err
         
@@ -262,15 +340,18 @@ for iF = 1:nFiles
             fprintf('Error in %s (line %d): %s\n',[f_temp e_temp],err.stack(1).line,err.message);
         end
     end
-   
+    
     % communicate progress
     comms.progrVal(iF,nFiles);
     
 end
 
-% output struct direclty if only one element
-if numel(fDataGroup)==1
-    fDataGroup = fDataGroup{1};
+
+if outputFData
+    % output struct direclty if only one element
+    if numel(fDataGroup)==1
+        fDataGroup = fDataGroup{1};
+    end
 end
 
 % general timer
@@ -284,4 +365,5 @@ fprintf('Done. Total duration: ~%.2f seconds (~%.2f minutes).\n\n',duration_sec,
 comms.endMsg('Done.');
 
 end
+
 

@@ -44,7 +44,9 @@ for nF = 1:n_files
         
         % test if file was effectively converted, or already loaded
         % check if file was converted
-        bool_converted = CFF_are_raw_files_converted(file_to_load);
+        
+        [idxConverted,idxFDataUpToDate,idxHasWCD] = CFF_are_raw_files_converted(file_to_load);
+        bool_converted = idxConverted && idxFDataUpToDate==1 && idxHasWCD==1;
         bool_already_loaded = CFF_are_raw_files_loaded(file_to_load, fData);
         
         % management & display
@@ -66,6 +68,7 @@ for nF = 1:n_files
         % loading temp
         fData_temp = load(mat_fdata_file);
         
+        %% XXX1 Here reset the datagram source depending on app
         
         %% Check if paths in fData are accurate and change them if necessary
         

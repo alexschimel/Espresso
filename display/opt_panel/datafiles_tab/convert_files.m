@@ -59,7 +59,8 @@ for nF = 1:n_files
         end
         
         % test if file already converted
-        bool_already_converted = CFF_are_raw_files_converted(file_to_convert);
+        [idxConverted,idxFDataUpToDate,idxHasWCD] = CFF_are_raw_files_converted(file_to_convert);
+        bool_already_converted = idxConverted && idxFDataUpToDate==1 && idxHasWCD==1;
         
         % management & display
         if isempty(file_format)

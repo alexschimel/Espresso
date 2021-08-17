@@ -17,8 +17,9 @@ search_path = get(file_tab_comp.path_box,'string');
 rawfileslist = CFF_list_raw_files_in_dir(search_path);
 
 % check which are already converted
-[idx_converted,flag_outdated_fdata] = CFF_are_raw_files_converted(rawfileslist);
-
+[idxConverted,idxFDataUpToDate,idxHasWCD] = CFF_are_raw_files_converted(rawfileslist);
+idx_converted = idxConverted & idxFDataUpToDate==1 & idxHasWCD==1;
+        
 % check which are currently loaded
 idx_loaded = CFF_are_raw_files_loaded(rawfileslist, fData);
 
@@ -55,7 +56,7 @@ file_tab_comp.idx_converted = idx_converted;
 setappdata(main_figure,'file_tab',file_tab_comp);
 
 % throw warning for outdated version
-if flag_outdated_fdata
+if any(idxFDataUpToDate==0)
     warning('One or several files in this folder have been previously converted using an outdated version of Espresso. They will require reconversion and thus show as NOT converted.');
 end
 
