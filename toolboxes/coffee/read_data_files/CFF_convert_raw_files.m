@@ -12,7 +12,7 @@ argCheck = @(x) ~isempty(x) && (ischar(x) || iscell(x));
 addRequired(p,argName,argCheck);
 
 % what if file already converted? 0: to next file (default), 1: reconvert
-addParameter(p,'reconvertFiles',0,@(x) mustBeMember(x,[0,1]));
+addParameter(p,'forceReconvert',0,@(x) mustBeMember(x,[0,1]));
 
 % what if error during conversion? 0: to next file (default), 1: abort
 addParameter(p,'abortOnError',0,@(x) mustBeMember(x,[0,1]));
@@ -44,7 +44,7 @@ parse(p,files_to_convert,varargin{:});
 
 % and get results
 files_to_convert = p.Results.files_to_convert;
-reconvertFiles = p.Results.reconvertFiles;
+forceReconvert = p.Results.forceReconvert;
 abortOnError = p.Results.abortOnError;
 convertEvenIfDtgrmsMissing = p.Results.convertEvenIfDtgrmsMissing;
 conversionType = p.Results.conversionType;
@@ -63,13 +63,10 @@ clear p
 %% Prep
 
 % start message
-comms.startMsg('Reading and converting file(s)');
+comms.start('Reading and converting file(s)');
 
 % number of files
 nFiles = numel(files_to_convert);
-
-% general timer
-timer_start = now;
 
 % init output
 if outputFData
@@ -79,7 +76,7 @@ else
 end
 
 % start progress
-comms.progrVal(0,nFiles);
+comms.progress(0,nFiles);
 
 
 %% Read and convert files
@@ -91,14 +88,16 @@ for iF = 1:nFiles
         % get the file (or pair of files) to convert
         file_to_convert = files_to_convert{iF};
         
-        % display name for file (or pair of files)
+        % display for this file
         if ischar(file_to_convert)
-            file_to_convert_disp = sprintf('file "%s"',file_to_convert);
+            filename = CFF_file_name(file_to_convert,1);
+            comms.step(sprintf('%i/%i: file %s. ',iF,nFiles,filename));
         else
-            % paired file
-            file_to_convert_disp = sprintf('pair of files "%s" and "%s"',file_to_convert{1},file_to_convert{2});
+            % paired files
+            filename_1 = CFF_file_name(file_to_convert{1},1);
+            filename_2_ext = CFF_file_extension(file_to_convert{2});
+            comms.step(sprintf('%i/%i: pair of files %s and %s. ',iF,nFiles,filename_1,filename_2_ext));
         end
-        % fprintf('%i/%i: %s.\n',iF,nFiles,file_to_convert_disp);
         
         % file format
         [~,~,f_ext] = fileparts(CFF_onerawfileonly(file_to_convert));
@@ -116,13 +115,13 @@ for iF = 1:nFiles
         [idxConverted,idxFDataUpToDate,idxHasWCD] = CFF_are_raw_files_converted(file_to_convert);
         if ~idxConverted
             % File is not converted yet: proceed with conversion.
-            comms.infoMsg(sprintf('Converting file %i',iF));
+            comms.info('Never converted. Try to convert');
         else
             % File has already been converted...
-            if reconvertFiles
+            if forceReconvert
                 % ...but asking for reconversion: proceed with
                 % reconversion.
-                comms.infoMsg(sprintf('Re-converting file %i',iF));
+                comms.info('Already converted. Try to re-convert');
             else
                 % ...and not asking for reconversion: examine its status a
                 % bit more in detail.
@@ -130,21 +129,24 @@ for iF = 1:nFiles
                     % Converted file is unsuitable, as it's using an
                     % outdated format OR it does not have the WCD data we
                     % need: update it aka reconvert.
-                    comms.infoMsg(sprintf('Updating conversion of file %i',iF));
+                    comms.info('Already converted but unsuitable. Try to update conversion');
                 else
                     % Converted file is suitable and doesn't need to be
                     % reconverted.
                     if outputFData
                         % we need in in output, so load it now
-                        comms.infoMsg(sprintf('Loading already-converted file %i',iF));
+                        comms.info('Already converted and suitable. Loading');
                         wc_dir = CFF_converted_data_folder(file_to_convert);
                         mat_fdata_file = fullfile(wc_dir, 'fData.mat');
                         fDataGroup{iF} = load(mat_fdata_file);
+                        comms.info('Done');
                     else
                         % we don't need in output, just ignore
-                        comms.infoMsg(sprintf('Ignoring already-converted file %i',iF));
+                        comms.info('Already converted and suitable. Ignore');
                     end
-                    % in both cases, move on to next file
+                    % in both cases, communicate progress and move on to
+                    % next file
+                    comms.progress(iF,nFiles);
                     continue
                 end
             end
@@ -173,6 +175,11 @@ for iF = 1:nFiles
                 end
                 
                 % conversion step 1: read what we can
+                if ischar(file_to_convert)
+                    comms.info('Reading data in file');
+                else
+                    comms.info('Reading data in pair of files');
+                end
                 [EMdata,iDtgsParsed] = CFF_read_all(file_to_convert, dtgs);
                 
                 % check if all required datagrams have been found
@@ -181,7 +188,7 @@ for iF = 1:nFiles
                     strdisp = sprintf('File is missing necessary datagram types (%s).',strjoin(string(dtgs(~iDtgsRequired)),', '));
                     if convertEvenIfDtgrmsMissing
                         % log message and resume conversion
-                        comms.infoMsg(strdisp);
+                        comms.info(strdisp);
                     else
                         % disp message and abort conversion
                         strdisp = strcat(strdisp, ' Conversion aborted.');
@@ -195,7 +202,7 @@ for iF = 1:nFiles
                 if strcmp(conversionType,'WCD') && ~any(ismember(dtgsEitherOf,dtgs(iDtgsParsed)))
                     strdisp = 'File does not contain water-column datagrams.';
                     if convertEvenIfDtgrmsMissing
-                        comms.infoMsg(strdisp);
+                        comms.info(strdisp);
                     else
                         strdisp = strcat(strdisp, ' Conversion aborted.');
                         textprogressbar(strdisp);
@@ -217,6 +224,7 @@ for iF = 1:nFiles
                 end
                 
                 % conversion step 2: convert
+                comms.info('Converting to fData format');
                 fData = CFF_convert_ALLdata_to_fData(EMdata,dr_sub,db_sub);
                 
                 % add datagram source
@@ -317,6 +325,7 @@ for iF = 1:nFiles
                 mkdir(wc_dir);
             end
             mat_fdata_file = fullfile(wc_dir, 'fData.mat');
+            comms.info('Saving');
             save(mat_fdata_file,'-struct','fData','-v7.3');
         end
         
@@ -341,8 +350,11 @@ for iF = 1:nFiles
         end
     end
     
+    % end of this iteration
+    comms.info('Done');
+       
     % communicate progress
-    comms.progrVal(iF,nFiles);
+    comms.progress(iF,nFiles);
     
 end
 
@@ -354,15 +366,8 @@ if outputFData
     end
 end
 
-% general timer
-timer_end = now;
-duration_sec = (timer_end-timer_start)*24*60*60;
-duration_min = (timer_end-timer_start)*24*60;
-fprintf('Done. Total duration: ~%.2f seconds (~%.2f minutes).\n\n',duration_sec,duration_min);
-
-
 %% end message
-comms.endMsg('Done.');
+comms.finish('Done.');
 
 end
 

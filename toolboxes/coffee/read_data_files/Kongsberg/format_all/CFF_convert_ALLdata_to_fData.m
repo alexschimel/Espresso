@@ -159,7 +159,7 @@ end
 %% Prep
 
 % start message
-comms.startMsg('Converting to fData format');
+comms.start('Converting to fData format');
 
 % number of individual ALLdata structures in input ALLdataGroup
 nStruct = length(ALLdataGroup);
@@ -171,7 +171,7 @@ fData.MET_Fmt_version = CFF_get_current_fData_version();
 fData.ALLfilename = cell(1,nStruct);
 
 % start progress
-comms.progrVal(0,nStruct);
+comms.progress(0,nStruct);
 
 
 %% take one ALLdata structure at a time and add its contents to fData
@@ -190,6 +190,8 @@ for iF = 1:nStruct
     
     %% EM_InstallationStart
     if isfield(ALLdata,'EM_InstallationStart') && ~isfield(fData,'IP_ASCIIparameters')
+        
+        comms.step('Converting EM_InstallationStart'); 
         
         % initialize struct
         IP_ASCIIparameters = struct;
@@ -239,6 +241,8 @@ for iF = 1:nStruct
     %% EM_Runtime
     if isfield(ALLdata,'EM_Runtime') && ~isfield(fData,'Ru_1D_Date')
         
+        comms.step('Converting EM_Runtime'); 
+        
         % Here we only record the fields we need later. More fields are
         % available than those below.
         
@@ -253,6 +257,8 @@ for iF = 1:nStruct
     
     %% EM_SoundSpeedProfile
     if isfield(ALLdata,'EM_SoundSpeedProfile') && ~isfield(fData,'SS_1D_Date')
+        
+        comms.step('Converting EM_SoundSpeedProfile'); 
         
         nDatagrams  = length(ALLdata.EM_SoundSpeedProfile.TypeOfDatagram);
         maxnEntries = max(ALLdata.EM_SoundSpeedProfile.NumberOfEntries);
@@ -281,6 +287,8 @@ for iF = 1:nStruct
     
     %% EM_Attitude
     if isfield(ALLdata,'EM_Attitude') && ~isfield(fData,'At_1D_Date')
+        
+        comms.step('Converting EM_Attitude'); 
         
         nDatagrams  = length(ALLdata.EM_Attitude.TypeOfDatagram);
         maxnEntries = max(ALLdata.EM_Attitude.NumberOfEntries);
@@ -316,6 +324,8 @@ for iF = 1:nStruct
     %% EM_Height
     if isfield(ALLdata,'EM_Height') && ~isfield(fData,'He_1D_Date')
         
+        comms.step('Converting EM_Height'); 
+        
         fData.He_1D_Date                            = ALLdata.EM_Height.Date;
         fData.He_1D_TimeSinceMidnightInMilliseconds = ALLdata.EM_Height.TimeSinceMidnightInMilliseconds;
         fData.He_1D_HeightCounter                   = ALLdata.EM_Height.HeightCounter;
@@ -326,6 +336,8 @@ for iF = 1:nStruct
     
     %% EM_Position
     if isfield(ALLdata,'EM_Position') && ~isfield(fData,'Po_1D_Date')
+        
+        comms.step('Converting EM_Position'); 
         
         fData.Po_1D_Date                            = ALLdata.EM_Position.Date;
         fData.Po_1D_TimeSinceMidnightInMilliseconds = ALLdata.EM_Position.TimeSinceMidnightInMilliseconds;  % in ms
@@ -342,6 +354,8 @@ for iF = 1:nStruct
     
     %% EM_Depth XXX1 to update for dual head support
     if isfield(ALLdata,'EM_Depth') && ~isfield(fData,'De_1P_Date')
+        
+        comms.step('Converting EM_Depth'); 
         
         nPings  = length(ALLdata.EM_Depth.TypeOfDatagram); % total number of pings in file
         maxnBeams = max(cellfun(@(x) max(x),ALLdata.EM_Depth.BeamNumber)); % maximum beam number in file
@@ -391,6 +405,8 @@ for iF = 1:nStruct
     
     %% EM_XYZ88
     if isfield(ALLdata,'EM_XYZ88') && ~isfield(fData,'X8_1P_Date')
+        
+        comms.step('Converting EM_XYZ88'); 
         
         % get the number of heads
         headNumber = unique(ALLdata.EM_XYZ88.SystemSerialNumber,'stable');
@@ -500,6 +516,8 @@ for iF = 1:nStruct
     %% EM_SeabedImage XXX1 to update for dual head support
     if isfield(ALLdata,'EM_SeabedImage') && ~isfield(fData,'SI_1P_Date')
         
+        comms.step('Converting EM_SeabedImage'); 
+        
         nPings  = length(ALLdata.EM_SeabedImage.TypeOfDatagram); % total number of pings in file
         maxnBeams = max(cellfun(@(x) max(x),ALLdata.EM_SeabedImage.BeamIndexNumber))+1; % maximum beam number (beam index number +1), in file
         maxnSamples = max(cellfun(@(x) max(x),ALLdata.EM_SeabedImage.NumberOfSamplesPerBeam)); % maximum number of samples for a beam, in file
@@ -563,6 +581,8 @@ for iF = 1:nStruct
     %% EM_SeabedImage89  XXX1 to update for dual head support
     if isfield(ALLdata,'EM_SeabedImage89') && ~isfield(fData,'S8_1P_Date')
         
+        comms.step('Converting EM_SeabedImage89'); 
+        
         nPings  = length(ALLdata.EM_SeabedImage89.TypeOfDatagram); % total number of pings in file
         maxnBeams = max(ALLdata.EM_SeabedImage89.NumberOfValidBeams); % maximum beam number (beam index number +1), in file
         maxnSamples = max(cellfun(@(x) max(x),ALLdata.EM_SeabedImage89.NumberOfSamplesPerBeam)); % maximum number of samples for a beam, in file
@@ -625,6 +645,8 @@ for iF = 1:nStruct
     
     %% EM_WaterColumn
     if isfield(ALLdata,'EM_WaterColumn') && ~isfield(fData,'WC_1P_Date')
+        
+        comms.step('Converting EM_WaterColumn'); 
         
         % get the number of heads
         headNumber = unique(ALLdata.EM_WaterColumn.SystemSerialNumber,'stable');
@@ -906,6 +928,8 @@ for iF = 1:nStruct
     %% EM_AmpPhase
     if isfield(ALLdata,'EM_AmpPhase') && ~isfield(fData,'AP_1P_Date')
         
+        comms.step('Converting EM_AmpPhase'); 
+        
         % get the number of heads
         headNumber = unique(ALLdata.EM_AmpPhase.SystemSerialNumber,'stable');
         % note we don't support multiple-head data for AP as we do for WC.
@@ -1153,9 +1177,9 @@ for iF = 1:nStruct
     end
     
     % communicate progress
-    comms.progrVal(iF,nStruct);
+    comms.progress(iF,nStruct);
     
 end
 
 %% end message
-comms.endMsg('Done.');
+comms.finish('Done.');

@@ -149,23 +149,30 @@ end
 nFiles = numel(ALLfilename);
 
 % start message
+filename = CFF_file_name(ALLfilename{1},1);
 if nFiles == 1
-    comms.startMsg('Reading data in file');
+    comms.start(sprintf('Reading data in file %s',filename));
 else
-    comms.startMsg('Reading data in pair of files');
+    filename_2_ext = CFF_file_extension(ALLfilename{2});
+    comms.start(sprintf('Reading data in pair of files %s and %s',filename,filename_2_ext));
 end
 
 % start progress
-comms.progrVal(0,nFiles);
+comms.progress(0,nFiles);
 
 
 %% FIRST FILE
 
 % Get info from first (or only) file
+if nFiles == 1
+    comms.step('Listing datagrams');
+else
+    comms.step('Listing datagrams in paired file #1/2');
+end
 info = CFF_all_file_info(ALLfilename{1});
 
 % communicate progress
-comms.progrVal(0.5,nFiles);
+comms.progress(0.5,nFiles);
 
 if isempty(datagrams_to_parse)
     % parse all datagrams in first file
@@ -217,10 +224,15 @@ else
 end
 
 % read data
+if nFiles == 1
+    comms.step('Reading datagrams');
+else
+    comms.step('Reading datagrams in paired file #1/2');
+end
 ALLdata = CFF_read_all_from_fileinfo(ALLfilename{1}, info);
 
 % communicate progress
-comms.progrVal(1,nFiles);
+comms.progress(1,nFiles);
     
 
 %% SECOND FILE (if any)
@@ -233,10 +245,11 @@ if nFiles>1
     if isempty(datagrams_to_parse) || ~all(datagrams_parsed_idx)
         
         % Get info in second file
+        comms.step('Listing datagrams in paired file #2/2');
         info = CFF_all_file_info(ALLfilename{2});
         
         % communicate progress
-        comms.progrVal(1.5,nFiles);
+        comms.progress(1.5,nFiles);
         
         if isempty(datagrams_to_parse)
             % parse all datagrams in second file which we didn't get in the
@@ -292,6 +305,7 @@ if nFiles>1
         end
         
         % read data in second file
+        comms.step('Reading datagrams in paired file #2/2');
         ALLdata2 = CFF_read_all_from_fileinfo(ALLfilename{2}, info);
         
         % combine to data from first file
@@ -300,13 +314,13 @@ if nFiles>1
     end
     
     % communicate progress
-    comms.progrVal(2,nFiles);
+    comms.progress(2,nFiles);
     
 end
 
 
 %% end message
-comms.endMsg('Done.');
+comms.finish('Done.');
 
 
 

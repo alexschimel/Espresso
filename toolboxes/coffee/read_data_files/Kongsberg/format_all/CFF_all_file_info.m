@@ -85,7 +85,8 @@ end
 
 
 %% Start message
-comms.startMsg('Listing datagrams in file');
+filename = CFF_file_name(ALLfilename,1);
+comms.start(sprintf('Listing datagrams in file %s',filename));
 
 
 %% Checking byte ordering
@@ -199,7 +200,7 @@ syncCounter = 0;
 
 
 %% Start progress
-comms.progrVal(0,filesize);
+comms.progress(0,filesize);
 
 
 %% Reading datagrams
@@ -402,7 +403,7 @@ while 1
     fseek(fid,pif+4+nbDatag,-1);
     
     % communicate progress
-    comms.progrVal(pif,filesize);
+    comms.progress(pif,filesize);
 end
 
 
@@ -411,7 +412,7 @@ fclose(fid);
 
 
 %% end message
-comms.endMsg('Done.');
+comms.finish('Done.');
 
 
 

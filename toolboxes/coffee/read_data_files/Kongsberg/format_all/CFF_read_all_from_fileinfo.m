@@ -96,7 +96,8 @@ end
 %% Prep
 
 % start message
-comms.startMsg('Reading desired datagrams');
+filename = CFF_file_name(ALLfilename,1);
+comms.start(sprintf('Reading datagrams in file %s',filename));
 
 % get basic info for file opening
 filesize = ALLfileinfo.filesize;
@@ -113,7 +114,7 @@ datagToParse = find(ALLfileinfo.parsed==1);
 nDatagsToPars = numel(datagToParse);
 
 % start progress
-comms.progrVal(0,nDatagsToPars);
+comms.progress(0,nDatagsToPars);
 
 
 %% Reading datagrams
@@ -1379,7 +1380,7 @@ for iDatag = datagToParse'
     ALLfileinfo.parsed(iDatag,1) = parsed;
     
     % communicate progress
-    comms.progrVal(iDatag,nDatagsToPars);
+    comms.progress(iDatag,nDatagsToPars);
 
 end
 
@@ -1418,4 +1419,4 @@ ALLdata.info = ALLfileinfo;
 
 
 %% end message
-comms.endMsg('Done.');
+comms.finish('Done.');
