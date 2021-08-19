@@ -1,18 +1,131 @@
-function fDataGroup = CFF_convert_raw_files(files_to_convert,varargin)
-%CFF_CONVERT_RAW_FILES Summary of this function goes here
-%   Detailed explanation goes here
+function fDataGroup = CFF_convert_raw_files(rawFilesList,varargin)
+%CFF_CONVERT_RAW_FILES Read raw data file(s) and convert to fData format
+%
+%   Reads contents of one or several multibeam raw data files and convert
+%   each of them to the CoFFee fData format used for data processing on
+%   Matlab. Data supported are Kongsberg EM series binary data file in
+%   .all format (.all or .wcd, or pair of .all/.wcd) or .kmall format
+%   (.kmall or .kmwcd, or pair of .kmall/.kmwcd) and Reson-Teledyne .s7k
+%   format. converts every
+%   datagram supported. 
+%
+%   fDataGroup = CFF_CONVERT_RAW_FILES(rawFile) converts single, non-paired
+%   file rawFile specified with full path either as a character string (e.g.
+%   rawFilesList='D:\Data\myfile.all') or a 1x1 cell containing the
+%   character string (e.g. rawFilesList={'D:\Data\myfile.all'}).
+%
+%   fDataGroup = CFF_CONVERT_RAW_FILES(pairedRawFiles) converts pair of
+%   files specified as a 1x1 cell containing a 2x1 cell where each cell
+%   contain the full path as character string (e.g.
+%   rawFilesList={{'D:\Data\myfile.all','D:\Data\myfile.wcd'}}). Note: If
+%   you omit the double cell (i.e.
+%   rawFilesList={'D:\Data\myfile.all','D:\Data\myfile.wcd'}), the two
+%   files will be converted separately.
+%
+%   fDataGroup = CFF_CONVERT_RAW_FILES(rawFilesList) converts a cell vector
+%   where each cell contains a file or pair of files to convert, specified
+%   as above either a character string, or 2x1 cells of paired files (e.g.
+%   rawFilesList =
+%   {'D:\Data\mySingleFile.all',
+%   {'D:\Data\myPairedFile.all','D:\Data\myPairedFile.wcd'}}). 
+%   Note: Use CFF_LIST_RAW_FILES_IN_DIR to generate rawFilesList from a
+%   folder containing raw data files.
+%
+%   By default, CFF_CONVERT_RAW_FILES converts every datagram supported. It
+%   does not reconvert a file that has already been converted if it's found
+%   on the disk (fData.mat) with the suitable version. In this case, the
+%   data are simply loaded. If an error is encountered, the error message
+%   is logged and processing moves onto the next file. Use the format
+%   fDataGroup = CFF_CONVERT_RAW_FILES(...,Name,Parameter) to modify this
+%   default behaviour. Options below:
+%
+%   'conversionType': 'Z&BS' will only convert datagrams necessary for
+%   bathymetry and backscatter processing (e.g. for Ristretto).
+%   Water-column datagrams are ignored in this mode. 
+%   'conversionType': 'WCD' will only
+%   convert datagrams necessary for water-column data processing (e.g. for
+%   Espresso). Note: this includes datagrams for bathymetry and backscatter
+%   processing. Use 'conversionType': 'everything' (default) to convert
+%   every datagram supported.
+%
+%   'saveFDataToDrive': 1 will save the converted fData to the hard-drive.
+%   Use 'saveFDataToDrive': 0 (default) to prevent this. Note that if
+%   water-column datagrams are present and converted, then this parameter
+%   is overriden and fData is saved to the hard-drive anyway. Converted
+%   date are in the 'Coffee_files' folder created in the same folder as the
+%   raw data files.
+%
+%   'forceReconvert': 1 will force the conversion of a raw data file, even
+%   if a suitable converted file is found on the hard-drive. Use
+%   'forceReconvert': 0 (default) for skipping conversion if possible.
+%
+%   'outputFData': 0 will clear fData after conversion of each file so that
+%   the function returns empty. This avoids memory errors when converting
+%   many files. Use this with 'saveFDataToDrive': 1 to save fData on the
+%   hard-drive instead. Use 'outputFData': 1 (default) to conserve and
+%   return fData.
+%
+%   'abortOnError': 1 will interrupt processing if an error is encountered.
+%   Use 'abortOnError': 0 (default) for the function to log the error
+%   message and move onto the next file.
+%
+%   'convertEvenIfDtgrmsMissing': 1 will continue conversion even if the
+%   datagrams required by 'conversionType' are not all found in a file. Use
+%   'convertEvenIfDtgrmsMissing': 0 (default) to stop conversion instead.
+%
+%   'dr_sub': N where N is an integer will decimate water-column data in
+%   range by a factor of N. By default, 'dr_sub': 1 so that all data are
+%   read and converted.
+%
+%   'db_sub': N where N is an integer will decimate water-column data in
+%   beam by a factor of N. By default, 'db_sub': 1 so that all data are
+%   read and converted.
+%   
+%   'comms': 'disp' will display text and progress information in the
+%   command window.
+%   'comms': 'textprogressbar': will display text and progress information
+%   in a text progress bar in the command window.
+%   'comms': 'waitbar': will display text and progress information
+%   in a Matlab waitbar figure. 
+%   'comms': '' (default) will not display any text and progress
+%   information.
+%
+%   See also ESPRESSO, RISTRETTO, CFF_CONVERTED_DATA_FOLDER,
+%   CFF_ARE_RAW_FILES_CONVERTED, CFF_READ_ALL, CFF_READ_S7K,
+%   CFF_READ_KMALL, CFF_CONVERT_ALLDATA_TO_FDATA,
+%   CFF_CONVERT_S7KDATA_TO_FDATA, CFF_CONVERT_KMALLDATA_TO_FDATA, CFF_COMMS
+
+%   Authors: Alex Schimel (NGU, alexandre.schimel@ngu.no) and Yoann
+%   Ladroit (NIWA, yoann.ladroit@ensta-bretagne.fr)
+%   2021; Last revision: 19-08-2021
 
 
 %% Input arguments management
 p = inputParser;
 
 % list of files (or pairs of files) to convert
-argName = 'files_to_convert';
+argName = 'rawFilesList';
 argCheck = @(x) ~isempty(x) && (ischar(x) || iscell(x));
 addRequired(p,argName,argCheck);
 
+% purpose of conversion: 'Z&BS' for bathy and BS processing ignoring
+% water-column data (e.g. Ristretto) (default), 'WCD' for WCD processing
+% (e.g. for Espresso, note: fData also includes bathy and BS in this case),
+% 'everything' to force conversion of all supported datagrams in the raw
+% data.
+addParameter(p,'conversionType','everything',@(x) mustBeMember(x,{'everything','WCD','Z&BS'}));
+
+% save fData to hard-drive? 0: no (default), 1: yes
+% Note that if we convert for WCD processing, we will disregard that info
+% and save fData to drive anyway
+addParameter(p,'saveFDataToDrive',0,@(x) mustBeMember(x,[0,1]));
+
 % what if file already converted? 0: to next file (default), 1: reconvert
 addParameter(p,'forceReconvert',0,@(x) mustBeMember(x,[0,1]));
+
+% output fData? 0: no, 1: yes (default)
+% Unecessary in apps like Espresso, but useful in scripts
+addParameter(p,'outputFData',1,@(x) mustBeMember(x,[0,1]));
 
 % what if error during conversion? 0: to next file (default), 1: abort
 addParameter(p,'abortOnError',0,@(x) mustBeMember(x,[0,1]));
@@ -20,30 +133,18 @@ addParameter(p,'abortOnError',0,@(x) mustBeMember(x,[0,1]));
 % what if missing required dtgrms? 0: to next file (def), 1: convert anyway
 addParameter(p,'convertEvenIfDtgrmsMissing',0,@(x) mustBeMember(x,[0,1]));
 
-% convert for WCD processing (includes bathy/BS) or only bathy/BS (default)
-addParameter(p,'conversionType','Z&BS',@(x) mustBeMember(x,{'WCD','Z&BS'}));
-
 % decimation factor in range and beam (def 1, aka no decimation)
 addParameter(p,'dr_sub',1,@(x) isnumeric(x)&&x>0&&mod(x,1)==0);
 addParameter(p,'db_sub',1,@(x) isnumeric(x)&&x>0&&mod(x,1)==0);
-
-% save fData to hard-drive? 0: no (default), 1: yes
-% Note that if we convert for WCD processing, we will disregard that info
-% and save fData to drive anyway
-addParameter(p,'saveFDataToDrive',0,@(x) mustBeMember(x,[0,1]));
-
-% output fData? 0: no, 1: yes (default)
-% Unecessary in apps like Espresso, but useful in scripts
-addParameter(p,'outputFData',1,@(x) mustBeMember(x,[0,1]));
 
 % information communication (none by default)
 addParameter(p,'comms',CFF_Comms());
 
 % parse inputs
-parse(p,files_to_convert,varargin{:});
+parse(p,rawFilesList,varargin{:});
 
 % and get results
-files_to_convert = p.Results.files_to_convert;
+rawFilesList = p.Results.rawFilesList;
 forceReconvert = p.Results.forceReconvert;
 abortOnError = p.Results.abortOnError;
 convertEvenIfDtgrmsMissing = p.Results.convertEvenIfDtgrmsMissing;
@@ -65,8 +166,13 @@ clear p
 % start message
 comms.start('Reading and converting file(s)');
 
+% single filename in input
+if ischar(rawFilesList)
+    rawFilesList = {rawFilesList};
+end
+
 % number of files
-nFiles = numel(files_to_convert);
+nFiles = numel(rawFilesList);
 
 % init output
 if outputFData
@@ -86,21 +192,21 @@ for iF = 1:nFiles
     try
         
         % get the file (or pair of files) to convert
-        file_to_convert = files_to_convert{iF};
+        rawFile = rawFilesList{iF};
         
         % display for this file
-        if ischar(file_to_convert)
-            filename = CFF_file_name(file_to_convert,1);
-            comms.step(sprintf('%i/%i: file %s. ',iF,nFiles,filename));
+        if ischar(rawFile)
+            filename = CFF_file_name(rawFile,1);
+            comms.step(sprintf('%i/%i: file %s',iF,nFiles,filename));
         else
             % paired files
-            filename_1 = CFF_file_name(file_to_convert{1},1);
-            filename_2_ext = CFF_file_extension(file_to_convert{2});
-            comms.step(sprintf('%i/%i: pair of files %s and %s. ',iF,nFiles,filename_1,filename_2_ext));
+            filename_1 = CFF_file_name(rawFile{1},1);
+            filename_2_ext = CFF_file_extension(rawFile{2});
+            comms.step(sprintf('%i/%i: pair of files %s and %s',iF,nFiles,filename_1,filename_2_ext));
         end
         
         % file format
-        [~,~,f_ext] = fileparts(CFF_onerawfileonly(file_to_convert));
+        [~,~,f_ext] = fileparts(CFF_onerawfileonly(rawFile));
         if strcmpi(f_ext,'.all') || strcmpi(f_ext,'.wcd')
             file_format = 'Kongsberg_all';
         elseif strcmpi(f_ext,'.kmall') || strcmpi(f_ext,'.kmwcd')
@@ -108,11 +214,11 @@ for iF = 1:nFiles
         elseif strcmpi(f_ext,'.s7k')
             file_format = 'Reson_s7k';
         else
-            file_format = [];
+            error('Cannot be converted. Format ("%s") not supported',f_ext);
         end
         
         % convert, reconvert, update, or ignore based on file status
-        [idxConverted,idxFDataUpToDate,idxHasWCD] = CFF_are_raw_files_converted(file_to_convert);
+        [idxConverted,idxFDataUpToDate,idxHasWCD] = CFF_are_raw_files_converted(rawFile);
         if ~idxConverted
             % File is not converted yet: proceed with conversion.
             comms.info('Never converted. Try to convert');
@@ -135,8 +241,8 @@ for iF = 1:nFiles
                     % reconverted.
                     if outputFData
                         % we need in in output, so load it now
-                        comms.info('Already converted and suitable. Loading');
-                        wc_dir = CFF_converted_data_folder(file_to_convert);
+                        comms.info('Already converted and suitable. Try to load');
+                        wc_dir = CFF_converted_data_folder(rawFile);
                         mat_fdata_file = fullfile(wc_dir, 'fData.mat');
                         fDataGroup{iF} = load(mat_fdata_file);
                         comms.info('Done');
@@ -172,63 +278,70 @@ for iF = 1:nFiles
                             82, ...                % runtime parameters (82)
                             88];                   % X8 depth (88)
                         dtgs = sort(unique(dtgsAllRequired));
+                    case 'everything'
+                        % convert every datagrams supported
+                        dtgs = [];
                 end
                 
                 % conversion step 1: read what we can
-                if ischar(file_to_convert)
+                if ischar(rawFile)
                     comms.info('Reading data in file');
                 else
                     comms.info('Reading data in pair of files');
                 end
-                [EMdata,iDtgsParsed] = CFF_read_all(file_to_convert, dtgs);
+                [EMdata,iDtgsParsed] = CFF_read_all(rawFile, dtgs);
                 
-                % check if all required datagrams have been found
-                iDtgsRequired = ismember(dtgsAllRequired,dtgs(iDtgsParsed));
-                if ~all(iDtgsRequired)
-                    strdisp = sprintf('File is missing necessary datagram types (%s).',strjoin(string(dtgs(~iDtgsRequired)),', '));
-                    if convertEvenIfDtgrmsMissing
-                        % log message and resume conversion
-                        comms.info(strdisp);
-                    else
-                        % disp message and abort conversion
-                        strdisp = strcat(strdisp, ' Conversion aborted.');
-                        textprogressbar(strdisp);
-                        continue;
-                    end
-                end
-                
-                % for WCD, check if at least one type of water-column
-                % datagram has been found
-                if strcmp(conversionType,'WCD') && ~any(ismember(dtgsEitherOf,dtgs(iDtgsParsed)))
-                    strdisp = 'File does not contain water-column datagrams.';
-                    if convertEvenIfDtgrmsMissing
-                        comms.info(strdisp);
-                    else
-                        strdisp = strcat(strdisp, ' Conversion aborted.');
-                        textprogressbar(strdisp);
-                        continue;
-                    end
-                end
-                
-                % set datagram source
-                switch conversionType
-                    case 'WCD'
-                        % use AP if they exist
-                        if ismember(114,dtgs(iDtgsParsed))
-                            datagramSource = 'AP';
+                if ~strcmp(conversionType,'everything')
+                    % if requesting conversion specifically for WCD or
+                    % Z&BS, a couple of checks are necessary
+                    
+                    % check if all required datagrams have been found 
+                    iDtgsRequired = ismember(dtgsAllRequired,dtgs(iDtgsParsed));
+                    if ~all(iDtgsRequired)
+                        strdisp = sprintf('File is missing required datagram types (%s).',strjoin(string(dtgs(~iDtgsRequired)),', '));
+                        if convertEvenIfDtgrmsMissing
+                            % log message and resume conversion
+                            comms.info([strdisp ' Converting anyway']);
                         else
-                            datagramSource = 'WC';
+                            % abort conversion by throwing error
+                            error([strdisp ' Conversion aborted']);
                         end
-                    case 'Z&BS'
-                        datagramSource = 'X8';
+                    end
+                    
+                    % if requesting conversion for WCD, check if at least
+                    % one type of water-column datagram has been found
+                    if strcmp(conversionType,'WCD') && ~any(ismember(dtgsEitherOf,dtgs(iDtgsParsed)))
+                        strdisp = 'File does not contain water-column datagrams.';
+                        if convertEvenIfDtgrmsMissing
+                            % log message and resume conversion
+                            comms.info([strdisp ' Converting anyway'])
+                        else
+                            % abort conversion by throwing error
+                            error([strdisp ' Conversion aborted']);
+                        end
+                    end
+                    
                 end
                 
                 % conversion step 2: convert
                 comms.info('Converting to fData format');
                 fData = CFF_convert_ALLdata_to_fData(EMdata,dr_sub,db_sub);
                 
-                % add datagram source
-                fData.MET_datagramSource = CFF_get_datagramSource(fData,datagramSource);
+                % set datagram source
+                switch conversionType
+                    case 'WCD'
+                        % use AP if they exist
+                        if ismember(114,dtgs(iDtgsParsed))
+                            fData.MET_datagramSource = 'AP';
+                        else
+                            fData.MET_datagramSource = 'WC';
+                        end
+                    case 'Z&BS'
+                        fData.MET_datagramSource = 'X8';
+                    case 'everything'
+                        % choose whatever is available
+                        fData.MET_datagramSource = CFF_get_datagramSource(fData);
+                end
                 
                 % sort fields by name
                 fData = orderfields(fData);
@@ -247,7 +360,7 @@ for iF = 1:nFiles
                 dg_wc = [1015 1003 7000 7001 7004 7027 7018 7042];
                 
                 % step 1: read
-                [RESONdata, iDtgsParsed] = CFF_read_s7k(file_to_convert,dg_wc);
+                [RESONdata, iDtgsParsed] = CFF_read_s7k(rawFile,dg_wc);
                 
                 % if not all datagrams were found at this point, message and abort
                 if ~all(iDtgsParsed)
@@ -296,7 +409,7 @@ for iF = 1:nFiles
                 % dg_wc = {}; % everything
                 
                 % step 1: read
-                [EMdata,iDtgsParsed] = CFF_read_kmall(file_to_convert, dg_wc);
+                [EMdata,iDtgsParsed] = CFF_read_kmall(rawFile, dg_wc);
                 
                 % if not all datagrams were found at this point, message and abort
                 if ~isempty(dg_wc) && ~all(iDtgsParsed)
@@ -320,7 +433,7 @@ for iF = 1:nFiles
         % save fData to drive
         if saveFDataToDrive || strcmp(conversionType,'WCD')
             % get output folder and create it if necessary
-            wc_dir = CFF_converted_data_folder(file_to_convert);
+            wc_dir = CFF_converted_data_folder(rawFile);
             if ~isfolder(wc_dir)
                 mkdir(wc_dir);
             end
@@ -335,29 +448,26 @@ for iF = 1:nFiles
         end
         clear fData
         
+        % successful end of this iteration
+        comms.info('Done');
+       
     catch err
-        
-        % display which file as this info is not in the error message
-        fprintf('%s: ERROR converting %s\n',datestr(now,'HH:MM:SS'),file_to_convert_disp);
-        
         if abortOnError
+            % just rethrow error to terminate execution
             rethrow(err);
         else
-            % print error information for developers before moving onto
-            % next file
-            [~,f_temp,e_temp] = fileparts(err.stack(1).file);
-            fprintf('Error in %s (line %d): %s\n',[f_temp e_temp],err.stack(1).line,err.message);
+            % log the error and continue
+            errorFile = CFF_file_name(err.stack(1).file,1);
+            errorLine = err.stack(1).line;
+            errrorFullMsg = sprintf('%s (error in %s, line %i)',err.message,errorFile,errorLine);
+            comms.error(errrorFullMsg);
         end
     end
     
-    % end of this iteration
-    comms.info('Done');
-       
     % communicate progress
     comms.progress(iF,nFiles);
     
 end
-
 
 if outputFData
     % output struct direclty if only one element
@@ -367,7 +477,7 @@ if outputFData
 end
 
 %% end message
-comms.finish('Done.');
+comms.finish('Done');
 
 end
 

@@ -5,9 +5,7 @@ classdef CFF_Comms < handle
     properties
         Type (1,:) char {mustBeMember(Type,{'', 'disp','textprogressbar','waitbar'})} = ''
         FigObj = []
-        InfoMsgs = {}
-        StartMsg = []
-        StepMsgs = {}
+        Msgs = {}
     end
     
     methods
@@ -25,21 +23,21 @@ classdef CFF_Comms < handle
             %START Summary of this method goes here
             %   Detailed explanation goes here
             
-            % set start message and time
-            obj.StartMsg = {str, datetime('now')};
+            % record start message
+            obj.Msgs(end+1,:) = {datetime('now'), 'Start', str};
             
             % display
             switch obj.Type
                 case 'disp'
-                    dispstr = [char(string(obj.StartMsg{2},'HH:mm:ss ')) obj.StartMsg{1} ': '];
+                    dispstr = [char(string(obj.Msgs{end,1},'HH:mm:ss')) ' - ' obj.Msgs{end,2} ' - ' obj.Msgs{end,3}];
                     disp(dispstr);
                 case 'textprogressbar'
                     % init textprogressbar with a string
-                    textprogressbar([obj.StartMsg{1} ': ']);
+                    textprogressbar([obj.Msgs{end,3} ': ']);
                 case 'waitbar'
                     % init waitbar with title
                     obj.FigObj = waitbar(0,'');
-                    obj.FigObj.Name = obj.StartMsg{1};
+                    obj.FigObj.Name = obj.Msgs{end,3};
                     % init interpreter for future info messages
                     obj.FigObj.Children.Title.Interpreter = 'None';
                     % init message of two line
@@ -48,6 +46,116 @@ classdef CFF_Comms < handle
             end
         end
         
+        function step(obj,str)
+            %STEP Summary of this method goes here
+            %   Detailed explanation goes here
+            
+            % record step message
+            obj.Msgs(end+1,:) = {datetime('now'), 'Step', str};
+            
+            switch obj.Type
+                case 'disp'
+                    dispstr = [char(string(obj.Msgs{end,1},'HH:mm:ss')) ' - ' obj.Msgs{end,2} ' - ' obj.Msgs{end,3}];
+                    disp(dispstr);
+                case 'waitbar'
+                    set(obj.FigObj.Children.Title,'String',sprintf('%s\n',obj.Msgs{end,3}));
+                    drawnow;
+            end
+        end
+        
+        function info(obj,str)
+            %INFO Summary of this method goes here
+            %   Detailed explanation goes here
+            
+            % record info message
+            obj.Msgs(end+1,:) = {datetime('now'), 'Info', str};
+            
+            switch obj.Type
+                case 'disp'
+                    dispstr = [char(string(obj.Msgs{end,1},'HH:mm:ss')) ' - ' obj.Msgs{end,2} ' - ' obj.Msgs{end,3}];
+                    disp(dispstr);
+                case 'waitbar'
+                    % get last step message
+                    idx = find(strcmp(obj.Msgs(:,2),'Step'),1,'last');
+                    if isempty(idx)
+                        stepStr = '';
+                    else
+                        stepStr = obj.Msgs{idx,3};
+                    end
+                    % set waitbar title
+                    set(obj.FigObj.Children.Title,'String',sprintf('%s\n%s',stepStr,obj.Msgs{end,3}));
+                    drawnow;
+            end
+        end
+        
+        function error(obj,str)
+            %ERROR Summary of this method goes here
+            %   Detailed explanation goes here
+            
+            % record info message
+            obj.Msgs(end+1,:) = {datetime('now'), 'Error', str};
+            
+            switch obj.Type
+                case 'disp'
+                    dispstr = [char(string(obj.Msgs{end,1},'HH:mm:ss')) ' - ' obj.Msgs{end,2} ' - ' obj.Msgs{end,3}];
+                    disp(dispstr);
+                case 'waitbar'
+                    % get last step message
+                    idx = find(strcmp(obj.Msgs(:,2),'Step'),1,'last');
+                    if isempty(idx)
+                        stepStr = '';
+                    else
+                        stepStr = obj.Msgs{idx,3};
+                    end
+                    % set waitbar title
+                    set(obj.FigObj.Children.Title,'String',sprintf('%s\n%s',stepStr,obj.Msgs{end,3}));
+                    drawnow;
+            end
+        end
+        
+        
+        function finish(obj,str)
+            %FINISH Summary of this method goes here
+            %   Detailed explanation goes here
+            
+            % record finish message
+            obj.Msgs(end+1,:) = {datetime('now'), 'Finish', str};
+            
+            switch obj.Type
+                case 'disp'
+                    dispstr = [char(string(obj.Msgs{end,1},'HH:mm:ss')) ' - ' obj.Msgs{end,2} ' - ' obj.Msgs{end,3}];
+                    disp(dispstr);
+                case 'textprogressbar'
+                    % complete textprogressbar
+                    textprogressbar(100);
+                    if any(strcmp(obj.Msgs(:,2),'Error'))
+                        % show if error messages received
+                        textprogressbar([' ' obj.Msgs{end,3} '. Error messages were received:']);
+                        for ii = 1:size(obj.Msgs,1)
+                            dispstr = [char(string(obj.Msgs{ii,1},'HH:mm:ss')) ' - ' obj.Msgs{ii,2} ' - ' obj.Msgs{ii,3}];
+                            fprintf([dispstr, newline]);
+                        end
+                    else
+                        % normal completion
+                        textprogressbar([' ' obj.Msgs{end,3}]);
+                    end
+                case 'waitbar'
+                    % complete waitbar
+                    waitbar(1,obj.FigObj,obj.Msgs{end,3});
+                    pause(0.1);
+                    close(obj.FigObj);
+                    % show if error messages received
+                    if any(strcmp(obj.Msgs(:,2),'Error'))
+                        wardlgTxt = sprintf('Error messages were received:\n');
+                        for ii = 1:size(obj.Msgs,1)
+                            dispstr = [char(string(obj.Msgs{ii,1},'HH:mm:ss')) ' - ' obj.Msgs{ii,2} ' - ' obj.Msgs{ii,3}];
+                            wardlgTxt = [wardlgTxt, newline, dispstr];
+                        end
+                        warndlg(wardlgTxt,'Warning');
+                    end
+            end
+        end
+          
         function progress(obj,ii,N)
             %PROGRESS Summary of this method goes here
             %   Detailed explanation goes here
@@ -60,80 +168,7 @@ classdef CFF_Comms < handle
                     waitbar(ii./N,obj.FigObj);
             end
         end
-        
-        function step(obj,str)
-            %STEP Summary of this method goes here
-            %   Detailed explanation goes here
-            
-            % record step message and time
-            obj.StepMsgs(end+1,1:2) = {str, datetime('now')};
-            
-            switch obj.Type
-                case 'disp'
-                    dispstr = [char(string(obj.StepMsgs{end,2},'HH:mm:ss ')) obj.StepMsgs{end,1}];
-                    disp(dispstr);
-                case 'waitbar'
-                    set(obj.FigObj.Children.Title,'String',sprintf('%s\n',str));
-                    drawnow;
-            end
-        end
-        
-        function info(obj,str)
-            %INFO Summary of this method goes here
-            %   Detailed explanation goes here
-            
-            % record info message and time
-            obj.InfoMsgs(end+1,1:2) = {str, datetime('now')};
-            
-            switch obj.Type
-                case 'disp'
-                    dispstr = [char(string(obj.InfoMsgs{end,2},'HH:mm:ss ')) obj.InfoMsgs{end,1}];
-                    disp(dispstr);
-                case 'waitbar'
-                    if isempty(obj.StepMsgs)
-                        stepStr = '';
-                    else
-                        stepStr = obj.StepMsgs{end,1};
-                    end
-                    set(obj.FigObj.Children.Title,'String',sprintf('%s\n%s',stepStr,str));
-                    drawnow;
-            end
-        end
-        
-        function finish(obj,str)
-            %FINISH Summary of this method goes here
-            %   Detailed explanation goes here
-            switch obj.Type
-                case 'disp'
-                    disp(str);
-                case 'textprogressbar'
-                    % complete textprogressbar
-                    textprogressbar(100);
-                    if isempty(obj.InfoMsgs)
-                        textprogressbar([' ' str]);
-                    else
-                        % throw info messages if any
-                        textprogressbar([' ' str '. Messages received during progress:']);
-                        for ii=1:numel(obj.InfoMsgs)
-                            fprintf('* %i: %s.\n',ii,obj.InfoMsgs{ii});
-                        end
-                    end
-                    
-                case 'waitbar'
-                    waitbar(1,obj.FigObj,str);
-                    pause(0.1);
-                    close(obj.FigObj);
-                    if ~isempty(obj.InfoMsgs)
-                        wardlgTxt = sprintf('Messages received:\n');
-                        for ii=1:numel(obj.InfoMsgs)
-                            wardlgTxt = [wardlgTxt, sprintf('* %i: %s.\n',ii,obj.InfoMsgs{ii})];
-                        end
-                        warndlg(wardlgTxt,'Warning');
-                    end
-            end
-        end
-        
-        
+
     end
 end
 
