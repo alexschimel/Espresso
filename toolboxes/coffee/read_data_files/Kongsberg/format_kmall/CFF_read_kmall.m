@@ -24,53 +24,85 @@ function [KMALLdata,datagrams_parsed_idx] = CFF_read_kmall(KMALLfilename, vararg
 
 %   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
 %   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
-%   2017-2021; Last revision: 01-06-2021
+%   2017-2021; Last revision: 20-08-2021
 
 
-%% Input parsing
+%% Input arguments management
 p = inputParser;
 
-% ALLfilename to parse as required argument.
-% Check file existence
+% name of the .kmall or .kmwcd file (or pair)
 argName = 'KMALLfilename';
 argCheck = @(x) CFF_check_KMALLfilename(x);
 addRequired(p,argName,argCheck);
 
-% datagrams as optional argument.
-% Check that cell array
+% types of datagram to read
 argName = 'datagrams';
 argDefault = [];
 argCheck = @(x) isnumeric(x)||iscell(x)||(ischar(x)&&~strcmp(x,'datagrams')); % that last part allows the use of the couple name,param
 addOptional(p,argName,argDefault,argCheck);
 
+% information communication
+addParameter(p,'comms',CFF_Comms()); % no communication by default
+
 % now parse inputs
 parse(p,KMALLfilename,varargin{:});
 
-% and get input variables from parser
+% and get results
 KMALLfilename      = p.Results.KMALLfilename;
 datagrams_to_parse = p.Results.datagrams;
+if ischar(p.Results.comms)
+    comms = CFF_Comms(p.Results.comms);
+else
+    comms = p.Results.comms;
+end
+clear p;
 
-
-%% PREP
+% check input
 if ischar(KMALLfilename)
-    % single file .all OR .wcd. Convert filename to cell.
+    % single file .kmall OR .kmwcd. Convert filename to cell.
     KMALLfilename = {KMALLfilename};
 else
-    % matching file pair .all AND .wcd.
-    % make sure .wcd is listed first because this function only reads in
+    % matching file pair .kmall AND .kmwcd.
+    % make sure .kmwcd is listed first because this function only reads in
     % the 2nd file what it could not find in the first, and we want to only
-    % grab from the .all file what is needed and couldn't be found in the
-    % .wcd file.
+    % grab from the .kmall file what is needed and couldn't be found in the
+    % .kmwcd file.
     if strcmpi(CFF_file_extension(KMALLfilename{1}),'.kmall')
         KMALLfilename = fliplr(KMALLfilename);
     end
 end
 
 
+%% Prep
+
+% number of files
+nFiles = numel(KMALLfilename);
+
+% start message
+filename = CFF_file_name(KMALLfilename{1},1);
+if nFiles == 1
+    comms.start(sprintf('Reading data in file %s',filename));
+else
+    filename_2_ext = CFF_file_extension(KMALLfilename{2});
+    comms.start(sprintf('Reading data in pair of files %s and %s',filename,filename_2_ext));
+end
+
+% start progress
+comms.progress(0,nFiles);
+
+
 %% FIRST FILE
 
 % Get info from first (or only) file
+if nFiles == 1
+    comms.step('Listing datagrams');
+else
+    comms.step('Listing datagrams in paired file #1/2');
+end
 info = CFF_kmall_file_info(KMALLfilename{1});
+
+% communicate progress
+comms.progress(0.5,nFiles);
 
 if isempty(datagrams_to_parse)
     % parse all datagrams in first file
@@ -102,12 +134,19 @@ else
 end
 
 % read data
+if nFiles == 1
+    comms.step('Reading datagrams');
+else
+    comms.step('Reading datagrams in paired file #1/2');
+end
 KMALLdata = CFF_read_kmall_from_fileinfo(KMALLfilename{1}, info);
 
-
+% communicate progress
+comms.progress(1,nFiles);
+    
 
 %% SECOND FILE (if any)
-if numel(KMALLfilename)>1
+if nFiles>1
     
     % parse only if we requested to read all datagrams (in which case, the
     % second file might have datagrams not read in the first and we need to
@@ -116,7 +155,11 @@ if numel(KMALLfilename)>1
     if isempty(datagrams_to_parse) || ~all(datagrams_parsed_idx)
         
         % Get info in second file
+        comms.step('Listing datagrams in paired file #2/2');
         info = CFF_kmall_file_info(KMALLfilename{2});
+        
+        % communicate progress
+        comms.progress(1.5,nFiles);
         
         if isempty(datagrams_to_parse)
             % parse all datagrams in second file which we didn't get in the
@@ -153,6 +196,7 @@ if numel(KMALLfilename)>1
         end
         
         % read data in second file
+        comms.step('Reading datagrams in paired file #2/2');
         KMALLdata2 = CFF_read_kmall_from_fileinfo(KMALLfilename{2}, info);
         
         % combine to data from first file
@@ -160,4 +204,11 @@ if numel(KMALLfilename)>1
         
     end
     
+    % communicate progress
+    comms.progress(2,nFiles);
+    
 end
+
+
+%% end message
+comms.finish('Done');

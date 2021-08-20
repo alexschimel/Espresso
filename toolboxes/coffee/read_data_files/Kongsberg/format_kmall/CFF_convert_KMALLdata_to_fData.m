@@ -60,42 +60,50 @@ function fData = CFF_convert_KMALLdata_to_fData(KMALLdataGroup,varargin)
 %   2017-2021; Last revision: 21-07-2021
 
 
-%% input parsing
-
-% init
+%% Input arguments management
 p = inputParser;
 
-% required
+% array of KMALLdata structures
 addRequired(p,'KMALLdataGroup',@(x) isstruct(x) || iscell(x));
 
-% optional
+% decimation factor in range and beam
 addOptional(p,'dr_sub',1,@(x) isnumeric(x)&&x>0);
 addOptional(p,'db_sub',1,@(x) isnumeric(x)&&x>0);
 
-% parse
+% information communication
+addParameter(p,'comms',CFF_Comms()); % no communication by default
+
+% parse inputs
 parse(p,KMALLdataGroup,varargin{:})
 
-% get results
+% and get results
 KMALLdataGroup = p.Results.KMALLdataGroup;
 dr_sub = p.Results.dr_sub;
 db_sub = p.Results.db_sub;
+global comms
+if ischar(p.Results.comms)
+    comms = CFF_Comms(p.Results.comms);
+else
+    comms = p.Results.comms;
+end
 clear p;
 
-%% pre-processing
-
 if isstruct(KMALLdataGroup)
+    % just one structure
+    KMALLdataGroup = {KMALLdataGroup};
+end
+
+% check input
+if numel(KMALLdataGroup)==1
     % single KMALLdata structure
     
     % check it's from Kongsberg and that source file exist
-    has_KMALLfilename = isfield(KMALLdataGroup, 'KMALLfilename');
-    if ~has_KMALLfilename || ~CFF_check_KMALLfilename(KMALLdataGroup.KMALLfilename)
+    has_KMALLfilename = isfield(KMALLdataGroup{1}, 'KMALLfilename');
+    if ~has_KMALLfilename || ~CFF_check_KMALLfilename(KMALLdataGroup{1}.KMALLfilename)
         error('Invalid input');
     end
     
-    % if clear, turn to cell before processing further
-    KMALLdataGroup = {KMALLdataGroup};
-    
-elseif iscell(KMALLdataGroup) && numel(KMALLdataGroup)==2
+elseif numel(KMALLdataGroup)==2
     % pair of KMALLdata structures
     
     % check it's from a pair of Kongsberg kmall/kmwcd files and that source
@@ -110,6 +118,12 @@ else
     error('Invalid input');
 end
 
+
+%% Prep
+
+% start message
+comms.start('Converting to fData format');
+
 % number of individual KMALLdata structures in input KMALLdataGroup
 nStruct = length(KMALLdataGroup);
 
@@ -118,6 +132,9 @@ fData.MET_Fmt_version = CFF_get_current_fData_version();
 
 % initialize source filenames
 fData.ALLfilename = cell(1,nStruct);
+
+% start progress
+comms.progress(0,nStruct);
 
 
 %% take one KMALLdata structure at a time and add its contents to fData
@@ -137,6 +154,8 @@ for iF = 1:nStruct
     
     %% '#IIP - Installation parameters and sensor setup'
     if isfield(KMALLdata,'EMdgmIIP') && ~isfield(fData,'IP_ASCIIparameters')
+        
+        comms.step('Converting #IIP'); 
         
         % number of entries
         % nD = numel(KMALLdata.EMdgmIIP);
@@ -180,6 +199,8 @@ for iF = 1:nStruct
     %% '#MRZ - Multibeam (M) raw range (R) and depth(Z) datagram'
     if isfield(KMALLdata,'EMdgmMRZ') && ~isfield(fData,'X8_1D_Date')
         
+        comms.step('Converting #MRZ'); 
+        
         % DEV NOTE: note we don't decimate beam data here as we do for
         % water-column data
         
@@ -203,14 +224,14 @@ for iF = 1:nStruct
         % Receive beamwidth
         Rx_BW = unique([pingInfo.receiveArraySizeUsed_deg]);
         if numel(Rx_BW)>1
-            warning('This file has more than one Rx beamwidth recorded. Keeping only the first value');
+            comms.error('Found more than one Rx beamwidth records. Keeping only the first value');
         end
         fData.Ru_1D_ReceiveBeamwidth = Rx_BW(1);
         
         % Transmit Power Re Maximum
         Tx_pow = unique([pingInfo.transmitPower_dB]);
         if numel(Tx_pow)>1
-            warning('This file has more than one Tx Power recorded. Keeping only the first value');
+            comms.error('Found more than one Tx Power records. Keeping only the first value');
         end
         fData.Ru_1D_TransmitPowerReMaximum = Tx_pow(1);
                 
@@ -291,6 +312,8 @@ for iF = 1:nStruct
     
     %% '#MWC - Multibeam (M) water (W) column (C) datagram'
     if isfield(KMALLdata,'EMdgmMWC') && ~isfield(fData,'WC_1D_Date')
+        
+        comms.step('Converting #MWC'); 
         
         % remove duplicate datagrams
         EMdgmMWC = CFF_remove_duplicate_KMALL_datagrams(KMALLdata.EMdgmMWC);
@@ -562,6 +585,8 @@ for iF = 1:nStruct
     %% '#SPO - Sensor (S) data for position (PO)'
     if isfield(KMALLdata,'EMdgmSPO') && ~isfield(fData,'Po_1D_Date')
         
+        comms.step('Converting #SPO'); 
+        
         % extract data
         header     = [KMALLdata.EMdgmSPO.header];
         sensorData = [KMALLdata.EMdgmSPO.sensorData];
@@ -597,42 +622,52 @@ for iF = 1:nStruct
         
     end
     
-end
-
-end
-
-
-%%
-function out_EM_struct = CFF_remove_duplicate_KMALL_datagrams(in_EM_struct)
-% DEV NOTE: I have found occurences of duplicate MRZ datagrams in some test
-% files. Not sure how common it is, but the conversion code ends up
-% duplicating the data too. Instead of modifying the code everywhere to be
-% always considering the possibility of duplicates, it's easier to look for
-% them at the start and remove them before parsing.
-% In the examples I found, it would be sufficient to check for the set
-% unicity of the cmnPart fields pingCnt, rxFanIndex, and
-% swathAlongPosition. But the range of cases covered by the kmall format
-% can be complicated (including systems with dual Rx heads and dual Tx
-% heads in multi-swath mode!!! see documentation of EMdgmMbody_def) so to
-% be entierely safe, we will instead use ALL the fields of cmnPart in a
-% test for set unicity.
-
-if isfield(in_EM_struct, 'cmnPart')
- 
-    cmnPart_table = struct2table([in_EM_struct.cmnPart]);
-    [~, ia, ~] = unique(cmnPart_table,'rows', 'stable');
-    idx_duplicates = ~ismember(1:size(cmnPart_table,1), ia);
+    %% communicate progress
+    comms.progress(iF,nStruct);
     
-    if any(idx_duplicates)
-        % note for devs to figure how common duplicates are.
-        fprintf('DEV NOTE: KMALL struct has %i duplicate datagrams.\n',sum(idx_duplicates));
+end
+
+
+%% end message
+comms.finish('Done');
+
+
+%% nested functions
+
+    function out_EM_struct = CFF_remove_duplicate_KMALL_datagrams(in_EM_struct)
+        % DEV NOTE: I have found occurences of duplicate MRZ datagrams in some test
+        % files. Not sure how common it is, but the conversion code ends up
+        % duplicating the data too. Instead of modifying the code everywhere to be
+        % always considering the possibility of duplicates, it's easier to look for
+        % them at the start and remove them before parsing.
+        % In the examples I found, it would be sufficient to check for the set
+        % unicity of the cmnPart fields pingCnt, rxFanIndex, and
+        % swathAlongPosition. But the range of cases covered by the kmall format
+        % can be complicated (including systems with dual Rx heads and dual Tx
+        % heads in multi-swath mode!!! see documentation of EMdgmMbody_def) so to
+        % be entierely safe, we will instead use ALL the fields of cmnPart in a
+        % test for set unicity.
+        
+        if isfield(in_EM_struct, 'cmnPart')
+            
+            cmnPart_table = struct2table([in_EM_struct.cmnPart]);
+            [~, ia, ~] = unique(cmnPart_table,'rows', 'stable');
+            idx_duplicates = ~ismember(1:size(cmnPart_table,1), ia);
+            
+            % remove duplicates
+            out_EM_struct = in_EM_struct(~idx_duplicates);
+            
+            % info
+            if any(idx_duplicates)
+                infoStr = sprintf('Found and discarded %i duplicate datagrams',sum(idx_duplicates));
+                comms.info(infoStr);
+            end
+            
+        else
+            out_EM_struct = in_EM_struct;
+        end
+        
     end
-    
-    out_EM_struct = in_EM_struct(~idx_duplicates);
-    
-else
-    out_EM_struct = in_EM_struct;
-end
 
 end
 
@@ -692,6 +727,7 @@ TSMIM = milliseconds(timeofday(dt));
 
 end
 
+%%
 function str = CFF_get_kmall_TxRx_info(cmnPart)
 
 % Single or Dual Tx

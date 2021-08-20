@@ -13,52 +13,75 @@ function KMALLdata = CFF_read_kmall_from_fileinfo(KMALLfilename,KMALLfileinfo,va
 
 %   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
 %   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
-%   2017-2021; Last revision: 27-07-2021
+%   2017-2021; Last revision: 20-08-2021
 
 global DEBUG;
 
-% This code was developped around the following kmall format versions.
+
+%% HARD-CODED PARAMETERS
+
+% This code was developped around the following kmall format versions. To
+% update if you verify it works with other versions.
 kmall_versions_supported = 'H,I';
 
-%% Input arguments management using inputParser
+
+%% Input arguments management
 p = inputParser;
 
-% KMALLfilename to parse
+% name of the .kmall or .kmwcd file
 argName = 'KMALLfilename';
 argCheck = @(x) CFF_check_KMALLfilename(x);
 addRequired(p,argName,argCheck);
 
-% KMALLfileinfo resulting from first pass reading
+% fileinfo from CFF_KMALL_FILE_INFO containing indexes of datagrams to read
 argName = 'KMALLfileinfo';
 argCheck = @isstruct;
 addRequired(p,argName,argCheck);
 
-% MATfilename output as only optional argument.
+% ?? XXX3
 argName = 'OutputFields';
 argCheck = @iscell;
 addParameter(p,argName,{},argCheck);
 
-% now parse inputs
+% information communication
+addParameter(p,'comms',CFF_Comms()); % no communication by default
+
+% parse inputs
 parse(p,KMALLfilename,KMALLfileinfo,varargin{:});
 
 % and get results
 KMALLfilename = p.Results.KMALLfilename;
 KMALLfileinfo = p.Results.KMALLfileinfo;
+OutputFields = p.Results.OutputFields;
+if ischar(p.Results.comms)
+    comms = CFF_Comms(p.Results.comms);
+else
+    comms = p.Results.comms;
+end
 
 
-%% Pre-reading
+%% Prep
 
-% store
+% start message
+filename = CFF_file_name(KMALLfilename,1);
+comms.start(sprintf('Reading datagrams in file %s',filename));
+
+% store filename
 KMALLdata.KMALLfilename = KMALLfilename;
 
 % open file
 [fid,~] = fopen(KMALLfilename, 'r');
 
-% Parse only datagrams indicated in KMALLfileinfo
+% parse only datagrams indicated in KMALLfileinfo
 datagToParse = find(KMALLfileinfo.parsed==1);
+nDatagsToPars = numel(datagToParse);
 
 % flag so kmall version warning only goes off once
 kmall_version_warning_flag = 0;
+
+% start progress
+comms.progress(0,nDatagsToPars);
+
 
 %% Reading datagrams
 for iDatag = datagToParse'
@@ -91,7 +114,7 @@ for iDatag = datagToParse'
         
         case 'IIP'
             % '#IIP - Installation parameters and sensor setup'
-            if ~( isempty(p.Results.OutputFields) || any(strcmp(dgm_type_code,p.Results.OutputFields)) )
+            if ~( isempty(OutputFields) || any(strcmp(dgm_type_code,OutputFields)) )
                 continue;
             end
             try iIIP=iIIP+1; catch, iIIP=1; dtg_warn_flag = 1; end
@@ -100,9 +123,9 @@ for iDatag = datagToParse'
             
             % extract kmall version
             kmall_version = CFF_get_kmall_version(KMALLdata.EMdgmIIP(iIIP));
-            
             if ~ismember(kmall_version, kmall_versions_supported) && ~kmall_version_warning_flag
-                warning('The kmall format version (%s) of this file is different to that used to develop the raw data reading code (%s). Data will be read anyway, but there may be issues.',kmall_version,kmall_versions_supported);
+                errStr = sprintf('This file''s kmall format version (%s) is different to that used to develop the raw data reading code (%s). Data will be read anyway, but there may be issues',kmall_version,kmall_versions_supported);
+                comms.error(errStr);
                 kmall_version_warning_flag = 1;
             end
             
@@ -110,7 +133,7 @@ for iDatag = datagToParse'
             
         case 'IOP'
             % '#IOP - Runtime parameters as chosen by operator'
-            if ~( isempty(p.Results.OutputFields) || any(strcmp(dgm_type_code,p.Results.OutputFields)) )
+            if ~( isempty(OutputFields) || any(strcmp(dgm_type_code,OutputFields)) )
                 continue;
             end
             try iIOP=iIOP+1; catch, iIOP=1; dtg_warn_flag = 1; end
@@ -121,7 +144,7 @@ for iDatag = datagToParse'
             
         case 'IBE'
             % '#IBE - Built in test (BIST) error report'
-            if ~( isempty(p.Results.OutputFields) || any(strcmp(dgm_type_code,p.Results.OutputFields)) )
+            if ~( isempty(OutputFields) || any(strcmp(dgm_type_code,OutputFields)) )
                 continue;
             end
             try iIBE=iIBE+1; catch, iIBE=1; dtg_warn_flag = 1; end
@@ -133,7 +156,7 @@ for iDatag = datagToParse'
             
         case 'IBR'
             % '#IBR - Built in test (BIST) reply'
-            if ~( isempty(p.Results.OutputFields) || any(strcmp(dgm_type_code,p.Results.OutputFields)) )
+            if ~( isempty(OutputFields) || any(strcmp(dgm_type_code,OutputFields)) )
                 continue;
             end
             try iIBR=iIBR+1; catch, iIBR=1; dtg_warn_flag = 1; end
@@ -145,7 +168,7 @@ for iDatag = datagToParse'
             
         case 'IBS' 
             % '#IBS - Built in test (BIST) short reply'
-            if ~( isempty(p.Results.OutputFields) || any(strcmp(dgm_type_code,p.Results.OutputFields)) )
+            if ~( isempty(OutputFields) || any(strcmp(dgm_type_code,OutputFields)) )
                 continue;
             end
             try iIBS=iIBS+1; catch, iIBS=1; dtg_warn_flag = 1; end
@@ -160,7 +183,7 @@ for iDatag = datagToParse'
       
         case 'MRZ'
             % '#MRZ - Multibeam (M) raw range (R) and depth(Z) datagram'
-            if ~( isempty(p.Results.OutputFields) || any(strcmp(dgm_type_code,p.Results.OutputFields)) )
+            if ~( isempty(OutputFields) || any(strcmp(dgm_type_code,OutputFields)) )
                 continue;
             end
             try iMRZ=iMRZ+1; catch, iMRZ=1; dtg_warn_flag = 1; end
@@ -231,7 +254,7 @@ for iDatag = datagToParse'
             
         case 'MWC'
             % '#MWC - Multibeam (M) water (W) column (C) datagram'
-            if ~( isempty(p.Results.OutputFields) || any(strcmp(dgm_type_code,p.Results.OutputFields)) )
+            if ~( isempty(OutputFields) || any(strcmp(dgm_type_code,OutputFields)) )
                 continue;
             end
             try iMWC=iMWC+1; catch, iMWC=1; dtg_warn_flag = 1; end
@@ -319,7 +342,7 @@ for iDatag = datagToParse'
 
         case 'SPO'
             % '#SPO - Sensor (S) data for position (PO)'
-            if ~( isempty(p.Results.OutputFields) || any(strcmp(dgm_type_code,p.Results.OutputFields)) )
+            if ~( isempty(OutputFields) || any(strcmp(dgm_type_code,OutputFields)) )
                 continue;
             end
             try iSPO=iSPO+1; catch, iSPO=1; dtg_warn_flag = 1; end
@@ -330,7 +353,7 @@ for iDatag = datagToParse'
             
         case 'SKM'
             % '#SKM - Sensor (S) KM binary sensor format'
-            if ~( isempty(p.Results.OutputFields) || any(strcmp(dgm_type_code,p.Results.OutputFields)) )
+            if ~( isempty(OutputFields) || any(strcmp(dgm_type_code,OutputFields)) )
                 continue;
             end
             try iSKM=iSKM+1; catch, iSKM=1; dtg_warn_flag = 1; end
@@ -341,7 +364,7 @@ for iDatag = datagToParse'
             
         case 'SVP'
             % '#SVP - Sensor (S) data from sound velocity (V) profile (P) or CTD'
-            if ~( isempty(p.Results.OutputFields) || any(strcmp(dgm_type_code,p.Results.OutputFields)) )
+            if ~( isempty(OutputFields) || any(strcmp(dgm_type_code,OutputFields)) )
                 continue;
             end
             try iSVP=iSVP+1; catch, iSVP=1; dtg_warn_flag = 1; end
@@ -377,7 +400,7 @@ for iDatag = datagToParse'
             
         case 'SVT'
             % '#SVT - Sensor (S) data for sound velocity (V) at transducer (T)'
-            if ~( isempty(p.Results.OutputFields) || any(strcmp(dgm_type_code,p.Results.OutputFields)) )
+            if ~( isempty(OutputFields) || any(strcmp(dgm_type_code,OutputFields)) )
                 continue;
             end
             try iSVT=iSVT+1; catch, iSVT=1; dtg_warn_flag = 1; end
@@ -389,7 +412,7 @@ for iDatag = datagToParse'
             
         case 'SCL'
             % '#SCL - Sensor (S) data from clock (CL)'
-            if ~( isempty(p.Results.OutputFields) || any(strcmp(dgm_type_code,p.Results.OutputFields)) )
+            if ~( isempty(OutputFields) || any(strcmp(dgm_type_code,OutputFields)) )
                 continue;
             end
             try iSCL=iSCL+1; catch, iSCL=1; dtg_warn_flag = 1; end
@@ -400,7 +423,7 @@ for iDatag = datagToParse'
             
         case 'SDE'
             % '#SDE - Sensor (S) data from depth (DE) sensor'
-            if ~( isempty(p.Results.OutputFields) || any(strcmp(dgm_type_code,p.Results.OutputFields)) )
+            if ~( isempty(OutputFields) || any(strcmp(dgm_type_code,OutputFields)) )
                 continue;
             end
             try iSDE=iSDE+1; catch, iSDE=1; dtg_warn_flag = 1; end
@@ -412,7 +435,7 @@ for iDatag = datagToParse'
             
         case 'SHI'
             % '#SHI - Sensor (S) data for height (HI)'
-            if ~( isempty(p.Results.OutputFields) || any(strcmp(dgm_type_code,p.Results.OutputFields)) )
+            if ~( isempty(OutputFields) || any(strcmp(dgm_type_code,OutputFields)) )
                 continue;
             end
             try iSHI=iSHI+1; catch, iSHI=1; dtg_warn_flag = 1; end
@@ -427,7 +450,7 @@ for iDatag = datagToParse'
                     
         case 'CPO'
             % '#CPO - Compatibility (C) data for position (PO)'
-            if ~( isempty(p.Results.OutputFields) || any(strcmp(dgm_type_code,p.Results.OutputFields)) )
+            if ~( isempty(OutputFields) || any(strcmp(dgm_type_code,OutputFields)) )
                 continue;
             end
             try iCPO=iCPO+1; catch, iCPO=1; dtg_warn_flag = 1; end
@@ -438,7 +461,7 @@ for iDatag = datagToParse'
             
         case 'CHE'
             % '#CHE - Compatibility (C) data for heave (HE)'
-            if ~( isempty(p.Results.OutputFields) || any(strcmp(dgm_type_code,p.Results.OutputFields)) )
+            if ~( isempty(OutputFields) || any(strcmp(dgm_type_code,OutputFields)) )
                 continue;
             end
             try iCHE=iCHE+1; catch, iCHE=1; dtg_warn_flag = 1; end
@@ -452,7 +475,7 @@ for iDatag = datagToParse'
                                            
         case '#FCF - Backscatter calibration (C) file (F) datagram'
             % 'YYY'
-            if ~( isempty(p.Results.OutputFields) || any(strcmp(dgm_type_code,p.Results.OutputFields)) )
+            if ~( isempty(OutputFields) || any(strcmp(dgm_type_code,OutputFields)) )
                 continue;
             end
             try iFCF=iFCF+1; catch, iFCF=1; dtg_warn_flag = 1; end
@@ -472,14 +495,22 @@ for iDatag = datagToParse'
     % modify parsed status in info
     KMALLfileinfo.parsed(iDatag,1) = parsed;
     
+    % communicate progress
+    comms.progress(iDatag,nDatagsToPars);
+    
 end
 
 
-%% close fid
+%% finalise
+
+% close fid
 fclose(fid);
 
-%% add info to parsed data
+% add info to parsed data
 KMALLdata.info = KMALLfileinfo;
+
+% end message
+comms.finish('Done.');
 
 end
 

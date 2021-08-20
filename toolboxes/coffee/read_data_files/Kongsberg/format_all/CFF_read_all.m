@@ -95,7 +95,7 @@ function [ALLdata,datagrams_parsed_idx] = CFF_read_all(ALLfilename, varargin)
 
 %   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
 %   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
-%   2017-2021; Last revision: 27-07-2021
+%   2017-2021; Last revision: 20-08-2021
 
 
 %% Input arguments management
@@ -126,6 +126,7 @@ if ischar(p.Results.comms)
 else
     comms = p.Results.comms;
 end
+clear p;
 
 % check input
 if ischar(ALLfilename)
@@ -320,7 +321,4 @@ end
 
 
 %% end message
-comms.finish('Done.');
-
-
-
+comms.finish('Done');

@@ -55,7 +55,7 @@ function ALLdata = CFF_read_all_from_fileinfo(ALLfilename, ALLfileinfo, varargin
 
 %   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
 %   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
-%   2017-2021; Last revision: 30-07-2021
+%   2017-2021; Last revision: 20-08-2021
 
 
 %% Input arguments management
@@ -66,7 +66,7 @@ argName = 'ALLfilename';
 argCheck = @(x) CFF_check_ALLfilename(x);
 addRequired(p,argName,argCheck);
 
-% fileinfo from CFF_all_file_info containing indexes of datagrams to read
+% fileinfo from CFF_ALL_FILE_INFO containing indexes of datagrams to read
 argName = 'ALLfileinfo';
 argCheck = @isstruct;
 addRequired(p,argName,argCheck);

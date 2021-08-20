@@ -51,7 +51,7 @@ function ALLfileinfo = CFF_all_file_info(ALLfilename, varargin)
 
 %   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
 %   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
-%   2017-2021; Last revision: 27-07-2021
+%   2017-2021; Last revision: 20-08-2021
 
 
 
@@ -115,13 +115,14 @@ resync_counter = 0;
 while 1
     
     % read in little endian
-    pif    = ftell(fid);
+    pif = ftell(fid);
     nbDatagL = fread(fid,1,'uint32','l'); % number of bytes in datagram
     
     if isempty(nbDatagL)
         %file finished
         error('.all file parsing synchronization failed');
     end
+    
     fseek(fid,pif,-1); % come back to re-read in b
     nbDatagB        = fread(fid,1,'uint32','b'); % number of bytes in datagram
     stxDatag        = fread(fid,1,'uint8');      % STX (always H02)
@@ -144,7 +145,7 @@ while 1
     end
     
     % testing need for synchronization
-    synchronized =    (sum(emNumberL==emNumberList) || sum(emNumberB==emNumberList)) ...
+    synchronized = (sum(emNumberL==emNumberList) || sum(emNumberB==emNumberList)) ...
         & (etxDatagB==3 || etxDatagL==3) ...
         & stxDatag==2;
     if synchronized
@@ -400,19 +401,21 @@ while 1
     syncCounter = 0;
     
     % go to end of datagram
-    fseek(fid,pif+4+nbDatag,-1);
+    next_dgm_start_pif = pif + 4 + nbDatag;
+    fseek(fid,next_dgm_start_pif,-1);
     
     % communicate progress
-    comms.progress(pif,filesize);
+    comms.progress(next_dgm_start_pif,filesize);
 end
 
 
-%% closing file
+%% finalizing
+
+% closing file
 fclose(fid);
 
-
-%% end message
-comms.finish('Done.');
+% end message
+comms.finish('Done');
 
 
 

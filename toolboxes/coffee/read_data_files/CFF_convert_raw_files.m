@@ -6,27 +6,26 @@ function fDataGroup = CFF_convert_raw_files(rawFilesList,varargin)
 %   Matlab. Data supported are Kongsberg EM series binary data file in
 %   .all format (.all or .wcd, or pair of .all/.wcd) or .kmall format
 %   (.kmall or .kmwcd, or pair of .kmall/.kmwcd) and Reson-Teledyne .s7k
-%   format. converts every
-%   datagram supported. 
+%   format.
 %
-%   fDataGroup = CFF_CONVERT_RAW_FILES(rawFile) converts single, non-paired
-%   file rawFile specified with full path either as a character string (e.g.
-%   rawFilesList='D:\Data\myfile.all') or a 1x1 cell containing the
-%   character string (e.g. rawFilesList={'D:\Data\myfile.all'}).
+%   fDataGroup = CFF_CONVERT_RAW_FILES(rawFile) converts a single,
+%   non-paired file rawFile specified with full path either as a character
+%   string (e.g. rawFilesList='D:\Data\myfile.all') or a 1x1 cell
+%   containing the character string (e.g.
+%   rawFilesList={'D:\Data\myfile.all'}). 
 %
-%   fDataGroup = CFF_CONVERT_RAW_FILES(pairedRawFiles) converts pair of
+%   fDataGroup = CFF_CONVERT_RAW_FILES(pairedRawFiles) converts a pair of
 %   files specified as a 1x1 cell containing a 2x1 cell where each cell
-%   contain the full path as character string (e.g.
+%   contains the full path as a character string (e.g.
 %   rawFilesList={{'D:\Data\myfile.all','D:\Data\myfile.wcd'}}). Note: If
 %   you omit the double cell (i.e.
 %   rawFilesList={'D:\Data\myfile.all','D:\Data\myfile.wcd'}), the two
 %   files will be converted separately.
 %
 %   fDataGroup = CFF_CONVERT_RAW_FILES(rawFilesList) converts a cell vector
-%   where each cell contains a file or pair of files to convert, specified
-%   as above either a character string, or 2x1 cells of paired files (e.g.
-%   rawFilesList =
-%   {'D:\Data\mySingleFile.all',
+%   where each cell corresponds to a file or pair of files to convert,
+%   specified as above either a character string, or 2x1 cells of paired
+%   files (e.g. rawFilesList = {'D:\Data\mySingleFile.all',
 %   {'D:\Data\myPairedFile.all','D:\Data\myPairedFile.wcd'}}). 
 %   Note: Use CFF_LIST_RAW_FILES_IN_DIR to generate rawFilesList from a
 %   folder containing raw data files.
@@ -42,18 +41,18 @@ function fDataGroup = CFF_convert_raw_files(rawFilesList,varargin)
 %   'conversionType': 'Z&BS' will only convert datagrams necessary for
 %   bathymetry and backscatter processing (e.g. for Ristretto).
 %   Water-column datagrams are ignored in this mode. 
-%   'conversionType': 'WCD' will only
-%   convert datagrams necessary for water-column data processing (e.g. for
-%   Espresso). Note: this includes datagrams for bathymetry and backscatter
-%   processing. Use 'conversionType': 'everything' (default) to convert
-%   every datagram supported.
+%   'conversionType': 'WCD' will only convert datagrams necessary for
+%   water-column data processing (e.g. for Espresso). Note: this includes
+%   datagrams for bathymetry and backscatter processing. Use
+%   'conversionType': 'everything' (default) will convert every datagram
+%   supported. 
 %
 %   'saveFDataToDrive': 1 will save the converted fData to the hard-drive.
 %   Use 'saveFDataToDrive': 0 (default) to prevent this. Note that if
-%   water-column datagrams are present and converted, then this parameter
-%   is overriden and fData is saved to the hard-drive anyway. Converted
-%   date are in the 'Coffee_files' folder created in the same folder as the
-%   raw data files.
+%   water-column datagrams are present and to be converted, then this
+%   parameter is overriden and fData is saved to the hard-drive anyway.
+%   Converted data are in the 'Coffee_files' folder created in the same
+%   folder as the raw data files.
 %
 %   'forceReconvert': 1 will force the conversion of a raw data file, even
 %   if a suitable converted file is found on the hard-drive. Use
@@ -97,7 +96,7 @@ function fDataGroup = CFF_convert_raw_files(rawFilesList,varargin)
 
 %   Authors: Alex Schimel (NGU, alexandre.schimel@ngu.no) and Yoann
 %   Ladroit (NIWA, yoann.ladroit@ensta-bretagne.fr)
-%   2021; Last revision: 19-08-2021
+%   2021; Last revision: 20-08-2021
 
 
 %% Input arguments management
@@ -298,7 +297,7 @@ for iF = 1:nFiles
                     % check if all required datagrams have been found 
                     iDtgsRequired = ismember(dtgsAllRequired,dtgs(iDtgsParsed));
                     if ~all(iDtgsRequired)
-                        strdisp = sprintf('File is missing required datagram types (%s).',strjoin(string(dtgs(~iDtgsRequired)),', '));
+                        strdisp = sprintf('File is missing required datagram types (%s).',strjoin(string(dtgsAllRequired(~iDtgsRequired)),', '));
                         if convertEvenIfDtgrmsMissing
                             % log message and resume conversion
                             comms.info([strdisp ' Converting anyway']);
@@ -393,39 +392,65 @@ for iF = 1:nFiles
                 
             case 'Kongsberg_kmall'
                 
-                % relevant datagrams:
-                % * #IIP Installation Parameters
-                % * #SPO Position
-                % * #MRZ Bathy and BS
-                % * #MWC Water-column Data
-                dg_wc = {'#IIP','#SPO','#MRZ','#MWC'};
-                
-                % for test/debug:
-                % warning('DEBUGGING!') % uncomment this if using one below
-                % dg_wc = {'#IIP'};
-                % dg_wc = {'#SPO'};
-                % dg_wc = {'#MRZ'};
-                % dg_wc = {'#MWC'};
-                % dg_wc = {}; % everything
-                
-                % step 1: read
-                [EMdata,iDtgsParsed] = CFF_read_kmall(rawFile, dg_wc);
-                
-                % if not all datagrams were found at this point, message and abort
-                if ~isempty(dg_wc) && ~all(iDtgsParsed)
-                    strdisp = sprintf('File is missing necessary datagrams (%s). Conversion aborted.', strjoin(dg_wc(~iDtgsParsed),', '));
-                    textprogressbar(strdisp);
-                    continue
+                % datagram types to read
+                switch conversionType
+                    case 'WCD'
+                        dtgsAllRequired = {'#IIP',... % Installation Parameters
+                            '#SPO',...                % Position
+                            '#MRZ',...                % Bathy and BS
+                            '#MWC'};                  % Water-column Data
+                        dtgs = sort(unique(dtgsAllRequired));
+                    case 'Z&BS'
+                        dtgsAllRequired = {'#IIP',... % Installation Parameters
+                            '#SPO',...                % Position
+                            '#MRZ'};                   % Bathy and BS
+                        dtgs = sort(unique(dtgsAllRequired));
+                    case 'everything'
+                        % convert every datagrams supported
+                        dtgs = [];
                 end
                 
-                datagramSource = 'WC'; % XXX1 to update this confusing datagramsource business eventually
+                % conversion step 1: read what we can
+                if ischar(rawFile)
+                    comms.info('Reading data in file');
+                else
+                    comms.info('Reading data in pair of files');
+                end
+                [EMdata,iDtgsParsed] = CFF_read_kmall(rawFile, dtgs);
                 
-                % step 2: convert
+                if ~strcmp(conversionType,'everything')
+                    % if requesting conversion specifically for WCD or
+                    % Z&BS, a couple of checks are necessary
+                    
+                    % check if all required datagrams have been found
+                    iDtgsRequired = ismember(dtgsAllRequired,dtgs(iDtgsParsed));
+                    if ~all(iDtgsRequired)
+                        strdisp = sprintf('File is missing required datagram types (%s).',strjoin(string(dtgsAllRequired(~iDtgsRequired)),', '));
+                        if convertEvenIfDtgrmsMissing
+                            % log message and resume conversion
+                            comms.info([strdisp ' Converting anyway']);
+                        else
+                            % abort conversion by throwing error
+                            error([strdisp ' Conversion aborted']);
+                        end
+                    end
+                end
+                
+                % conversion step 2: convert
+                comms.info('Converting to fData format');
                 fData = CFF_convert_KMALLdata_to_fData(EMdata,dr_sub,db_sub);
                 
-                % add datagram source
-                fData.MET_datagramSource = CFF_get_datagramSource(fData,datagramSource);
-                
+                % set datagram source
+                switch conversionType
+                    case 'WCD'
+                        fData.MET_datagramSource = 'WC';
+                    case 'Z&BS'
+                        fData.MET_datagramSource = 'X8';
+                    case 'everything'
+                        % choose whatever is available
+                        fData.MET_datagramSource = CFF_get_datagramSource(fData);
+                end
+
                 % sort fields by name
                 fData = orderfields(fData);
         end

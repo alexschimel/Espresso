@@ -95,7 +95,7 @@ function fData = CFF_convert_ALLdata_to_fData(ALLdataGroup,varargin)
 
 %   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
 %   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
-%   2017-2021; Last revision: 21-07-2021
+%   2017-2021; Last revision: 20-08-2021
 
 
 %% Input arguments management
@@ -1182,4 +1182,4 @@ for iF = 1:nStruct
 end
 
 %% end message
-comms.finish('Done.');
+comms.finish('Done');

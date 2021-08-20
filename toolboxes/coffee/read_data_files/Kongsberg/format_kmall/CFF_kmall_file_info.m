@@ -1,4 +1,4 @@
-function KMALLfileinfo = CFF_kmall_file_info(KMALLfilename)
+function KMALLfileinfo = CFF_kmall_file_info(KMALLfilename, varargin)
 %CFF_KMALL_FILE_INFO  Records basic info about contents of .kmall file
 %
 %   Records basic info about the datagrams contained in one Kongsberg EM
@@ -44,22 +44,35 @@ function KMALLfileinfo = CFF_kmall_file_info(KMALLfilename)
 
 %   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
 %   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
-%   2017-2021; Last revision: 27-07-2021
+%   2017-2021; Last revision: 20-08-2021
 
-%% Input arguments management using inputParser
+
+%% Input arguments management
 p = inputParser;
 
-% KMALLfilename to parse as only required argument. Test for file existence
-% and extension.
+% name of the .kmall or .kmwcd file
 argName = 'KMALLfilename';
 argCheck = @(x) CFF_check_KMALLfilename(x);
 addRequired(p,argName,argCheck);
 
-% now parse inputs
-parse(p,KMALLfilename)
+% information communication
+addParameter(p,'comms',CFF_Comms()); % no communication by default
+
+% parse inputs
+parse(p,KMALLfilename,varargin{:});
 
 % and get results
 KMALLfilename = p.Results.KMALLfilename;
+if ischar(p.Results.comms)
+    comms = CFF_Comms(p.Results.comms);
+else
+    comms = p.Results.comms;
+end
+
+
+%% Start message
+filename = CFF_file_name(KMALLfilename,1);
+comms.start(sprintf('Listing datagrams in file %s',filename));
 
 
 %% Open file and initializing
@@ -71,7 +84,7 @@ fseek(fid,0,1);
 file_size = ftell(fid);
 fseek(fid,0,-1);
 
-% create ouptut info file if required
+% create output info file if required
 if nargout
     KMALLfileinfo.file_name = KMALLfilename;
     KMALLfileinfo.file_size = file_size;
@@ -87,6 +100,10 @@ kk = 0;
 % initializing synchronization counter: the number of bytes that needed to
 % be passed before this datagram appeared
 sync_counter = 0;
+
+
+%% Start progress
+comms.progress(0,file_size);
 
 
 %% Reading datagrams
@@ -124,7 +141,7 @@ while next_dgm_start_pif < file_size
         % Being here can be due to two things:
         % 1) we are in sync but this datagram is incomplete, or 
         % 2) we are out of sync.
-        numBytesDgm_repeat = [];
+        numBytesDgm_repeat = -1;
     end
     
     % check for matching datagram size, amd the hash symbol of datagram
@@ -141,14 +158,14 @@ while next_dgm_start_pif < file_size
         sync_counter = sync_counter+1; % update sync counter
         if sync_counter == 1
             % just lost sync, throw a message just now
-            warning('Lost sync while reading datagrams. A record may be corrupted. Trying to resync...');
+            comms.error('Lost sync while reading datagrams. A record may be corrupted. Trying to resync...');
         end
         continue;
     else
         % In sync, and datagram complete
         if sync_counter
             % if we had lost sync, warn here we're back
-            warning('Back in sync (%i bytes later)',sync_counter);
+            comms.info(sprintf('Back in sync (%i bytes later). Resume process.',sync_counter));
             % reinitialize sync counter
             sync_counter = 0;
         end
@@ -201,6 +218,8 @@ while next_dgm_start_pif < file_size
     % go to end of datagram
     fseek(fid, next_dgm_start_pif, -1);
     
+    % communicate progress
+    comms.progress(next_dgm_start_pif,file_size);
 end
 
 
@@ -216,7 +235,11 @@ KMALLfileinfo.parsed = zeros(size(KMALLfileinfo.dgm_num));
 % closing file
 fclose(fid);
 
+% end message
+comms.finish('Done');
+
 end
+
 
 %% subfunctions
 
