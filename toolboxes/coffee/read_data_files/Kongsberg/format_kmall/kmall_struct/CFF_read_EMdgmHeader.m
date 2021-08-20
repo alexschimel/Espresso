@@ -3,13 +3,13 @@ function out_struct = CFF_read_EMdgmHeader(fid)
 %
 %   Definition of general datagram header.
 %
-%   Verified correct for kmall versions H,I
+%   Verified correct for kmall format revisions F-I
 %
 %   See also CFF_READ_KMALL_FROM_FILEINFO, ESPRESSO.
 
 %   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
 %   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
-%   2017-2021; Last revision: 27-07-2021
+%   2017-2021; Last revision: 20-08-2021
 
 % Datagram length in bytes. The length field at the start (4 bytes) and end
 % of the datagram (4 bytes) are included in the length count.

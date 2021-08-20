@@ -5,7 +5,7 @@ function out_struct = CFF_read_EMdgmSVP(fid, dgmVersion_warning_flag)
 %   CTD profile. Sound velocity is measured directly or estimated,
 %   respectively.
 %
-%   Verified correct for kmall versions H,I
+%   Verified correct for kmall format revisions F-I
 %
 %   See also CFF_READ_KMALL_FROM_FILEINFO, ESPRESSO.
 
@@ -15,9 +15,11 @@ function out_struct = CFF_read_EMdgmSVP(fid, dgmVersion_warning_flag)
 
 out_struct.header = CFF_read_EMdgmHeader(fid);
 
-if ~any(out_struct.header.dgmVersion==[1]) && dgmVersion_warning_flag
-    % definition valid for SVP_VERSION 1 (kmall versions H,I)
-    warning('#SVP datagram version (%i) unsupported. Continue reading but there may be issues.',out_struct.header.dgmVersion);
+SVP_VERSION = out_struct.header.dgmVersion;
+if SVP_VERSION~=1 && dgmVersion_warning_flag
+    % definitions in this function and subfunctions valid for SVP_VERSION:
+    % 1 (kmall format revisions F-I)
+    warning('#SVP datagram version (%i) unsupported. Continue reading but there may be issues.',SVP_VERSION);
 end
 
 % Size in bytes of body part struct. Used for denoting size of rest of
@@ -58,7 +60,7 @@ function out_struct = CFF_read_EMdgmSVPpoint(fid)
 % #SVP - Sound Velocity Profile. Data from one depth point contains
 % information specified in this struct.
 %
-% Verified correct for kmall versions H,I
+% Verified correct for kmall format revisions F-I
 
 % Depth at which measurement is taken. Unit m. Valid range from 0.00 m to
 % 12000 m.

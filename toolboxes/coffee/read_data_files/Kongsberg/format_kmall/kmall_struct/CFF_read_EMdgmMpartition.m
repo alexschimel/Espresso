@@ -14,13 +14,13 @@ function out_struct = CFF_read_EMdgmMpartition(fid)
 %   and may have size > 64 kB. The maximum number of partitions from PU is
 %   given by MAX_NUM_MWC_DGMS and MAX_NUM_MRZ_DGMS.
 %
-%   Verified correct for kmall versions H,I
+%   Verified correct for kmall format revisions F-I
 %
 %   See also CFF_READ_KMALL_FROM_FILEINFO, ESPRESSO.
 
 %   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
 %   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
-%   2017-2021; Last revision: 27-07-2021
+%   2017-2021; Last revision: 20-08-2021
 
 % Number of datagram parts to re-join to get one Multibeam datagram. E.g.
 % 3.

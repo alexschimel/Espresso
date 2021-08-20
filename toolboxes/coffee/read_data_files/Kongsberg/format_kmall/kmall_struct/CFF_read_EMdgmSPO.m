@@ -7,19 +7,21 @@ function out_struct = CFF_read_EMdgmSPO(fid, dgmVersion_warning_flag)
 %   operator. Motion correction is applied to latitude, longitude, speed,
 %   course and ellipsoidal height.
 %
-%   Verified correct for kmall versions H,I
+%   Verified correct for kmall format revisions F-I
 %
 %   See also CFF_READ_KMALL_FROM_FILEINFO, ESPRESSO.
 
 %   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
 %   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
-%   2017-2021; Last revision: 27-07-2021
+%   2017-2021; Last revision: 20-08-2021
 
 out_struct.header = CFF_read_EMdgmHeader(fid);
 
-if out_struct.header.dgmVersion>0 && dgmVersion_warning_flag
-    % definition valid for SPO_VERSION 0 (kmall versions H,I)
-    warning('#SPO datagram version (%i) unsupported. Continue reading but there may be issues.',out_struct.header.dgmVersion);
+SPO_VERSION = out_struct.header.dgmVersion;
+if SPO_VERSION>0 && dgmVersion_warning_flag
+    % definitions in this function and subfunctions valid for SPO_VERSION:
+    % 0 (kmall format revisions F-I, and presumably earlier ones?)
+    warning('#SPO datagram version (%i) unsupported. Continue reading but there may be issues.',SPO_VERSION);
 end
 
 out_struct.cmnPart = CFF_read_EMdgmScommon(fid);
@@ -46,7 +48,7 @@ function out_struct = CFF_read_EMdgmSPOdataBlock(fid, SPO_data_numBytes)
 % Data given both decoded and corrected (active sensors), and raw as
 % received from sensor in text string.
 %
-% Verified correct for kmall versions H,I
+% Verified correct for kmall format revisions F-I
 
 % UTC time from position sensor. Unit seconds. Epoch 1970-01-01. Nanosec
 % part to be added for more exact time.

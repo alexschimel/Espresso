@@ -3,19 +3,21 @@ function out_struct = CFF_read_EMdgmSCL(fid, dgmVersion_warning_flag)
 %
 %   #SCL - CLock datagram.
 %
-%   Verified correct for kmall versions H,I
+%   Verified correct for kmall format revisions F-I
 %
 %   See also CFF_READ_KMALL_FROM_FILEINFO, ESPRESSO.
 
 %   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
 %   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
-%   2017-2021; Last revision: 27-07-2021
+%   2017-2021; Last revision: 20-08-2021
 
 out_struct.header = CFF_read_EMdgmHeader(fid);
 
-if out_struct.header.dgmVersion>0 && dgmVersion_warning_flag
-    % definition valid for SCL_VERSION 0 (kmall versions H,I)
-    warning('#SCL datagram version (%i) unsupported. Continue reading but there may be issues.',out_struct.header.dgmVersion);
+SCL_VERSION = out_struct.header.dgmVersion;
+if SCL_VERSION>0 && dgmVersion_warning_flag
+    % definitions in this function and subfunctions valid for SCL_VERSION:
+    % 0 (kmall format revisions F-I, and presumably earlier ones?)
+    warning('#SCL datagram version (%i) unsupported. Continue reading but there may be issues.',SCL_VERSION);
 end
 
 out_struct.cmnPart = CFF_read_EMdgmScommon(fid);
@@ -37,7 +39,7 @@ end
 function out_struct = CFF_read_EMdgmSCLdataFromSensor(fid, SCL_data_numBytes)
 % Part of clock datagram giving offsets and the raw input in text format.
 %
-% Verified correct for kmall versions H,I
+% Verified correct for kmall format revisions F-I
 
 % Offset in seconds from K-Controller operator input.
 out_struct.offset_sec = fread(fid,1,'float');

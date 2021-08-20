@@ -1,5 +1,5 @@
-function kmall_version = CFF_get_kmall_version(EMdgmIIP)
-%CFF_GET_KMALL_VERSION  Get the KMALL format version (single letter)
+function kmallRev = CFF_get_kmall_revision(EMdgmIIP)
+%CFF_GET_KMALL_REVISION  Get the KMALL format revision (single letter)
 %
 %   See also ESPRESSO.
 
@@ -8,6 +8,6 @@ function kmall_version = CFF_get_kmall_version(EMdgmIIP)
 %   2017-2021; Last revision: 27-07-2021
 
 idx = strfind(EMdgmIIP.install_txt,'KMALL:Rev ') + 10;
-kmall_version = EMdgmIIP.install_txt(idx);
+kmallRev = EMdgmIIP.install_txt(idx);
 
 end

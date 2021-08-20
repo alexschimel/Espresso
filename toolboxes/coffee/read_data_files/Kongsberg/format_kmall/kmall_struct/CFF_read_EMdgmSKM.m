@@ -13,19 +13,21 @@ function out_struct = CFF_read_EMdgmSKM(fid, dgmVersion_warning_flag)
 %   offsets, installation angles and attitude values are needed to correct
 %   the data for motion.
 %
-%   Verified correct for kmall versions H,I
+%   Verified correct for kmall format revisions F,I
 %
 %   See also CFF_READ_KMALL_FROM_FILEINFO, ESPRESSO.
 
 %   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
 %   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
-%   2017-2021; Last revision: 27-07-2021
+%   2017-2021; Last revision: 20-08-2021
 
 out_struct.header = CFF_read_EMdgmHeader(fid);
 
-if ~any(out_struct.header.dgmVersion==[1]) && dgmVersion_warning_flag
-    % definition valid for SKM_VERSION 1 (kmall versions H,I)
-    warning('#SKM datagram version (%i) unsupported. Continue reading but there may be issues.',out_struct.header.dgmVersion);
+SKM_VERSION = out_struct.header.dgmVersion;
+if SKM_VERSION~=1 && dgmVersion_warning_flag
+    % definitions in this function and subfunctions valid for SKM_VERSION:
+    % 1 (kmall format revisions C-I)
+    warning('#SKM datagram version (%i) unsupported. Continue reading but there may be issues.',SKM_VERSION);
 end
 
 out_struct.infoPart = CFF_read_EMdgmSKMinfo(fid);
@@ -41,7 +43,7 @@ end
 function out_struct = CFF_read_EMdgmSKMinfo(fid)
 % Sensor (S) output datagram - info of KMB datagrams.
 %
-% Verified correct for kmall versions H,I
+% Verified correct for kmall versions F-I
 
 % Size in bytes of current struct. Used for denoting size of rest of
 % datagram in cases where only one datablock is attached.
@@ -119,7 +121,7 @@ function out_struct = CFF_read_EMdgmSKMsample_def(fid)
 %
 % An implementation of the KM Binary sensor input format.
 %
-% Verified correct for kmall versions H,I
+% Verified correct for kmall format revisions F-I
 
 out_struct.KMdefault = CFF_read_KMbinary(fid);
 out_struct.delayedHeave = CFF_read_KMdelayedHeave(fid);
@@ -132,7 +134,7 @@ function out_struct = CFF_read_KMbinary(fid)
 %
 % See Coordinate systems for definition of positive angles and axis.
 %
-% Verified correct for kmall versions H,I
+% Verified correct for kmall format revisions F-I
 
 % #KMB
 out_struct.dgmType = fscanf(fid,'%c',4);
@@ -266,7 +268,7 @@ end
 function out_struct = CFF_read_KMdelayedHeave(fid)
 % #SKM - delayed heave. Included if available from sensor.
 %
-% Verified correct for kmall versions H,I
+% Verified correct for kmall format revisions F-I
 
 out_struct.time_sec = fread(fid,1,'uint32');
 out_struct.time_nanosec = fread(fid,1,'uint32');

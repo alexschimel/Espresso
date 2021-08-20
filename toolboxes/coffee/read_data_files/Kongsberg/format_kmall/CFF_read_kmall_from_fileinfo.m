@@ -20,9 +20,9 @@ global DEBUG;
 
 %% HARD-CODED PARAMETERS
 
-% This code was developped around the following kmall format versions. To
-% update if you verify it works with other versions.
-kmall_versions_supported = 'H,I';
+% This code was developped around the following kmall format revisions. To
+% update if you verify it works with other revisions.
+kmallRevSupported = 'F,H,I';
 
 
 %% Input arguments management
@@ -76,8 +76,8 @@ KMALLdata.KMALLfilename = KMALLfilename;
 datagToParse = find(KMALLfileinfo.parsed==1);
 nDatagsToPars = numel(datagToParse);
 
-% flag so kmall version warning only goes off once
-kmall_version_warning_flag = 0;
+% flag so kmall revision warning only goes off once
+kmallRevWarningFlag = 0;
 
 % start progress
 comms.progress(0,nDatagsToPars);
@@ -121,12 +121,12 @@ for iDatag = datagToParse'
              
             KMALLdata.EMdgmIIP(iIIP) = CFF_read_EMdgmIIP(fid, dtg_warn_flag);
             
-            % extract kmall version
-            kmall_version = CFF_get_kmall_version(KMALLdata.EMdgmIIP(iIIP));
-            if ~ismember(kmall_version, kmall_versions_supported) && ~kmall_version_warning_flag
-                errStr = sprintf('This file''s kmall format version (%s) is different to that used to develop the raw data reading code (%s). Data will be read anyway, but there may be issues',kmall_version,kmall_versions_supported);
+            % extract and check kmall revision
+            kmallRev = CFF_get_kmall_revision(KMALLdata.EMdgmIIP(iIIP));
+            if ~ismember(kmallRev, kmallRevSupported) && ~kmallRevWarningFlag
+                errStr = sprintf('This file''s kmall format revision (%s) is different to that used to develop the raw data reading code (%s). Data will be read anyway, but there may be issues',kmallRev,kmallRevSupported);
                 comms.error(errStr);
-                kmall_version_warning_flag = 1;
+                kmallRevWarningFlag = 1;
             end
             
             parsed = 1;

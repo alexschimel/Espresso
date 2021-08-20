@@ -4,20 +4,23 @@ function out_struct = CFF_read_EMdgmMWC(fid, dgmVersion_warning_flag)
 %   #MWC - Multibeam Water Column Datagram. Entire datagram containing
 %   several sub structs.
 %
-%   Verified correct for kmall versions H,I
+%   Verified correct for kmall format revisions F-I
 %
 %   See also CFF_READ_KMALL_FROM_FILEINFO, ESPRESSO.
 
 %   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
 %   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
-%   2017-2021; Last revision: 27-07-2021
+%   2017-2021; Last revision: 20-08-2021
 
 out_struct.header = CFF_read_EMdgmHeader(fid);
 
-if ~any(out_struct.header.dgmVersion==[1,2]) && dgmVersion_warning_flag
-    % definition valid for MWC_VERSION 1 (kmall version H) and 2 (kmall
-    % version I)
-    warning('#MWC datagram version (%i) unsupported. Continue reading but there may be issues.',out_struct.header.dgmVersion);
+MWC_VERSION = out_struct.header.dgmVersion;
+if MWC_VERSION>2 && dgmVersion_warning_flag
+    % definitions in this function and subfunctions valid for MWC_VERSION:
+    % 0 (kmall format revision F, and presumably earlier ones?)
+    % 1 (kmall format revision G-H)
+    % 2 (kmall format revision I)
+    warning('#MWC datagram version (%i) unsupported. Continue reading but there may be issues.',MWC_VERSION);
 end
 
 out_struct.partition = CFF_read_EMdgmMpartition(fid);
@@ -46,7 +49,7 @@ out_struct.rxInfo = CFF_read_EMdgmMWCrxInfo(fid);
 % 2             numBytesPerBeamEntry + numSampleData* size(sampleAmplitude05dB_p) + numSampleData* size(EMdgmMWCrxBeamPhase2_def)
 phaseFlag = out_struct.rxInfo.phaseFlag;
 Nrx = out_struct.rxInfo.numBeams;
-out_struct.beamData_p = CFF_read_EMdgmMWCrxBeamData(fid, phaseFlag, Nrx);
+out_struct.beamData_p = CFF_read_EMdgmMWCrxBeamData(fid, phaseFlag, Nrx, MWC_VERSION);
 
 end
 
@@ -54,7 +57,7 @@ end
 function out_struct = CFF_read_EMdgmMWCtxInfo(fid)
 % #MWC - data block 1: transmit sectors, general info for all sectors
 %
-% Verified correct for kmall versions H,I
+% Verified correct for kmall format revisions F-I
 
 % Number of bytes in current struct.
 out_struct.numBytesTxInfo = fread(fid,1,'uint16');
@@ -79,7 +82,7 @@ end
 function out_struct = CFF_read_EMdgmMWCtxSectorData(fid)
 % #MWC - data block 1: transmit sector data, loop for all i = numTxSectors.
 %
-% Verified correct for kmall versions H,I
+% Verified correct for kmall format revisions F-I
 
 % Along ship steering angle of the TX beam (main lobe of transmitted
 % pulse), angle referred to transducer face. Angle as used by beamformer
@@ -104,7 +107,7 @@ end
 function out_struct = CFF_read_EMdgmMWCrxInfo(fid)
 % #MWC - data block 2: receiver, general info
 %
-% Verified correct for kmall versions H,I
+% Verified correct for kmall format revisions F-I
 
 % Number of bytes in current struct.
 out_struct.numBytesRxInfo = fread(fid,1,'uint16');
@@ -141,10 +144,10 @@ out_struct.soundVelocity_mPerSec = fread(fid,1,'float');
 end
 
 
-function out_struct = CFF_read_EMdgmMWCrxBeamData(fid, phaseFlag, Nrx)
+function out_struct = CFF_read_EMdgmMWCrxBeamData(fid, phaseFlag, Nrx, MWC_VERSION)
 % #MWC - data block 2: receiver, specific info for each beam.
 %
-% Verified correct for kmall versions H,I
+% Verified correct for kmall format revisions F-I
 
 for iRx = 1:Nrx
     
@@ -164,12 +167,14 @@ for iRx = 1:Nrx
     % Number of sample data for current beam. Also denoted Ns.
     out_struct.numSampleData(iRx) = fread(fid,1,'uint16');
     
-    % The same information as in detectedRangeInSamples with higher
-    % resolution. Two way range in samples. Approximation to calculated
-    % distance from tx to bottom detection [meters] = soundVelocity_mPerSec
-    % * detectedRangeInSamples / (sampleFreq_Hz * 2). The detected range is
-    % set to zero when the beam has no bottom detection.
-    out_struct.detectedRangeInSamplesHighResolution(iRx) = fread(fid,1,'float');
+    if MWC_VERSION >= 1
+        % The same information as in detectedRangeInSamples with higher
+        % resolution. Two way range in samples. Approximation to calculated
+        % distance from tx to bottom detection [meters] = soundVelocity_mPerSec
+        % * detectedRangeInSamples / (sampleFreq_Hz * 2). The detected range is
+        % set to zero when the beam has no bottom detection.
+        out_struct.detectedRangeInSamplesHighResolution(iRx) = fread(fid,1,'float');
+    end
     
     Ns = out_struct.numSampleData(iRx);
     

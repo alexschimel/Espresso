@@ -20,29 +20,33 @@ function out_struct = CFF_read_EMdgmMRZ(fid, dgmVersion_warning_flag)
 %   points and offsets. Explanation of the xyz reference points is also
 %   illustrated in the figure below.
 %
-%   Verified correct for kmall versions H,I
+%   Verified correct for kmall format revisions F-I
 %
 %   See also CFF_READ_KMALL_FROM_FILEINFO, ESPRESSO.
 
 %   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
 %   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
-%   2017-2021; Last revision: 27-07-2021
+%   2017-2021; Last revision: 20-08-2021
 
 out_struct.header = CFF_read_EMdgmHeader(fid);
 
-if ~any(out_struct.header.dgmVersion==[2,3]) && dgmVersion_warning_flag
-    % definition valid for MRZ_VERSION 2 (kmall version H) and 3 (kmall
-    % version I)
-    warning('#MRZ datagram version (%i) unsupported. Continue reading but there may be issues.',out_struct.header.dgmVersion);
+MRZ_VERSION = out_struct.header.dgmVersion;
+if MRZ_VERSION>3 && dgmVersion_warning_flag
+    % definitions in this function and subfunctions valid for MRZ_VERSION:
+    % 0 (kmall format revision F, and presumably earlier ones?)
+    % 1 (kmall format revision G)
+    % 2 (kmall format revision H)
+    % 3 (kmall format revision I)
+    warning('#MRZ datagram version (%i) unsupported. Continue reading but there may be issues.',MRZ_VERSION);
 end
 
 out_struct.partition = CFF_read_EMdgmMpartition(fid);
 out_struct.cmnPart   = CFF_read_EMdgmMbody(fid);
-out_struct.pingInfo  = CFF_read_EMdgmMRZ_pingInfo(fid);
+out_struct.pingInfo  = CFF_read_EMdgmMRZ_pingInfo(fid, MRZ_VERSION);
 
 Ntx = out_struct.pingInfo.numTxSectors;
 for iTx = 1:Ntx
-    out_struct.sectorInfo(iTx) = CFF_read_EMdgmMRZ_txSectorInfo(fid);
+    out_struct.sectorInfo(iTx) = CFF_read_EMdgmMRZ_txSectorInfo(fid, MRZ_VERSION);
 end
 
 out_struct.rxInfo = CFF_read_EMdgmMRZ_rxInfo(fid);
@@ -80,11 +84,11 @@ end
 
 end
 
-function out_struct = CFF_read_EMdgmMRZ_pingInfo(fid)
+function out_struct = CFF_read_EMdgmMRZ_pingInfo(fid, MRZ_VERSION)
 % #MRZ - ping info. Information on vessel/system level, i.e. information
 % common to all beams in the current ping.
 %
-% Verified correct for kmall versions H,I
+% Verified correct for kmall format revisions F-I
 
 % Number of bytes in current struct.
 out_struct.numBytesInfoData = fread(fid,1,'uint16');
@@ -340,31 +344,40 @@ out_struct.longitude_deg = fread(fid,1,'double');
 % motion and installation offsets of the position sensor.
 out_struct.ellipsoidHeightReRefPoint_m = fread(fid,1,'float');
 
-% Backscatter offset set in the installation menu
-out_struct.bsCorrectionOffset_dB = fread(fid,1,'float');
-
-% Beam intensity data corrected as seabed image data (Lambert and normal
-% incidence corrections)
-out_struct.lambertsLawApplied = fread(fid,1,'uint8');
-
-% Ice window installed
-out_struct.iceWindow = fread(fid,1,'uint8');
-
-% Sets status for active modes.
-% Bit 	Modes                   Setting
-% 1 	EM MultiFrequency Mode 	0 = not active, 1 = active
-% 2-16 	Not in use              NA
-out_struct.activeModes = fread(fid,1,'uint16');
+if MRZ_VERSION > 0
+    
+    % Backscatter offset set in the installation menu
+    out_struct.bsCorrectionOffset_dB = fread(fid,1,'float');
+    
+    % Beam intensity data corrected as seabed image data (Lambert and
+    % normal incidence corrections)
+    out_struct.lambertsLawApplied = fread(fid,1,'uint8');
+    
+    % Ice window installed
+    out_struct.iceWindow = fread(fid,1,'uint8');
+    
+    if MRZ_VERSION == 1
+        % Padding for byte alignment.
+        out_struct.padding4 = fread(fid,1,'uint16');
+    else
+        % Sets status for active modes.
+        % Bit 	Modes                   Setting
+        % 1 	EM MultiFrequency Mode 	0 = not active, 1 = active
+        % 2-16 	Not in use              NA
+        out_struct.activeModes = fread(fid,1,'uint16');
+    end
 
 end
 
-function out_struct = CFF_read_EMdgmMRZ_txSectorInfo(fid)
+end
+
+function out_struct = CFF_read_EMdgmMRZ_txSectorInfo(fid, MRZ_VERSION)
 % #MRZ - sector information.
 %
 % Information specific to each transmitting sector. sectorInfo is repeated
 % numTxSectors (Ntx)- times in datagram.
 %
-% Verified correct for kmall versions H,I
+% Verified correct for kmall format revisions F-I
 
 % TX sector index number, used in the sounding section. Starts at 0.
 out_struct.txSectorNumb = fread(fid,1,'uint8');
@@ -424,20 +437,24 @@ out_struct.signalWaveForm = fread(fid,1,'uint8');
 % Byte alignment.
 out_struct.padding1 = fread(fid,1,'uint16');
 
-% 20 log(Measured high voltage power level at TX pulse / Nominal high
-% voltage power level). This parameter will also include the effect of user
-% selected transmit power reduction (transmitPower_dB) and mammal
-% protection. Actual SL = txNominalSourceLevel_dB + highVoltageLevel_dB.
-% Unit dB.
-out_struct.highVoltageLevel_dB = fread(fid,1,'float');
-
-% Backscatter correction added in sector tracking mode. Unit dB.
-out_struct.sectorTrackingCorr_dB = fread(fid,1,'float');
-
-% Signal length used for backscatter footprint calculation. This
-% compensates for the TX pulse tapering and the RX filter bandwidths. Unit
-% second.
-out_struct.effectiveSignalLength_sec = fread(fid,1,'float');
+if MRZ_VERSION > 1
+    
+    % 20 log(Measured high voltage power level at TX pulse / Nominal high
+    % voltage power level). This parameter will also include the effect of user
+    % selected transmit power reduction (transmitPower_dB) and mammal
+    % protection. Actual SL = txNominalSourceLevel_dB + highVoltageLevel_dB.
+    % Unit dB.
+    out_struct.highVoltageLevel_dB = fread(fid,1,'float');
+    
+    % Backscatter correction added in sector tracking mode. Unit dB.
+    out_struct.sectorTrackingCorr_dB = fread(fid,1,'float');
+    
+    % Signal length used for backscatter footprint calculation. This
+    % compensates for the TX pulse tapering and the RX filter bandwidths. Unit
+    % second.
+    out_struct.effectiveSignalLength_sec = fread(fid,1,'float');
+    
+end
 
 end
 
@@ -446,7 +463,7 @@ function out_struct = CFF_read_EMdgmMRZ_rxInfo(fid)
 %
 % Information specific to the receiver unit used in this swath.
 %
-% Verified correct for kmall versions H,I
+% Verified correct for kmall format revisions F-I
 
 % Bytes in current struct.
 out_struct.numBytesRxInfo = fread(fid,1,'uint16');
@@ -495,7 +512,7 @@ function out_struct = CFF_read_EMdgmMRZ_extraDetClassInfo(fid)
 %
 % To be entered in loop numExtraDetectionClasses - times.
 %
-% Verified correct for kmall versions H,I
+% Verified correct for kmall format revisions F-I
 
 % Number of extra detection in this class.
 out_struct.numExtraDetInClass = fread(fid,1,'uint16');
@@ -517,7 +534,7 @@ function out_struct = CFF_read_EMdgmMRZ_sounding(fid, N)
 % datablock (number of samples in SI etc.). To be entered in loop
 % (numSoundingsMaxMain + numExtraDetections) times.
 %
-% Verified correct for kmall versions H,I
+% Verified correct for kmall format revisions F-I
 
 structSize = 120;
 data = fread(fid,N.*structSize,'uint8=>uint8');

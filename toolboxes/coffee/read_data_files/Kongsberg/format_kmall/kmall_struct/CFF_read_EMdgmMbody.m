@@ -9,13 +9,13 @@ function out_struct = CFF_read_EMdgmMbody(fid)
 %   from one datagram. See index description table and figure below for
 %   more information. See the chapter for #MRZ datagram, for more details.
 %
-%   Verified correct for kmall versions H,I
+%   Verified correct for kmall format revisions F-I
 %
 %   See also CFF_READ_KMALL_FROM_FILEINFO, ESPRESSO.
 
 %   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
 %   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
-%   2017-2021; Last revision: 27-07-2021
+%   2017-2021; Last revision: 20-08-2021
 
 % Used for denoting size of current struct, EMdgmMbody_def.
 out_struct.numBytesCmnPart = fread(fid,1,'uint16');

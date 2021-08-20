@@ -7,7 +7,7 @@ function out_struct = CFF_read_EMdgmCPO(fid, dgmVersion_warning_flag)
 %   operator. Motion correction is applied to latitude, longitude, speed,
 %   course and ellipsoidal height.
 %
-%   Verified correct for kmall versions H,I
+%   Verified correct for kmall format revisions F-I
 %
 %   See also CFF_READ_KMALL_FROM_FILEINFO, ESPRESSO.
 
@@ -17,12 +17,14 @@ function out_struct = CFF_read_EMdgmCPO(fid, dgmVersion_warning_flag)
 
 out_struct.header = CFF_read_EMdgmHeader(fid);
 
-if out_struct.header.dgmVersion>0 && dgmVersion_warning_flag
-    % definition valid for CPO_VERSION 0 (kmall versions H,I)
-    warning('#CPO datagram version (%i) unsupported. Continue reading but there may be issues.',out_struct.header.dgmVersion);
+CPO_VERSION = out_struct.header.dgmVersion;
+if CPO_VERSION>0 && dgmVersion_warning_flag
+    % definitions in this function and subfunctions valid for CPO_VERSION:
+    % 0 (kmall format revisions F-I, and presumably earlier ones?)
+    warning('#CPO datagram version (%i) unsupported. Continue reading but there may be issues.',CPO_VERSION);
 end
 
-out_struct.cmnPart    = CFF_read_EMdgmScommon(fid);
+out_struct.cmnPart = CFF_read_EMdgmScommon(fid);
 
 % number of bytes in the actual CPO data is the total datagram size
 % (need to remove 4 bytes for the final numBytes field) minus what was
@@ -46,7 +48,7 @@ function out_struct = CFF_read_EMdgmCPOdataBlock(fid, CPO_data_numBytes)
 % K-Controller operator. Data given both decoded and corrected (active
 % sensors), and raw as received from sensor in text string.
 %
-% Verified correct for kmall versions H,I
+% Verified correct for kmall format revisions F-I
 
 % UTC time from position sensor. Unit seconds. Epoch 1970-01-01. Nanosec
 % part to be added for more exact time.
