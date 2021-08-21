@@ -40,7 +40,7 @@ function KMALLfileinfo = CFF_kmall_file_info(KMALLfilename, varargin)
 %     * |parsed|: flag for whether the datagram has been parsed. Initiated
 %     at 0 at this stage. To be later turned to 1 for parsing.
 %
-%   See also ESPRESSO.
+%   See also ESPRESSO, CFF_ALL_FILE_INFO, CFF_S7K_FILE_INFO
 
 %   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
 %   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
