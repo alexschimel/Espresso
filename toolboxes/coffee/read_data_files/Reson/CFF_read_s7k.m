@@ -1,4 +1,4 @@
-function [S7Kdata,datagrams_parsed_idx] = CFF_read_s7k(S7Kfilename, varargin)
+function [S7Kdata,datagrams_parsed_idx] = CFF_read_s7k(S7Kfilename,varargin)
 %CFF_READ_S7K  Read s7k file
 %
 %   Reads contents of one Teledyne-Reson binary data file in .s7k format,
@@ -25,38 +25,56 @@ function [S7Kdata,datagrams_parsed_idx] = CFF_read_s7k(S7Kfilename, varargin)
 %   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
 %   2017-2021; Last revision: 27-07-2021
 
+
 %% Input arguments management
 p = inputParser;
 
-% S7Kfilename to parse as required argument.
-% Check file existence
+% name of the .s7k file
 argName = 'S7Kfilename';
 argCheck = @(x) CFF_check_S7Kfilename(x);
 addRequired(p,argName,argCheck);
 
-% datagrams as optional argument.
-% Check that cell array
+% types of datagram to read
 argName = 'datagrams';
 argDefault = {};
 argCheck = @(x) isnumeric(x)||isempty(x);
 addOptional(p,argName,argDefault,argCheck);
 
-% now parse inputs
+% information communication
+addParameter(p,'comms',CFF_Comms()); % no communication by default
+
+% parse inputs
 parse(p,S7Kfilename,varargin{:});
 
-% and get input variables from parser
+% and get results
 S7Kfilename        = p.Results.S7Kfilename;
 datagrams_to_parse = p.Results.datagrams;
-
-if isempty(CFF_file_extension(S7Kfilename))
-    S7Kfilename = [S7Kfilename,'.s7k'];
+if ischar(p.Results.comms)
+    comms = CFF_Comms(p.Results.comms);
+else
+    comms = p.Results.comms;
 end
+clear p;
+
+
+%% Prep
+
+% start message
+filename = CFF_file_name(S7Kfilename,1);
+comms.start(sprintf('Reading data in file %s',filename));
+
+% start progress
+comms.progress(0,1);
 
 
 %% Processing
 
 % get info from file
+comms.step('Listing datagrams');
 info = CFF_s7k_file_info(S7Kfilename);
+
+% communicate progress
+comms.progress(0.5,1);
 
 if isempty(datagrams_to_parse)
     % parse all datagrams in file
@@ -81,17 +99,21 @@ end
 % find and remove possibly corrupted datagrams
 idx_corrupted = info.syncCounter~=0;
 idx_corrupted = [idx_corrupted(2:end);false]; % the possibly corrupted datagram is the one before the one with syncCounter~=0;
-
 if any(idx_corrupted & idx_to_parse)
-    warning('%i of the %i datagrams to be parsed in this file may be corrupted and will not be parsed.',sum(idx_corrupted & idx_to_parse), sum(idx_to_parse) );
+    comms.info('%i of the %i datagrams to be parsed in this file may be corrupted and will not be parsed.',sum(idx_corrupted & idx_to_parse), sum(idx_to_parse) );
 end
 
 % parsable datagrams to be parsed
 info.parsed(idx_to_parse & ~idx_corrupted) = 1;
-    
+
+% DEV TEMP remove this XXX1
+% info.parsed(:) = 1;
+% /DEV TEMP
+
 % read data
+comms.step('Reading datagrams');
 S7Kdata = CFF_read_s7k_from_fileinfo(S7Kfilename, info);
 
 
-
-
+%% end message
+comms.finish('Done');

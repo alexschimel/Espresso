@@ -1,4 +1,4 @@
-function [KMALLdata,datagrams_parsed_idx] = CFF_read_kmall(KMALLfilename, varargin)
+function [KMALLdata,datagrams_parsed_idx] = CFF_read_kmall(KMALLfilename,varargin)
 %CFF_READ_KMALL  Read kmall file or pair of files
 %
 %   Reads contents of one Kongsberg EM series binary data file in .kmall
@@ -44,7 +44,7 @@ addOptional(p,argName,argDefault,argCheck);
 % information communication
 addParameter(p,'comms',CFF_Comms()); % no communication by default
 
-% now parse inputs
+% parse inputs
 parse(p,KMALLfilename,varargin{:});
 
 % and get results

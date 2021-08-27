@@ -1,11 +1,11 @@
 function flags = CFF_get_R7012_flags(flag_dec)
 %CFF_GET_R7012_FLAGS  One-line description
 %
-%   See also ESPRESSO.
+%   See also ESPRESSO, CFF_READ_S7K_FROM_FILEINFO.
 
 %   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
 %   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
-%   2017-2021; Last revision: 27-07-2021
+%   2017-2021; Last revision: 27-08-2021
 
 if isnumeric(flag_dec)
     flag_bin = dec2bin(flag_dec, 16);

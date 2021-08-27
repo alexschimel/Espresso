@@ -345,6 +345,10 @@ for iF = 1:nStruct
         [maxnSamples_groups, ping_group_start, ping_group_end] = CFF_group_pings(dtg_nSamples, swath_counter, dtg_swathCnt); % making groups of pings to limit size of memmaped files
         maxnSamples_groups = ceil(maxnSamples_groups/dr_sub); % maximum number of samples TO READ, per group.
         
+        % add the WCD decimation factors given here in input
+        fData.dr_sub = dr_sub;
+        fData.db_sub = db_sub;
+        
         % get date and time-since-midnight-in-milleseconds from header
         [dtg_date,dtg_TSMIM] = CFF_get_date_and_TSMIM_from_kmall_header(header); % date and time per datagram
         fData.WC_1P_Date = dtg_date(iFirstDatagram); % date per swath

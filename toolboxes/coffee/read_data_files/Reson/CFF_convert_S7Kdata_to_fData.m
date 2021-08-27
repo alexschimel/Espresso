@@ -16,24 +16,28 @@ function [fData,update_flag] = CFF_convert_S7Kdata_to_fData(S7KdataGroup,varargi
 %   fData = CFF_CONVERT_S7KDATA_TO_FDATA(S7Kdata,dr_sub,db_sub) operates
 %   the conversion with a sub-sampling of the water-column data in range
 %   and in beams. For example, to sub-sample range by a factor of 10 and
-%   beams by a factor of 2, use: 
+%   beams by a factor of 2, use:
 %   fData = CFF_CONVERT_S7KDATA_TO_FDATA(S7Kdata,10,2).
 %
 %   See also ESPRESSO.
 
 %   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
 %   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
-%   2017-2021; Last revision: 21-07-2021
+%   2017-2021; Last revision: 27-08-2021
+
 
 %% Input arguments management
 p = inputParser;
 
-% required
+% array of S7Kdata structures
 addRequired(p,'S7KdataGroup',@(x) isstruct(x) || iscell(x));
 
 % decimation factor in range and beam
 addOptional(p,'dr_sub',1,@(x) isnumeric(x)&&x>0);
 addOptional(p,'db_sub',1,@(x) isnumeric(x)&&x>0);
+
+% information communication
+addParameter(p,'comms',CFF_Comms()); % no communication by default
 
 % parse inputs
 parse(p,S7KdataGroup,varargin{:})
@@ -42,14 +46,23 @@ parse(p,S7KdataGroup,varargin{:})
 S7KdataGroup = p.Results.S7KdataGroup;
 dr_sub = p.Results.dr_sub;
 db_sub = p.Results.db_sub;
+if ischar(p.Results.comms)
+    comms = CFF_Comms(p.Results.comms);
+else
+    comms = p.Results.comms;
+end
 clear p;
 
-if ~iscell(S7KdataGroup)
+if isstruct(S7KdataGroup)
+    % just one structure
     S7KdataGroup = {S7KdataGroup};
 end
 
 
 %% Prep
+
+% start message
+comms.start('Converting to fData format');
 
 % number of individual S7Kdata structures in input S7KdataGroup
 nStruct = length(S7KdataGroup);
@@ -60,16 +73,11 @@ fData.MET_Fmt_version = CFF_get_current_fData_version();
 % initialize source filenames
 fData.ALLfilename = cell(1,nStruct);
 
+% start progress
+comms.progress(0,nStruct);
 
-for iF = 1:nStruct
-    fData.ALLfilename{iF} = S7KdataGroup{iF}.S7Kfilename;
-end
 
-% add the decimation factors given here in input
-fData.dr_sub = dr_sub;
-fData.db_sub = db_sub;
-
-% XXX1 this calls Matlab version. To fix quick
+% XXX1 this calls Matlab version. To fix quick XXX1
 if ~strcmpi(ver,CFF_get_current_fData_version)
     f_reconvert = 1;
     update_mode = 0;
@@ -78,27 +86,23 @@ else
     update_mode = 1;
 end
 
-% initialize update_flag
+% initialize update_flag. This to fix too XXX1
 update_flag = 0;
 
-%% take one S7Kdata structure at a time and add its contents to fData
 
+%% take one S7Kdata structure at a time and add its contents to fData
 for iF = 1:nStruct
-    
-    %% pre processing
     
     % get current structure
     S7Kdata = S7KdataGroup{iF};
     
-    % Make sure we don't update fData with datagrams from different
-    % sources
-    % XXX3 clean up that display later
-    if ~ismember(S7Kdata.S7Kfilename,fData.ALLfilename)
-        fprintf('Cannot add different files to this structure.\n')
-        continue;
-    end
+    % add source filename
+    S7Kfilename = S7Kdata.S7Kfilename;
+    fData.ALLfilename{iF} = S7Kfilename;
     
-    % now reading each type of datagram...
+    % now reading each type of datagram.
+    % Note we only convert the datagrams if fData does not already contain
+    % any.
     
     fData.IP_ASCIIparameters.S1H=0; %deg (sonarHeadingOffsetDeg, to check where we can find it...)
     %ping_number=S7Kdata.R7000_SonarSettings.PingNumber;
@@ -108,8 +112,6 @@ for iF = 1:nStruct
     
     
     %% S7K_Height
-    
-    % only convert these datagrams if this type doesn't already exist in output
     if f_reconvert || ~isfield(fData,'He_1D_Date')
         if update_mode
             update_flag = 1;
@@ -178,8 +180,8 @@ for iF = 1:nStruct
             warning('Po_1D_Date: Could not find position data in the file');
         end
         
-        %% EM_XYZ88
         
+        %% EM_XYZ88
         if isfield(S7Kdata,'R7027_RAWdetection') %%%%TODO
             
             % only convert these datagrams if this type doesn't already exist in output
@@ -231,8 +233,9 @@ for iF = 1:nStruct
             end
             
         end
-        %% R7000_SonarSettings TODO
         
+        
+        %% R7000_SonarSettings TODO
         if isfield(S7Kdata,'R7000_SonarSettings')
             if f_reconvert || ~isfield(fData,'Ru_1D_Date')
                 
@@ -253,7 +256,6 @@ for iF = 1:nStruct
         
         
         %% R7018_7kBeamformedData TODO
-        
         if isfield(S7Kdata,'R7018_7kBeamformedData')
             if f_reconvert || ~isfield(fData,'WC_1P_Date')
                 if update_mode
@@ -267,6 +269,9 @@ for iF = 1:nStruct
                 maxNSamples=nanmax(S7Kdata.R7018_7kBeamformedData.S);
                 maxNTransmitSectors = 1;
                 
+                % add the WCD decimation factors given here in input
+                fData.dr_sub = dr_sub;
+                fData.db_sub = db_sub;
                 
                 % read data per ping from first datagram of each ping
                 fData.WC_1P_Date                            = S7Kdata.R7018_7kBeamformedData.Date;
@@ -295,12 +300,11 @@ for iF = 1:nStruct
                 fData.WC_BP_TransmitSectorNumber   = ones(maxnBeams,nPings);
                 fData.WC_BP_BeamNumber             = nan(maxnBeams,nPings);
                 
-                
                 [maxNSamples_groups,ping_group_start,ping_group_end]=CFF_group_pings(S7Kdata.R7018_7kBeamformedData.S,pingNumber,pingNumber);
                 
                 % The actual water-column data will not be saved in fData
                 % but in binary files. Get the output directory to store
-                % those files 
+                % those files
                 wc_dir = CFF_converted_data_folder(fData.ALLfilename{iF});
                 
                 % Clean up that folder first before adding anything to it
@@ -379,7 +383,6 @@ for iF = 1:nStruct
         
         
         %% R7042_CompressedWaterColumn
-        
         if isfield(S7Kdata,'R7042_CompressedWaterColumn')
             
             % only convert these datagrams if this type doesn't already exist in output
@@ -404,6 +407,10 @@ for iF = 1:nStruct
                 % maxNSamples = nanmax(S7Kdata.R7042_CompressedWaterColumn.FirstSample+cellfun(@nanmax,S7Kdata.R7042_CompressedWaterColumn.NumberOfSamples));
                 dtg_nSamples = S7Kdata.R7042_CompressedWaterColumn.NumberOfSamples; % number of samples per datagram and beam
                 [maxNSamples_groups, ping_group_start, ping_group_end] = CFF_group_pings(dtg_nSamples,pingNumber,pingNumber); % making groups of pings to limit size of memmaped files
+                
+                % add the WCD decimation factors given here in input
+                fData.dr_sub = dr_sub;
+                fData.db_sub = db_sub;
                 
                 % read data per ping from first datagram of each ping
                 fData.AP_1P_Date                            = S7Kdata.R7042_CompressedWaterColumn.Date;
@@ -437,7 +444,7 @@ for iF = 1:nStruct
                 
                 % The actual water-column data will not be saved in fData
                 % but in binary files. Get the output directory to store
-                % those files 
+                % those files
                 wc_dir = CFF_converted_data_folder(fData.ALLfilename{iF});
                 
                 % Clean up that folder first before adding anything to it
@@ -466,7 +473,7 @@ for iF = 1:nStruct
                     'ping_group_start', ping_group_start, ...
                     'ping_group_end', ping_group_end);
                 
-
+                
                 % do the same for phase if it's available
                 if ~flags.magnitudeOnly
                     
@@ -497,7 +504,7 @@ for iF = 1:nStruct
                 % their location in the source file, so we need to fopen
                 % the source file to grab the data.
                 fid = fopen(fData.ALLfilename{iF},'r',S7Kdata.datagramsformat);
-
+                
                 % correct sampling frequency record
                 if flags.downsamplingType > 0
                     fData.AP_1P_SamplingFrequencyHz = fData.AP_1P_SamplingFrequencyHz./flags.downsamplingDivisor;
@@ -657,7 +664,6 @@ for iF = 1:nStruct
                     
                 end
                 
-                                
                 % close the original raw file
                 fclose(fid);
                 
@@ -667,4 +673,11 @@ for iF = 1:nStruct
         
     end
     
+    %% communicate progress
+    comms.progress(iF,nStruct);
+    
 end
+
+
+%% end message
+comms.finish('Done');

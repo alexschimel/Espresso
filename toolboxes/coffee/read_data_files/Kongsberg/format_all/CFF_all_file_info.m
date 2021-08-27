@@ -179,13 +179,11 @@ fclose(fid);
 
 clear emNumberL emNumberB fid nbDatagL nbDatagB stxDatag datagTypeNumber pif etxDatagL etxDatagB synchronized
 
-% create ouptut info file if required
-if nargout
-    ALLfileinfo.ALLfilename     = ALLfilename;
-    ALLfileinfo.filesize        = filesize;
-    ALLfileinfo.datagsizeformat = datagsizeformat;
-    ALLfileinfo.datagramsformat = datagramsformat;
-end
+% init output info
+ALLfileinfo.ALLfilename     = ALLfilename;
+ALLfileinfo.filesize        = filesize;
+ALLfileinfo.datagsizeformat = datagsizeformat;
+ALLfileinfo.datagramsformat = datagramsformat;
 
 
 %% Reopening file with the good byte ordering

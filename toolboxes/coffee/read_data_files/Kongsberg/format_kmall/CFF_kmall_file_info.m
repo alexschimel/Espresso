@@ -16,7 +16,7 @@ function KMALLfileinfo = CFF_kmall_file_info(KMALLfilename, varargin)
 %   * |KMALLfileinfo|: structure containing information about datagrams in
 %   KMALLfilename, with fields:
 %     * |file_name|: input file name
-%     * |file_size|: file size in bytes
+%     * |fileSize|: file size in bytes
 %     * |dgm_num|: number of datagram in file
 %     * |dgm_type_code|: datagram type as string, e.g. '#IIP' (Kongsberg
 %     .kmall format)
@@ -76,19 +76,17 @@ comms.start(sprintf('Listing datagrams in file %s',filename));
 
 
 %% Open file and initializing
-% kmall files are in little Endian 'l', which is the default with fopen
+% kmall files are in little Endian, but just use the default with fopen
 [fid,~] = fopen(KMALLfilename, 'r');
 
 % go to end of file to get number of bytes in file then rewind
 fseek(fid,0,1);
-file_size = ftell(fid);
+fileSize = ftell(fid);
 fseek(fid,0,-1);
 
-% create output info file if required
-if nargout
-    KMALLfileinfo.file_name = KMALLfilename;
-    KMALLfileinfo.file_size = file_size;
-end
+% init output info
+KMALLfileinfo.fileName = KMALLfilename;
+KMALLfileinfo.fileSize = fileSize;
 
 % initialize list of datagram types and counter
 list_dgmType = {};
@@ -103,14 +101,14 @@ sync_counter = 0;
 
 
 %% Start progress
-comms.progress(0,file_size);
+comms.progress(0,fileSize);
 
 
 %% Reading datagrams
 next_dgm_start_pif = 0;
-while next_dgm_start_pif < file_size
+while next_dgm_start_pif < fileSize
     
-    % new record begins
+    %% new record begins
     dgm_start_pif = ftell(fid);
       
     % A full kmall datagram is organized as a sequence of:
@@ -132,8 +130,8 @@ while next_dgm_start_pif < file_size
     % pif of presumed end of datagram
     dgm_end_pif = dgm_start_pif + header.numBytesDgm - 4;
     
-    % get the repeat file_size at the end of the datagram
-    if dgm_end_pif < file_size
+    % get the repeat fileSize at the end of the datagram
+    if dgm_end_pif < fileSize
         fseek(fid, dgm_end_pif, -1);
         numBytesDgm_repeat  = fread(fid,1,'uint32'); % Datagram length in bytes
         next_dgm_start_pif = ftell(fid);
@@ -144,21 +142,22 @@ while next_dgm_start_pif < file_size
         numBytesDgm_repeat = -1;
     end
     
+    
+    %% test for synchronization
     % check for matching datagram size, amd the hash symbol of datagram
     % type code.
     flag_numBytesDgm_match = (header.numBytesDgm == numBytesDgm_repeat);
     flag_hash = strcmp(header.dgmType(1), '#');
-    
     if ~flag_numBytesDgm_match || ~flag_hash
-        % We've either lost sync, or the last datagram is incomplete
-        % go back to new record start, advance one byte, and restart
+        % We've either lost sync, or the last datagram is incomplete.
+        % Go back to new record start, advance one byte, and restart
         % reading
         fseek(fid, dgm_start_pif+1, -1);
         next_dgm_start_pif = -1;
         sync_counter = sync_counter+1; % update sync counter
         if sync_counter == 1
             % just lost sync, throw a message just now
-            comms.error('Lost sync while reading datagrams. A record may be corrupted. Trying to resync...');
+            comms.error('Lost sync while reading datagrams. A datagram may be corrupted. Trying to resync...');
         end
         continue;
     else
@@ -191,8 +190,10 @@ while next_dgm_start_pif < file_size
     
     %% write output KMALLfileinfo
     
+    % Datagram complete
+    kk = kk + 1;
+    
     % Datagram number in file
-    kk = kk+1;
     KMALLfileinfo.dgm_num(kk,1) = kk;
     
     % Datagram info
@@ -213,13 +214,14 @@ while next_dgm_start_pif < file_size
     % Report any sync issue in reading
     KMALLfileinfo.sync_counter(kk,1) = sync_counter;
     
+    
     %% prepare for reloop
     
     % go to end of datagram
     fseek(fid, next_dgm_start_pif, -1);
     
     % communicate progress
-    comms.progress(next_dgm_start_pif,file_size);
+    comms.progress(next_dgm_start_pif,fileSize);
 end
 
 

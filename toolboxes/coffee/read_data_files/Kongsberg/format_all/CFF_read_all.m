@@ -1,4 +1,4 @@
-function [ALLdata,datagrams_parsed_idx] = CFF_read_all(ALLfilename, varargin)
+function [ALLdata,datagrams_parsed_idx] = CFF_read_all(ALLfilename,varargin)
 %CFF_READ_ALL  Read all file or pair of files
 %
 %   Reads contents of one Kongsberg EM series binary data file in .all
