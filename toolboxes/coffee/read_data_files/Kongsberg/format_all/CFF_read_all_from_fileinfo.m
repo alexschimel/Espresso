@@ -1419,4 +1419,4 @@ ALLdata.info = ALLfileinfo;
 
 
 %% end message
-comms.finish('Done.');
+comms.finish('Done');

@@ -250,7 +250,7 @@ for iF = 1:nStruct
         nBeams = arrayfun(@(idx) sum(dtg_nBeams(iC==idx)), 1:nSwaths); % total number of beams per swath
         maxnBeams = nanmax(nBeams); % maximum number of "beams per swath" in the file
         
-        % get date and time-since-midnight-in-milleseconds from header
+        % date and time
         [dtg_date,dtg_TSMIM] = CFF_get_date_and_TSMIM_from_kmall_header(header); % date and time per datagram
         fData.X8_1P_Date = dtg_date(iFirstDatagram); % date per swath
         fData.X8_1P_TimeSinceMidnightInMilliseconds = dtg_TSMIM(iFirstDatagram); % time per swath
@@ -292,8 +292,8 @@ for iF = 1:nStruct
         end
         
         % debug graph
-        disp_wc = 0;
-        if disp_wc
+        debugDisp = 0;
+        if debugDisp
             f = figure();
             ax_z = axes(f,'outerposition',[0 0.66 1 0.3]);
             imagesc(ax_z, -fData.X8_BP_DepthZ);
@@ -349,14 +349,12 @@ for iF = 1:nStruct
         fData.dr_sub = dr_sub;
         fData.db_sub = db_sub;
         
-        % get date and time-since-midnight-in-milleseconds from header
-        [dtg_date,dtg_TSMIM] = CFF_get_date_and_TSMIM_from_kmall_header(header); % date and time per datagram
-        fData.WC_1P_Date = dtg_date(iFirstDatagram); % date per swath
-        fData.WC_1P_TimeSinceMidnightInMilliseconds = dtg_TSMIM(iFirstDatagram); % time per swath
-        
         % data per ping
         % here taken from first datagram. Ideally, check consistency
         % between datagrams for a given ping
+        [dtg_date,dtg_TSMIM] = CFF_get_date_and_TSMIM_from_kmall_header(header); % date and time per datagram
+        fData.WC_1P_Date = dtg_date(iFirstDatagram); % date per swath
+        fData.WC_1P_TimeSinceMidnightInMilliseconds = dtg_TSMIM(iFirstDatagram); % time per swath
         fData.WC_1P_PingCounter               = swath_counter;
         fData.WC_1P_NumberOfDatagrams         = NaN; % unused anyway
         fData.WC_1P_NumberOfTransmitSectors   = NaN; % unused anyway
@@ -389,23 +387,29 @@ for iF = 1:nStruct
         % Clean up that folder first before adding anything to it
         CFF_clean_delete_fdata(wc_dir);
         
-        % Definition of Kongsberg's KMALL water-column data format. We keep
-        % it exactly like this to save disk space.
-        % The sample amplitude are recorded in "int8" (signed integers from
-        % -128 to 127) with -128 being the NaN value. It needs to be
-        % multiplied by a factor of 1/2 to retrieve the true value, aka an
-        % int8 record of -41 is actually -20.5dB.
-        raw_WCamp_Class = 'int8';
-        raw_WCamp_Factor = 1./2;
-        raw_WCamp_Nanval = intmin(raw_WCamp_Class); % -128
+        % DEV NOTE: Info format for raw WC data and storage
+        % In these raw datagrams, you have both amplitude and phase.
+        %
+        % Amplitude samples are recorded exactly as in the .all format, 
+        % that is in "int8" (signed integers from -128 to 127) with -128
+        % being the NaN value. Raw values needs to be multiplied by a 
+        % factor of 1/2 to retrieve the true value, aka real values go from
+        % -127/2 = -63.5 dB to 127/2 = 63.5 dB in increments of 0.5 dB
+        % For storage, we keep the same format in order to save disk space.
+        %
+        % Phase might or might not be recorded, and depending on the value
+        % of the flag may be recorded in 'int8' with a factor of 180./128,
+        % or in 'int16' with a factor of 0.01.
+        %
+        % For storage, we keep the same format in order to save disk space.
         
         % initialize data-holding binary files for Amplitude
         fData = CFF_init_memmapfiles(fData, ...
             'field', 'WC_SBP_SampleAmplitudes', ...
             'wc_dir', wc_dir, ...
-            'Class', raw_WCamp_Class, ...
-            'Factor', raw_WCamp_Factor, ...
-            'Nanval', raw_WCamp_Nanval, ...
+            'Class', 'int8', ...
+            'Factor', 1./2, ...
+            'Nanval', intmin('int8'), ...
             'Offset', 0, ...
             'MaxSamples', maxnSamples_groups, ...
             'MaxBeams', maxnBeams_sub, ...
@@ -429,24 +433,24 @@ for iF = 1:nStruct
         % record phase data, if available
         if phaseFlag
             
-            % two different formats for raw Phase, depending on the value
-            % of the flag.
+            % two different formats for raw phase, depending on the value
+            % of the flag. Keep the same for storage
             if phaseFlag==1
-                raw_WCph_Class = 'int8';
-                raw_WCph_Factor = 180./128;
+                phaseFormat = 'int8';
+                phaseFactor = 180./128;
             else
-                raw_WCph_Class = 'int16';
-                raw_WCph_Factor = 0.01;
+                phaseFormat = 'int16';
+                phaseFactor = 0.01;
             end
-            raw_WCph_Nanval = intmin(raw_WCph_Class);
+            phaseNanValue = intmin(phaseFormat);
             
             % initialize data-holding binary files for Phase
             fData = CFF_init_memmapfiles(fData, ...
                 'field', 'WC_SBP_SamplePhase', ...
                 'wc_dir', wc_dir, ...
-                'Class', raw_WCph_Class, ...
-                'Factor', raw_WCph_Factor, ...
-                'Nanval', raw_WCph_Nanval, ...
+                'Class', phaseFormat, ...
+                'Factor', phaseFactor, ...
+                'Nanval', phaseNanValue, ...
                 'Offset', 0, ...
                 'MaxSamples', maxnSamples_groups, ...
                 'MaxBeams', maxnBeams_sub, ...
@@ -455,14 +459,14 @@ for iF = 1:nStruct
             
         end
         
-        % Also the samples data were not recorded in ALLdata, only their
-        % location in the source file, so we need to fopen the source file
-        % to grab the data.
+        % Also the samples data were not recorded, only their location in
+        % the source file, so we need to fopen the source file to grab the
+        % data.
         fid = fopen(KMALLfilename,'r','l');
         
         % debug graph
-        disp_wc = 0;
-        if disp_wc
+        debugDisp = 0;
+        if debugDisp
             f = figure();
             if ~phaseFlag
                 ax_mag = axes(f,'outerposition',[0 0 1 1]);
@@ -478,7 +482,7 @@ for iF = 1:nStruct
         % initialize ping group number
         iG = 1;
         
-        % in each swath...
+        % now get data for each swath...
         for iS = 1:nSwaths
             
             % ping group number is the index of the memmaped file in which
@@ -488,9 +492,9 @@ for iF = 1:nStruct
             end
             
             % (re-)initialize amplitude and phase arrays for that swath
-            Mag_tmp = raw_WCamp_Nanval.*ones(maxnSamples_groups(iG),maxnBeams_sub,raw_WCamp_Class);
+            Mag_tmp = intmin('int8').*ones(maxnSamples_groups(iG),maxnBeams_sub,'int8');
             if phaseFlag
-                Ph_tmp = raw_WCph_Nanval.*ones(maxnSamples_groups(iG),maxnBeams_sub,raw_WCph_Class);
+                Ph_tmp = phaseNanValue.*ones(maxnSamples_groups(iG),maxnBeams_sub,phaseFormat);
             end
             
             % data for one swath can be spread over several datagrams,
@@ -512,7 +516,7 @@ for iF = 1:nStruct
                 nB = numel(iB_src); % number of beams to record from this datagram
                 iB_dst = nB_tot + (1:nB); % indices of those beams in output arrays
                 
-                % record data per beam
+                % data per beam
                 fData.WC_BP_BeamPointingAngle(iB_dst,iS)      = BD.beamPointAngReVertical_deg(iB_src);
                 fData.WC_BP_StartRangeSampleNumber(iB_dst,iS) = BD.startRangeSampleNum(iB_src);
                 fData.WC_BP_NumberOfSamples(iB_dst,iS)        = BD.numSampleData(iB_src);
@@ -557,14 +561,14 @@ for iF = 1:nStruct
             end
             
             % debug graph
-            if disp_wc
+            if debugDisp
                 % display amplitude
-                imagesc(ax_mag,double(Mag_tmp).*raw_WCamp_Factor);
+                imagesc(ax_mag,double(Mag_tmp)./2);
                 colorbar(ax_mag)
                 title(ax_mag, sprintf('Ping %i/%i, WCD amplitude',iS,nSwaths));
                 % display phase
                 if phaseFlag
-                    imagesc(ax_phase,double(Ph_tmp).*raw_WCph_Factor);
+                    imagesc(ax_phase,double(Ph_tmp).*phaseFactor);
                     colorbar(ax_phase)
                     title(ax_phase, 'WCD phase');
                 end

@@ -7,7 +7,7 @@ function [maxNSamples_groups,ping_group_start,ping_group_end] = CFF_group_pings(
 
 %   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
 %   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
-%   2017-2021; Last revision: 21-07-2021
+%   2017-2021; Last revision: 30-08-2021
 
 % get the maximum number of samples for each ping
 if iscell(num_samp_per_dtgrm)
@@ -57,11 +57,13 @@ num_groups = numel(idx_new_group);
 % calculate the max number of samples in a ping, per group
 maxNSamples_groups = nan(1,num_groups);
 for uig = 1:num_groups
-    % find datagrams in this group of pings
-    ix = (dtgrm_ping_number>=ping_group_start(uig))&(dtgrm_ping_number<=ping_group_end(uig));
     if iscell(num_samp_per_dtgrm)
+        % indices of datagrams in this group
+        ix = (dtgrm_ping_number>=ping_group_start(uig))&(dtgrm_ping_number<=ping_group_end(uig));
         maxNSamples_groups(uig) = max(cellfun(@(x) max(x),num_samp_per_dtgrm(ix)));
     else
+        % indices of datagrams in this group
+        ix = (ping_counter>=ping_group_start(uig))&(ping_counter<=ping_group_end(uig));
         maxNSamples_groups(uig) = max(num_samp_per_dtgrm(ix));
     end
 end

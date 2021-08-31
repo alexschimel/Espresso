@@ -89,24 +89,24 @@ flags.firstSampleContainsRxDelay = bin2dec(flag_bin(32-15));
 if ~flags.int32BitsData
     if ~flags.int8BitCompression
         if ~flags.magnitudeOnly
-            % A) 16 bit Mag, 16 bit Phase (4 bytes total)
+            % A) 16 bit Mag & 16bit Phase (32 bits total)
             sample_size = 4;
             mag_fmt = 'uint16';
             phase_fmt = 'int16';
         else
-            % B) 16 bit Mag, no phase (2 bytes total)
+            % B) 16 bit Mag (16 bits total, no phase)
             sample_size = 2;
             mag_fmt = 'uint16';
             phase_fmt = '';
         end
     else
         if ~flags.magnitudeOnly
-            % C) 8 bit Mag, 8 bit Phase (2 bytes total)
+            % C) 8 bit Mag & 8 bit Phase (16 bits total)
             sample_size = 2;
             mag_fmt = 'int8';
             phase_fmt = 'int8';
         else
-            % D) 8 bit Mag, no phase (1 byte total)
+            % D) 8 bit Mag (8 bits total, no phase)
             sample_size = 1;
             mag_fmt = 'int8';
             phase_fmt = '';
@@ -114,24 +114,23 @@ if ~flags.int32BitsData
     end
 else
     if ~flags.magnitudeOnly        
-        % This case is ambiguous. We have both mag and phase, and the data
-        % is 32 bits instead of the nominal 16 bits. One would assume it
-        % means magnitude and phase are both 32 bits, for a total of 64.
-        % But this case in not in the documentation.
+        % This case is strange. We have both mag and phase, and bit 12 "32
+        % Bits data" is on. One would assume it means magnitude and phase
+        % are both 32 bits, for a total of 64. OR that magnitude is 32 bits
+        % and phase is nominal, aka 16 bits, for a total of 48 bits. But
+        % none of those cases are in the documentation.
+        %
+        % What we have in the documentation is case "E) 32 bit Mag & 8 bit
+        % Phase (40 bits total)", which is strange. Is the phase downgraded
+        % from 16 to 8 bits to save space? Anyway, we assume that the doc
+        % is correct and that this case applies here.
         
-        % What we have in the documentation is case E) "32 bit Mag & 8 bit
-        % Phase", which is strange. Is the phase downgraded from 16 to 8
-        % bits to save space? Or was that an error and they meant 16 bits,
-        % aka that the upgrade to 32 bits only applies to Mag?
-        
-        % We will assume the doc is correct
-        
-        % E) 32 bit Mag & 8 bit Phase (5 bytes total)
+        % E) 32 bit Mag & 8 bit Phase (40 bits total)
         sample_size = 5;
         mag_fmt = 'float32';
         phase_fmt = 'int8';
     else
-        % F) 32 bit Mag, no phase (4 bytes total)
+        % F) 32 bit Mag (32 bits total, no phase)
         sample_size = 4;
         mag_fmt = 'float32';
         phase_fmt = '';

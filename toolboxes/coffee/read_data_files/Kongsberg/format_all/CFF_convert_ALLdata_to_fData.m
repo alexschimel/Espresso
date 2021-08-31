@@ -768,26 +768,22 @@ for iF = 1:nStruct
         % Clean up that folder first before adding anything to it
         CFF_clean_delete_fdata(wc_dir);
         
-        % Definition of Kongsberg's water-column data format. We keep it
-        % exactly like this to save disk space.
-        % The raw data are recorded in "int8" (signed integers from -128 to
-        % 127) with -128 being the NaN value. It needs to be multiplied by
-        % a factor of 1/2 to retrieve the true value, aka an int8 record of
-        % -41 is actually -20.5dB.
-        raw_WC_Class = 'int8';
-        raw_WC_Factor = 1./2;
-        raw_WC_Nanval = intmin(raw_WC_Class); % -128
-        
-        % precision source and output for fread
-        precision = sprintf('%s=>%s', raw_WC_Class, raw_WC_Class);
+        % DEV NOTE: Info format for raw WC data and storage
+        % In the raw datagrams, there is only amplitude and no phase.
+        % Samples are recorded in "int8" (signed integers from
+        % -128 to 127) with -128 being the NaN value. Raw values needs to
+        % be multiplied by a factor of 1/2 to retrieve the true value, aka
+        % real values go from -127/2 = -63.5 dB to 127/2 = 63.5 dB in
+        % increments of 0.5 dB
+        % For storage, we keep the same format in order to save disk space.
         
         % initialize data-holding binary files
         fData = CFF_init_memmapfiles(fData, ...
             'field', 'WC_SBP_SampleAmplitudes', ...
             'wc_dir', wc_dir, ...
-            'Class', raw_WC_Class, ...
-            'Factor', raw_WC_Factor, ...
-            'Nanval', raw_WC_Nanval, ...
+            'Class', 'int8', ...
+            'Factor', 1./2, ...
+            'Nanval', intmin('int8'), ...
             'Offset', 0, ...
             'MaxSamples', maxnSamples_groups, ...
             'MaxBeams', maxnBeams_sub, ...
@@ -815,7 +811,7 @@ for iF = 1:nStruct
             end
             
             % initialize amplitude matrix for that ping
-            SB_temp = raw_WC_Nanval.*ones(maxnSamples_groups(iG),maxnBeams_sub,raw_WC_Class);
+            SB_temp = intmin('int8').*ones(maxnSamples_groups(iG),maxnBeams_sub,'int8');
             
             % initialize number of sectors and beams recorded so far for
             % that ping (needed for multiple heads)
@@ -901,7 +897,7 @@ for iF = 1:nStruct
                         fseek(fid_all,pos-curr_pos,'cof');
                         
                         % read raw data, with decimation in range
-                        SB_temp(1:nSamp_sub,iBeamDest(iB)) = fread(fid_all, nSamp_sub, precision, dr_sub-1);
+                        SB_temp(1:nSamp_sub,iBeamDest(iB)) = fread(fid_all, nSamp_sub, 'int8=>int8', dr_sub-1);
                         
                     end
                     
@@ -1013,21 +1009,27 @@ for iF = 1:nStruct
         % Clean up that folder first before adding anything to it
         CFF_clean_delete_fdata(wc_dir);
         
-        % Definition of Kongsberg's amplitude-phase data format. We keep it
-        % exactly like this to save disk space.
-        raw_AP_Class = 'int16';
-        raw_A_Factor = 1/200;
-        raw_P_Factor = 1/30;
-        raw_A_Nanval = intmin(raw_AP_Class); % -32768
-        raw_P_Nanval = 200;
+        % DEV NOTE: Info format for raw WC data and storage
+        % This was originally coded by Yoann and I don't have documentation
+        % about the raw data format for these datagrams. Inferring from the
+        % code:
+        % * The amplitude appears to be stored as uint16 in natural values
+        % with a factor of 1/10000. No idea about the NaN value but
+        % assuming it's intmin. We need to convert those to dB so we can't
+        % reuse that format like we did in the WC datagram. Here we will
+        % store the data as int16 with a factor of 1/200.
+        % * The phase appears to be stored as int16 in radians, with a
+        % factor of 1/10000. No idea about the NaN value but assuming it's
+        % intmin. Here we will store the data as int16, as degrees, with a
+        % factor of 1/30 and 200 as the NaN value.
         
         % initialize data-holding binary files
         fData = CFF_init_memmapfiles(fData, ...
             'field', 'AP_SBP_SampleAmplitudes', ...
             'wc_dir', wc_dir, ...
-            'Class', raw_AP_Class, ...
-            'Factor', raw_A_Factor, ...
-            'Nanval', raw_A_Nanval, ...
+            'Class', 'int16', ...
+            'Factor', 1/200, ...
+            'Nanval', intmin('int16'), ...
             'Offset', 0, ...
             'MaxSamples', maxnSamples_groups, ...
             'MaxBeams', maxnBeams_sub, ...
@@ -1037,9 +1039,9 @@ for iF = 1:nStruct
         fData = CFF_init_memmapfiles(fData, ...
             'field', 'AP_SBP_SamplePhase', ...
             'wc_dir', wc_dir, ...
-            'Class', raw_AP_Class, ...
-            'Factor', raw_P_Factor, ...
-            'Nanval', raw_P_Nanval, ...
+            'Class', 'int16', ...
+            'Factor', 1/30, ...
+            'Nanval', 200, ...
             'Offset', 0, ...
             'MaxSamples', maxnSamples_groups, ...
             'MaxBeams', maxnBeams_sub, ...
@@ -1075,8 +1077,8 @@ for iF = 1:nStruct
             end
             
             % initialize the water column data matrix for that ping.
-            SB2_temp = raw_A_Nanval.*ones(maxnSamples_groups(iG),maxnBeams_sub,raw_AP_Class);
-            Ph_temp  = raw_P_Nanval.*ones(maxnSamples_groups(iG),maxnBeams_sub,raw_AP_Class);
+            SB2_temp = intmin('int16').*ones(maxnSamples_groups(iG),maxnBeams_sub,'int16');
+            Ph_temp  = 200.*ones(maxnSamples_groups(iG),maxnBeams_sub,'int16');
             
             % index of the datagrams making up this ping/head in ALLdata.EM_Watercolumn (ex: 58-59-61-64)
             iDatagrams  = find(ALLdata.EM_AmpPhase.PingCounter==pingCounter);
@@ -1131,21 +1133,23 @@ for iF = 1:nStruct
                         pos = ALLdata.EM_AmpPhase.SamplePhaseAmplitudePosition{iDatagrams(iD)}(idx_beams(iB));
                         fseek(fid_all,pos,'bof');
                         
-                        % read amplitude data
+                        % read and decode amplitude data
                         tmp = fread(fid_all,nSamp_sub,'uint16',2); % XXX1 it's missing dr_sub
+                        tmp = 20*log10(single(tmp)*0.0001);
                         
-                        % transform amplitude data
-                        SB2_temp((1:(nSamp_sub)),iBeams(iB)) = int16(20*log10(single(tmp)*0.0001)*200); % what is this transformation? XXX2
+                        % rencode amplitude data in storage format
+                        SB2_temp((1:(nSamp_sub)),iBeams(iB)) = int16(tmp*200); 
                         
                         % get to the start of phase data
                         pos = pos+2;
                         fseek(fid_all,pos,'bof');
                         
-                        % read phase data
+                        % read and decode phase data
                         tmp = fread(fid_all,nSamp_sub,'int16',2);  % XXX1 it's missing dr_sub
+                        tmp = -0.0001*single(tmp)/pi*180;
                         
-                        % transform phase data
-                        Ph_temp((1:(nSamp_sub)),iBeams(iB)) = int16(-0.0001*single(tmp)*30/pi*180); % what is this transformation? XXX2
+                        % transform phase data to storage format
+                        Ph_temp((1:(nSamp_sub)),iBeams(iB)) = int16(tmp*30); 
                         
                     end
                 end

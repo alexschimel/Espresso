@@ -106,10 +106,6 @@ end
 % parsable datagrams to be parsed
 info.parsed(idx_to_parse & ~idx_corrupted) = 1;
 
-% DEV TEMP remove this XXX1
-% info.parsed(:) = 1;
-% /DEV TEMP
-
 % read data
 comms.step('Reading datagrams');
 S7Kdata = CFF_read_s7k_from_fileinfo(S7Kfilename, info);

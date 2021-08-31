@@ -54,7 +54,7 @@ function S7Kdata = CFF_read_s7k_from_fileinfo(S7Kfilename,S7Kfileinfo,varargin)
 
 %   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
 %   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
-%   2017-2021; Last revision: 26-08-2021
+%   2017-2021; Last revision: 30-08-2021
 
 
 %% Input arguments management
@@ -105,10 +105,10 @@ listRecordTypeFieldname = cellfun(@(str) ['R' regexprep(replace(str,' ',''),'\W'
 
 % parse only datagrams indicated in S7Kfileinfo
 datagToParse = find(S7Kfileinfo.parsed==1);
-nDatagsToPars = numel(datagToParse);
+nDatagsToParse = numel(datagToParse);
 
 % start progress
-comms.progress(0,nDatagsToPars);
+comms.progress(0,nDatagsToParse);
 
 
 %% Reading datagrams
@@ -138,7 +138,7 @@ for iDatag = datagToParse'
     
     % get record counter
     if isfield(S7Kdata, recordName)
-        iRec = numel(S7Kdata.(recordName)) +1 ;
+        iRec = numel(S7Kdata.(recordName).Date) +1 ;
     else
         iRec = 1;
     end
@@ -160,23 +160,27 @@ for iDatag = datagToParse'
             % always 0.
             
             % start parsing RTH
-            S7Kdata.(recordName).Datum_id(iRec) = fread(fid,1,'uint32');
-            S7Kdata.(recordName).Latency(iRec)  = fread(fid,1,'float32');
+            S7Kdata.(recordName).Datum_id(iRec) = fread(fid,1,'uint32'); % 0 – WGS84; >0 – Reserved
+            S7Kdata.(recordName).Latency(iRec)  = fread(fid,1,'float32'); % In seconds
             
-            if S7Kdata.(recordName).Datum_id(iRec)==0
-                S7Kdata.(recordName).Latitude(iRec)  = fread(fid,1,'float64')/pi*180; % in radians if latitude (now degrees), or in meters if northing
-                S7Kdata.(recordName).Longitude(iRec) = fread(fid,1,'float64')/pi*180; % in radians if longitude (now degrees), or in meters if easting
-            else
-                S7Kdata.(recordName).LatitudeRadOrNorthing(iRec) = fread(fid,1,'float64');
-                S7Kdata.(recordName).LongitudeRadOrEasting(iRec) = fread(fid,1,'float64');
-            end
+            % Latitude in radians or northing in meters
+            S7Kdata.(recordName).LatitudeOrNorthing(iRec) = fread(fid,1,'float64');
             
-            S7Kdata.(recordName).Height(iRec)             = fread(fid,1,'float64'); % in m
-            S7Kdata.(recordName).PositionTypeFlag(iRec)   = fread(fid,1,'uint8');
-            S7Kdata.(recordName).UTMZone(iRec)            = fread(fid,1,'uint8');
-            S7Kdata.(recordName).QualityFlag(iRec)        = fread(fid,1,'uint8');
-            S7Kdata.(recordName).PositioningMethod(iRec)  = fread(fid,1,'uint8');
-            S7Kdata.(recordName).NumberOfSatellites(iRec) = fread(fid,1,'uint8');
+            % Longitude in radians or easting in meters
+            S7Kdata.(recordName).LongitudeOrEasting(iRec) = fread(fid,1,'float64');
+            
+            S7Kdata.(recordName).Height(iRec) = fread(fid,1,'float64'); % In meters
+            
+            % 0 – Geographical coordinates; 1 – Grid coordinates
+            S7Kdata.(recordName).PositionTypeFlag(iRec) = fread(fid,1,'uint8');
+            
+            S7Kdata.(recordName).UTMZone(iRec) = fread(fid,1,'uint8'); % UTM Zone
+            
+            % 0 – Navigation Data; 1 – Dead-Reckoning
+            S7Kdata.(recordName).QualityFlag(iRec) = fread(fid,1,'uint8');
+           
+            S7Kdata.(recordName).PositioningMethod(iRec) = fread(fid,1,'uint8'); % see doc
+            S7Kdata.(recordName).NumberOfSatellites(iRec) = fread(fid,1,'uint8'); % Optional
             
             parsed = 1;
             
@@ -202,16 +206,36 @@ for iDatag = datagToParse'
             % Description: This record will be output at the input
             % navigation rate.
             
+            % DEV NOTE -- Have not tested this code against actual data...
+            
             % start parsing RTH
-            S7Kdata.(recordName).VerticalReference(iRec)          = fread(fid,1,'uint8');
-            S7Kdata.(recordName).Latitude(iRec)                   = fread(fid,1,'float64')/pi*180; % originally in rad, now in deg
-            S7Kdata.(recordName).Longitude(iRec)                  = fread(fid,1,'float64')/pi*180; % originally in rad, now in deg
+            
+            % 1– Ellipsoid; 2 – Geoid; 3 – Chart datum
+            S7Kdata.(recordName).VerticalReference(iRec) = fread(fid,1,'uint8');
+            
+            % Latitude of vessel reference point in radians -pi/2 to pi/2, -south
+            S7Kdata.(recordName).Latitude(iRec) = fread(fid,1,'float64');
+            
+            % Longitude of vessel reference point in radians -pi to pi, -west
+            S7Kdata.(recordName).Longitude(iRec) = fread(fid,1,'float64');
+            
+            % Position accuracy in meters
             S7Kdata.(recordName).HorizontalPositionAccuracy(iRec) = fread(fid,1,'float32');
-            S7Kdata.(recordName).VesselHeight(iRec)               = fread(fid,1,'float32');
-            S7Kdata.(recordName).HeightAccuracy(iRec)             = fread(fid,1,'float32'); % in m
-            S7Kdata.(recordName).SpeedOverGround(iRec)            = fread(fid,1,'float32'); % in m/s
-            S7Kdata.(recordName).CourseOverGround(iRec)           = fread(fid,1,'float32'); % in rad
-            S7Kdata.(recordName).Heading(iRec)                    = fread(fid,1,'float32')/pi*180; % originally in rad, now in deg
+            
+            % Height of vessel reference point above vertical reference in meters
+            S7Kdata.(recordName).VesselHeight(iRec) = fread(fid,1,'float32');
+            
+            % In meters
+            S7Kdata.(recordName).HeightAccuracy(iRec) = fread(fid,1,'float32');
+            
+            % Speed over ground at position time in m/s
+            S7Kdata.(recordName).SpeedOverGround(iRec) = fread(fid,1,'float32');
+            
+            % Course over ground at position time in radians
+            S7Kdata.(recordName).CourseOverGround(iRec) = fread(fid,1,'float32'); 
+            
+            % Heading of vessel at position time in radians
+            S7Kdata.(recordName).Heading(iRec) = fread(fid,1,'float32');
             
             parsed = 1;
             
@@ -621,9 +645,9 @@ for iDatag = datagToParse'
                 fread(fid,OD_offset-(tmp_pos-pif_recordstart),'uint8');
                 
                 S7Kdata.(recordName).Frequency(iRec) = fread(fid,1,'float32'); % Ping Frequency in Hz
-                S7Kdata.(recordName).Latitude(iRec)  = fread(fid,1,'float64')/pi*180; % Latitude of vessel reference point in radians -pi/2 to pi/2, south negative
-                S7Kdata.(recordName).Longitude(iRec) = fread(fid,1,'float64')/pi*180; % Longitude of vessel reference point in radians -pi to pi, west negative
-                S7Kdata.(recordName).Heading(iRec)   = fread(fid,1,'float32')/pi*180; % Heading of vessel at transmit time in radians
+                S7Kdata.(recordName).Latitude(iRec)  = fread(fid,1,'float64'); % Latitude of vessel reference point in radians -pi/2 to pi/2, south negative
+                S7Kdata.(recordName).Longitude(iRec) = fread(fid,1,'float64'); % Longitude of vessel reference point in radians -pi to pi, west negative
+                S7Kdata.(recordName).Heading(iRec)   = fread(fid,1,'float32'); % Heading of vessel at transmit time in radians
                 
                 % Method used to correct to chart datum. If height source = 1, then Tide = ‘0’.
                 % 0 – None
@@ -632,8 +656,8 @@ for iDatag = datagToParse'
                 S7Kdata.(recordName).HeightSource{iRec} = fread(fid,1,'uint8');
                 
                 S7Kdata.(recordName).Tide(iRec)         = fread(fid,1,'float32'); % In meters
-                S7Kdata.(recordName).Roll(iRec)         = fread(fid,1,'float32')/pi*180; % Roll (originally in radians) at transmit time
-                S7Kdata.(recordName).Pitch(iRec)        = fread(fid,1,'float32')/pi*180; % Pitch (originally in radians) at transmit time
+                S7Kdata.(recordName).Roll(iRec)         = fread(fid,1,'float32'); % Roll (in radians) at transmit time
+                S7Kdata.(recordName).Pitch(iRec)        = fread(fid,1,'float32'); % Pitch (in radians) at transmit time
                 S7Kdata.(recordName).Heave(iRec)        = fread(fid,1,'float32'); % Heave (in radians???) at transmit time
                 S7Kdata.(recordName).VehicleDepth(iRec) = fread(fid,1,'float32'); % Vehicle depth at transmit time in meters
                 
@@ -747,8 +771,8 @@ for iDatag = datagToParse'
             % sequence. 
             S7Kdata.(recordName).MultiPingSequence(iRec) = fread(fid,1,'uint16');
             
-            S7Kdata.(recordName).Beams(iRec)             = fread(fid,1,'uint16'); % Number of beams.
-            S7Kdata.(recordName).Samples(iRec)           = fread(fid,1,'uint32'); % Number of samples (nominal, based on range)
+            S7Kdata.(recordName).Beams(iRec)   = fread(fid,1,'uint16'); % Number of beams.
+            S7Kdata.(recordName).Samples(iRec) = fread(fid,1,'uint32'); % Number of samples (nominal, based on range)
             
             % Number of samples (maximum over all beams if Flags bit 0 set
             % [samples per beam varies]. Otherwise same as Samples(N) )
@@ -810,10 +834,18 @@ for iDatag = datagToParse'
             if flags.segmentNumbersAvailable
                 for jj = 1:B
                     try
-                        S7Kdata.(recordName).BeamNumber{iRec}(jj)      = typecast(blocktmp(1+id(jj):2+id(jj)),'uint16');
-                        S7Kdata.(recordName).SegmentNumber{iRec}(jj)   = typecast(blocktmp(3+id(jj)),'uint8');
+                        % Beam Number for this data.
+                        S7Kdata.(recordName).BeamNumber{iRec}(jj) = typecast(blocktmp(1+id(jj):2+id(jj)),'uint16');
+                        
+                        % Segment number for this beam. Optional field, see ‘Bit 14’ of Flags.
+                        S7Kdata.(recordName).SegmentNumber{iRec}(jj) = typecast(blocktmp(3+id(jj)),'uint8');
+                        
+                        % Number of samples included for this beam.
                         S7Kdata.(recordName).NumberOfSamples{iRec}(jj) = typecast(blocktmp(4+id(jj):7+id(jj)),'uint32');
+                        
+                        % Record position of data
                         S7Kdata.(recordName).SampleStartPositionInFile{iRec}(jj) = pos_2 + id(jj) + 7;
+                        
                         Ns(jj) = S7Kdata.(recordName).NumberOfSamples{iRec}(jj);
                         id(jj) = 7*jj + sum(Ns)*sample_size;
                     catch
@@ -828,9 +860,15 @@ for iDatag = datagToParse'
                 % same process but without reading segment number
                 for jj = 1:B
                     try
-                        S7Kdata.(recordName).BeamNumber{iRec}(jj)      = typecast(blocktmp(1+id(jj):2+id(jj)),'uint16');
+                        % Beam Number for this data.
+                        S7Kdata.(recordName).BeamNumber{iRec}(jj) = typecast(blocktmp(1+id(jj):2+id(jj)),'uint16');
+                        
+                        % Number of samples included for this beam.
                         S7Kdata.(recordName).NumberOfSamples{iRec}(jj) = typecast(blocktmp(3+id(jj):6+id(jj)),'uint32');
+                        
+                        % Record position of data
                         S7Kdata.(recordName).SampleStartPositionInFile{iRec}(jj) = pos_2 + id(jj) + 6;
+                        
                         Ns(jj) = S7Kdata.(recordName).NumberOfSamples{iRec}(jj);
                         id(jj+1) = 6*jj + sum(Ns).*sample_size;
                     catch
@@ -844,7 +882,6 @@ for iDatag = datagToParse'
             end
             
             if wc_parsing_error == 0
-                
                 % HERE if data parsing all went well
                 
                 if OD_size~=0
@@ -984,21 +1021,20 @@ for iDatag = datagToParse'
             
         otherwise
             % recordTypeIdentifier is not recognized yet
-            pi;
             
     end
     
     % modify parsed status in info
     S7Kfileinfo.parsed(iDatag,1) = parsed;
     
-    % chnage date and time format
+    % and date and time
     if parsed == 1
         S7Kdata.(recordName).TimeSinceMidnightInMilliseconds(iRec) = S7Kfileinfo.timeSinceMidnightInMilliseconds(iDatag);
         S7Kdata.(recordName).Date(iRec)                            = str2double(S7Kfileinfo.date{iDatag});
     end
     
     % communicate progress
-    comms.progress(iDatag,nDatagsToPars);
+    comms.progress(iDatag,nDatagsToParse);
     
 end
 
@@ -1012,7 +1048,6 @@ fclose(fid);
 S7Kdata.info = S7Kfileinfo;
 
 % end message
-comms.finish('Done.');
+comms.finish('Done');
 
 end
-

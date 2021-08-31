@@ -510,7 +510,7 @@ fclose(fid);
 KMALLdata.info = KMALLfileinfo;
 
 % end message
-comms.finish('Done.');
+comms.finish('Done');
 
 end
 

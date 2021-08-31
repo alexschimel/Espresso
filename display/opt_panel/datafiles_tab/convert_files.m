@@ -150,12 +150,8 @@ for nF = 1:n_files
                     end
                 end
                 
-                if datags_parsed_idx(end)
-                    datagramSource = 'AP';
-                else
-                    datagramSource = 'WC';
-                end
-                
+                datagramSource = 'AP';
+
                 % step 2: convert
                 fData = CFF_convert_S7Kdata_to_fData(RESONdata,dr_sub,db_sub);
                 textprogressbar(90);
