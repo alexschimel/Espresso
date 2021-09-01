@@ -149,7 +149,7 @@ if isfield(S7Kdata,'R1015_Navigation')
     fData.He_1D_Date                            = S7Kdata.R1015_Navigation.Date;
     fData.He_1D_TimeSinceMidnightInMilliseconds = S7Kdata.R1015_Navigation.TimeSinceMidnightInMilliseconds;
     fData.He_1D_HeightCounter                   = 1:numel(S7Kdata.R1015_Navigation.Date);
-    fData.He_1D_Height                          = S7Kdata.R1015_Navigation.VesselHeigh;
+    fData.He_1D_Height                          = S7Kdata.R1015_Navigation.VesselHeight;
 elseif isfield(S7Kdata,'R1003_Position')
     fData.He_1D_Date                            = S7Kdata.R1003_Position.Date;
     fData.He_1D_TimeSinceMidnightInMilliseconds = S7Kdata.R1003_Position.TimeSinceMidnightInMilliseconds;

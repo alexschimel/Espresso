@@ -12,7 +12,7 @@ function fDataGroup = CFF_convert_raw_files(rawFilesList,varargin)
 %   non-paired file rawFile specified with full path either as a character
 %   string (e.g. rawFilesList='D:\Data\myfile.all') or a 1x1 cell
 %   containing the character string (e.g.
-%   rawFilesList={'D:\Data\myfile.all'}). 
+%   rawFilesList={'D:\Data\myfile.all'}).
 %
 %   fDataGroup = CFF_CONVERT_RAW_FILES(pairedRawFiles) converts a pair of
 %   files specified as a 1x1 cell containing a 2x1 cell where each cell
@@ -26,7 +26,7 @@ function fDataGroup = CFF_convert_raw_files(rawFilesList,varargin)
 %   where each cell corresponds to a file or pair of files to convert,
 %   specified as above either a character string, or 2x1 cells of paired
 %   files (e.g. rawFilesList = {'D:\Data\mySingleFile.all',
-%   {'D:\Data\myPairedFile.all','D:\Data\myPairedFile.wcd'}}). 
+%   {'D:\Data\myPairedFile.all','D:\Data\myPairedFile.wcd'}}).
 %   Note: Use CFF_LIST_RAW_FILES_IN_DIR to generate rawFilesList from a
 %   folder containing raw data files.
 %
@@ -40,12 +40,12 @@ function fDataGroup = CFF_convert_raw_files(rawFilesList,varargin)
 %
 %   'conversionType': 'Z&BS' will only convert datagrams necessary for
 %   bathymetry and backscatter processing (e.g. for Ristretto).
-%   Water-column datagrams are ignored in this mode. 
+%   Water-column datagrams are ignored in this mode.
 %   'conversionType': 'WCD' will only convert datagrams necessary for
 %   water-column data processing (e.g. for Espresso). Note: this includes
 %   datagrams for bathymetry and backscatter processing. Use
 %   'conversionType': 'everything' (default) will convert every datagram
-%   supported. 
+%   supported.
 %
 %   'saveFDataToDrive': 1 will save the converted fData to the hard-drive.
 %   Use 'saveFDataToDrive': 0 (default) to prevent this. Note that if
@@ -79,13 +79,13 @@ function fDataGroup = CFF_convert_raw_files(rawFilesList,varargin)
 %   'db_sub': N where N is an integer will decimate water-column data in
 %   beam by a factor of N. By default, 'db_sub': 1 so that all data are
 %   read and converted.
-%   
+%
 %   'comms': 'disp' will display text and progress information in the
 %   command window.
 %   'comms': 'textprogressbar': will display text and progress information
 %   in a text progress bar in the command window.
 %   'comms': 'waitbar': will display text and progress information
-%   in a Matlab waitbar figure. 
+%   in a Matlab waitbar figure.
 %   'comms': '' (default) will not display any text and progress
 %   information.
 %
@@ -256,7 +256,7 @@ for iF = 1:nFiles
                 end
             end
         end
-         
+        
         % reading and converting depending on file format
         switch file_format
             case 'Kongsberg_all'
@@ -294,7 +294,7 @@ for iF = 1:nFiles
                     % if requesting conversion specifically for WCD or
                     % Z&BS, a couple of checks are necessary
                     
-                    % check if all required datagrams have been found 
+                    % check if all required datagrams have been found
                     iDtgsRequired = ismember(dtgsAllRequired,dtgs(iDtgsParsed));
                     if ~all(iDtgsRequired)
                         strdisp = sprintf('File is missing required datagram types (%s).',strjoin(string(dtgsAllRequired(~iDtgsRequired)),', '));
@@ -335,99 +335,6 @@ for iF = 1:nFiles
                         else
                             fData.MET_datagramSource = 'WC';
                         end
-                    case 'Z&BS'
-                        fData.MET_datagramSource = 'X8';
-                    case 'everything'
-                        % choose whatever is available
-                        fData.MET_datagramSource = CFF_get_datagramSource(fData);
-                end
-                
-                % sort fields by name
-                fData = orderfields(fData);
-                
-            case 'Reson_s7k'
-                
-                % datagram types to read
-                switch conversionType
-                    case 'WCD'
-                        dtgsAllRequired = [7000, ... % R7000_SonarSettings
-                            7004, ...                % R7004_BeamGeometry
-                            7027];                   % R7027_RawDetectionData   
-                        dtgsEitherNav = [1015, ... % R1015_Navigation
-                            1003];                   % R1003_Position
-                        dtgsEitherWCD = [7018, ... % R7018_BeamformedData
-                            7042];                   % R7042_CompressedWaterColumnData
-                        dtgs = sort(unique([dtgsAllRequired, dtgsEitherNav, dtgsEitherWCD]));
-                    case 'Z&BS'
-                        dtgsAllRequired = [7000, ... % R7000_SonarSettings
-                            7027, ...                % R7027_RawDetectionData
-                            ];
-                        dtgsEitherNav = [1015, ...    % R1015_Navigation
-                            1003];                   % R1003_Position
-                        dtgs = sort(unique([dtgsAllRequired, dtgsEitherNav]));
-                    case 'everything'
-                        % convert every datagrams supported
-                        dtgs = [];
-                end
-                
-                % conversion step 1: read what we can
-                comms.info('Reading data in file');
-                [RESONdata,iDtgsParsed] = CFF_read_s7k(rawFile, dtgs);
-                
-                if ~strcmp(conversionType,'everything')
-                    % if requesting conversion specifically for WCD or
-                    % Z&BS, a couple of checks are necessary
-                    
-                    % check if all required datagrams have been found
-                    iDtgsRequired = ismember(dtgsAllRequired,dtgs(iDtgsParsed));
-                    if ~all(iDtgsRequired)
-                        strdisp = sprintf('File is missing required datagram types (%s).',strjoin(string(dtgsAllRequired(~iDtgsRequired)),', '));
-                        if convertEvenIfDtgrmsMissing
-                            % log message and resume conversion
-                            comms.info([strdisp ' Converting anyway']);
-                        else
-                            % abort conversion by throwing error
-                            error([strdisp ' Conversion aborted']);
-                        end
-                    end
-                    
-                    % check if at least one type of navigation datagram has
-                    % been found 
-                    if ~any(ismember(dtgsEitherNav,dtgs(iDtgsParsed)))
-                        strdisp = 'File does not contain navigation datagrams.';
-                        if convertEvenIfDtgrmsMissing
-                            % log message and resume conversion
-                            comms.info([strdisp ' Converting anyway'])
-                        else
-                            % abort conversion by throwing error
-                            error([strdisp ' Conversion aborted']);
-                        end
-                    end
-                    
-                    % if requesting conversion for WCD, check if at least
-                    % one type of water-column datagram has been found
-                    if strcmp(conversionType,'WCD') && ~any(ismember(dtgsEitherWCD,dtgs(iDtgsParsed)))
-                        strdisp = 'File does not contain water-column datagrams.';
-                        if convertEvenIfDtgrmsMissing
-                            % log message and resume conversion
-                            comms.info([strdisp ' Converting anyway'])
-                        else
-                            % abort conversion by throwing error
-                            error([strdisp ' Conversion aborted']);
-                        end
-                    end
-                    
-                end
-                
-                % conversion step 2: convert
-                comms.info('Converting to fData format');
-                fData = CFF_convert_S7Kdata_to_fData(RESONdata,dr_sub,db_sub);
-               
-                % set datagram source
-                switch conversionType
-                    case 'WCD'
-                        % both WCD datagram types in Reson have phase
-                        fData.MET_datagramSource = 'AP';
                     case 'Z&BS'
                         fData.MET_datagramSource = 'X8';
                     case 'everything'
@@ -498,9 +405,102 @@ for iF = 1:nFiles
                         % choose whatever is available
                         fData.MET_datagramSource = CFF_get_datagramSource(fData);
                 end
-
+                
                 % sort fields by name
                 fData = orderfields(fData);
+                
+            case 'Reson_s7k'
+                
+                % datagram types to read
+                switch conversionType
+                    case 'WCD'
+                        dtgsAllRequired = [7000, ... % R7000_SonarSettings
+                            7004, ...                % R7004_BeamGeometry
+                            7027];                   % R7027_RawDetectionData
+                        dtgsEitherNav = [1015, ...   % R1015_Navigation
+                            1003];                   % R1003_Position
+                        dtgsEitherWCD = [7018, ...   % R7018_BeamformedData
+                            7042];                   % R7042_CompressedWaterColumnData
+                        dtgs = sort(unique([dtgsAllRequired, dtgsEitherNav, dtgsEitherWCD]));
+                    case 'Z&BS'
+                        dtgsAllRequired = [7000, ... % R7000_SonarSettings
+                            7027];                   % R7027_RawDetectionData
+                        dtgsEitherNav = [1015, ...   % R1015_Navigation
+                            1003];                   % R1003_Position
+                        dtgs = sort(unique([dtgsAllRequired, dtgsEitherNav]));
+                    case 'everything'
+                        % convert every datagrams supported
+                        dtgs = [];
+                end
+                
+                % conversion step 1: read what we can
+                comms.info('Reading data in file');
+                [S7Kdata,iDtgsParsed] = CFF_read_s7k(rawFile, dtgs);
+                
+                if ~strcmp(conversionType,'everything')
+                    % if requesting conversion specifically for WCD or
+                    % Z&BS, a couple of checks are necessary
+                    
+                    % check if all required datagrams have been found
+                    iDtgsRequired = ismember(dtgsAllRequired,dtgs(iDtgsParsed));
+                    if ~all(iDtgsRequired)
+                        strdisp = sprintf('File is missing required datagram types (%s).',strjoin(string(dtgsAllRequired(~iDtgsRequired)),', '));
+                        if convertEvenIfDtgrmsMissing
+                            % log message and resume conversion
+                            comms.info([strdisp ' Converting anyway']);
+                        else
+                            % abort conversion by throwing error
+                            error([strdisp ' Conversion aborted']);
+                        end
+                    end
+                    
+                    % check if at least one type of navigation datagram has
+                    % been found
+                    if ~any(ismember(dtgsEitherNav,dtgs(iDtgsParsed)))
+                        strdisp = 'File does not contain navigation datagrams.';
+                        if convertEvenIfDtgrmsMissing
+                            % log message and resume conversion
+                            comms.info([strdisp ' Converting anyway'])
+                        else
+                            % abort conversion by throwing error
+                            error([strdisp ' Conversion aborted']);
+                        end
+                    end
+                    
+                    % if requesting conversion for WCD, check if at least
+                    % one type of water-column datagram has been found
+                    if strcmp(conversionType,'WCD') && ~any(ismember(dtgsEitherWCD,dtgs(iDtgsParsed)))
+                        strdisp = 'File does not contain water-column datagrams.';
+                        if convertEvenIfDtgrmsMissing
+                            % log message and resume conversion
+                            comms.info([strdisp ' Converting anyway'])
+                        else
+                            % abort conversion by throwing error
+                            error([strdisp ' Conversion aborted']);
+                        end
+                    end
+                    
+                end
+                
+                % conversion step 2: convert
+                comms.info('Converting to fData format');
+                fData = CFF_convert_S7Kdata_to_fData(S7Kdata,dr_sub,db_sub);
+                
+                % set datagram source
+                switch conversionType
+                    case 'WCD'
+                        % both WCD datagram types in Reson have phase
+                        fData.MET_datagramSource = 'AP';
+                    case 'Z&BS'
+                        fData.MET_datagramSource = 'X8';
+                    case 'everything'
+                        % choose whatever is available
+                        fData.MET_datagramSource = CFF_get_datagramSource(fData);
+                end
+                
+                % sort fields by name
+                fData = orderfields(fData);
+                
         end
         
         % save fData to drive
@@ -523,7 +523,7 @@ for iF = 1:nFiles
         
         % successful end of this iteration
         comms.info('Done');
-       
+        
     catch err
         if abortOnError
             % just rethrow error to terminate execution
