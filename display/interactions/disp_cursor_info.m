@@ -26,7 +26,7 @@ disp_config = getappdata(main_figure,'disp_config');
 IDs=cellfun(@(c) c.ID,fData_tot);
 
 
-if ~ismember(disp_config.Fdata_ID , IDs)
+if isempty(disp_config.Fdata_ID) || ~ismember(disp_config.Fdata_ID , IDs)
     disp_config.Fdata_ID = IDs(1);
     disp_config.Iping = 1; % calls listenIping
     return;

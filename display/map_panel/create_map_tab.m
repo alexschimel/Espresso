@@ -35,6 +35,7 @@ map_tab_comp.map_axes.XTickLabelRotation = 90;
 
 [cmap,col_ax,col_lab,col_grid,col_bot,col_txt] = init_cmap(disp_config.Cmap);
 
+
 map_tab_comp.cbar = colorbar(map_tab_comp.map_axes,'east');
 colormap(map_tab_comp.map_axes,cmap);
 

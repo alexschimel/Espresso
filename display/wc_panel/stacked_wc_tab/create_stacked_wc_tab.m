@@ -27,7 +27,7 @@ stacked_wc_tab_comp.wc_axes = axes(stacked_wc_tab_comp.wc_tab,...
     'YDir','normal',...
     'Tag','stacked_wc');
 
-[cmap,col_ax,col_lab,col_grid,col_bot,col_txt] = init_cmap(disp_config.Cmap);
+[cmap,col_ax,col_lab,col_grid,col_bot,col_txt] = init_cmap('ek60');
 
 colorbar(stacked_wc_tab_comp.wc_axes,'southoutside');
 colormap(stacked_wc_tab_comp.wc_axes,cmap);
