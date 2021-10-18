@@ -28,6 +28,10 @@ try mask_ping = varargin{5};
 catch
     mask_ping = 100; % default
 end
+try mask_minslantrange = varargin{6};
+catch
+    mask_minslantrange = 0; % default
+end
 
 % data size
 [nSamples, nBeams, ~] = size(data);
@@ -41,7 +45,8 @@ datagramSource = CFF_get_datagramSource(fData);
 interSamplesDistance = CFF_inter_sample_distance(fData);
 interSamplesDistance = interSamplesDistance(blockPings);
 
-% MASK 1: OUTER BEAMS REMOVAL
+
+%% MASK 1: OUTER BEAMS REMOVAL
 if ~isinf(mask_angle)
     
     % extract needed data
@@ -59,7 +64,8 @@ else
     
 end
 
-% MASK 2: CLOSE RANGE REMOVAL
+
+%% MASK 2: CLOSE RANGE REMOVAL
 if mask_closerange>0
     
     % extract needed data
@@ -75,7 +81,8 @@ else
     
 end
 
-% MASK 3: BOTTOM RANGE REMOVAL
+
+%% MASK 3: BOTTOM RANGE REMOVAL
 if ~isinf(mask_bottomrange)
     
     % beam pointing angle
@@ -153,7 +160,8 @@ else
     
 end
 
-% MASK 4: OUTSIDE POLYGON REMOVAL
+
+%% MASK 4: OUTSIDE POLYGON REMOVAL
 if ~isempty(mypolygon)
     
     % build mask: 1: to conserve, 0: to remove
@@ -169,12 +177,13 @@ else
     
 end
 
-% MASK 5: PINGS REMOVAL
+
+%% MASK 5: PINGS REMOVAL
 if mask_ping<100
     
     % for now we will use the percentage of faulty bottom detects as a
     % threshold to mask the ping. Aka, if mask_ping=10, then we
-    % will mask the  ping if 10% or more of its bottom detects are
+    % will mask the ping if 10% or more of its bottom detects are
     % faulty.
     % Quick data look up reveal show that good pings still misses up to 6%
     % of detects on the outer beams. A ping with some missing bottom
@@ -201,14 +210,38 @@ else
 end
 
 
-% MULTIPLYING ALL MASKS
+%% MASK 6: REMOVE DATA BEYOND MIN SLANT RANGE
+if mask_minslantrange
+   
+    % get range (in m) for all samples
+    samplesRange = CFF_get_samples_range( (1:nSamples)', fData.(sprintf('%s_BP_StartRangeSampleNumber',datagramSource))(:,blockPings), interSamplesDistance);
+    
+    % get bottom range (in m)
+    bottomRange = fData.X_BP_bottomRange(:,blockPings);
+    
+    % min slant range per ping
+    bottomRange(bottomRange==0) = NaN;
+    P1_minSlantRange = nanmin(bottomRange)';
+    SBP_minSlantRange = repmat( permute(P1_minSlantRange,[3,2,1]),nSamples,nBeams);
+    
+    % build mask: 1: to conserve, 0: to remove
+    X_SBP_MinSlantRangeMask = samplesRange < SBP_minSlantRange;
+    
+else 
+    % conserve all data
+    X_SBP_MinSlantRangeMask = true(nSamples,nBeams,nPings);
+end
+
+
+
+%% MULTIPLYING ALL MASKS
 % for earlier versions of Matlab
 % if verLessThan('matlab','9.1')
 % mask_temp = X_SBP_CloseRangeMask & X_SBP_BottomRangeMask & X_SBP_PolygonMask;
 % mask_temp = bsxfun(@and,X_1BP_OuterBeamsMask,mask_temp);
 % mask = bsxfun(@and,X_11P_PingMask,mask_temp);
 
-mask = X_11P_PingMask & X_1BP_OuterBeamsMask & X_SBP_CloseRangeMask & X_SBP_BottomRangeMask & X_SBP_PolygonMask;
+mask = X_11P_PingMask & X_1BP_OuterBeamsMask & X_SBP_CloseRangeMask & X_SBP_BottomRangeMask & X_SBP_PolygonMask & X_SBP_MinSlantRangeMask;
 
 % apply mask
 data(~mask) = NaN;

@@ -147,7 +147,7 @@ for itt = idx_fData(:)'
                 %
                 % PROCESSING STEP 3: masking data
                 if procpar.masking_flag
-                    data = CFF_mask_WC_data_CORE(data, fData_tot{itt}, blockPings_f, procpar.mask_angle, procpar.mask_closerange, procpar.mask_bottomrange, [], procpar.mask_ping);
+                    data = CFF_mask_WC_data_CORE(data, fData_tot{itt}, blockPings_f, procpar.mask_angle, procpar.mask_closerange, procpar.mask_bottomrange, [], procpar.mask_ping, procpar.mask_minslantrange);
                 end
                 %
                 % END OF PROCESSING %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

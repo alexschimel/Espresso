@@ -8,6 +8,23 @@ function initialize_display(main_figure)
 %   2017-2021; Last revision: 21-07-2021
 
 
+%% FIGURE DIMENSIONS AND POSITION
+
+% primary monitor's dimensions
+monitorPositions = get(0, 'MonitorPositions');
+if size(monitorPositions,1)>1
+    iPrimaryDisplay = (monitorPositions(:,1)==1) & (monitorPositions(:,2)==1);
+    monitorPositions = monitorPositions(iPrimaryDisplay,:);
+end
+
+% Espresso's window size
+Espresso_window_position = [monitorPositions(1,1), ... % bottom-left corner X
+    monitorPositions(1,2), ...     % bottom-left corner Y
+    round(monitorPositions(1,3).*(3/4)), ... % width
+    round(monitorPositions(1,4).*(3/4))];    % height
+set(main_figure,'Position',Espresso_window_position);
+centerfig(main_figure);
+
 %% CONTROL PANEL (left-top)
 
 % create panel
@@ -58,8 +75,7 @@ create_info_panel(main_figure);
 
 %% FINISHING UP
 
-% center main window on screen and make visible
-centerfig(main_figure);
+% make visible
 set(main_figure,'Visible','on');
 drawnow;
 

@@ -70,15 +70,6 @@ else
     fprintf(' Unavailable.\n');
 end
 
-% monitor's dimensions
-size_max = get(0, 'MonitorPositions');
-
-% Espresso's window position and size
-Espresso_window_position = [size_max(1,1), ... % bottom-left corner X
-    size_max(1,2)+1/8*size_max(1,4), ... % bottom-left corner Y
-    size_max(1,3)/4*3, ... % width
-    size_max(1,4)/4*3]; % height
-
 % create main_figure
 fprintf('Creating main figure...\n');
 if ~isdeployed()
@@ -87,7 +78,6 @@ else
     Espresso_start_visibility = 'off';
 end
 main_figure = figure('Units','pixels',...
-    'Position',Espresso_window_position,...
     'Color','White',...
     'Name','Espresso',...
     'Tag','Espresso',...

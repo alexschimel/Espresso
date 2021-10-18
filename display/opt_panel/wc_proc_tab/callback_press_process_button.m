@@ -37,11 +37,12 @@ procpar.gridbathyBS_flag    = wc_proc_tab_comp.bs_grid_bool.Value;
 procpar.gridbathyBS_res     = str2double(get(wc_proc_tab_comp.bs_grid_res,'String'));
 
 % masking parameters
-procpar.masking_flag        = wc_proc_tab_comp.masking.Value;
-procpar.mask_angle          = str2double(get(wc_proc_tab_comp.angle_mask,'String'));
-procpar.mask_closerange     = str2double(get(wc_proc_tab_comp.r_min,'String'));
-procpar.mask_bottomrange    = -str2double(get(wc_proc_tab_comp.r_bot,'String')); % NOTE inverting sign here.
-procpar.mask_ping           = str2double(get(wc_proc_tab_comp.mask_badpings,'String'));
+procpar.masking_flag       = wc_proc_tab_comp.masking.Value;
+procpar.mask_angle         = str2double(get(wc_proc_tab_comp.angle_mask,'String'));
+procpar.mask_closerange    = str2double(get(wc_proc_tab_comp.r_min,'String'));
+procpar.mask_bottomrange   = -str2double(get(wc_proc_tab_comp.r_bot,'String')); % NOTE inverting sign here.
+procpar.mask_ping          = str2double(get(wc_proc_tab_comp.mask_badpings,'String'));
+procpar.mask_minslantrange = wc_proc_tab_comp.mask_minslantrange.Value;
 
 % radiometric correction parameters
 procpar.radiomcorr_flag     = wc_proc_tab_comp.radiomcorr.Value;
