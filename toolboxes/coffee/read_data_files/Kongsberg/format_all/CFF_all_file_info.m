@@ -109,7 +109,7 @@ filesize = ftell(fid);
 fseek(fid,0,-1);
 
 % counter for resynchornization attempts
-resync_counter = 0;
+syncCounter = 0;
 
 % reading data from first datagram
 while 1
@@ -152,8 +152,8 @@ while 1
         break
     else
         % trying to re-synchronize: fwd one byte and repeat the above
-        resync_counter = resync_counter+1;
-        if resync_counter == 10000
+        syncCounter = syncCounter+1;
+        if syncCounter == 10000
             error('Struggling to recognize start of file. Ensure your EM model is in the list of this function.');
         end
         fseek(fid,pif+1,-1);
@@ -203,9 +203,10 @@ comms.progress(0,filesize);
 
 
 %% Reading datagrams
-while 1
+next_dgm_start_pif = 0;
+while next_dgm_start_pif < filesize
     
-    % new datagram begins, start reading
+    %% new datagram begins
     pif = ftell(fid);
     
     % number of bytes in datagram
@@ -223,22 +224,35 @@ while 1
     number                          = fread(fid,1,'uint16'); % datagram or ping number
     systemSerialNumber              = fread(fid,1,'uint16'); % EM system serial number
     
-    if feof(fid)
-        % file finished, leave the loop
-        break;
-    end
-    
-    % test for synchronization
-    % to pass, first data reading must show that:
+    %% test for synchronization
+    % to pass, first data reading above must show that:
     % - the number of bytes in following datagram doesn't overshoot file
     % size
     % - STX must be equal to 2.
     % - the EM model number must be in the list showed at beginning
     if nbDatag>filesize || stxDatag~=2 || ~sum(emNumber==emNumberList)
-        fseek(fid,pif+1,-1); % re-synchronizing 1 byte
-        syncCounter = syncCounter+1; % update counter
-        continue;
+        % NOT SYNCHRONIZED
+        % trying to re-synchronize: fwd one byte and repeat the above
+        fseek(fid,pif+1,-1);
+        next_dgm_start_pif = -1;
+        syncCounter = syncCounter+1; % update sync counter
+        if syncCounter == 1
+            % just lost sync, throw a message just now
+            comms.error('Lost sync while reading datagrams. A datagram may be corrupted. Trying to resync...');
+        end
+        continue
+    else
+        % SYNCHRONIZED
+        if syncCounter
+            % if we had lost sync, warn here we're back
+            comms.info(sprintf('Back in sync (%i bytes later). Resume process.',syncCounter));
+            % reinitialize sync counter
+            syncCounter = 0;
+        end
     end
+    
+    % position in file of next datagram
+    next_dgm_start_pif = pif + 4 + nbDatag;
     
     % reset the datagram counter and parsed switch
     counter = NaN;
@@ -379,27 +393,38 @@ while 1
             
     end
     
-    % write output ALLfileinfo
+    %% write output ALLfileinfo
+    
+    % Datagram complete
     kk = kk+1;
+    
+    % Datagram number in file
     ALLfileinfo.datagNumberInFile(kk,1) = kk;
-    ALLfileinfo.datagPositionInFile(kk,1) = pif;
+    
+    % Datagram info
     ALLfileinfo.datagTypeNumber(kk,1) = datagTypeNumber;
     ALLfileinfo.datagTypeText{kk,1} = datagTypeText;
-    ALLfileinfo.parsed(kk,1) = 0;
     ALLfileinfo.counter(kk,1) = counter;
-    ALLfileinfo.number(kk,1) = number;
+    ALLfileinfo.datagPositionInFile(kk,1) = pif;
     ALLfileinfo.size(kk,1) = nbDatag;
-    ALLfileinfo.syncCounter(kk,1) = syncCounter;
+    ALLfileinfo.number(kk,1) = number;
+    ALLfileinfo.parsed(kk,1) = 0;
+    
+    % System info
     ALLfileinfo.emNumber(kk,1) = emNumber;
     ALLfileinfo.systemSerialNumber(kk,1)=systemSerialNumber;
+    
+    % Time info
     ALLfileinfo.date(kk,1) = date;
     ALLfileinfo.timeSinceMidnightInMilliseconds(kk,1) = timeSinceMidnightInMilliseconds;
     
-    % reinitialize synccounter
-    syncCounter = 0;
+    % Report any sync issue in reading
+    ALLfileinfo.syncCounter(kk,1) = syncCounter;
+    
+    
+    %% Prepare for reloop
     
     % go to end of datagram
-    next_dgm_start_pif = pif + 4 + nbDatag;
     fseek(fid,next_dgm_start_pif,-1);
     
     % communicate progress

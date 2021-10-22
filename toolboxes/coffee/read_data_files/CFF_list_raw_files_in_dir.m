@@ -1,9 +1,9 @@
 function rawfileslist = CFF_list_raw_files_in_dir(folder_init)
-%CFF_LIST_RAW_FILES_IN_DIR  One-line description
+%CFF_LIST_RAW_FILES_IN_DIR  List raw multibeam files available in folder
 %
-%   List the files available for the app in input folder. Files are
-%   available only if the pair .all/.wcd exists. Also returns whether these
-%   pairs have been converted to .mat format.
+%   Returns in this order: pairs of .all/.wcd, unpaired .all files,
+%   unpaired .wcd files, pairs of .kmall/.kmwcd, unpaired .kmall files,
+%   unpaired .kmwcd files, .s7k files.
 %
 %   See also ESPRESSO.
 
@@ -12,7 +12,7 @@ function rawfileslist = CFF_list_raw_files_in_dir(folder_init)
 %   2017-2021; Last revision: 27-07-2021
 
 % for now, list all raw files whatever the sonar type, but maybe at some
-% point add some control in input to specify what sonar types we want
+% point add some control in input to sspecify what sonar types we want
 
 if isempty(folder_init)
     rawfileslist = {};

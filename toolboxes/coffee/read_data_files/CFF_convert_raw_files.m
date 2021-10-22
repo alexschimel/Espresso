@@ -34,43 +34,47 @@ function fDataGroup = CFF_convert_raw_files(rawFilesList,varargin)
 %   does not reconvert a file that has already been converted if it's found
 %   on the disk (fData.mat) with the suitable version. In this case, the
 %   data are simply loaded. If an error is encountered, the error message
-%   is logged and processing moves onto the next file. Use the format
-%   fDataGroup = CFF_CONVERT_RAW_FILES(...,Name,Parameter) to modify this
-%   default behaviour. Options below:
+%   is logged and processing moves onto the next file. After conversion,
+%   the converted data are NOT saved on the hard-drive.
+%   Use the format fDataGroup = CFF_CONVERT_RAW_FILES(...,Name,Parameter)
+%   to modify this default behaviour. Options below:
 %
 %   'conversionType': 'Z&BS' will only convert datagrams necessary for
 %   bathymetry and backscatter processing (e.g. for Ristretto).
 %   Water-column datagrams are ignored in this mode.
 %   'conversionType': 'WCD' will only convert datagrams necessary for
 %   water-column data processing (e.g. for Espresso). Note: this includes
-%   datagrams for bathymetry and backscatter processing. Use
+%   datagrams for bathymetry and backscatter processing.
 %   'conversionType': 'everything' (default) will convert every datagram
 %   supported.
 %
 %   'saveFDataToDrive': 1 will save the converted fData to the hard-drive.
-%   Use 'saveFDataToDrive': 0 (default) to prevent this. Note that if
-%   water-column datagrams are present and to be converted, then this
-%   parameter is overriden and fData is saved to the hard-drive anyway.
-%   Converted data are in the 'Coffee_files' folder created in the same
-%   folder as the raw data files.
+%   'saveFDataToDrive': 0 (default) will NOT save the data to hard-drive. 
+%   Note that if water-column datagrams are present and to be converted,
+%   then this parameter is overriden and fData is saved to the hard-drive
+%   anyway. Converted data are in the 'Coffee_files' folder created in the
+%   same folder as the raw data files.
 %
 %   'forceReconvert': 1 will force the conversion of a raw data file, even
-%   if a suitable converted file is found on the hard-drive. Use
-%   'forceReconvert': 0 (default) for skipping conversion if possible.
+%   if a suitable converted file is found on the hard-drive.
+%   'forceReconvert': 0 (default) will skip conversion if a converted
+%   version is found on the hard-drive and can be loaded.
 %
 %   'outputFData': 0 will clear fData after conversion of each file so that
 %   the function returns empty. This avoids memory errors when converting
-%   many files. Use this with 'saveFDataToDrive': 1 to save fData on the
-%   hard-drive instead. Use 'outputFData': 1 (default) to conserve and
-%   return fData.
+%   many files. Use this in combination with 'saveFDataToDrive': 1 as a
+%   routine to convert fData for the purpose of saving it to the
+%   hard-drive.
+%   'outputFData': 1 (default) will conserve fData and return it.
 %
 %   'abortOnError': 1 will interrupt processing if an error is encountered.
-%   Use 'abortOnError': 0 (default) for the function to log the error
-%   message and move onto the next file.
+%   'abortOnError': 0 (default) will log the error message and move onto
+%   the next file.
 %
-%   'convertEvenIfDtgrmsMissing': 1 will continue conversion even if the
-%   datagrams required by 'conversionType' are not all found in a file. Use
-%   'convertEvenIfDtgrmsMissing': 0 (default) to stop conversion instead.
+%   'convertEvenIfDtgrmsMissing': 1 will continue the conversion of a file
+%   even in the event that one or more datagram types required by
+%   'conversionType' are not found in a file.
+%   'convertEvenIfDtgrmsMissing': 0 (default) will stop conversion instead.
 %
 %   'dr_sub': N where N is an integer will decimate water-column data in
 %   range by a factor of N. By default, 'dr_sub': 1 so that all data are
@@ -96,7 +100,7 @@ function fDataGroup = CFF_convert_raw_files(rawFilesList,varargin)
 
 %   Authors: Alex Schimel (NGU, alexandre.schimel@ngu.no) and Yoann
 %   Ladroit (NIWA, yoann.ladroit@ensta-bretagne.fr)
-%   2021; Last revision: 20-08-2021
+%   2021; Last revision: 22-10-2021
 
 
 %% Input arguments management

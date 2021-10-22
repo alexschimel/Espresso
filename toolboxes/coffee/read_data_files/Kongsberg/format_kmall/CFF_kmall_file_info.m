@@ -149,6 +149,7 @@ while next_dgm_start_pif < fileSize
     flag_numBytesDgm_match = (header.numBytesDgm == numBytesDgm_repeat);
     flag_hash = strcmp(header.dgmType(1), '#');
     if ~flag_numBytesDgm_match || ~flag_hash
+        % NOT SYNCHRONIZED
         % We've either lost sync, or the last datagram is incomplete.
         % Go back to new record start, advance one byte, and restart
         % reading
@@ -159,9 +160,9 @@ while next_dgm_start_pif < fileSize
             % just lost sync, throw a message just now
             comms.error('Lost sync while reading datagrams. A datagram may be corrupted. Trying to resync...');
         end
-        continue;
+        continue
     else
-        % In sync, and datagram complete
+        % SYNCHRONIZED
         if sync_counter
             % if we had lost sync, warn here we're back
             comms.info(sprintf('Back in sync (%i bytes later). Resume process.',sync_counter));
