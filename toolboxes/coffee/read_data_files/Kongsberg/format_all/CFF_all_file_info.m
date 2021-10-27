@@ -115,7 +115,7 @@ syncCounter = 0;
 while 1
     
     % read in little endian
-    pif = ftell(fid);
+    dgm_start_pif = ftell(fid);
     nbDatagL = fread(fid,1,'uint32','l'); % number of bytes in datagram
     
     if isempty(nbDatagL)
@@ -123,7 +123,7 @@ while 1
         error('.all file parsing synchronization failed');
     end
     
-    fseek(fid,pif,-1); % come back to re-read in b
+    fseek(fid,dgm_start_pif,-1); % come back to re-read in b
     nbDatagB        = fread(fid,1,'uint32','b'); % number of bytes in datagram
     stxDatag        = fread(fid,1,'uint8');      % STX (always H02)
     datagTypeNumber = fread(fid,1,'uint8');      % SIMRAD type of datagram
@@ -132,13 +132,13 @@ while 1
     emNumberB       = fread(fid,1,'uint16','b'); % EM Model Number
     
     % trying to read ETX
-    if fseek(fid,pif+4+nbDatagL-3,-1) + 1
+    if fseek(fid,dgm_start_pif+4+nbDatagL-3,-1) + 1
         etxDatagL = fread(fid,1,'uint8'); % ETX (always H03)
     else
         etxDatagL = NaN;
     end
     
-    if fseek(fid,pif+4+nbDatagB-3,-1) + 1
+    if fseek(fid,dgm_start_pif+4+nbDatagB-3,-1) + 1
         etxDatagB = fread(fid,1,'uint8'); % ETX (always H03)
     else
         etxDatagB = NaN;
@@ -156,7 +156,7 @@ while 1
         if syncCounter == 10000
             error('Struggling to recognize start of file. Ensure your EM model is in the list of this function.');
         end
-        fseek(fid,pif+1,-1);
+        fseek(fid,dgm_start_pif+1,-1);
         continue
     end
 end
@@ -177,7 +177,7 @@ end
 
 fclose(fid);
 
-clear emNumberL emNumberB fid nbDatagL nbDatagB stxDatag datagTypeNumber pif etxDatagL etxDatagB synchronized
+clear emNumberL emNumberB fid nbDatagL nbDatagB stxDatag datagTypeNumber dgm_start_pif etxDatagL etxDatagB synchronized
 
 % init output info
 ALLfileinfo.ALLfilename     = ALLfilename;
@@ -207,35 +207,32 @@ next_dgm_start_pif = 0;
 while next_dgm_start_pif < filesize
     
     %% new datagram begins
-    pif = ftell(fid);
+    dgm_start_pif = ftell(fid);
     
-    % number of bytes in datagram
-    nbDatag = fread(fid,1,'uint32',datagsizeformat); 
-    if isempty(nbDatag)
-        % file finished, leave the loop
-        break;
+    % read start of datagram
+    nbDatag  = fread(fid,1,'uint32',datagsizeformat); % number of bytes in datagram
+    stxDatag = fread(fid,1,'uint8');  % STX (always H02)
+    
+    % read STX at end of datagram
+    if 4+nbDatag<=filesize
+        fseek(fid,dgm_start_pif+4+nbDatag-3,-1);
+        etxDatag = fread(fid,1,'uint8'); % ETX (always H03)
+        % checkSum = fread(fid,1,'uint16'); % Check sum of data between STX and ETX
+        fseek(fid,dgm_start_pif+5, -1); % rewind to where we left datagram
+    else
+        % would be here if nbDatag is wrong, aka sync issue
+        etxDatag = 0;
     end
     
-    stxDatag                        = fread(fid,1,'uint8');  % STX (always H02)
-    datagTypeNumber                 = fread(fid,1,'uint8');  % SIMRAD type of datagram
-    emNumber                        = fread(fid,1,'uint16'); % EM Model Number
-    date                            = fread(fid,1,'uint32'); % date
-    timeSinceMidnightInMilliseconds = fread(fid,1,'uint32'); % time since midnight in milliseconds
-    number                          = fread(fid,1,'uint16'); % datagram or ping number
-    systemSerialNumber              = fread(fid,1,'uint16'); % EM system serial number
-    
     %% test for synchronization
-    % to pass, first data reading above must show that:
-    % - the number of bytes in following datagram doesn't overshoot file
-    % size
-    % - STX must be equal to 2.
-    % - the EM model number must be in the list showed at beginning
-    if nbDatag>filesize || stxDatag~=2 || ~sum(emNumber==emNumberList)
+    % check STX=2 and ETX=3
+    if stxDatag~=2 || etxDatag~=3 
         % NOT SYNCHRONIZED
         % trying to re-synchronize: fwd one byte and repeat the above
-        fseek(fid,pif+1,-1);
+        fseek(fid,dgm_start_pif+1,-1);
         next_dgm_start_pif = -1;
         syncCounter = syncCounter+1; % update sync counter
+        syncCounter
         if syncCounter == 1
             % just lost sync, throw a message just now
             comms.error('Lost sync while reading datagrams. A datagram may be corrupted. Trying to resync...');
@@ -251,8 +248,16 @@ while next_dgm_start_pif < filesize
         end
     end
     
+    % read rest of start of datagram
+    datagTypeNumber                 = fread(fid,1,'uint8');  % SIMRAD type of datagram
+    emNumber                        = fread(fid,1,'uint16'); % EM Model Number
+    date                            = fread(fid,1,'uint32'); % date
+    timeSinceMidnightInMilliseconds = fread(fid,1,'uint32'); % time since midnight in milliseconds
+    number                          = fread(fid,1,'uint16'); % datagram or ping number
+    systemSerialNumber              = fread(fid,1,'uint16'); % EM system serial number
+    
     % position in file of next datagram
-    next_dgm_start_pif = pif + 4 + nbDatag;
+    next_dgm_start_pif = dgm_start_pif + 4 + nbDatag;
     
     % reset the datagram counter and parsed switch
     counter = NaN;
@@ -405,7 +410,7 @@ while next_dgm_start_pif < filesize
     ALLfileinfo.datagTypeNumber(kk,1) = datagTypeNumber;
     ALLfileinfo.datagTypeText{kk,1} = datagTypeText;
     ALLfileinfo.counter(kk,1) = counter;
-    ALLfileinfo.datagPositionInFile(kk,1) = pif;
+    ALLfileinfo.datagPositionInFile(kk,1) = dgm_start_pif;
     ALLfileinfo.size(kk,1) = nbDatag;
     ALLfileinfo.number(kk,1) = number;
     ALLfileinfo.parsed(kk,1) = 0;

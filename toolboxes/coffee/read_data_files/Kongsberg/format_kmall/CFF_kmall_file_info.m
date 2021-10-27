@@ -108,7 +108,7 @@ comms.progress(0,fileSize);
 next_dgm_start_pif = 0;
 while next_dgm_start_pif < fileSize
     
-    %% new record begins
+    %% new datagram begins
     dgm_start_pif = ftell(fid);
       
     % A full kmall datagram is organized as a sequence of:
