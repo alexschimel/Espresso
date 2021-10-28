@@ -232,7 +232,6 @@ while next_dgm_start_pif < filesize
         fseek(fid,dgm_start_pif+1,-1);
         next_dgm_start_pif = -1;
         syncCounter = syncCounter+1; % update sync counter
-        syncCounter
         if syncCounter == 1
             % just lost sync, throw a message just now
             comms.error('Lost sync while reading datagrams. A datagram may be corrupted. Trying to resync...');

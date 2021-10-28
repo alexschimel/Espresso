@@ -2,10 +2,14 @@ classdef CFF_Comms < handle
     %CFF_COMMS Summary of this class goes here
     %   Detailed explanation goes here
     
+    %   Authors: Alex Schimel (NGU, alexandre.schimel@ngu.no)
+    %   2021-2021; Last revision: 28-10-2021
+    
     properties
-        Type (1,:) char {mustBeMember(Type,{'', 'disp','textprogressbar','waitbar'})} = ''
+        Type (1,:) char {mustBeMember(Type,{'', 'disp','textprogressbar','waitbar','oneline','multilines'})} = ''
         FigObj = []
-        Msgs = {}
+        Msgs = {} % messages received (includes error)
+        Prog = {} % progress values received
     end
     
     methods
@@ -43,6 +47,12 @@ classdef CFF_Comms < handle
                     % init message of two line
                     set(obj.FigObj.Children.Title,'String',newline);
                     drawnow
+                case {'oneline','multilines'}
+                    % init dipstat
+                    dispstat('','init');
+                    % top line to print and keep
+                    dispstr = [obj.Msgs{end,3} ' (started ' char(string(obj.Msgs{end,1})) '):'];
+                    dispstat(dispstr,'keepthis');
             end
         end
         
@@ -60,6 +70,43 @@ classdef CFF_Comms < handle
                 case 'waitbar'
                     set(obj.FigObj.Children.Title,'String',sprintf('%s\n',obj.Msgs{end,3}));
                     drawnow;
+                case 'oneline'
+                    % step message
+                    dispstr = [obj.Msgs{end,3} '.'];
+                    if obj.Prog{end,2}>0
+                        % estimated time to complete, from prior progress
+                        durationPerStep = cellfun(@minus, obj.Prog(2:end,1), obj.Prog(1:end-1,1));
+                        nRemainingSteps = obj.Prog{end,3} - obj.Prog{end,2};
+                        ETC = median(durationPerStep).*nRemainingSteps;
+                        dispstr = sprintf([dispstr newline 'Estimated time to complete: ' char(string(ETC))]);
+                    end
+                    % print with dispstat, to be overwritten
+                    dispstat(dispstr);
+                case 'multilines'
+                    % if there was a previous step, reprint and keep it
+                    idxPrevStep = find(matches(string(obj.Msgs(1:end-1,2)),'Step'),1,'last');
+                    if ~isempty(idxPrevStep)
+                        % first, get that last step message
+                        dispstr = [obj.Msgs{idxPrevStep,3}];
+                        if matches(obj.Msgs(end-1,2),["Info","Error"])
+                            % next, add last info message if it exists
+                            dispstr = [dispstr '. ' obj.Msgs{end-1,3}];
+                        end
+                        % finally, add completion
+                        dispstr = [dispstr ' (completed ' char(string(obj.Msgs{end,1})) ')'];
+                        dispstat(dispstr,'keepthis');
+                    end
+                    % step message
+                    dispstr = [obj.Msgs{end,3} '.'];
+                    if obj.Prog{end,2}>0
+                        % estimated time to complete, from prior progress
+                        durationPerStep = cellfun(@minus, obj.Prog(2:end,1), obj.Prog(1:end-1,1));
+                        nRemainingSteps = obj.Prog{end,3} - obj.Prog{end,2};
+                        ETC = median(durationPerStep).*nRemainingSteps;
+                        dispstr = sprintf([dispstr newline 'Estimated time to complete: ' char(string(ETC))]);
+                    end
+                    % print with dispstat, to be overwritten
+                    dispstat(dispstr);
             end
         end
         
@@ -85,6 +132,19 @@ classdef CFF_Comms < handle
                     % set waitbar title
                     set(obj.FigObj.Children.Title,'String',sprintf('%s\n%s',stepStr,obj.Msgs{end,3}));
                     drawnow;
+                case {'oneline','multilines'}
+                    % last step, and new info message
+                    idxLastStep = find(matches(string(obj.Msgs(:,2)),'Step'),1,'last');
+                    dispstr = [obj.Msgs{idxLastStep,3} '. ' obj.Msgs{end,3}];
+                    if obj.Prog{end,2}>0
+                        % estimated time to complete, from prior progress
+                        durationPerStep = cellfun(@minus, obj.Prog(2:end,1), obj.Prog(1:end-1,1));
+                        nRemainingSteps = obj.Prog{end,3} - obj.Prog{end,2};
+                        ETC = median(durationPerStep).*nRemainingSteps;
+                        dispstr = sprintf([dispstr newline 'Estimated time to complete: ' char(string(ETC))]);
+                    end
+                    % print with dispstat, to be overwritten
+                    dispstat(dispstr);
             end
         end
         
@@ -110,6 +170,19 @@ classdef CFF_Comms < handle
                     % set waitbar title
                     set(obj.FigObj.Children.Title,'String',sprintf('%s\n%s',stepStr,obj.Msgs{end,3}));
                     drawnow;
+                case {'oneline','multilines'}
+                    % last step, and new info message
+                    idxLastStep = find(matches(string(obj.Msgs(:,2)),'Step'),1,'last');
+                    dispstr = [obj.Msgs{idxLastStep,3} '. ' obj.Msgs{end,3}];
+                    if obj.Prog{end,2}>0
+                        % estimated time to complete, from prior progress
+                        durationPerStep = cellfun(@minus, obj.Prog(2:end,1), obj.Prog(1:end-1,1));
+                        nRemainingSteps = obj.Prog{end,3} - obj.Prog{end,2};
+                        ETC = median(durationPerStep).*nRemainingSteps;
+                        dispstr = sprintf([dispstr newline 'Estimated time to complete: ' char(string(ETC))]);
+                    end
+                    % print with dispstat, to be overwritten
+                    dispstat(dispstr);
             end
         end
         
@@ -121,44 +194,64 @@ classdef CFF_Comms < handle
             % record finish message
             obj.Msgs(end+1,:) = {datetime('now'), 'Finish', str};
             
+            % complete
             switch obj.Type
                 case 'disp'
                     dispstr = [char(string(obj.Msgs{end,1},'HH:mm:ss')) ' - ' obj.Msgs{end,2} ' - ' obj.Msgs{end,3}];
                     disp(dispstr);
                 case 'textprogressbar'
-                    % complete textprogressbar
                     textprogressbar(100);
-                    if any(strcmp(obj.Msgs(:,2),'Error'))
-                        % show if error messages received
-                        textprogressbar([' ' obj.Msgs{end,3} '. Error messages were received:']);
-                        for ii = 1:size(obj.Msgs,1)
-                            dispstr = [char(string(obj.Msgs{ii,1},'HH:mm:ss')) ' - ' obj.Msgs{ii,2} ' - ' obj.Msgs{ii,3}];
-                            fprintf([dispstr, newline]);
-                        end
-                    else
-                        % normal completion
-                        textprogressbar([' ' obj.Msgs{end,3}]);
-                    end
+                    textprogressbar([' ' obj.Msgs{end,3}]);
                 case 'waitbar'
-                    % complete waitbar
                     waitbar(1,obj.FigObj,obj.Msgs{end,3});
                     pause(0.1);
                     close(obj.FigObj);
-                    % show if error messages received
-                    if any(strcmp(obj.Msgs(:,2),'Error'))
-                        wardlgTxt = sprintf('Error messages were received:\n');
-                        for ii = 1:size(obj.Msgs,1)
-                            dispstr = [char(string(obj.Msgs{ii,1},'HH:mm:ss')) ' - ' obj.Msgs{ii,2} ' - ' obj.Msgs{ii,3}];
-                            wardlgTxt = [wardlgTxt, newline, dispstr];
-                        end
-                        warndlg(wardlgTxt,'Warning');
+                case 'oneline'
+                    dispstr = [obj.Msgs{end,3} ' (completed ' char(string(obj.Msgs{end,1})) '). Total processing time: ' char(string(obj.Msgs{end,1}-obj.Msgs{1,1}))];
+                    dispstat(dispstr,'keepthis');
+                case 'multilines'
+                    % if there was a previous step, reprint and keep it
+                    idxLastStep = find(matches(string(obj.Msgs(:,2)),'Step'),1,'last');
+                    dispstr = [obj.Msgs{idxLastStep,3}];
+                    if matches(obj.Msgs(end-1,2),["Info","Error"])
+                        % next, add last info message if it exists
+                        dispstr = [dispstr '. ' obj.Msgs{end-1,3}];
                     end
+                    dispstat(dispstr,'keepthis');
+                    % complete progress
+                    dispstr = [obj.Msgs{end,3} ' (completed ' char(string(obj.Msgs{end,1})) '). Total processing time: ' char(string(obj.Msgs{end,1}-obj.Msgs{1,1}))];
+                    dispstat(dispstr,'keepthis');
             end
+            
+            % show received error messages, if any, and
+            % corresponding steps
+            if ~isempty(obj.Type) && any(strcmp(obj.Msgs(:,2),'Error'))
+                idxStp = cellfun(@(x) strcmp(x,'Step'), obj.Msgs(:,2));
+                idxErr = cellfun(@(x) strcmp(x,'Error'), obj.Msgs(:,2));
+                idxStp = ismember((1:numel(idxStp))', unique(arrayfun(@(idx) find(idxStp(1:idx-1),1,'last') ,find(idxErr))));
+                idxFinal = num2cell(find(idxStp|idxErr));
+                errlog = cellfun(@(idx) [char(string(obj.Msgs{idx,1},'HH:mm:ss')) ' - ' obj.Msgs{idx,2} ' - ' obj.Msgs{idx,3}], idxFinal,'UniformOutput', false);
+                errlog = strjoin(errlog,newline);
+                switch obj.Type
+                    case 'waitbar'
+                        wardlgTxt = sprintf('Error messages were received:\n');
+                        warndlg([wardlgTxt, newline, errlog],'Warning');
+                    otherwise
+                        % print to screen
+                        fprintf('Error messages were received:\n');
+                        disp(errlog);
+                end
+            end
+
         end
-          
+        
         function progress(obj,ii,N)
             %PROGRESS Summary of this method goes here
             %   Detailed explanation goes here
+            
+            % record progress values
+            obj.Prog(end+1,:) = {datetime('now'), ii, N};
+            
             switch obj.Type
                 case 'disp'
                     fprintf('#%.10g/%.10g\n',ii,N);
@@ -168,7 +261,7 @@ classdef CFF_Comms < handle
                     waitbar(ii./N,obj.FigObj);
             end
         end
-
+        
     end
 end
 

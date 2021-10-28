@@ -100,7 +100,7 @@ function fDataGroup = CFF_convert_raw_files(rawFilesList,varargin)
 
 %   Authors: Alex Schimel (NGU, alexandre.schimel@ngu.no) and Yoann
 %   Ladroit (NIWA, yoann.ladroit@ensta-bretagne.fr)
-%   2021; Last revision: 22-10-2021
+%   2021; Last revision: 28-10-2021
 
 
 %% Input arguments management
