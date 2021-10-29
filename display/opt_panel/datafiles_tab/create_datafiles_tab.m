@@ -219,10 +219,55 @@ file_tab_comp = getappdata(main_figure,'file_tab');
 fData = getappdata(main_figure,'fData');
 disp_config = getappdata(main_figure,'disp_config');
 
-% list of files requested for loading
+% list of files
 files = file_tab_comp.files;
-idx_selected = file_tab_comp.idx_selected;
-files_to_load = files(idx_selected);
+
+% check which are...
+[idxConverted,idxFDataUpToDate,idxHasWCD] = CFF_are_raw_files_converted(files);
+idxLoadable = idxConverted & idxFDataUpToDate==1 & idxHasWCD==1;
+idxAlreadyLoaded = CFF_are_raw_files_loaded(files, fData);
+idxSelected = file_tab_comp.idx_selected;
+idxFilesToLoad = idxSelected & ~idxAlreadyLoaded;
+idxNeedConversionFirst = idxFilesToLoad & ~idxLoadable;
+
+% prompt to convert those unconverted yet
+if any(idxNeedConversionFirst)
+    N = sum(idxNeedConversionFirst);
+    if N == 1
+        questDlgTxt = sprintf('1 file for which loading was requested has not been converted yet.\n\nDo you want to convert it and load it?');
+    else
+        questDlgTxt = sprintf('%i files for which loading was requested have not been converted yet.\n\nDo you want to convert them and load them?',N);
+    end
+    answer = questdlg(questDlgTxt, ...
+        'Converted Files Loading', ...
+        'Yes','No','Cancel','Cancel');
+    switch answer
+        case 'Yes'
+            % Convert those files
+            CFF_convert_raw_files(files(idxNeedConversionFirst),...
+                'conversionType','WCD',...
+                'saveFDataToDrive',1,...
+                'forceReconvert',1,...
+                'outputFData',0,...
+                'abortOnError',0,...
+                'convertEvenIfDtgrmsMissing',0,...
+                'dr_sub',1,...
+                'db_sub',1,...
+                'comms','multilines');
+        case 'No'
+            % Remove non-converted files from loading list
+            idxFilesToLoad = idxFilesToLoad & idxLoadable;
+        case 'Cancel'
+            % abort loading
+            return
+    end
+end
+
+% name of files to load
+files_to_load = files(idxFilesToLoad);
+if isempty(files_to_load)
+   return
+end
 
 % CORE PART: load files
 [fData, disp_config] = load_files(fData, files_to_load, disp_config);

@@ -7,58 +7,42 @@ function [fData, disp_config] = load_files(fData, files_to_load, disp_config)
 %   Schimel (NIWA, alexandre.schimel@niwa.co.nz)
 %   2017-2021; Last revision: 27-07-2021
 
-% general timer
-timer_start = now;
+%% Prep
 
-% number of files and start display
-n_files = numel(files_to_load);
-if isempty(files_to_load)
-    fprintf('Requesting loading, but no files in input. Abort.\n');
-    return
-else
-    if n_files == 1
-        fprintf('Requested loading of 1 data file (or pair of files) at %s...\n', datestr(now));
-    else
-        fprintf('Requested loading of %i data files (or pairs of files) at %s...\n', n_files, datestr(now));
-    end
+% start message
+comms = CFF_Comms('multilines');
+comms.start('Loading file(s)');
+
+% single filename in input
+if ischar(files_to_load)
+    files_to_load = {files_to_load};
 end
 
-% for each file
-for nF = 1:n_files
+% number of files
+nFiles = numel(files_to_load);
+
+% start progress
+comms.progress(0,nFiles);
+
+
+%% Load files
+for iF = 1:nFiles
     
-    % using a try-catch sequence to allow continuing to the next file if
-    % loading of one fails.
+    % try-catch sequence to allow continuing to next file if one fails
     try
         
         % get the file (or pair of files) to load
-        file_to_load = files_to_load{nF};
+        file_to_load = files_to_load{iF};
         
-        % start of display for this file
+        % display for this file
         if ischar(file_to_load)
-            file_to_load_disp = sprintf('file "%s"',file_to_load);
+            filename = CFF_file_name(file_to_load,1);
+            comms.step(sprintf('%i/%i: file %s',iF,nFiles,filename));
         else
-            % paired file
-            file_to_load_disp = sprintf('pair of files "%s" and "%s"',file_to_load{1},file_to_load{2});
-        end
-        fprintf('%i/%i: %s.\n',nF,n_files,file_to_load_disp);
-        
-        % test if file was effectively converted, or already loaded
-        % check if file was converted
-        
-        [idxConverted,idxFDataUpToDate,idxHasWCD] = CFF_are_raw_files_converted(file_to_load);
-        bool_converted = idxConverted && idxFDataUpToDate==1 && idxHasWCD==1;
-        bool_already_loaded = CFF_are_raw_files_loaded(file_to_load, fData);
-        
-        % management & display
-        if ~bool_converted
-            fprintf('...Cannot be loaded. Has not been converted yet.\n');
-            continue
-        elseif bool_already_loaded
-            fprintf('...Already loaded.\n');
-            continue
-        else
-            fprintf('...Started loading at %s...\n',datestr(now));
-            tic
+            % paired files
+            filename_1 = CFF_file_name(file_to_load{1},1);
+            filename_2_ext = CFF_file_extension(file_to_load{2});
+            comms.step(sprintf('%i/%i: pair of files %s and %s',iF,nFiles,filename_1,filename_2_ext));
         end
         
         % converted filename fData
@@ -68,12 +52,8 @@ for nF = 1:n_files
         % loading temp
         fData_temp = load(mat_fdata_file);
         
-        %% XXX1 Here reset the datagram source depending on app
-        
-        %% Check if paths in fData are accurate and change them if necessary
-        
-        % flag to trigger re-save data
-        dirchange_flag = 0;
+        % check if paths in fData are accurate and change them if necessary
+        dirchange_flag = 0; % init flag to trigger a re-save
         
         % checking paths to .all/.wcd
         for nR = 1:length(fData_temp.ALLfilename)
@@ -85,10 +65,26 @@ for nF = 1:n_files
             end
         end
         
-        % checking path to water-column data binary file
-        
-        fields={'WC_SBP_SampleAmplitudes' 'AP_SBP_SampleAmplitudes' 'AP_SBP_SamplePhase' 'X_SBP_WaterColumnProcessed'};
-        [fData_temp,dirchange_flag]=CFF_check_memmap_location(fData_temp,fields,folder_for_converted_data);
+        % checking path to water-column data binary files
+        fields = {'WC_SBP_SampleAmplitudes' 'AP_SBP_SampleAmplitudes' 'AP_SBP_SamplePhase' 'X_SBP_WaterColumnProcessed'};
+        dirchange_flag = 0;
+        for ifi = 1:numel(fields)
+            if isfield(fData_temp,fields{ifi})
+                if ~iscell(fData_temp.(fields{ifi}))
+                    fData_temp.(fields{ifi}) = {fData_temp.(fields{ifi})};
+                end
+                for ic = 1:numel(fData_temp.(fields{ifi}))
+                    if ~isempty(fData_temp.(fields{ifi}){ic})
+                        [filepath_in_fData,name,ext] = fileparts(fData_temp.(fields{ifi}){ic}.Filename);
+                        if ~strcmp(filepath_in_fData,folder_for_converted_data)
+                            fData_temp.(fields{ifi}){ic}.Filename = fullfile(folder_for_converted_data,[name ext]);
+                            dirchange_flag = 1;
+                        end
+                    end
+                end
+            end
+            
+        end
         
         % saving on disk if changes have been made
         if dirchange_flag
@@ -198,7 +194,7 @@ for nF = 1:n_files
         fData_temp.ID = str2double(datestr(now,'yyyymmddHHMMSSFFF'));
         
         % If data have already been processed, load the binary file into
-        % fData  
+        % fData
         % NOTE: if data have already been processed, the fData and the
         % binary files should already exist and should already been
         % attached, without need to re-memmap them... So verify if there is
@@ -212,7 +208,7 @@ for nF = 1:n_files
         
         % why pause here? XXX2
         pause(1e-3);
-        
+
         % add this file's data to the full fData
         fData{numel(fData)+1} = fData_temp;
         
@@ -220,7 +216,7 @@ for nF = 1:n_files
         fprintf('...Done. Duration: ~%.2f seconds.\n',toc);
         
     catch err
-        fprintf('%s: ERROR loading %s\n',datestr(now,'HH:MM:SS'),file_to_load_disp);
+        fprintf('%s: ERROR loading %s\n',datestr(now,'HH:MM:SS'),'dEBUGreplacethis');
         if ~isdeployed
             rethrow(err);
         else
@@ -233,7 +229,7 @@ for nF = 1:n_files
 end
 
 % general timer
-timer_end = now;
-duration_sec = (timer_end-timer_start)*24*60*60;
-duration_min = (timer_end-timer_start)*24*60;
-fprintf('Done. Total duration: ~%.2f seconds (~%.2f minutes).\n\n',duration_sec,duration_min);
+% timer_end = now;
+% duration_sec = (timer_end-timer_start)*24*60*60;
+% duration_min = (timer_end-timer_start)*24*60;
+% fprintf('Done. Total duration: ~%.2f seconds (~%.2f minutes).\n\n',duration_sec,duration_min);
