@@ -1,4 +1,4 @@
-function idx_loaded = CFF_are_raw_files_loaded(rawfileslist, fData)
+function idxLoaded = CFF_are_raw_files_loaded(rawFilesList, fData)
 %CFF_ARE_RAW_FILES_LOADED  One-line description
 %
 %   List the files available for the app in input folder. Files are
@@ -12,24 +12,24 @@ function idx_loaded = CFF_are_raw_files_loaded(rawfileslist, fData)
 %   2017-2021; Last revision: 27-07-2021
 
 % exit if no input
-if isempty(rawfileslist)
-    idx_loaded = [];
+if isempty(rawFilesList)
+    idxLoaded = [];
     return
 end
 
 % test if input is just ONE file (or ONE pair of files), and turn to cell
-if ischar(rawfileslist)
+if ischar(rawFilesList)
     % single file
-    rawfileslist = {rawfileslist};
-elseif is_pair_of_files(rawfileslist)
+    rawFilesList = {rawFilesList};
+elseif is_pair_of_files(rawFilesList)
     % pair of files
-    rawfileslist = {rawfileslist};
+    rawFilesList = {rawFilesList};
 end
-n_rawfiles = size(rawfileslist,1);
+n_rawfiles = size(rawFilesList,1);
 
 % if no files are loaded, simply output false here, and exit
 if isempty(fData)
-    idx_loaded = false([n_rawfiles,1]);
+    idxLoaded = false([n_rawfiles,1]);
     return
 end
 
@@ -62,12 +62,12 @@ if ischar(loaded_files_pair_rootfilename)
 end
 
 % init output
-idx_loaded = false([n_rawfiles,1]);
+idxLoaded = false([n_rawfiles,1]);
 
 % fill in for each rawfile
 for nF = 1:n_rawfiles
     
-    rawfile = rawfileslist{nF};
+    rawfile = rawFilesList{nF};
     
     if ischar(rawfile)
         % single file
@@ -77,7 +77,7 @@ for nF = 1:n_rawfiles
         rawfilename = {rawfilename};
         
         % and compare to those loaded
-        idx_loaded(nF) = ismember(rawfilename, loaded_files_single_rootfilename);
+        idxLoaded(nF) = ismember(rawfilename, loaded_files_single_rootfilename);
         
     elseif is_pair_of_files(rawfile)
         % pair of files
@@ -87,11 +87,11 @@ for nF = 1:n_rawfiles
         onerawfilename = {onerawfilename};
         
         % and compare to those loaded
-        idx_loaded(nF) = ismember(onerawfilename, loaded_files_pair_rootfilename);
+        idxLoaded(nF) = ismember(onerawfilename, loaded_files_pair_rootfilename);
         
     else
         % not recognized
-        idx_loaded(nF) = false;
+        idxLoaded(nF) = false;
     end
     
 end
