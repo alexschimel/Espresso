@@ -21,7 +21,7 @@ function [fData] = CFF_georeference_WC_bottom_detect(fData)
 
 %   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
 %   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
-%   2017-2021; Last revision: 27-07-2021
+%   2017-2021; Last revision: 11-11-2021
 
 %% info extraction
 
@@ -33,15 +33,20 @@ X_1P_gridConvergenceDeg   = fData.X_1P_pingGridConv; %deg
 X_1P_vesselHeadingDeg     = fData.X_1P_pingHeading; %deg
 X_1_sonarHeadingOffsetDeg = fData.IP_ASCIIparameters.S1H; %deg
 
-% Compute the horizontal rotation angle between the swath frame (Ys forward
-% and Yp northing)
-%
-% In THEORY, real-time compensation of roll and pitch means the Z for the
-% swath frame is exactly the same as Z for elevation, so that we only need
-% to rotate in the horizontal frame. In effect, we may want to recompute
-% the true up pointing angle for the swath. For now, we'll make it simple:
+% Considering the swath frame Fs (origin: sonar face, Xs: across distance
+% (positive ~starboard), Ys: along distance (positive ~forward), Zs: up
+% distance (positive up)) and the projection frame Fp (origin: the (0,0)
+% Easting/Northing projection reference and datum reference, Xp: Easting
+% (positive East), Yp: Northing (grid North, positive North), Zp:
+% Elevation/Height (positive up)), AND ASSUMING THERE WAS A REAL-TIME
+% COMPENSATION OF ROLL AND PITCH SO THAT ZS=ZP, then to go from Fs to Fp,
+% one simply needs to rotate along the Z axis, which includes the vessel
+% heading, the sonar head heading offset, and the grid convergence (aka
+% angle between true north and grid north).
 X_1P_thetaDeg = - mod( X_1P_gridConvergenceDeg + X_1P_vesselHeadingDeg + X_1_sonarHeadingOffsetDeg, 360 );
 X_1P_thetaRad = deg2rad(X_1P_thetaDeg);
+
+% In practice, might want to check the vessel roll and pitch.
 
 datagramSource = CFF_get_datagramSource(fData);
 switch datagramSource
@@ -78,17 +83,27 @@ switch datagramSource
         
     case 'X8'
         
-        [X_1BP_bottomEasting, X_1BP_bottomNorthing, X_1BP_bottomHeight] = CFF_get_samples_ENH(X_1P_sonarEasting,X_1P_sonarNorthing,X_1P_sonarHeight,X_1P_thetaRad,fData.X8_BP_AcrosstrackDistanceY,fData.X8_BP_DepthZ);
+        % get bottom detect's across-track distance and depth from BP to
+        % SBP (1BP)
+        X_BP_bottomAcrossDist = fData.X8_BP_AcrosstrackDistanceY;
+        X_BP_bottomUpDist     = -fData.X8_BP_DepthZ;
+        X_1BP_bottomAcrossDist = permute(X_BP_bottomAcrossDist,[3,1,2]);
+        X_1BP_bottomUpDist     = permute(X_BP_bottomUpDist,[3,1,2]);
         
-        X_1BP_bottomAcrossDist = fData.X8_BP_AcrosstrackDistanceY;
+        % get Easting, NOrthing and Height of bottom detect
+        [X_1BP_bottomEasting, X_1BP_bottomNorthing, X_1BP_bottomHeight] = CFF_get_samples_ENH(X_1P_sonarEasting,X_1P_sonarNorthing,X_1P_sonarHeight,X_1P_thetaRad,X_1BP_bottomAcrossDist,X_1BP_bottomUpDist);
         
         % save data in the swath frame
-        fData.X_BP_bottomAcrossDist = permute(X_1BP_bottomAcrossDist,[2,3,1]);
-        
+        fData.X_BP_bottomUpDist     = X_BP_bottomUpDist;
+        fData.X_BP_bottomAcrossDist = X_BP_bottomAcrossDist;
+       
         % save data in the projected frame
         fData.X_BP_bottomEasting    = permute(X_1BP_bottomEasting,[2,3,1]);
         fData.X_BP_bottomNorthing   = permute(X_1BP_bottomNorthing,[2,3,1]);
         fData.X_BP_bottomHeight     = permute(X_1BP_bottomHeight,[2,3,1]);
         
 end
+
+% sort fields by name
+fData = orderfields(fData);
 

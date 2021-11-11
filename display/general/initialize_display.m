@@ -5,7 +5,7 @@ function initialize_display(main_figure)
 
 %   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
 %   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
-%   2017-2021; Last revision: 21-07-2021
+%   2017-2021; Last revision: 11-11-2021
 
 
 %% FIGURE DIMENSIONS AND POSITION
@@ -33,7 +33,7 @@ setappdata(main_figure,'control_panel',control_panel);
 
 % create tabs in panel
 create_datafiles_tab(main_figure,control_panel);
-create_fdata_tab(main_figure,control_panel);
+create_loadedlines_tab(main_figure,control_panel);
 create_wc_proc_tab(main_figure,control_panel);
 create_display_tab(main_figure,control_panel);
 create_mosaic_tab(main_figure,control_panel);

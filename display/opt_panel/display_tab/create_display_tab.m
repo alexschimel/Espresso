@@ -5,7 +5,7 @@ function create_display_tab(main_figure,parent_tab_group)
 
 %   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
 %   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
-%   2017-2021; Last revision: 21-07-2021
+%   2017-2021; Last revision: 11-11-2021
 
 % getappdata
 if isappdata(main_figure,'display_tab')
@@ -419,11 +419,12 @@ end
 
 display_tab_comp = getappdata(main_figure,'display_tab');
 
-dg_source = display_tab_comp.dg_source.String{display_tab_comp.dg_source.Value};
+datagramSource = display_tab_comp.dg_source.String{display_tab_comp.dg_source.Value};
 
 for ui = 1:numel(fData_tot)
     if isfield(fData_tot{ui},'MET_datagramSource')
-        fData_tot{ui}.MET_datagramSource = CFF_get_datagramSource(fData_tot{ui},dg_source);
+        datagramSource = CFF_get_datagramSource(fData_tot{ui},datagramSource);
+        fData_tot{ui}.MET_datagramSource = datagramSource;
     end
 end
 

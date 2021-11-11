@@ -8,7 +8,7 @@ function rawfileslist_out = CFF_onerawfileonly(rawfileslist_in)
 
 %   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
 %   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
-%   2017-2021; Last revision: 27-07-2021
+%   2017-2021; Last revision: 11-11-2021
 
 if ischar(rawfileslist_in)
     % single file
@@ -24,7 +24,7 @@ else
     
     % fill in output
     for ii = 1:n_files
-        if iscell(rawfileslist_in{ii})
+        if iscell(rawfileslist_in{ii}) && numel(rawfileslist_in{ii})==2
             % for pairs, select the second file
             rawfileslist_out{ii} = rawfileslist_in{ii}{2};
         else

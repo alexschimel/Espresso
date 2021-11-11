@@ -5,7 +5,7 @@ function fData_tot = process_watercolumn(fData_tot, idx_fData, procpar)
 
 %   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
 %   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
-%   2017-2021; Last revision: 27-07-2021
+%   2017-2021; Last revision: 11-11-2021
 
 % Water-column data takes A LOT of space. Because of this, the original
 % data are limited in resolution so that they could be stored with less
@@ -61,11 +61,11 @@ for itt = idx_fData(:)'
         tic
         
         % number, dimensions, and pings of memmap files data
-        dg_source = CFF_get_datagramSource(fData_tot{itt});
-        nMemMapFiles = length(fData_tot{itt}.(sprintf('%s_SBP_SampleAmplitudes',dg_source)));
-        [nSamples, nBeams, nPings] = cellfun(@(x) size(x.Data.val),fData_tot{itt}.(sprintf('%s_SBP_SampleAmplitudes',dg_source)));
-        ping_gr_start = fData_tot{itt}.(sprintf('%s_n_start',dg_source));
-        ping_gr_end   = fData_tot{itt}.(sprintf('%s_n_end',dg_source));
+        datagramSource = CFF_get_datagramSource(fData_tot{itt});
+        nMemMapFiles = length(fData_tot{itt}.(sprintf('%s_SBP_SampleAmplitudes',datagramSource)));
+        [nSamples, nBeams, nPings] = cellfun(@(x) size(x.Data.val),fData_tot{itt}.(sprintf('%s_SBP_SampleAmplitudes',datagramSource)));
+        ping_gr_start = fData_tot{itt}.(sprintf('%s_n_start',datagramSource));
+        ping_gr_end   = fData_tot{itt}.(sprintf('%s_n_end',datagramSource));
         
         % create empty binary files for processed data and memory-map them
         % in fData
@@ -127,7 +127,8 @@ for itt = idx_fData(:)'
                 blockPings_f  = iPings(blocks(iB,1):blocks(iB,2));
                 
                 % grab original data in dB
-                data = CFF_get_WC_data(fData_tot{itt},sprintf('%s_SBP_SampleAmplitudes',CFF_get_datagramSource(fData_tot{itt})),'iPing',blockPings_f,'iRange',1:nSamples(ig),'output_format','true');
+                datagramSource = CFF_get_datagramSource(fData_tot{itt});
+                data = CFF_get_WC_data(fData_tot{itt},sprintf('%s_SBP_SampleAmplitudes',datagramSource),'iPing',blockPings_f,'iRange',1:nSamples(ig),'output_format','true');
                 
                 % BEGINNING OF PROCESSING %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                 %

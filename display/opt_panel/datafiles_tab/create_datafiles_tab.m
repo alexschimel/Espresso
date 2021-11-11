@@ -5,7 +5,7 @@ function create_datafiles_tab(main_figure,parent_tab_group)
 
 %   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
 %   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
-%   2017-2021; Last revision: 28-10-2021
+%   2017-2021; Last revision: 11-11-2021
 
 %% create tab variable
 switch parent_tab_group.Type
@@ -63,11 +63,12 @@ columnformat = {'char','char'};
 file_tab_comp.table_main = uitable('Parent',file_tab_comp.file_tab,...
     'Data', {},...
     'ColumnName', columnname,...
-    'ColumnFormat', columnformat,...
-    'CellSelectionCallback',{@callback_select_cell,main_figure},...
     'ColumnEditable', [false false],...
+    'ColumnFormat', columnformat,...
+    'RowName',[],...
+    'Tooltip','Gray: not converted. Black: converted/loadable. Green: loaded',...
     'Units','Normalized','Position',[0 0.1 1 0.8],...
-    'RowName',[]);
+    'CellSelectionCallback',{@callback_select_cell,main_figure});
 
 % Set widths of columns in table and add callback for automatic resizing
 pos_t = getpixelposition(file_tab_comp.table_main);
@@ -190,9 +191,9 @@ idx_selected = file_tab_comp.idx_selected;
 files_to_convert = files(idx_selected);
 
 % convert files
-%convert_files(files_to_convert, flag_force_convert); % obsolete
+%convert_files(files_to_convert, flag_force_convert); % OBSOLETE
 CFF_convert_raw_files(files_to_convert,...
-    'conversionType','WCD',...
+    'conversionType','seafloorOrWCD',...
     'saveFDataToDrive',1,...
     'forceReconvert',flag_force_convert,...
     'outputFData',0,...
@@ -224,7 +225,7 @@ files = file_tab_comp.files;
 
 % check which are...
 [idxConverted,idxFDataUpToDate,idxHasWCD] = CFF_are_raw_files_converted(files);
-idxLoadable = idxConverted & idxFDataUpToDate==1 & idxHasWCD==1;
+idxLoadable = idxConverted & idxFDataUpToDate==1; % add "& idxHasWCD==1" if wanting to flag data without WCD as unloadable
 idxAlreadyLoaded = CFF_are_raw_files_loaded(files, fData);
 idxSelected = file_tab_comp.idx_selected;
 idxFilesToLoad = idxSelected & ~idxAlreadyLoaded;
@@ -245,7 +246,7 @@ if any(idxNeedConversionFirst)
         case 'Yes'
             % Convert those files
             CFF_convert_raw_files(files(idxNeedConversionFirst),...
-                'conversionType','WCD',...
+                'conversionType','seafloorOrWCD',...
                 'saveFDataToDrive',1,...
                 'forceReconvert',1,...
                 'outputFData',0,...
@@ -269,8 +270,49 @@ if isempty(files_to_load)
    return
 end
 
-% CORE PART: load files
-[fData, disp_config] = load_files(fData, files_to_load, disp_config);
+% OBSOLETE:
+% [fData, disp_config] = load_files(fData, files_to_load, disp_config);
+% /OBSOLETE
+
+% NEW CODE STARTS:
+fData_new = CFF_geoprocess_files(files_to_load,...
+    'datagramSource',disp_config.MET_datagramSource,...
+    'ellips',disp_config.MET_ellips,...
+    'tmproj',disp_config.MET_tmproj,...
+    'saveFDataToDrive',0,...
+    'outputFData',1,...
+    'abortOnError',0,...
+    'comms','multilines');
+
+% by default, CFF_geoprocess_files outputs a struct for a single file. Turn
+% to cell array if a single file was loaded
+if isstruct(fData_new)
+    fData_new = {fData_new};
+end
+
+% add geoprocessing parameters to disp_config
+if isempty(disp_config.MET_tmproj)
+    disp_config.MET_ellips = fData_new{1}.MET_ellips;
+    disp_config.MET_tmproj = fData_new{1}.MET_tmproj;
+end
+if isempty(disp_config.MET_datagramSource)
+    disp_config.MET_datagramSource = fData_new{1}.MET_datagramSource;
+end
+
+% fix fData paths if necessary
+fData_new = CFF_fix_fData_paths(fData_new, files_to_load);
+
+% Time-tag the individual fData structs
+for iF = 1:numel(fData_new)
+    fData_new{iF}.ID = str2double(datestr(now,'yyyymmddHHMMSSFFF'));
+    pause(1e-2); % pause here to ensure unique IDs
+end
+
+% add new fData to old one
+fData = [fData,fData_new];
+
+% NEW CODE ENDS.
+
 
 % add fData to appdata
 setappdata(main_figure,'fData',fData);
@@ -279,7 +321,7 @@ setappdata(main_figure,'fData',fData);
 update_datafiles_tab(main_figure);
 
 % update tab of lines loaded
-update_fdata_tab(main_figure);
+update_loadedlines_tab(main_figure);
 if isempty(fData)
     return;
 end

@@ -5,7 +5,7 @@ function create_feature_list_tab(main_figure,parent_tab_group)
 
 %   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
 %   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
-%   2017-2021; Last revision: 21-07-2021
+%   2017-2021; Last revision: 11-11-2021
 
 % disp_config = getappdata(main_figure,'disp_config');
 
@@ -102,7 +102,7 @@ if ~isempty(features)
     
     % throw a warning that existing features define the session's
     % projection
-    txt = sprintf('Existing features (in the "Features List" tab) define the projection for this session (ellipsoid: %s, UTM zone: %s), so that any data file to be loaded will be using this projection. If you want to reset this session''s projection so that data files will be loaded in their natural projection, you will first need to delete the existing features.', disp_config.MET_ellips, disp_config.MET_tmproj);
+    txt = sprintf('Existing features define the projection for this session (ellipsoid: %s, UTM zone: %s), so that any data file to be loaded will be using this projection. If you want to reset this session''s projection so that data files will be loaded in their natural projection, you will first need to delete the existing features (either from the "Feature List" tab, or from the folder %s) then close and restart Espresso.', disp_config.MET_ellips, disp_config.MET_tmproj, folder);
     warning(txt);
     
     % all good? save/overwrite features into main figure

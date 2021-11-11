@@ -95,7 +95,7 @@ function fData = CFF_convert_ALLdata_to_fData(ALLdataGroup,varargin)
 
 %   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
 %   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
-%   2017-2021; Last revision: 20-08-2021
+%   2017-2021; Last revision: 11-11-2021
 
 
 %% Input arguments management
@@ -739,7 +739,7 @@ for iF = 1:nStruct
         % number of beams
         % maxnBeams = max(fData.WC_1P_TotalNumberOfReceiveBeams); % maximum number of receive beams in a ping (not using it)
         maxnBeams_sub = max(fData.WC_1P_NumberOfBeamsToRead); % maximum number of receive beams TO READ
-        
+
         % number of samples
         % maxnSamples = max(cellfun(@(x) max(x), ALLdata.EM_WaterColumn.NumberOfSamples(ismember(ALLdata.EM_WaterColumn.PingCounter,pingCounters)))); % maximum number of samples in a ping (not using it)
         % maxnSamples_sub  = ceil(maxnSamples/dr_sub); 
@@ -1003,11 +1003,14 @@ for iF = 1:nStruct
         % fData.AC_BP_SystemSerialNumber     = nan(maxnBeams_sub,nPings);
         
         % The actual water-column data will not be saved in fData but in
-        % binary files. Get the output directory to store those files 
+        % binary files. Get the output directory to store those files
         wc_dir = CFF_converted_data_folder(fData.ALLfilename{iF});
         
-        % Clean up that folder first before adding anything to it
-        CFF_clean_delete_fdata(wc_dir);
+        % Clean up that folder first before adding anything to it, BUT NOT
+        % IF WE JUST RECORDED DATA WITH THE WC DATAGRAM
+        if ~isfield(fData,'WC_1P_Date')
+            CFF_clean_delete_fdata(wc_dir);
+        end
         
         % DEV NOTE: Info format for raw WC data and storage
         % This was originally coded by Yoann and I don't have documentation

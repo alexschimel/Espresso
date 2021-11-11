@@ -5,7 +5,7 @@ function update_wc_tab(main_figure)
 
 %   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
 %   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
-%   2017-2021; Last revision: 21-07-2021
+%   2017-2021; Last revision: 11-11-2021
 
 %% prep
 
@@ -24,6 +24,11 @@ disp_config.cleanup(main_figure);
 fData_tot_IDs = cellfun(@(c) c.ID,fData_tot);
 fData = fData_tot{fData_tot_IDs==disp_config.Fdata_ID};
 datagramSource = CFF_get_datagramSource(fData);
+
+% exit if not showing water column data
+if ~ismember(disp_config.MET_datagramSource, {'WC','AP'})
+    return
+end
 
 % get ping and across-dist to be displayed
 ip          = disp_config.Iping;

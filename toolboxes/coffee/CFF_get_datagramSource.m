@@ -5,7 +5,7 @@ function datagramSource = CFF_get_datagramSource(fData,varargin)
 
 %   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
 %   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
-%   2017-2021; Last revision: 27-07-2021
+%   2017-2021; Last revision: 11-11-2021
 
 % init output
 datagramSource = [];
@@ -26,10 +26,10 @@ if isempty(datagramSource)
         datagramSource = 'AP';
     elseif isfield(fData, 'WC_1P_Date')
         datagramSource = 'WC';
-    elseif isfield(fData, 'De_1P_Date')
-        datagramSource = 'De';
     elseif isfield(fData, 'X8_1P_Date')
         datagramSource = 'X8';
+    elseif isfield(fData, 'De_1P_Date')
+        datagramSource = 'De';
     else
         error('can''t find a suitable datagramSource')
     end

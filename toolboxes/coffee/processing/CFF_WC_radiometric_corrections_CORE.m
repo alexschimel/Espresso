@@ -35,10 +35,10 @@ end
 % "The TVG function applied to the data is X logR + 2 Alpha R + OFS + C.
 % The parameters X and C is documented in this datagram. OFS is gain offset
 % to compensate for TX Source Level, Receiver sensitivity etc."
-dg_source = CFF_get_datagramSource(fData);
+datagramSource = CFF_get_datagramSource(fData);
 
-X = fData.(sprintf('%s_1P_TVGFunctionApplied',dg_source))(pings);
-C = fData.(sprintf('%s_1P_TVGOffset',dg_source))(pings);
+X = fData.(sprintf('%s_1P_TVGFunctionApplied',datagramSource))(pings);
+C = fData.(sprintf('%s_1P_TVGOffset',datagramSource))(pings);
 
 % Assuming 30log R if nothing has been specified
 X(isnan(X)) = 30;

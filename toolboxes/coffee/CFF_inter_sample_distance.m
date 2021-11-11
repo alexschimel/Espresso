@@ -10,9 +10,19 @@ function inter_samples_distance = CFF_inter_sample_distance(fData)
 
 %   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
 %   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
-%   2017-2021; Last revision: 21-07-2021
+%   2017-2021; Last revision: 11-11-2021
 
-dtg = CFF_get_datagramSource(fData);
-sound_speed = fData.(sprintf('%s_1P_SoundSpeed',dtg)); % m/s
-sampling_freq  = fData.(sprintf('%s_1P_SamplingFrequencyHz',dtg)); % Hz
+% get sound speed and sampling frequency
+datagramSource = CFF_get_datagramSource(fData);
+switch datagramSource
+    case {'WC','AP'}
+        sound_speed    = fData.(sprintf('%s_1P_SoundSpeed',datagramSource)); % m/s
+        sampling_freq  = fData.(sprintf('%s_1P_SamplingFrequencyHz',datagramSource)); % Hz
+    case 'X8'
+        sound_speed    = fData.X8_1P_SoundSpeedAtTransducer; % m/s
+        sampling_freq  = fData.X8_1P_SamplingFrequencyInHz; % Hz
+end
+
+% calculate
 inter_samples_distance = sound_speed./(sampling_freq.*2); % in m
+

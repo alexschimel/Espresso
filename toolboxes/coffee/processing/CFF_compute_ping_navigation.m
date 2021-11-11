@@ -36,30 +36,18 @@ function [fData] = CFF_compute_ping_navigation(fData,varargin)
 
 %   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
 %   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
-%   2017-2021; Last revision: 27-07-2021
+%   2017-2021; Last revision: 11-11-2021
 
 
-
-
-%% 0. INITIALIZE
-datagramSource = [];
-
-%% 1. VARARGIN CHECKS
+%% INPUT PARSING
 
 % varargin{1}, source datagram for ping info:
 if nargin>1    
     datagramSource = varargin{1};
+else 
+    datagramSource = [];
 end
-   
-datagramSource=CFF_get_datagramSource(fData,datagramSource);
-
-% get ping time
-pingTSMIM    = fData.([datagramSource '_1P_TimeSinceMidnightInMilliseconds']);
-date         = fData.([datagramSource '_1P_Date']);
-pingCounter  = fData.([datagramSource '_1P_PingCounter']);
-
-
-pingDate = datenum(cellfun(@num2str,num2cell(date),'un',0),'yyyymmdd');
+datagramSource = CFF_get_datagramSource(fData,datagramSource);
 
 % varargin{2}: ellipsoid for CFF_ll2tm conversion
 if nargin>2
@@ -92,9 +80,21 @@ else
 end
 
 
-%% 2. EXTRACT DATA FROM POSITION AND HEIGHT DATAGRAMS
-% in the future, offer possibility to import position/orientation from
-% other files, say SBET
+%% EXTRACT PING DATA
+% create ping time vectors in serial date number (SDN, Matlab, the whole
+% and fractional number of days from January 0, 0000) and Time Since
+% Midnight In Milliseconds (TSMIM, Kongsberg).
+
+pingTSMIM    = fData.([datagramSource '_1P_TimeSinceMidnightInMilliseconds']);
+pingDate     = fData.([datagramSource '_1P_Date']);
+pingCounter  = fData.([datagramSource '_1P_PingCounter']);
+pingDate     = datenum(cellfun(@num2str,num2cell(pingDate),'un',0),'yyyymmdd');
+pingSDN      = pingDate(:)'+ pingTSMIM/(24*60*60*1000) + navLat./(1000.*60.*60.*24); % apply navigation latency here
+
+
+%% EXTRACT NAVIGATION DATA
+% same for navigation. In the future, offer possibility to import
+% position/orientation from other files, say SBET
 
 % test if there are several sources of GPS data
 if isfield(fData,'Po_1D_PositionSystemDescriptor')
@@ -114,35 +114,32 @@ else
    pos_idx = 1:numel(fData.Po_1D_Latitude);
 end
 
+% get data
 posLatitude  = fData.Po_1D_Latitude(pos_idx); 
 posLongitude = fData.Po_1D_Longitude(pos_idx);
 posHeading   = fData.Po_1D_HeadingOfVessel(pos_idx);
 posSpeed     = fData.Po_1D_SpeedOfVesselOverGround(pos_idx);
-posTSMIM     = fData.Po_1D_TimeSinceMidnightInMilliseconds(pos_idx);
+posTSMIM     = fData.Po_1D_TimeSinceMidnightInMilliseconds(pos_idx); % time since midnight in milliseconds
 posDate      = datenum(cellfun(@num2str,num2cell(fData.Po_1D_Date(pos_idx)),'un',0),'yyyymmdd');
-posSDN       = posDate(:)'+ posTSMIM/(24*60*60*1000);
+posSDN       = posDate(:)'+ posTSMIM/(24*60*60*1000); % serial date number
 
 
-
-%% 3. PROCESS PING TIME
-% create ping time vectors in serial date number (SDN, Matlab, the whole
-% and fractional number of days from January 0, 0000) and Time Since
-% Midnight In Milliseconds (TSMIM, Kongsberg).
-
-pingSDN = pingDate(:)'+ pingTSMIM/(24*60*60*1000) + navLat./(1000.*60.*60.*24);
-
+%% EXTRACT HEIGHT DATA
 if isfield(fData,'He_1D_Height')
     heiHeight = fData.He_1D_Height; % now m
     heiDate   = datenum(cellfun(@num2str,num2cell(fData.He_1D_Date),'un',0),'yyyymmdd');
     heiSDN    = heiDate(:)' + fData.He_1D_TimeSinceMidnightInMilliseconds/(24*60*60*1000);
 else
+    % no height datagrams, create fake variables
     heiHeight = zeros(size(pingTSMIM));
     heiSDN    = pingSDN;
 end
 
-%% 4. PROCESS NAVIGATION AND HEADING:
-% Position and heading were recorded at the sensor's time so we need to
-% interpolate them at the same time to match ping time.
+
+%% PROCESS NAVIGATION AND HEADING
+% Get position and heading for each ping. Position and heading were
+% recorded at the sensor's time so we need to interpolate them at the same
+% time to match ping time.
 
 % convert posLatitude/posLongitude to easting/northing/grid convergence:
 [posE, posN, posGridConv] = CFF_ll2tm(posLongitude, posLatitude, ellips, tmproj);
@@ -224,9 +221,9 @@ posHeading  = posHeading - jumps.*360;
 pingHeading = mod(pingHeading,360);
 
 
-%% 5. PROCESS HEIGHT
-% Height were recorded at the sensor's time so we need to
-% interpolate them at the same time to match ping time.
+%% PROCESS HEIGHT
+% Get height for each ping. Height were recorded at the sensor's time so we
+% need to interpolate them at the same time to match ping time.
 
 % initialize new vectors
 pingH = nan(size(pingSDN));
@@ -259,13 +256,9 @@ for jj = 1:length(pingSDN)
 end
 
 
-%% 6. SAVE RESULTS
+%% SAVE RESULTS
 
-fData.MET_datagramSource                  = datagramSource;
-fData.MET_navigationLatencyInMilliseconds = navLat;
-fData.MET_ellips                          = ellips;
-fData.MET_tmproj                          = tmproj;
-
+% save processed results
 fData.X_1P_pingCounter  = pingCounter;
 fData.X_1P_pingTSMIM    = pingTSMIM;
 fData.X_1P_pingSDN      = pingSDN;
@@ -276,5 +269,13 @@ fData.X_1P_pingGridConv = pingGridConv;
 fData.X_1P_pingHeading  = pingHeading;
 fData.X_1P_pingSpeed    = pingSpeed;
 
-% fData.X_1P_pingAzimuth?
-% fData.X_1P_pingDepression?
+% metadata. 
+% Datagram source is the datagram at the origin of the time vector, to
+% which all the "X_1P" fields above correspond.
+fData.MET_datagramSource                  = datagramSource;
+fData.MET_navigationLatencyInMilliseconds = navLat;
+fData.MET_ellips                          = ellips;
+fData.MET_tmproj                          = tmproj;
+
+% sort fields by name
+fData = orderfields(fData);

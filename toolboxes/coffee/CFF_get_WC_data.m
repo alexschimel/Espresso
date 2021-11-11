@@ -22,7 +22,7 @@ function data_tot = CFF_get_WC_data(fData,fieldN,varargin)
 
 %   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
 %   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
-%   2017-2021; Last revision: 08-10-2018
+%   2017-2021; Last revision: 11-11-2021
 
 % input parser
 p = inputParser;
@@ -46,8 +46,8 @@ if ~isfield(fData,fieldN)
     return;
 end
 
-dg = CFF_get_datagramSource(fData);
-if ~ismember(dg,{'WC','AP'})
+datagramSource = CFF_get_datagramSource(fData);
+if ~ismember(datagramSource,{'WC','AP'})
     data_tot = [];
     return;
 end
@@ -63,9 +63,9 @@ if isempty(iRange)
 end
 
 % finding relevant groups of pings
-p_start = fData.(sprintf('%s_n_start',dg));
-p_end   = fData.(sprintf('%s_n_end',dg));
-pingCounter = fData.(sprintf('%s_1P_PingCounter',dg));
+p_start = fData.(sprintf('%s_n_start',datagramSource));
+p_end   = fData.(sprintf('%s_n_end',datagramSource));
+pingCounter = fData.(sprintf('%s_1P_PingCounter',datagramSource));
 p_end(p_end>numel(pingCounter))     = numel(pingCounter);
 p_start(p_start>numel(pingCounter)) = numel(pingCounter);
 
@@ -118,21 +118,21 @@ for ig = istart:iend
             
             % get info about data
             idx_undsc = regexp(fieldN,'_');
-            dg = fieldN(1:idx_undsc(1)-1);
+            datagramSource = fieldN(1:idx_undsc(1)-1);
             fieldname = fieldN(idx_undsc(2)+1:end);
             
             % get NaN value (should be a single value)
-            Nanval = fData.(sprintf('%s_1_%s_Nanval',dg,fieldname));
+            Nanval = fData.(sprintf('%s_1_%s_Nanval',datagramSource,fieldname));
             
             % get factor (one per memmap file in the new format)
-            Fact = fData.(sprintf('%s_1_%s_Factor',dg,fieldname));
+            Fact = fData.(sprintf('%s_1_%s_Factor',datagramSource,fieldname));
             if numel(Fact)>1
                 Fact = Fact(ig);
             end
             
             % get offset (doesn't exist for older format, one per memmap
             % file in the new format)
-            offset_fieldname = sprintf('%s_1_%s_Offset',dg,fieldname);
+            offset_fieldname = sprintf('%s_1_%s_Offset',datagramSource,fieldname);
             if isfield(fData, offset_fieldname)
                 Offset = fData.(offset_fieldname);
             else

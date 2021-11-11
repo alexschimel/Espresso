@@ -5,7 +5,8 @@ function update_stacked_wc_tab(main_figure,varargin)
 
 %   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
 %   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
-%   2017-2021; Last revision: 21-07-2021
+%   2017-2021; Last revision: 11-11-2021
+
 
 %% input parser
 p = inputParser;
@@ -27,6 +28,11 @@ end
 % get disp_config
 disp_config = getappdata(main_figure,'disp_config');
 disp_config.cleanup(main_figure);
+
+% exit if not showing water column data
+if ~ismember(disp_config.MET_datagramSource, {'WC','AP'})
+    return
+end
 
 % get fdata to be displayed
 fData_tot_IDs = cellfun(@(c) c.ID,fData_tot);

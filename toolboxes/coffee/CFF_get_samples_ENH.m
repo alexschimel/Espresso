@@ -3,7 +3,20 @@ function [sampleEasting, sampleNorthing, sampleHeight] = CFF_get_samples_ENH(son
 %
 %   Compute samples' coordinates in the geographical frame (Easting,
 %   Northing, Height) from their coordinates in the swath frame (Distances
-%   across and upwards). This requires the geographical coordinates of the
+%   across and upwards). 
+%
+%   We make the STRONG ASSUMPTION here that the geographical and swath
+%   frames have THE SAME Z axis, so that going from one to the other only
+%   requires considering the rotation about the Z axis (aka heading/yaw),
+%   which includes the vessel heading, the sonar head heading offset, and
+%   the grid convergence (aka angle between true north and grid north).
+%
+%   This is only valid if the system was corrected in real time for pitch
+%   and roll, and the single swath is pointed directly downwards. Aka, this
+%   is most likely wrong for multi-sectors, and systems using
+%   yaw-compesnation
+%
+%   This requires the geographical coordinates of the
 %   swath frame origin (sonar), and the orientation of the swath frame in
 %   the geographical frame (vessel's heading).
 %   Calculate sample(s) projected coordinates:
@@ -39,7 +52,7 @@ function [sampleEasting, sampleNorthing, sampleHeight] = CFF_get_samples_ENH(son
 
 %   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
 %   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
-%   2017-2021; Last revision: 27-07-2021
+%   2017-2021; Last revision: 11-11-2021
 
 % permute dimensions of input to get everything as SBP matrices
 sonarEasting  = permute(sonarEasting,[3,1,2]);

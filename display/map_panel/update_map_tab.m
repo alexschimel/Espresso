@@ -5,7 +5,7 @@ function up_wc = update_map_tab(main_figure,varargin)
 
 %   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
 %   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
-%   2017-2021; Last revision: 21-07-2021
+%   2017-2021; Last revision: 11-11-2021
 
 %% INIT
 
@@ -406,10 +406,12 @@ if update_poly || ... % forcing update
     map_tab_comp.ping_window.Tag = sprintf('%.0f0_pingwindow',fData.ID);
     
     % update xlim and ylim
-    xlim(1) = nanmin(xlim(1),nanmin(new_vert(:,1)));
-    xlim(2) = nanmax(xlim(2),nanmax(new_vert(:,1)));
-    ylim(1) = nanmin(ylim(1),nanmin(new_vert(:,2)));
-    ylim(2) = nanmax(ylim(2),nanmax(new_vert(:,2)));
+    if ~isempty(new_vert)
+        xlim(1) = nanmin(xlim(1),nanmin(new_vert(:,1)));
+        xlim(2) = nanmax(xlim(2),nanmax(new_vert(:,1)));
+        ylim(1) = nanmin(ylim(1),nanmin(new_vert(:,2)));
+        ylim(2) = nanmax(ylim(2),nanmax(new_vert(:,2)));
+    end
 end
 
 

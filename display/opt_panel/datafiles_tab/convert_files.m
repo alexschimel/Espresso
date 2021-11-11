@@ -7,7 +7,7 @@ function convert_files(files_to_convert, flag_force_convert)
 
 %   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
 %   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
-%   2017-2021; Last revision: 28-10-2021
+%   2017-2021; Last revision: 11-11-2021
 
 % % NOTE: HARD-CODED PARAMETERS subsampling factors:
 % dr_sub = 1; % none at this stage, subsampling occuring at processing
@@ -195,7 +195,8 @@ function convert_files(files_to_convert, flag_force_convert)
 %         end
 %         
 %         % add datagram source
-%         fData.MET_datagramSource = CFF_get_datagramSource(fData,datagramSource);
+%         datagramSource = CFF_get_datagramSource(fData,datagramSource);
+%         fData.MET_datagramSource = datagramSource;
 %         
 %         % and save
 %         wc_dir = CFF_converted_data_folder(file_to_convert);

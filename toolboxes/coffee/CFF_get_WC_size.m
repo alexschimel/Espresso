@@ -5,19 +5,19 @@ function [nSamples, nBeams, nPings] = CFF_get_WC_size(fData,varargin)
 
 %   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
 %   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
-%   2017-2021; Last revision: 27-07-2021
+%   2017-2021; Last revision: 11-11-2021
 
 % get source datagram
 if ~isempty(varargin) && ~isempty(varargin{1})
-    dg_source = varargin{1};
+    datagramSource = varargin{1};
 else
-    dg_source = CFF_get_datagramSource(fData);
+    datagramSource = CFF_get_datagramSource(fData);
 end
 
 % get data size
-switch dg_source
+switch datagramSource
     case {'WC' 'AP'}
-        fieldN = sprintf('%s_SBP_SampleAmplitudes',dg_source);        
+        fieldN = sprintf('%s_SBP_SampleAmplitudes',datagramSource);        
         [nSamples, nBeams, nPings] = cellfun(@(x) size(x.Data.val),fData.(fieldN));
     case 'X8'
         nSamples = 1;

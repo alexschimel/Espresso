@@ -5,7 +5,7 @@ function update_datafiles_tab(main_figure)
 
 %   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
 %   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
-%   2017-2021; Last revision: 21-07-2021
+%   2017-2021; Last revision: 11-11-2021
 
 
 % get relevant stuff from main figure
@@ -18,7 +18,7 @@ rawfileslist = CFF_list_raw_files_in_dir(search_path);
 
 % check which are already converted
 [idxConverted,idxFDataUpToDate,idxHasWCD] = CFF_are_raw_files_converted(rawfileslist);
-idx_converted = idxConverted & idxFDataUpToDate==1 & idxHasWCD==1;
+idx_converted = idxConverted & idxFDataUpToDate==1; % add "& idxHasWCD==1" if wanting to only show data with WCD as converted
         
 % check which are currently loaded
 idx_loaded = CFF_are_raw_files_loaded(rawfileslist, fData);

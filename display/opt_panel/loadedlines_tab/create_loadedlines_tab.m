@@ -1,11 +1,11 @@
-function create_fdata_tab(main_figure,parent_tab_group)
+function create_loadedlines_tab(main_figure,parent_tab_group)
 %CREATE_FDATA_TAB  Creates fdata tab in Espresso Control panel
 %
 %   See also UPDATE_FDATA_TAB, INITIALIZE_DISPLAY, ESPRESSO.
 
 %   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
 %   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
-%   2017-2021; Last revision: 21-07-2021
+%   2017-2021; Last revision: 11-11-2021
 
 
 switch parent_tab_group.Type
@@ -19,13 +19,14 @@ end
 fdata_tab_comp.table = uitable( 'Parent',fdata_tab_comp.fdata_tab,...
     'Data', [],...
     'ColumnName', {'Lines' 'Folder' 'Disp' 'ID'},...
-    'ColumnFormat', {'char' 'char' 'logical' 'numeric'},...
     'ColumnEditable',[false false true false],...
+    'ColumnFormat', {'char' 'char' 'logical' 'numeric'},...
+    'RowName',[],...
+    'Tooltip','Black: has WCD. Red: does not have WCD',...
     'Units','Normalized',...
     'Position',[0.01 0 0.98 1],...
-    'RowName',[],...
-    'CellSelectionCallback',{@cell_select_cback,main_figure},...
     'CellEditCallback',{@update_map_cback,main_figure},...
+    'CellSelectionCallback',{@cell_select_cback,main_figure},...
     'BusyAction','cancel');
 
 % set its location
@@ -47,7 +48,7 @@ uimenu(rc_menu,'Label','Zoom to Highlighted Lines','Callback',{@go_to_lines_cbac
 
 % save and update the figure
 setappdata(main_figure,'fdata_tab',fdata_tab_comp);
-update_fdata_tab(main_figure);
+update_loadedlines_tab(main_figure);
 
 end
 
@@ -200,7 +201,7 @@ if isempty(fdata)
     disp_config.MET_tmproj = '';
 end
 
-update_fdata_tab(main_figure);
+update_loadedlines_tab(main_figure);
 update_datafiles_tab(main_figure);
 
 % update map with zoom back on all remaining lines

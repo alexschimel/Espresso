@@ -14,7 +14,7 @@ function [idxConverted,idxFDataUpToDate,idxHasWCD] = CFF_are_raw_files_converted
 
 %   Authors: Alex Schimel (NGU, alexandre.schimel@ngu.no) and Yoann
 %   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
-%   2017-2021; Last revision: 17-08-2021
+%   2017-2021; Last revision: 11-11-2021
 
 % exit if no input
 if isempty(rawFilesList)
@@ -24,7 +24,7 @@ if isempty(rawFilesList)
     return
 end
 
-% list of names of converted files, if inp'ut were converted
+% list of names of converted files, if input were converted
 fDataFolders = CFF_converted_data_folder(rawFilesList);
 fDataFiles = fullfile(fDataFolders,'fData.mat');
 if ischar(fDataFiles)
