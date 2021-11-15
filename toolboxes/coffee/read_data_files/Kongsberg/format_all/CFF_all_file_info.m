@@ -209,28 +209,40 @@ while next_dgm_start_pif < filesize
     %% new datagram begins
     dgm_start_pif = ftell(fid);
     
+    % .all datagrams are composed of
+    % - nbDatag (4 bytes): total size of datagram (excluding this field)
+    % - STX = 2 (1 byte)
+    % ...
+    % - ETX = 3 (1 byte)
+    % - checksum (2 bytes)
+    
     % read start of datagram
     nbDatag  = fread(fid,1,'uint32',datagsizeformat); % number of bytes in datagram
     stxDatag = fread(fid,1,'uint8');  % STX (always H02)
     
+    % pif of presumed end of datagram
+    next_dgm_start_pif = dgm_start_pif + 4 + nbDatag;
+    
     % read STX at end of datagram
-    if 4+nbDatag<=filesize
-        fseek(fid,dgm_start_pif+4+nbDatag-3,-1);
+    if next_dgm_start_pif <= filesize
+        fseek(fid,next_dgm_start_pif-3,-1);
         etxDatag = fread(fid,1,'uint8'); % ETX (always H03)
         % checkSum = fread(fid,1,'uint16'); % Check sum of data between STX and ETX
-        fseek(fid,dgm_start_pif+5, -1); % rewind to where we left datagram
+        fseek(fid,dgm_start_pif+5, -1); % rewind to where we left reading
     else
-        % would be here if nbDatag is wrong, aka sync issue
+        % would be here if overshooting the end of the file, aka datagram
+        % is incomplete, or nbDatag is wrong. Set a wrong etxDatag to
+        % trigger resync
         etxDatag = 0;
     end
     
     %% test for synchronization
-    % check STX=2 and ETX=3
-    if stxDatag~=2 || etxDatag~=3 
+    flag_inSync = ~isempty(stxDatag) && stxDatag==2 && etxDatag==3;
+    if ~flag_inSync
         % NOT SYNCHRONIZED
         % trying to re-synchronize: fwd one byte and repeat the above
-        fseek(fid,dgm_start_pif+1,-1);
-        next_dgm_start_pif = -1;
+        next_dgm_start_pif = dgm_start_pif+1;
+        fseek(fid,next_dgm_start_pif,-1);
         syncCounter = syncCounter+1; % update sync counter
         if syncCounter == 1
             % just lost sync, throw a message just now
@@ -254,9 +266,6 @@ while next_dgm_start_pif < filesize
     timeSinceMidnightInMilliseconds = fread(fid,1,'uint32'); % time since midnight in milliseconds
     number                          = fread(fid,1,'uint16'); % datagram or ping number
     systemSerialNumber              = fread(fid,1,'uint16'); % EM system serial number
-    
-    % position in file of next datagram
-    next_dgm_start_pif = dgm_start_pif + 4 + nbDatag;
     
     % reset the datagram counter and parsed switch
     counter = NaN;

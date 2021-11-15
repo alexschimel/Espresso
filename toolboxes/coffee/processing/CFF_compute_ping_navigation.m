@@ -41,6 +41,10 @@ function [fData] = CFF_compute_ping_navigation(fData,varargin)
 
 %% INPUT PARSING
 
+% initialize information communication object
+comms = CFF_Comms();
+comms.start('Computing ping navigation');
+
 % varargin{1}, source datagram for ping info:
 if nargin>1    
     datagramSource = varargin{1};
@@ -65,7 +69,7 @@ else
     firstPosLon = fData.Po_1D_Longitude(1);
     [~,~,~,~,tmproj] = CFF_ll2tm(firstPosLon,firstPosLat,ellips,'utm');
     tmproj = ['utm' tmproj];
-    %fprintf(['tmproj not specified. Using ''' tmproj '''...\n']);
+    comms.info(['tmproj not specified. Using ''' tmproj '''']);
 end
 
 % varargin{?}: datum conversion?
@@ -76,7 +80,7 @@ if nargin == 5
     navLat = varargin{4};
 else
     navLat = 0;
-    %fprintf('navLat not specified. Using 0...\n');
+    comms.info('navLat not specified. Using 0.');
 end
 
 
@@ -103,14 +107,14 @@ if isfield(fData,'Po_1D_PositionSystemDescriptor')
         % several sources, keep the one with best accuracy
         [~,idx_keep] = nanmin(fData.Po_1D_MeasureOfPositionFixQuality(idx_sys));
         pos_idx = fData.Po_1D_PositionSystemDescriptor==ID(idx_keep);
-        fprintf('Several sources of GPS data available. Using source with ID: %d\n',ID(idx_keep));
+        comms.info(sprintf('Several sources of GPS data available. Using source with ID: %d',ID(idx_keep)));
     else
         % single source. Use all datagrams.
         pos_idx = 1:numel(fData.Po_1D_Latitude);
     end
 else
     % using older version of converted data, throw warning and continue
-   warning('Navigation information in your converted data indicates it is not up to date with this version of Espresso. Consider reconverting this file, particularly if you see strange patterns in the navigation, or if two GPS sources have been logged in the file.'); 
+    comms.info('Navigation information in your converted data indicates it is not up to date with this version of Espresso. Consider reconverting this file, particularly if you see strange patterns in the navigation, or if two GPS sources have been logged in the file.'); 
    pos_idx = 1:numel(fData.Po_1D_Latitude);
 end
 

@@ -1,36 +1,106 @@
-function fData_tot = gridbathyBS(fData_tot, idx_fData, procpar)
-%GRIDBATHYBS  One-line description
+function fDataGroup = gridbathyBS(fDataGroup, idx_fData, procpar)
+%GRIDBATHYBS  Grid bottom height field, and backscatter if possible
+%
+%   Grid in geographical coordinates (Easting, Northing) the
+%   X_BP_bottomHeight field, which is obtained after applying
+%   CFF_GEOREFERENCE_WC_BOTTOM_DETECT. If the datagram source was X8, then
+%   the backscatter is also available with the same dimensions and can also
+%   be gridded. However, if the datagram source was WC or AP, then the
+%   bottom height comes from the sample in WC corresponding to the 
+%   bottom, and so the backscatter value from X8 might not have the same
+%   size and thus cannot be gridded
 %
 %   See also ESPRESSO.
 
 %   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
 %   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
-%   2017-2021; Last revision: 27-07-2021
+%   2017-2021; Last revision: 15-11-2021
 
-% init
+
+%% Prep
+
+% init communication object
+comms = CFF_Comms('multilines');
+
+% start message
+comms.start('Gridding bathymetry and seafloor backscatter');
+
+% number of files
+nFiles = numel(idx_fData);
+
+% start progress
+comms.progress(0,nFiles);
+
+% init iterator
 u = 0;
-timer_start = now;
 
-for itt = idx_fData(:)'
+
+%% Process per file
+for ii = idx_fData(:)'
     
-    % disp
+    % iterator update
     u = u+1;
-    fprintf('Gridding BS and Bathy in file "%s" (%i/%i)...\n',fData_tot{itt}.ALLfilename{1},u,numel(idx_fData));
-    fprintf('...Started at %s...',datestr(now));
     
-    tic
+    % file name
+    rawFile = fDataGroup{ii}.ALLfilename;
+    if numel(rawFile)==1
+        rawFile = rawFile{1};
+    end
     
-    % grid bathy and BS
-    fData_tot{itt} = CFF_grid_2D_fields_data(fData_tot{itt},...
-        'grid_horz_res',procpar.gridbathyBS_res);
-    
-    % disp
-    fprintf(' done. Elapsed time: %f seconds.\n',toc);
+    % display for this file
+    if ischar(rawFile)
+        filename = CFF_file_name(rawFile,1);
+        comms.step(sprintf('%i/%i: file %s',ii,nFiles,filename));
+    else
+        % paired files
+        filename_1 = CFF_file_name(rawFile{1},1);
+        filename_2_ext = CFF_file_extension(rawFile{2});
+        comms.step(sprintf('%i/%i: pair of files %s and %s',ii,nFiles,filename_1,filename_2_ext));
+    end
 
+    % grid bathy
+    comms.info('Gridding bathymetry');
+    [gridZ, gridE, gridN] = CFF_grid_2D_data(fDataGroup{ii}.X_BP_bottomEasting,...
+        fDataGroup{ii}.X_BP_bottomNorthing,...
+        fDataGroup{ii}.X_BP_bottomHeight,...
+        procpar.gridbathyBS_res);
+    
+    % grid BS
+    % DEV NOTE: The bathy above can be gridded because it comes with
+    % matching easting and northing. However, there is no "X_BP_bottom"
+    % backscatter field. The only seafloor backscatter available comes from
+    % X8 datagrams. If this was the datagram source used, then the
+    % dimensions of X8_BP_ReflectivityBS match X_BP_bottomNorthing/Easting
+    % and so they can be used to grid that backscatter. But if the datagram
+    % source used was WC or AP, then that X8 backscatter might not have the
+    % same dimensions. If this is the case, then we don't have a matching
+    % easting and northing for backscatter and it cannot be gridded.
+    if isfield(fDataGroup{ii},'X8_BP_ReflectivityBS') && all(size(fDataGroup{ii}.X8_BP_ReflectivityBS)==size(fDataGroup{ii}.X_BP_bottomEasting))
+        comms.info('Gridding seafloor backscatter');
+        gridBS = CFF_grid_2D_data(fDataGroup{ii}.X_BP_bottomEasting,...
+            fDataGroup{ii}.X_BP_bottomNorthing,...
+            fDataGroup{ii}.X8_BP_ReflectivityBS,...
+            procpar.gridbathyBS_res);
+    else
+        gridBS = zeros(size(gridE),'single');
+        gridBS(isnan(gridZ)) = NaN;
+    end
+    
+    % save
+    fDataGroup{ii}.X_NE_bathy = gridZ;
+    fDataGroup{ii}.X_NE_bs    = gridBS;
+    fDataGroup{ii}.X_1E_2DgridEasting  = gridE(1,:);
+    fDataGroup{ii}.X_N1_2DgridNorthing = gridN(:,1);
+    fDataGroup{ii}.X_1_2DgridHorizontalResolution = procpar.gridbathyBS_res;
+    
+    % successful end of this iteration
+    comms.info('Done');
+    
+    % communicate progress
+    comms.progress(ii,nFiles);
+    
 end
 
-% finalize
-timer_end = now;
-fprintf('Total time for gridding bathy and BS: %f seconds (~%.2f minutes).\n\n',(timer_end-timer_start)*24*60*60,(timer_end-timer_start)*24*60);
 
-end
+%% end message
+comms.finish('Done');
