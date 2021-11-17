@@ -153,7 +153,12 @@ if up_stacked_wc_bool
     end
     nBlocks = ceil(nPings/(blockLength));
     blocks = [ 1+(0:nBlocks-1)'.*blockLength , (1:nBlocks)'.*blockLength ];
-    blocks(end,2) = nPings;
+    
+    try
+        blocks(end,2) = nPings;
+    catch
+        XXX
+    end
     
     % block processing
     for iB = 1:nBlocks

@@ -61,9 +61,9 @@ sonarHeight   = permute(sonarHeight,[3,1,2]);
 sonarHeading  = permute(sonarHeading,[3,1,2]);
 
 % compute outputs
-sampleEasting  = sonarEasting+sampleAcrossDistance.*cos(sonarHeading);
-sampleNorthing = sonarNorthing+sampleAcrossDistance.*sin(sonarHeading);
-sampleHeight   = sonarHeight+sampleUpwardsDistance;
+sampleEasting  = sonarEasting  + sampleAcrossDistance.*cos(sonarHeading);
+sampleNorthing = sonarNorthing + sampleAcrossDistance.*sin(sonarHeading);
+sampleHeight   = sonarHeight   + sampleUpwardsDistance;
 
 % sampleEasting  = bsxfun(@plus,sonarEasting,bsxfun(@times,sampleAcrossDistance,cos(sonarHeading)));
 % sampleNorthing = bsxfun(@plus,sonarNorthing,bsxfun(@times,sampleAcrossDistance,sin(sonarHeading)));

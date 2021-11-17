@@ -1,12 +1,10 @@
 function sampleRange = CFF_get_samples_range(idxSamples,startSampleNumber,interSamplesDistance)
 %CFF_GET_SAMPLES_RANGE  Range (in m) of samples from indices
 %
-%   Compute samples range (in m) from sonar, based on the sample number,
-%   the origin offset, and the distance between two samples. For water
-%   column, you need to take into account the startRangeSampleNumber to
-%   compute range as range =
-%   interSamplesDistance*(idxSamples+startRangeSampleNumber). For the
-%   sample corresponding to bottom detect, there should not be an offset.
+%   Compute range (in m) from sonar of samples, based on the sample number
+%   and the distance between two samples (in m). For water column data, the
+%   sample number must be corrected by a fixed offset
+%   (startRangeSampleNumber).
 %
 %   CFF_GET_SAMPLES_RANGE(I,S,D) returns the range of samples of index I,
 %   considering the start offset S, and the inter-sample distance D.

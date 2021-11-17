@@ -39,6 +39,10 @@ end
 % indices of data to keep, based on x and y only
 idxXYKeep = ~isnan(x) & ~isinf(x) & ~isnan(y) & ~isinf(y);
 
+% disable warnings because scatteredInterpolant complains about duplicate
+% points
+warning('off');
+
 % gridding v. Keeping single and multiple cases separate to keep code fast
 if nV == 1
     % single v array to grid
@@ -65,3 +69,6 @@ else
         gridV{ii} = gridV_temp;
     end
 end
+
+% reenable warnings
+warning('on');

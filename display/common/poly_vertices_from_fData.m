@@ -31,7 +31,7 @@ if isempty(idx_pings)
     return;
 end
 
-if isfield(fData,'X_PB_beamPointingAngleRad')
+if isfield(fData,'X_BP_beamPointingAngleRad')
     
     % limit angles in radians
     if ~isempty(disp_config)
@@ -41,7 +41,7 @@ if isfield(fData,'X_PB_beamPointingAngleRad')
     end
     
     % indices of beams to keep for computation of stack view
-    idx_angles = angle_lim(1)<=fData.X_PB_beamPointingAngleRad(:,idx_pings) & angle_lim(2)>=fData.X_PB_beamPointingAngleRad(:,idx_pings);
+    idx_angles = angle_lim(1)<=fData.X_BP_beamPointingAngleRad(:,idx_pings) & angle_lim(2)>=fData.X_BP_beamPointingAngleRad(:,idx_pings);
     
     % list the pings we'll actually use to form the rough polygon
     poly_vert_num = 20; % approximate max number of vertices composing the polygon on each side

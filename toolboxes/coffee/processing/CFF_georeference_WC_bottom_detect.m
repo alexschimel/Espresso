@@ -33,43 +33,41 @@ X_1P_gridConvergenceDeg   = fData.X_1P_pingGridConv; %deg
 X_1P_vesselHeadingDeg     = fData.X_1P_pingHeading; %deg
 X_1_sonarHeadingOffsetDeg = fData.IP_ASCIIparameters.S1H; %deg
 
-% Considering the swath frame Fs (origin: sonar face, Xs: across distance
-% (positive ~starboard), Ys: along distance (positive ~forward), Zs: up
-% distance (positive up)) and the projection frame Fp (origin: the (0,0)
-% Easting/Northing projection reference and datum reference, Xp: Easting
-% (positive East), Yp: Northing (grid North, positive North), Zp:
-% Elevation/Height (positive up)), AND ASSUMING THERE WAS A REAL-TIME
-% COMPENSATION OF ROLL AND PITCH SO THAT ZS=ZP, then to go from Fs to Fp,
-% one simply needs to rotate along the Z axis, which includes the vessel
-% heading, the sonar head heading offset, and the grid convergence (aka
-% angle between true north and grid north).
-X_1P_thetaDeg = - mod( X_1P_gridConvergenceDeg + X_1P_vesselHeadingDeg + X_1_sonarHeadingOffsetDeg, 360 );
-X_1P_thetaRad = deg2rad(X_1P_thetaDeg);
-
-% In practice, might want to check the vessel roll and pitch.
-
 datagramSource = CFF_get_datagramSource(fData);
 switch datagramSource
     
     case {'WC' 'AP'}
         
-        % get the bottom samples in each ping/beam
-        X_BP_bottomSample = CFF_get_bottom_sample(fData); % not precising wether raw or processed here, as this code is used both when loading the data and after filtering
+        % For water-column data, we start from the number of the sample
+        % corresponding to the bottom detect in each beam. 
+        
+        % Get it. Not precising wether raw or processed here, as this code
+        % is used both when loading the data and after filtering, and
+        % permute to get it as a 1BP array
+        X_BP_bottomSample = CFF_get_bottom_sample(fData);
         X_1BP_bottomSample = permute(X_BP_bottomSample,[3,1,2]);
         
-        % X_BP_startRangeSampleNumber = fData.WC_BP_StartRangeSampleNumber; % not needed for bottom detect (I think)
-        X_BP_beamPointingAngleDeg = fData.(sprintf('%s_BP_BeamPointingAngle',datagramSource));
-        X_BP_beamPointingAngleRad = deg2rad(X_BP_beamPointingAngleDeg);
-
-        % OWTT distance traveled in one sample
+        % To get from sample number to range in meters, we need the OWTT
+        % distance traveled in one sample 
         X_1P_oneSampleDistance = CFF_inter_sample_distance(fData);
         
-        % Georeference those samples
+        % To complete our coordinates, we need the beam pointing angle
+        X_BP_beamPointingAngleDeg = fData.(sprintf('%s_BP_BeamPointingAngle',datagramSource));
+        X_BP_beamPointingAngleRad = deg2rad(X_BP_beamPointingAngleDeg);
+        
+        % Range and angle will get us the coordinates of the bottom sample
+        % in the swath frame. To get in a geographical frame, we also need
+        % the heading angle, made up of the sonar heading offset, the
+        % vessel heading, and the grid convergence
+        X_1P_thetaDeg = - mod( X_1P_gridConvergenceDeg + X_1P_vesselHeadingDeg + X_1_sonarHeadingOffsetDeg, 360 );
+        X_1P_thetaRad = deg2rad(X_1P_thetaDeg);
+        
+        % Use all of this to georeference those bottom samples
         [X_1BP_bottomEasting, X_1BP_bottomNorthing, X_1BP_bottomHeight, X_1BP_bottomAcrossDist, X_1BP_bottomUpDist, X_1BP_bottomRange] = CFF_georeference_sample(X_1BP_bottomSample, 0, X_1P_oneSampleDistance, X_BP_beamPointingAngleRad, X_1P_sonarEasting, X_1P_sonarNorthing, X_1P_sonarHeight, X_1P_thetaRad);
         
         % save info
         fData = CFF_set_bottom_sample(fData,X_BP_bottomSample);
-        fData.X_PB_beamPointingAngleRad = X_BP_beamPointingAngleRad;
+        fData.X_BP_beamPointingAngleRad = X_BP_beamPointingAngleRad;
         fData.X_BP_bottomRange          = permute(X_1BP_bottomRange,[2,3,1]);
         
         % save data in the swath frame
@@ -83,25 +81,29 @@ switch datagramSource
         
     case 'X8'
         
-        % get bottom detect's across-track distance and depth from BP to
-        % SBP (1BP)
-        X_BP_bottomAcrossDist = fData.X8_BP_AcrosstrackDistanceY;
-        X_BP_bottomUpDist     = -fData.X8_BP_DepthZ;
-        X_1BP_bottomAcrossDist = permute(X_BP_bottomAcrossDist,[3,1,2]);
-        X_1BP_bottomUpDist     = permute(X_BP_bottomUpDist,[3,1,2]);
+        % For normal seafloor data, it's a bit simpler, as we start from
+        % the (x:forward,y:starboard,z:depth) coordinates of each sounding.
+        % We only need to rotate around the z/depth axis.
         
-        % get Easting, NOrthing and Height of bottom detect
-        [X_1BP_bottomEasting, X_1BP_bottomNorthing, X_1BP_bottomHeight] = CFF_get_samples_ENH(X_1P_sonarEasting,X_1P_sonarNorthing,X_1P_sonarHeight,X_1P_thetaRad,X_1BP_bottomAcrossDist,X_1BP_bottomUpDist);
+        % This time however, the data are already corrected for the sonar
+        % heading offset, so the vessel azimuth is only the vessel heading
+        % and the grid convergence
+        X_1P_thetaDeg = mod(X_1P_gridConvergenceDeg+X_1P_vesselHeadingDeg,360);
         
-        % save data in the swath frame
-        fData.X_BP_bottomUpDist     = X_BP_bottomUpDist;
-        fData.X_BP_bottomAcrossDist = X_BP_bottomAcrossDist;
+        % apply rotation for the (x,y) -> (E,N) coordinates. (x,y) are
+        % referenced to the horizontal position of the position system so
+        % just add the values obtained before.
+        fData.X_BP_bottomEasting  = fData.X_1P_pingE + fData.X8_BP_AcrosstrackDistanceY.*cosd(X_1P_thetaDeg) + fData.X8_BP_AlongtrackDistanceX.*sind(X_1P_thetaDeg);
+        fData.X_BP_bottomNorthing = fData.X_1P_pingN - fData.X8_BP_AcrosstrackDistanceY.*sind(X_1P_thetaDeg) + fData.X8_BP_AlongtrackDistanceX.*cosd(X_1P_thetaDeg);
+        
+        % z values are referenced to the sonar head depth, so we need to
+        % add the heave
+        fData.X_BP_bottomHeight = - (fData.X8_1P_TransmitTransducerDepth + fData.X8_BP_DepthZ);
+        
+        % also save the across-track and depth in the swath frame
+        fData.X_BP_bottomUpDist     = -fData.X8_BP_DepthZ;
+        fData.X_BP_bottomAcrossDist = fData.X8_BP_AcrosstrackDistanceY;
        
-        % save data in the projected frame
-        fData.X_BP_bottomEasting    = permute(X_1BP_bottomEasting,[2,3,1]);
-        fData.X_BP_bottomNorthing   = permute(X_1BP_bottomNorthing,[2,3,1]);
-        fData.X_BP_bottomHeight     = permute(X_1BP_bottomHeight,[2,3,1]);
-        
 end
 
 % sort fields by name
