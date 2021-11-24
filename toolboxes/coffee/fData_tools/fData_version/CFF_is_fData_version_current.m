@@ -1,7 +1,8 @@
 function bool = CFF_is_fData_version_current(fdata_input)
 %CFF_IS_FDATA_VERSION_CURRENT  Check if fData version of input is current
 %
-%   Input can be either the filepath to a fData.mat file, OR a fData structure.
+%   Input can be either the filepath to a fData.mat file, OR a fData
+%   structure. 
 %
 %   See also ESPRESSO.
 
