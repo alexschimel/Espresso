@@ -65,11 +65,8 @@ end
 if nargin>3
     tmproj = varargin{3};
 else
-    firstPosLat = fData.Po_1D_Latitude(1);
-    firstPosLon = fData.Po_1D_Longitude(1);
-    [~,~,~,~,tmproj] = CFF_ll2tm(firstPosLon,firstPosLat,ellips,'utm');
-    tmproj = ['utm' tmproj];
-    comms.info(['tmproj not specified. Using ''' tmproj '''']);
+    % to be specified from fir good lat/long value
+    tmproj = '';
 end
 
 % varargin{?}: datum conversion?
@@ -80,7 +77,7 @@ if nargin == 5
     navLat = varargin{4};
 else
     navLat = 0;
-    comms.info('navLat not specified. Using 0.');
+    comms.info('navLat not specified in input. Using 0.');
 end
 
 
@@ -102,20 +99,40 @@ pingSDN      = pingDate(:)'+ pingTSMIM/(24*60*60*1000) + navLat./(1000.*60.*60.*
 
 % test if there are several sources of GPS data
 if isfield(fData,'Po_1D_PositionSystemDescriptor')
-    [ID,idx_sys] = unique(fData.Po_1D_PositionSystemDescriptor);
-    if numel(idx_sys) > 1
-        % several sources, keep the one with best accuracy
-        [~,idx_keep] = nanmin(fData.Po_1D_MeasureOfPositionFixQuality(idx_sys));
-        pos_idx = fData.Po_1D_PositionSystemDescriptor==ID(idx_keep);
-        comms.info(sprintf('Several sources of GPS data available. Using source with ID: %d',ID(idx_keep)));
+    ID = unique(fData.Po_1D_PositionSystemDescriptor);
+    if numel(ID) > 1
+        % several sources available
+        % start by eliminating those that are obviously bad.
+        % I have found data where one source had lat/long values that were
+        % both constant and outside of normal values. You may want to
+        % devise more tests if you ever come across different examples of
+        % bad position data
+        isLatAllConst = arrayfun(@(x) all(diff(fData.Po_1D_Latitude(fData.Po_1D_PositionSystemDescriptor==x))==0), ID); % check if all constant values
+        isLonAllConst = arrayfun(@(x) all(diff(fData.Po_1D_Longitude(fData.Po_1D_PositionSystemDescriptor==x))==0), ID); % check if all constant values
+        isLatAllBad = arrayfun(@(x) all(abs(fData.Po_1D_Latitude(fData.Po_1D_PositionSystemDescriptor==x))>90), ID); % check if all outside [-90:90]
+        isLonAllBad = arrayfun(@(x) all(abs(fData.Po_1D_Longitude(fData.Po_1D_PositionSystemDescriptor==x))>180), ID); % check if all outside [-180:180]
+        idxBadPos = isLatAllConst | isLonAllConst | isLatAllBad | isLonAllBad;
+        % removing those bad sources
+        ID = ID(~idxBadPos);
+        if numel(ID)==1
+            % only one good source left, just use that one
+            pos_idx = fData.Po_1D_PositionSystemDescriptor==ID;
+        else
+            % still several sources available
+            % find the one with the best fix quality
+            meanFixQuality = arrayfun(@(x) nanmean(fData.Po_1D_MeasureOfPositionFixQuality(fData.Po_1D_PositionSystemDescriptor==x)), ID);
+            [~,idx_keep] = min(meanFixQuality);
+            pos_idx = fData.Po_1D_PositionSystemDescriptor==ID(idx_keep);
+            comms.info(sprintf('Several sources of GPS data available. Using source with ID: %d',ID(idx_keep)));
+        end
     else
         % single source. Use all datagrams.
         pos_idx = 1:numel(fData.Po_1D_Latitude);
     end
 else
     % using older version of converted data, throw warning and continue
-    comms.info('Navigation information in your converted data indicates it is not up to date with this version of Espresso. Consider reconverting this file, particularly if you see strange patterns in the navigation, or if two GPS sources have been logged in the file.'); 
-   pos_idx = 1:numel(fData.Po_1D_Latitude);
+    comms.info('Navigation information in your converted data indicates it is not up to date with this version of Espresso. Consider reconverting this file, particularly if you see strange patterns in the navigation, or if two GPS sources have been logged in the file.');
+    pos_idx = 1:numel(fData.Po_1D_Latitude);
 end
 
 % get data
@@ -126,6 +143,13 @@ posSpeed     = fData.Po_1D_SpeedOfVesselOverGround(pos_idx);
 posTSMIM     = fData.Po_1D_TimeSinceMidnightInMilliseconds(pos_idx); % time since midnight in milliseconds
 posDate      = datenum(cellfun(@num2str,num2cell(fData.Po_1D_Date(pos_idx)),'un',0),'yyyymmdd');
 posSDN       = posDate(:)'+ posTSMIM/(24*60*60*1000); % serial date number
+
+% define tmproj at this stage, if it was not provided in input
+if isempty(tmproj)
+    [~,~,~,~,tmproj] = CFF_ll2tm(posLongitude(1),posLatitude(1),ellips,'utm');
+    tmproj = ['utm' tmproj];
+    comms.info(['tmproj not specified in input. Defining it from first position fix: ''' tmproj '''']);
+end
 
 
 %% EXTRACT HEIGHT DATA
