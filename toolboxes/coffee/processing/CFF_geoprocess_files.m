@@ -55,20 +55,13 @@ addParameter(p,'comms',CFF_Comms());
 parse(p,rawFilesList,varargin{:});
 
 % and get results
-rawFilesList = p.Results.rawFilesList;
-datagramSource = p.Results.datagramSource;
-ellips = p.Results.ellips;
-tmproj = p.Results.tmproj;
-saveFDataToDrive = p.Results.saveFDataToDrive;
-outputFData = p.Results.outputFData;
-abortOnError = p.Results.abortOnError;
-if ischar(p.Results.comms)
-    comms = CFF_Comms(p.Results.comms);
-else
-    comms = p.Results.comms;
+for ff = fieldnames(p.Results)'
+    eval(sprintf('%s = p.Results.%s;',ff{1},ff{1}));
 end
 clear p
-
+if ischar(comms)
+    comms = CFF_Comms(comms);
+end
 
 %% Prep
 
@@ -177,12 +170,12 @@ for iF = 1:nFiles
                     % We need to recompute navigation with desired
                     % parameters.
                     
-                    % But first, remove all data fields using the old
-                    % projection. Throw a warning if we do that.
-                    if isfield(fData,'X_NEH_gridLevel')
-                        fData = rmfield(fData,{'X_1_gridHorizontalResolution','X_1E_gridEasting','X_N1_gridNorthing','X_NEH_gridDensity','X_NEH_gridLevel'});
-                        comms.info('This file contains gridded data in a projection that is different than that of the project. These gridded data were removed')
-                    end
+                    % First, remove all processed data fields using the old
+                    % projection 
+                    fields = fieldnames(fData);
+                    fData = rmfield(fData,fields(startsWith(fields,'X_')));
+                    
+                    % Recompute navigation with desired parameters.
                     comms.info('Interpolate navigation data from ancillary sensors to ping time');
                     fData = CFF_compute_ping_navigation(fData, ...
                         datagramSource, ...

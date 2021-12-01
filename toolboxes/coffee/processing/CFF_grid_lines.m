@@ -67,7 +67,7 @@ for ii = 1:nLines
         end
             
         % display for this line
-        lineName = CFF_file_name(fData.ALLfilename{1});
+        lineName = CFF_file_name(char(CFF_onerawfileonly(fData.ALLfilename)),1);
         comms.step(sprintf('%i/%i: line %s',ii,nLines,lineName));
         
         % data to grid: bathy and backscatter if available
@@ -80,17 +80,17 @@ for ii = 1:nLines
         % backscatter. But if the datagram source used was WC or AP, then
         % that X8 backscatter might not have the same dimensions. If this
         % is the case, then we don't have a matching easting and northing
-        % for backscatter and it cannot be gridded. 
-        flagGridBS = isfield(fData,'X8_BP_ReflectivityBS') && all(size(fData.X8_BP_ReflectivityBS)==size(fData.X_BP_bottomEasting));
+        % for backscatter and it cannot be gridded.
+        flagGridBS = CFF_is_field_or_prop(fData,'X8_BP_ReflectivityBS') &&  all(size(fData.X8_BP_ReflectivityBS)==size(fData.X_BP_bottomEasting)); 
         if flagGridBS
             comms.info('Gridding bathymetry and backscatter');
             
-            if isfield(fData,'X_1_bathyInterpolant')
+            if CFF_is_field_or_prop(fData,'X_1_bathyInterpolant')
                 bathyInterpolant = fData.X_1_bathyInterpolant;
             else
                 bathyInterpolant = [];
             end
-            if isfield(fData,'X_1_bsInterpolant')
+            if CFF_is_field_or_prop(fData,'X_1_bsInterpolant')
                 bsInterpolant = fData.X_1_bsInterpolant;
             else
                 bsInterpolant = [];
@@ -118,13 +118,10 @@ for ii = 1:nLines
             fData.X_1_bathyInterpolant = interpolant{1};
             fData.X_1_bsInterpolant = interpolant{2};
             
-            % sort fields by name
-            fData = orderfields(fData);
-            
         else
             comms.info('Gridding bathymetry');
             
-            if isfield(fData,'X_1_bathyInterpolant')
+            if CFF_is_field_or_prop(fData,'X_1_bathyInterpolant')
                 bathyInterpolant = fData.X_1_bathyInterpolant;
             else
                 bathyInterpolant = [];
@@ -155,15 +152,14 @@ for ii = 1:nLines
             fData.X_1_2DgridHorizontalResolution = res;
             fData.X_1_bathyInterpolant = bathyInterpolant;
             
-            % sort fields by name
-            fData = orderfields(fData);
-            
         end
         
         % gridding pingcounter as BP to display ping data as grids
         comms.info('Gridding indices for Runtime Parameters');
-        x = fData.X_BP_bottomEasting(:);
-        y = fData.X_BP_bottomNorthing(:);
+        x = fData.X_BP_bottomEasting;
+        x = x(:);
+        y = fData.X_BP_bottomNorthing;
+        y = y(:);
         iX = floor((x-gridE(1))/res)+1;
         iY = floor((y-gridN(1))/res)+1;
         subs = single([iY iX]);
