@@ -166,14 +166,25 @@ for ii = 1:nLines
         sz = single([numel(gridN) numel(gridE)]);
         nB = size(fData.X8_B1_BeamNumber,1);
         val = reshape(ones(nB,1)*fData.X8_1P_PingCounter,[],1);
-        EN_gridPingCounter = accumarray(subs,val,sz,@(x) nanmin(x),NaN);
+        NE_gridPingCounter = accumarray(subs,val,sz,@(x) nanmin(x),NaN);
         
         %indexing in Ru_1D
-        A = EN_gridPingCounter - permute(fData.Ru_1D_PingCounter,[3,1,2]);
-        A(A<0) = max(A(:));
-        [M,I] = min(A,[],3);
-        I(isnan(M)) = NaN;
-        fData.X_NE_indexInRu_1D = I;
+        % do column per column
+        X_NE_indexInRu_1D = nan(size(NE_gridPingCounter));
+        nC = size(X_NE_indexInRu_1D,2);
+        for iC = 1:nC
+            A = NE_gridPingCounter(:,iC) - fData.Ru_1D_PingCounter;
+            A(A<0) = max(A(:));
+            [M,I] = min(A,[],2);
+            I(isnan(M)) = NaN;
+            X_NE_indexInRu_1D(:,iC) = I;
+        end
+        % old way creates a 3D matrix that can be too big
+%         A = NE_gridPingCounter - permute(fData.Ru_1D_PingCounter,[3,1,2]);
+%         A(A<0) = max(A(:));
+%         [M,I] = min(A,[],3);
+%         I(isnan(M)) = NaN;
+%         fData.X_NE_indexInRu_1D = I;
 
         % save fData to drive
         if saveFDataToDrive
