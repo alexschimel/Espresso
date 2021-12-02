@@ -101,17 +101,18 @@ pingSDN      = pingDate(:)'+ pingTSMIM/(24*60*60*1000) + navLat./(1000.*60.*60.*
 if isfield(fData,'Po_1D_PositionSystemDescriptor')
     ID = unique(fData.Po_1D_PositionSystemDescriptor);
     if numel(ID) > 1
-        % several sources available
+        % several sources available, we will need to choose one
         % start by eliminating those that are obviously bad.
         % I have found data where one source had lat/long values that were
         % both constant and outside of normal values. You may want to
         % devise more tests if you ever come across different examples of
         % bad position data
+        isSingleEntry = arrayfun(@(x) sum(fData.Po_1D_PositionSystemDescriptor==x)==1, ID); % check if single entry (then they will be constant)
         isLatAllConst = arrayfun(@(x) all(diff(fData.Po_1D_Latitude(fData.Po_1D_PositionSystemDescriptor==x))==0), ID); % check if all constant values
         isLonAllConst = arrayfun(@(x) all(diff(fData.Po_1D_Longitude(fData.Po_1D_PositionSystemDescriptor==x))==0), ID); % check if all constant values
         isLatAllBad = arrayfun(@(x) all(abs(fData.Po_1D_Latitude(fData.Po_1D_PositionSystemDescriptor==x))>90), ID); % check if all outside [-90:90]
         isLonAllBad = arrayfun(@(x) all(abs(fData.Po_1D_Longitude(fData.Po_1D_PositionSystemDescriptor==x))>180), ID); % check if all outside [-180:180]
-        idxBadPos = isLatAllConst | isLonAllConst | isLatAllBad | isLonAllBad;
+        idxBadPos = (~isSingleEntry & (isLatAllConst|isLonAllConst)) | isLatAllBad | isLonAllBad;
         % removing those bad sources
         ID = ID(~idxBadPos);
         if numel(ID)==1
@@ -171,6 +172,18 @@ end
 
 % convert posLatitude/posLongitude to easting/northing/grid convergence:
 [posE, posN, posGridConv] = CFF_ll2tm(posLongitude, posLatitude, ellips, tmproj);
+
+% we need at least two position samples to process the navigation. If there
+% is only one, make up another one using dead reckoning
+if numel(posE)==1
+    posE = [posE, posE + posSpeed.*cosd(posHeading)];
+    posN = [posN, posN + posSpeed.*sind(posHeading)];
+    posGridConv = [posGridConv, posGridConv];
+    posHeading = [posHeading, posHeading];
+    posSpeed = [posSpeed, posSpeed];
+    posTSMIM = [posTSMIM, posTSMIM + 1000]; % + 1 sec
+    posSDN = [posSDN, posSDN + 1/(24*60*60)]; % + 1 sec
+end
 
 % convert heading to degrees and allow heading values superior to
 % 360 or inferior to 0 (because every time the vessel crossed the NS
