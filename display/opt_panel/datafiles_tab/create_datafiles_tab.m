@@ -224,12 +224,11 @@ disp_config = getappdata(main_figure,'disp_config');
 files = file_tab_comp.files;
 
 % check which are...
-[idxConverted,idxFDataUpToDate,idxHasWCD] = CFF_are_raw_files_converted(files);
-idxLoadable = idxConverted & idxFDataUpToDate==1; % add "& idxHasWCD==1" if wanting to flag data without WCD as unloadable
+idxConverted = CFF_are_raw_files_converted(files);
 idxAlreadyLoaded = CFF_are_raw_files_loaded(files, fData);
 idxSelected = file_tab_comp.idx_selected;
 idxFilesToLoad = idxSelected & ~idxAlreadyLoaded;
-idxNeedConversionFirst = idxFilesToLoad & ~idxLoadable;
+idxNeedConversionFirst = idxFilesToLoad & ~idxConverted;
 
 % prompt to convert those unconverted yet
 if any(idxNeedConversionFirst)
@@ -257,7 +256,7 @@ if any(idxNeedConversionFirst)
                 'comms','multilines');
         case 'No'
             % Remove non-converted files from loading list
-            idxFilesToLoad = idxFilesToLoad & idxLoadable;
+            idxFilesToLoad = idxFilesToLoad & idxConverted;
         case 'Cancel'
             % abort loading
             return

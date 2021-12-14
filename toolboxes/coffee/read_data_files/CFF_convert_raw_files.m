@@ -236,7 +236,7 @@ for iF = 1:nFiles
         end
         
         % convert, reconvert, update, or ignore based on file status
-        [idxConverted,idxFDataUpToDate,idxHasWCD] = CFF_are_raw_files_converted(rawFile);
+        idxConverted = CFF_are_raw_files_converted(rawFile);
         if ~idxConverted
             % File is not converted yet: proceed with conversion.
             comms.info('Never converted. Try to convert');
@@ -247,29 +247,23 @@ for iF = 1:nFiles
                 % reconversion.
                 comms.info('Already converted. Try to re-convert');
             else
-                % ...and not asking for reconversion: examine its status a
-                % bit more in detail.
+                % ...and not asking for reconversion. Load data for checks
+                wc_dir = CFF_converted_data_folder(rawFile);
+                mat_fdata_file = fullfile(wc_dir, 'fData.mat');
+                fData = load(mat_fdata_file);
+                % test if version correct, and if has WC data)
+                idxFDataUpToDate = strcmp(CFF_get_fData_version(fData),CFF_get_current_fData_version());
+                idxHasWCD = any(startsWith(fieldnames(fData),{'WC_','AP_'}));
                 if ~idxFDataUpToDate || (strcmp(conversionType,'WCD') && ~idxHasWCD)
-                    % Converted file is unsuitable, as it's using an
-                    % outdated format OR it does not have the WCD data we
-                    % need: update it aka reconvert.
                     comms.info('Already converted but unsuitable. Try to update conversion');
                 else
                     % Converted file is suitable and doesn't need to be
                     % reconverted.
+                    comms.info('Already converted and suitable. Ignore');
                     if outputFData
-                        % we need in in output, so load it now
-                        comms.info('Already converted and suitable. Try to load');
-                        wc_dir = CFF_converted_data_folder(rawFile);
-                        mat_fdata_file = fullfile(wc_dir, 'fData.mat');
-                        fDataGroup{iF} = load(mat_fdata_file);
-                        comms.info('Done');
-                    else
-                        % we don't need in output, just ignore
-                        comms.info('Already converted and suitable. Ignore');
+                        fDataGroup{iF} = fData;
                     end
-                    % in both cases, communicate progress and move on to
-                    % next file
+                    % communicate progress and move on to next file
                     comms.progress(iF,nFiles);
                     continue
                 end

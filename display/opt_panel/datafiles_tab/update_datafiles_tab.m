@@ -17,9 +17,8 @@ search_path = get(file_tab_comp.path_box,'string');
 rawfileslist = CFF_list_raw_files_in_dir(search_path);
 
 % check which are already converted
-[idxConverted,idxFDataUpToDate,idxHasWCD] = CFF_are_raw_files_converted(rawfileslist);
-idx_converted = idxConverted & idxFDataUpToDate==1; % add "& idxHasWCD==1" if wanting to only show data with WCD as converted
-        
+idx_converted = CFF_are_raw_files_converted(rawfileslist);
+     
 % check which are currently loaded
 idx_loaded = CFF_are_raw_files_loaded(rawfileslist, fData);
 
@@ -54,10 +53,5 @@ file_tab_comp.table_main.Data = new_entry;
 file_tab_comp.files = rawfileslist;
 file_tab_comp.idx_converted = idx_converted;
 setappdata(main_figure,'file_tab',file_tab_comp);
-
-% throw warning for outdated version
-if any(idxFDataUpToDate==0)
-    warning('One or several files in this folder have been previously converted using an outdated version of Espresso. They will require reconversion and thus show as NOT converted.');
-end
 
 end

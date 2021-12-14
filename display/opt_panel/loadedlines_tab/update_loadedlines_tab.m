@@ -28,9 +28,7 @@ for nF = 1:numel(fData)
 end
 
 % check which files have WC data
-rawfileslist = cellfun(@(x) x.ALLfilename, fData, 'UniformOutput', 0)';
-[~,~,idxHasWCD] = CFF_are_raw_files_converted(rawfileslist);
-idxHasWCD = logical(idxHasWCD);
+idxHasWCD = cellfun(@(x) any(startsWith(fieldnames(x),{'WC_','AP_'})), fData);
 
 % add HTML tags
 % raw files with WC

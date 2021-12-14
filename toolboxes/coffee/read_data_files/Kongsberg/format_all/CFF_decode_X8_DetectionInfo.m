@@ -1,4 +1,4 @@
-function [S2, cat] = CFF_decode_X8_DetectionInfo(data)
+function [S2, cat, ReflectivityCorrection, BScat] = CFF_decode_X8_DetectionInfo(data)
 
 
 dat = reshape(data,[],1);
@@ -13,7 +13,7 @@ cat = categorical({...
     'invalid, interpolated or extrapolated from neighbour detections',... % 3
     'invalid, estimated',... % 4
     'invalid, rejected candidate',... % 5
-    'invalid, no detection data available '... % 6
+    'invalid, no detection data available'... % 6
     });
 
 
@@ -33,3 +33,16 @@ S(bit7 & bits0to3==4) = 6;
 
 S2 = reshape(S,size(data));
 
+% additional code for reflectivity:
+% "Bit 4 Reflectivity (used in Beam intensity display) correction for
+% Lamberts law and for normal incidence: 0= not compensated (xxx0 xxxx) (to
+% show beam incidence angle dependency) 1= compensated (xxx1 xxxx) ( uses
+% same correction as for seabed image data)"
+% This refers to the "detection Infromation" field
+
+BScat = categorical({...
+    'not compensated',... % 0 "(to show beam incidence angle dependency)"
+    'compensated'... % 1 "(uses same correction as for seabed image data)"
+    });
+
+ReflectivityCorrection = str2num(dat(:,4));

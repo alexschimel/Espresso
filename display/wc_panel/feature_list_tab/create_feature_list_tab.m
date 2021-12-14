@@ -48,6 +48,9 @@ rc_menu = uicontextmenu(ancestor(parent_tab_group,'figure'));
 
 feature_list_tab_comp.table.UIContextMenu = rc_menu;
 
+str_importLatLong = '<HTML><center><FONT color="Black">Import Lat/Long as Point Feature(s)</Font> ';
+uimenu(rc_menu,'Label',str_importLatLong,'Callback',{@import_features_callback,main_figure});
+
 str_export = '<HTML><center><FONT color="Black">Export Selected Feature(s)</Font> ';
 uimenu(rc_menu,'Label',str_export,'Callback',{@export_features_callback,main_figure,{}});
 
@@ -337,6 +340,7 @@ else
 end
 end
 
+%%
 function delete_features_callback(~,~,main_figure,IDs)
 
 disp_config = getappdata(main_figure,'disp_config');
@@ -380,5 +384,60 @@ update_feature_list_tab(main_figure);
 display_features(main_figure,{},[]);
 
 disp_config.Act_features = {};
+
+end
+
+%%
+function import_features_callback(~,~,main_figure)
+
+disp_config = getappdata(main_figure,'disp_config');
+features = getappdata(main_figure,'features');
+
+[file, path] = uigetfile('*.csv','Select .csv files with "Lat" and "Long" headers to import as point features');
+filename = fullfile(path, file);
+T = readtable(filename,'delimiter',',');
+
+% to keep just for that one project
+[~,ia] = unique(T.event_name); % first per transect
+%ia =ismember(T.event_name,{'BUN_TV33','BUN_TV39','BUN_TV76','BUN_TV72','BUN_TV39','BUN_TV24'}); % select transects
+ia =ismember(T.event_name,{'BUN_TV41','BUN_TV52'}); % select transects
+
+T = T(ia,:);
+desc = T.event_name;
+
+varnames = T.Properties.VariableNames;
+idxLat = find(startsWith(varnames,'lat','IgnoreCase',true));
+idxLon = find(startsWith(varnames,'lon','IgnoreCase',true));
+
+lat = table2array(T(:,idxLat));
+lon = table2array(T(:,idxLon));
+
+[E, N] = CFF_ll2tm(lon, lat, disp_config.MET_ellips, disp_config.MET_tmproj);
+
+if ~isempty(features)
+    ID = nanmax([features(:).ID]);
+else
+    ID = 0;
+end
+
+zone = disp_config.get_zone();
+
+nPoints = numel(E);
+for ii = 1:nPoints
+    ID = ID+1;
+    new_feature = feature_cl('Point',[E(ii) N(ii)],'Zone',zone,'ID',ID,'Description',desc{ii});
+    new_feature.feature_to_shapefile(fullfile(Espresso_user_folder,'feature_files'));
+    features = [features new_feature];
+end
+
+% save/overwrite features into main figure
+setappdata(main_figure,'features',features);
+
+% trigger an update of displaying features on map and stacked view
+display_features(main_figure,{},[]);
+
+% trigger an update of the feature list tab
+update_feature_list_tab(main_figure);
+
 
 end

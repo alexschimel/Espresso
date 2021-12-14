@@ -179,6 +179,7 @@ for ii = 1:nLines
             I(isnan(M)) = NaN;
             X_NE_indexInRu_1D(:,iC) = I;
         end
+        fData.X_NE_indexInRu_1D = X_NE_indexInRu_1D;
         % old way creates a 3D matrix that can be too big
 %         A = NE_gridPingCounter - permute(fData.Ru_1D_PingCounter,[3,1,2]);
 %         A(A<0) = max(A(:));

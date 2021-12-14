@@ -185,6 +185,7 @@ if numel(posE)==1
     posSDN = [posSDN, posSDN + 1/(24*60*60)]; % + 1 sec
 end
 
+
 % convert heading to degrees and allow heading values superior to
 % 360 or inferior to 0 (because every time the vessel crossed the NS
 % line, the heading jumps from 0 to 360 (or from 360 to 0) and this
@@ -207,6 +208,18 @@ if ~isempty(negJump)
 end
 
 posHeading = posHeading + jumps.*360;
+
+% dirty heading fix if first value is null
+if posHeading(1)==0 && abs(posHeading(2))>5
+    posLatitude(1) = [];
+    posLongitude(1) = [];
+    posHeading(1) = [];
+    posSpeed(1) = [];
+    posTSMIM(1) = [];
+    posDate(1) = [];
+    posSDN(1) = [];
+    jumps(1) = [];
+end
 
 % initialize new vectors
 pingE        = nan(size(pingTSMIM));
