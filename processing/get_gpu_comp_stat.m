@@ -11,7 +11,7 @@ function [gpu_comp,g] = get_gpu_comp_stat()
 gpu_comp = 0;
 g = [];
 
-% check there is a licence for parallel computing
+% check if there is a licence for parallel computing
 gpu_lic = license('checkout','Distrib_Computing_Toolbox');
 
 if gpu_lic

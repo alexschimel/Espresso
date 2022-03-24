@@ -22,7 +22,7 @@ iX = floor((x(idxKeep)-gridX(1))/res)+1;
 iY = floor((y(idxKeep)-gridY(1))/res)+1;
 subs = single([iY iX]);
 
-% size of ouptut grid
+% size of output grid
 sz = single([numel(gridY) numel(gridX)]);
 
 % use accumarray to generate grid

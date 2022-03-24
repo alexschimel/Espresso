@@ -427,16 +427,22 @@ for iF = 1:nStruct
         else
             % in case there's more than one head, we're going to only keep
             % pings for which we have data for all heads
-            pingCounters = unique(ALLdata.EM_XYZ88.PingCounter,'stable');
+            
+            % pings in first head
+            idxFirstHead = ALLdata.EM_XYZ88.SystemSerialNumber==headNumber(1);
+            pingCounters = unique(ALLdata.EM_XYZ88.PingCounter(idxFirstHead),'stable');
+            
+            % update by keeping only common values to other heads in turn
             for iH = 2:numel(headNumber)
-                % pings for first head
-                pingCountersOtherhead = unique(ALLdata.EM_XYZ88.PingCounter(ALLdata.EM_XYZ88.SystemSerialNumber==headNumber(iH)),'stable');
-                pingCounters = intersect(pingCounters, pingCountersOtherhead);
+                idxThisOtherHead = ALLdata.EM_XYZ88.SystemSerialNumber==headNumber(iH);
+                pingCountersThisOhterHead = unique(ALLdata.EM_XYZ88.PingCounter(idxThisOtherHead),'stable');
+                pingCounters = intersect(pingCounters, pingCountersThisOhterHead);
             end
             
             % get the index of first datagram per head for a given ping
             % number
-            for iH = 1:length(headNumber)
+            idxDtg = nan(numel(headNumber), numel(pingCounters));
+            for iH = 1:numel(headNumber)
                 idxDtg(iH,:) = arrayfun(@(x) find(ALLdata.EM_XYZ88.SystemSerialNumber==headNumber(iH) & ALLdata.EM_XYZ88.PingCounter==x, 1), pingCounters);
             end
             

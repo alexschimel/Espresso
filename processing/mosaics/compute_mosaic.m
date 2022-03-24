@@ -11,11 +11,6 @@ E_lim = mosaic.E_lim;
 N_lim = mosaic.N_lim;
 res   = mosaic.res;
 
-if res<mosaic.best_res
-    warning('Cannot mosaic data at higher resolution than coarsest constituent grid. Best resolution possible is %.2g m.', mosaic.best_res);
-    return
-end
-
 %% initalize the mosaic:
 % * weighted sum and total sum of weights. In absence of weights, the total
 % sum of weights is simply the count of points, and the weighted sum is

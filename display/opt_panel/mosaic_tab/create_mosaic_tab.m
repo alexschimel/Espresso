@@ -43,13 +43,13 @@ set(mosaic_tab_comp.mosaic_tab,'SizeChangedFcn',{@resize_table,mosaic_tab_comp.t
 
 uicontrol(mosaic_tab_comp.mosaic_tab,'Style','pushbutton','units','normalized',...
     'pos',[0 0.01 0.2 0.08],...
-    'String','New Mosaic',...
-    'callback',{@mosaic_tot_cback,main_figure,'2D'});
+    'String','New 2D Mosaic',...
+    'callback',{@create_new_mosaic_cback,main_figure,'2D'});
 
 uicontrol(mosaic_tab_comp.mosaic_tab,'Style','pushbutton','units','normalized',...
     'pos',[0.2 0.01 0.2 0.08],...
     'String','New 3D Mosaic',...
-    'callback',{@mosaic_tot_cback,main_figure,'3D'});
+    'callback',{@create_new_mosaic_cback,main_figure,'3D'});
 
 uicontrol(mosaic_tab_comp.mosaic_tab,'Style','pushbutton','units','normalized',...
     'pos',[0.4 0.01 0.2 0.08],...
@@ -188,6 +188,7 @@ update_map_tab(main_figure,0,1,0,[]);
 
 end
 
+
 %%
 % Callback when editing mosaic (name or resolution)
 %
@@ -209,14 +210,15 @@ switch evt.Indices(2)
         mosaics(idx_mosaic).name = evt.NewData;
     case 2
         % resolution update
-        if ~isnan(evt.NewData) && evt.NewData>=mosaics(idx_mosaic).best_res
+        newRes = evt.NewData;
+        if ~isnan(newRes) && newRes>=mosaics(idx_mosaic).res
             
             % initialize a new mosaic with bounds of old mosaic but new
             % resolution
-            tmp_mosaic = init_mosaic(mosaics(idx_mosaic).E_lim,mosaics(idx_mosaic).N_lim,evt.NewData);
+            tmp_mosaic = CFF_init_mosaic(mosaics(idx_mosaic).E_lim,mosaics(idx_mosaic).N_lim,newRes);
             
             % new resolution and blank mosaic grid
-            mosaics(idx_mosaic).res = evt.NewData;
+            mosaics(idx_mosaic).res = newRes;
             mosaics(idx_mosaic).mosaic_level = tmp_mosaic.mosaic_level;
             
             % recompute mosaic with new resolution, but only with original fData
@@ -224,9 +226,9 @@ switch evt.Indices(2)
             ind_fData_tot_in_mosaic = ismember( fData_tot_IDs, mosaics(idx_mosaic).Fdata_ID );
             mosaics(idx_mosaic) = compute_mosaic(mosaics(idx_mosaic), fData_tot(ind_fData_tot_in_mosaic), d_lim_sonar_ref, d_lim_bottom_ref);
             
-        elseif ~isnan(evt.NewData) && evt.NewData>0
+        elseif ~isnan(newRes) && newRes>0
             % valid new resolution but not possible
-            warning('Cannot mosaic data at higher resolution than coarsest constituent grid. Best resolution possible is %.2g m.', mosaics(idx_mosaic).best_res);
+            warning('Cannot mosaic data at higher resolution than coarsest constituent grid. Best resolution possible is %.2g m.', mosaics(idx_mosaic).res);
             src.Data{evt.Indices(1),evt.Indices(2)} = evt.PreviousData;
         else
             % not a valid new resolution
@@ -242,16 +244,20 @@ update_map_tab(main_figure,0,1,0,[]);
 end
 
 
-%%
-% Callback when clicking the Create/New button for a new mosaic
+function create_new_mosaic_cback(~,~,main_figure,mosaic_type)
+%CREATE_NEW_MOSAIC_CBACK 
+%   Callback when clicking the Create/New button for a new mosaic
 %
-function mosaic_tot_cback(~,~,main_figure,mos_type)
+%   Pass into interactive "box dawing", requesting to create a mosaic of
+%   appropriate type (2D or 3D) when the bx has finished drawing
 
-% replace pointer with cross, and callback when clicking down on the map
-replace_interaction(main_figure,'interaction','WindowButtonDownFcn',  'id',1,'interaction_fcn',{@create_mosaic,main_figure,mos_type},'pointer','cross');
-replace_interaction(main_figure,'interaction','WindowButtonMotionFcn','id',1,'interaction_fcn',{@disp_cursor_info,main_figure},'pointer','cross');
+pointerStyle = 'cross';
+endFunction = @compute_and_add_mosaic;
+endFunctionInputVar = mosaic_type;
+init_box_drawing_mode(main_figure,endFunction,endFunctionInputVar,pointerStyle);
 
 end
+
 
 %%
 % Callback when ...

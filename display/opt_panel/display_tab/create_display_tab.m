@@ -152,7 +152,7 @@ display_tab_comp.dg_source = uicontrol(wc_gr,...
     'Callback',{@change_dg_source_cback,main_figure});
 
 
-%% 3D grid panel
+%% 3D grid group
 
 % Sonar referenced
 

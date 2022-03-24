@@ -58,7 +58,7 @@ function ALLfileinfo = CFF_all_file_info(ALLfilename, varargin)
 %% HARD-CODED PARAMETERS
 
 % supported systems:
-emNumberList = [122; 300; 302; 304; 710; 712; 2040; 2045; 3000; 3002; 3020]; %2045 is 2040c
+emNumberList = [122; 300; 302; 304; 710; 712; 2040; 2045; 3000; 3002; 3020; 12040]; %2045 is 2040c
 
 
 %% Input arguments management

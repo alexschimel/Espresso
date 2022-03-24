@@ -1,9 +1,9 @@
 function fDataGroup = CFF_grid_lines(fDataGroup,varargin)
-%CFF_GRID_LINES  Create Easting-Northing grids of data in a group of fData
+%CFF_GRID_LINES  Create Easting-Northing grids of data in a set of lines
 %
 %   Description
 %
-%   See also XXX
+%   See also CFF_GRID_2D_DATA
 
 %   Authors: Alex Schimel (NGU, alexandre.schimel@ngu.no) and Yoann
 %   Ladroit (NIWA, yoann.ladroit@ensta-bretagne.fr)
