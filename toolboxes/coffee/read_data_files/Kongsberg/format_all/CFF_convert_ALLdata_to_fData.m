@@ -93,9 +93,9 @@ function fData = CFF_convert_ALLdata_to_fData(ALLdataGroup,varargin)
 %
 %   See also ESPRESSO.
 
-%   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
+%   Authors: Alex Schimel (NGU, alexandre.schimel@ngu.no) and Yoann
 %   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
-%   2017-2021; Last revision: 11-11-2021
+%   2017-2022; Last revision: 07-04-2022
 
 
 %% Input arguments management
@@ -243,9 +243,23 @@ for iF = 1:nStruct
         
         comms.step('Converting EM_Runtime'); 
         
-        % Here we only record the fields we need later. More fields are
-        % available than those below.
+        % Here we have experienced redundant datagrams so remove them
+        N = numel(ALLdata.EM_Runtime.Date);
+        allFieldnames = fieldnames(ALLdata.EM_Runtime);
+        iRed = nan(1,N); % index of redundant datagrams
+        iRed(1) = 0;
+        for ii = 2:N
+            % check if all fields has same value as previous datagram
+            iRed(ii) = all(cellfun(@(f) ALLdata.EM_Runtime.(f)(ii)==ALLdata.EM_Runtime.(f)(ii-1) ,allFieldnames));
+        end
+        iRed = logical(iRed);
+        % remove redundancy
+        for ii = 1:numel(allFieldnames)
+        	ALLdata.EM_Runtime.(allFieldnames{ii})(iRed) = [];
+        end
         
+        % For now we only record the fields we need later. More fields are
+        % available than those below.
         fData.Ru_1D_Date                            = ALLdata.EM_Runtime.Date;
         fData.Ru_1D_TimeSinceMidnightInMilliseconds = ALLdata.EM_Runtime.TimeSinceMidnightInMilliseconds;
         fData.Ru_1D_PingCounter                     = ALLdata.EM_Runtime.PingCounter;

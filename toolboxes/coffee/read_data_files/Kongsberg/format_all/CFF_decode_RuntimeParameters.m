@@ -1,6 +1,10 @@
 function out = CFF_decode_RuntimeParameters(EM_Runtime)
 %CFF_DECODE_RUNTIMEPARAMETERS  Read the encoded fields of Runtime Param.
 %
+%
+%   Info comes from KONGSBERG. (2022). Kongsberg EM Series Multibeam echo
+%   sounders - EM datagram formats. Document 850-160692/X (pp. 133).
+
 %   See also CFF_READ_ALL_FROM_FILEINFO.
 
 %   Authors: Alex Schimel (NGU, alexandre.schimel@ngu.no) and Yoann
@@ -14,6 +18,12 @@ if numel(emNumber)>1
     error(['Cannot deal with multiple EM model numbers in a single ' ... 
         'EM_Runtime struct. In fact there is no reason why this ' ... 
         'should ever happen. Investigate this.']);
+end
+
+% The documentation does not mention the EM 712 but expecting the codes to 
+% be exactly the same as for EM 710.
+if emNumber==712
+    emNumber = 710;
 end
 
 % init output
@@ -219,7 +229,7 @@ switch emNumber
             6, 'Short FM';...      % x110 xxxx - Short FM
             7, 'Long FM'...        % x111 xxxx - Long FM
             };
-        codes = bin2dec(encodedData(:,5:6));
+        codes = bin2dec(encodedData(:,2:4));
         [~,idx] = ismember(codes,cell2mat(codeTable(:,1)));
         out.PulseLength = reshape(categorical(codeTable(idx,2)),sz);
         

@@ -25,9 +25,9 @@ function mosaic = CFF_mosaic_lines(fDataGroup,fieldname,varargin)
 %   as 'xy_roi', i.e. usually, meters). With VALUE empty (default), the
 %   grid size will be selected as the coarsest grid size of the data
 %   gridded in FDATAGROUP. Note that while you can set here a finer
-%   resolution than that of the gridded data, the end-resolut will not be
-%   more detailed than the componenent grids. To get a better resolution,
-%   you would need to re-grid the files at a finer resolution.
+%   resolution than that of the gridded data, the end-product will not
+%   appear as more detailed than the componenent grids. To get a better
+%   resolution, you would need to re-grid the files at a finer grid size.
 %
 %   CFF_MOSAIC_LINES(...,'mode',VALUE) specifies the mosaicking mode, i.e.
 %   the rules of how new data gets merged with existing data when adding to
@@ -45,8 +45,9 @@ function mosaic = CFF_mosaic_lines(fDataGroup,fieldname,varargin)
 %   method. See CFF_COMMS.
 %
 %   See also CFF_INIT_MOSAIC_V2, CFF_ADD_TO_MOSAIC, CFF_FINALIZE_MOSAIC
+
 %   Authors: Alex Schimel (NGU, alexandre.schimel@ngu.no)
-%   2017-2022; Last revision: 23-03-2022
+%   2017-2022; Last revision: 06-04-2022
 
 % input parser
 p = inputParser;
@@ -67,7 +68,7 @@ if ischar(comms)
 end
 
 % start message
-comms.start('Mosaicking data in line(s)');
+comms.start('Mosaicking data from line(s)');
 
 % number of files
 nLines = numel(fDataGroup);
@@ -75,7 +76,8 @@ nLines = numel(fDataGroup);
 % start progress
 comms.progress(0,nLines);
 
-% get coarsest resolution of component grids
+% for mosaic grid size, we use by default the coarsest resolution of
+% component grids 
 if isempty(res)
     res = max(cellfun(@(x) x.X_1_2DgridHorizontalResolution, fDataGroup));
 end
@@ -108,8 +110,8 @@ end
 % is strongly affected by outliers. The best choice "aesthetically" is to
 % use dB. We set here the transformation necessary before data is averaged,
 % and the reverse transformation to get back in dB.
-% For now we hard-code this, but perhaps eventually turn it as an input
-% parameter
+% For now the choice is hard-code, but perhaps eventually turn it as an
+% input parameter
 bs_averaging_mode = 'power';
 switch bs_averaging_mode
     case 'dB'
@@ -117,11 +119,11 @@ switch bs_averaging_mode
         bs_trsfm = @(x) x;
         inv_trsfm = @(x) x;
     case 'amplitude'
-        bs_trsfm = @(x) 10.^(x./20); % turn dB to amplitude
-        inv_trsfm = @(x) 20.*log10(x); % inverse transformation
+        bs_trsfm = @(x) 10.^(x./20); % dB to amplitude
+        inv_trsfm = @(x) 20.*log10(x); % amplitude to dB
     case 'power'
-        bs_trsfm = @(x) 10.^(x./10); % turn dB to power
-        inv_trsfm = @(x) 10.*log10(x); % inverse transformation
+        bs_trsfm = @(x) 10.^(x./10); % dB to power
+        inv_trsfm = @(x) 10.*log10(x); % power to dB
 end
 
 % loop through fData
@@ -149,15 +151,21 @@ for ii = 1:nLines
         % set weight
         switch mosaic{jj}.mode
             case 'blend'
-                w = 1;
-                % important not: 'blend' mode averages data
+                % weight here is the number of points per gridded cell
+                w = fData.X_NE_weight;
                 if strcmp(fieldname{jj},'X_NE_bs')
                     % transform dB before averaging. Mosaic will remain in
                     % transformed unit until finalization.
                     v = bs_trsfm(v);
                 end
             case 'stitch'
-                w = 1./fData.X_NEH_gridMaxHorizDist;
+                % weight here is the inverse of the distance of the grid
+                % cell to nadir
+                tempIndBP = fData.X_NE_indexBP;
+                indNan = isnan(tempIndBP);
+                tempIndBP(indNan) = 1;
+                w = 1./abs(fData.X8_BP_AcrosstrackDistanceY(tempIndBP));
+                w(indNan) = 0;
         end
         % add to mosaic
         mosaic{jj} = CFF_add_to_mosaic(mosaic{jj},x,y,v,w);

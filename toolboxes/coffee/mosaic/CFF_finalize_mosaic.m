@@ -9,7 +9,7 @@ function mosaic = CFF_finalize_mosaic(mosaic)
 %   See also CFF_MOSAIC_LINES, CFF_INIT_MOSAIC_V2, CFF_ADD_TO_MOSAIC
 
 %   Authors: Alex Schimel (NGU, alexandre.schimel@ngu.no)
-%   2017-2022; Last revision: 23-03-2022
+%   2017-2022; Last revision: 06-04-2022
 
 mosaic.value(mosaic.weight == 0) = NaN;
 
