@@ -150,12 +150,8 @@ switch mosaic.mode
         
         % where the updated weight is still zero (no current nor new data),
         % we get nan updated values, which we don't want to keep. Reset
-        % those updated values to zero 
+        % those updated values to zero
         upd_v_blc(upd_w_blc==0) = 0;
-        
-        % update mosaic with updated block value and weight
-        mosaic.value(iR_block,iC_block)  = upd_v_blc;
-        mosaic.weight(iR_block,iC_block) = upd_w_blc;
         
     case 'stitch'
         % In this mode, for each grid cell in the block, we retain either
@@ -170,9 +166,25 @@ switch mosaic.mode
         ind = reshape(ind,size(cur_w_blc));
         
         % updated data is new data where ind=1 and current data where ind=2
-        mosaic.value(iR_block,iC_block)  = new_v_blc.*(ind==1) + cur_v_blc.*(ind==2);
-        mosaic.weight(iR_block,iC_block) = new_w_blc.*(ind==1) + cur_w_blc.*(ind==2);
+        upd_v_blc = new_v_blc.*(ind==1) + cur_v_blc.*(ind==2);
+        upd_w_blc = new_w_blc.*(ind==1) + cur_w_blc.*(ind==2);
+        
+    case 'min'
+        % In this mode, for each grid cell in the block, we retain
+        % whichever value is the smallest.
+        % We only use weights to check where there is data
+        new_v_blc(new_w_blc==0) = NaN;
+        cur_v_blc(cur_w_blc==0) = NaN;
+        upd_v_blc = min(new_v_blc,cur_v_blc,'omitnan');
+        upd_v_blc(isnan(upd_v_blc)) = 0;
+        
+        % the udpated weight is where there is data
+        upd_w_blc = double(cur_w_blc+new_w_blc>0);
         
 end
+
+% update mosaic with updated block value and weight
+mosaic.value(iR_block,iC_block)  = upd_v_blc;
+mosaic.weight(iR_block,iC_block) = upd_w_blc;
 
 end

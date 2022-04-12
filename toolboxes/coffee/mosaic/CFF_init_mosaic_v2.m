@@ -37,7 +37,7 @@ function mosaic = CFF_init_mosaic_v2(xy_roi,varargin)
 p = inputParser;
 addRequired(p,'xy_roi',@(u) validateattributes(u,{'numeric'},{'2d'}));
 addParameter(p,'res',1,@(u) validateattributes(u,{'numeric'},{'scalar','positive'}));
-addParameter(p,'mode','blend',@(u) ismember(u,{'blend','stitch'}));
+addParameter(p,'mode','blend',@(u) ismember(u,{'blend','stitch','min'}));
 parse(p,xy_roi,varargin{:});
 res = p.Results.res;
 mode = p.Results.mode;
