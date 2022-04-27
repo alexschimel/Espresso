@@ -523,10 +523,10 @@ for iF = 1:nStruct
                 fData.X8_BP_AlongtrackDistanceX(iBOut,iPOut)          = ALLdata.EM_XYZ88.AlongtrackDistanceX{iPIn};
                 fData.X8_BP_DetectionWindowLength(iBOut,iPOut)        = ALLdata.EM_XYZ88.DetectionWindowLength{iPIn};
                 fData.X8_BP_QualityFactor(iBOut,iPOut)                = ALLdata.EM_XYZ88.QualityFactor{iPIn};
-                fData.X8_BP_BeamIncidenceAngleAdjustment(iBOut,iPOut) = ALLdata.EM_XYZ88.BeamIncidenceAngleAdjustment{iPIn};
+                fData.X8_BP_BeamIncidenceAngleAdjustment(iBOut,iPOut) = ALLdata.EM_XYZ88.BeamIncidenceAngleAdjustment{iPIn}*0.1; % now in deg
                 fData.X8_BP_DetectionInformation(iBOut,iPOut)         = ALLdata.EM_XYZ88.DetectionInformation{iPIn};
                 fData.X8_BP_RealTimeCleaningInformation(iBOut,iPOut)  = ALLdata.EM_XYZ88.RealTimeCleaningInformation{iPIn};
-                fData.X8_BP_ReflectivityBS(iBOut,iPOut)               = ALLdata.EM_XYZ88.ReflectivityBS{iPIn};
+                fData.X8_BP_ReflectivityBS(iBOut,iPOut)               = ALLdata.EM_XYZ88.ReflectivityBS{iPIn}*0.1; % now in dB
                 
                 % add head number
                 fData.X8_BP_HeadSystemSerialNumber(iBOut,iPOut) = headNumber(iH);
