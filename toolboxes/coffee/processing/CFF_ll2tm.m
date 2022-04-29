@@ -82,9 +82,13 @@ function [E, N, gridConv, pointScaleFactor, utmzone] = CFF_ll2tm(lon, lat, ellip
 %   * This function is based on "LINZS25002. Standard for New Zealand
 %   Geodetic Datum 2000 Projections: version 2." and original code from
 %   "ll2tm.m" by David Johnson and Brett Beamsley (Metocean Solutions LTD).
+%   * Special UTM zone definitions in Norway finally done correctly in
+%   later version.
+%   * UTM is only defined between 80°S and 84°N but this function ignores
+%   these limits.
 
-%   Authors: Alex Schimel (University of Waikato)
-%   2017-2021; Last revision: XX-06-2010
+%   Authors: Alex Schimel (NGU)
+%   2010-2022; Last revision: 29-04-2022
 
 
 %% ellipsoid parameters:
@@ -173,7 +177,12 @@ eval(['k0 = PARAM_PROJ.' tmproj '(5);']);      % central meridian scale factor
 %% changing parameters if 'utm' input
 if strcmp(tmproj,'utm')
     origLat = 0;
-    origLon = floor(lon./6).*6+3;
+    origLon = floor(lon./6).*6+3; % normal case, central meridian of the zone.
+    origLon(lat>=56&lat<64&lon>=3&lon<6) = 9; % west coast Norway (32N)
+    origLon(lat>=72&lon>=6&lon<9)   = 3; % Svalbard #1 (31N)
+    origLon(lat>=72&lon>=9&lon<21)  = 15; % Svalbard #2 (33N)
+    origLon(lat>=72&lon>=21&lon<33) = 27; % Svalbard #3 (35N)
+    origLon(lat>=72&lon>=33&lon<42) = 39; % Svalbard #4 (37N)
     FN = (lat < 0).*10000000;
     FE = 500000;  
     k0 = 0.9996;
