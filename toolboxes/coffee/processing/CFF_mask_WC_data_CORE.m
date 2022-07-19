@@ -43,9 +43,8 @@ nPings = numel(blockPings);
 % source datagram
 datagramSource = CFF_get_datagramSource(fData);
 
-% calculate inter-sample distance
-interSamplesDistance = CFF_inter_sample_distance(fData);
-interSamplesDistance = interSamplesDistance(blockPings);
+% get inter-sample distance
+interSamplesDistance = CFF_inter_sample_distance(fData,blockPings);
 
 
 %% MASK 1: OUTER BEAMS REMOVAL

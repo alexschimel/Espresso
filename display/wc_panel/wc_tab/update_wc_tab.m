@@ -7,6 +7,7 @@ function update_wc_tab(main_figure)
 %   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
 %   2017-2021; Last revision: 11-11-2021
 
+
 %% prep
 
 % check if there are data to display
@@ -31,7 +32,7 @@ if ~ismember(disp_config.MET_datagramSource, {'WC','AP'})
 end
 
 % get ping and across-dist to be displayed
-ip          = disp_config.Iping;
+iPing          = disp_config.Iping;
 across_dist = disp_config.AcrossDist;
 
 % get data type to be grabbed
@@ -56,31 +57,25 @@ cax = [cax_min cax_max];
 %% extract data
 switch str_disp
     case 'Original'
-        WC_data = CFF_get_WC_data(fData,sprintf('%s_SBP_SampleAmplitudes',datagramSource),'iPing',ip);
+        WC_data = CFF_get_WC_data(fData,sprintf('%s_SBP_SampleAmplitudes',datagramSource),'iPing',iPing);
         idx_keep = WC_data >= cax(1);
     case 'Processed'
-        WC_data = CFF_get_WC_data(fData,'X_SBP_WaterColumnProcessed','iPing',ip);
+        WC_data = CFF_get_WC_data(fData,'X_SBP_WaterColumnProcessed','iPing',iPing);
         idx_keep = WC_data >= cax(1);
     case 'Phase'
-        WC_data = CFF_get_WC_data(fData,sprintf('%s_SBP_SamplePhase',datagramSource),'iPing',ip);
+        WC_data = CFF_get_WC_data(fData,sprintf('%s_SBP_SamplePhase',datagramSource),'iPing',iPing);
         idx_keep = true(size(WC_data));
 end
-
 if isempty(WC_data)
     return;
 end
 
 
-%% calculations
-
-% get distances across and upwards for all samples
-dr_samples = CFF_inter_sample_distance(fData);
-sampleRange = CFF_get_samples_range((1:size(WC_data,1))',fData.(sprintf('%s_BP_StartRangeSampleNumber',datagramSource))(:,ip),dr_samples(ip));
-[sampleAcrossDist,sampleUpDist] = CFF_get_samples_dist(sampleRange,fData.(sprintf('%s_BP_BeamPointingAngle',datagramSource))(:,ip)/180*pi);
+%% get WCD coordinates in the swath frame
+[sampleAcrossDist,sampleUpDist] = CFF_get_WC_coordinates(fData,iPing,size(WC_data,1));
 
 
 %% display
-
 wc_tab_comp = getappdata(main_figure,'wc_tab');
 
 % display WC data itself
@@ -93,8 +88,8 @@ set(wc_tab_comp.wc_gh,...
 
 % display Bottom
 set(wc_tab_comp.bot_gh,...
-    'XData',fData.X_BP_bottomAcrossDist(:,ip),...
-    'YData',fData.X_BP_bottomUpDist(:,ip));
+    'XData',fData.X_BP_bottomAcrossDist(:,iPing),...
+    'YData',fData.X_BP_bottomUpDist(:,iPing));
 
 % set display Xlim and Ylim
 if all(idx_keep(:)==0)
@@ -102,7 +97,7 @@ if all(idx_keep(:)==0)
     idx_keep = true(size(idx_keep));
 end
 xlim = [-max(abs(sampleAcrossDist(idx_keep))) max(abs(sampleAcrossDist(idx_keep)))];
-ylim = [min(nanmin(fData.X_BP_bottomUpDist(:,ip)),nanmin(sampleUpDist(idx_keep))) 0];
+ylim = [min(nanmin(fData.X_BP_bottomUpDist(:,iPing)),nanmin(sampleUpDist(idx_keep))) 0];
 set(wc_tab_comp.wc_axes,...
     'XLim',xlim,...
     'Ylim',ylim,...
@@ -116,7 +111,7 @@ set(wc_tab_comp.ac_gh,...
 % figure title
 fname = fData.ALLfilename{1};
 [~,fnamet,~] = fileparts(fname);
-tt = sprintf('File: %s. Ping: %.0f/%.0f. Time: %s.',fnamet,ip,numel(fData.(sprintf('%s_1P_PingCounter',datagramSource))),datestr(fData.X_1P_pingSDN(ip),'HH:MM:SS'));
+tt = sprintf('File: %s. Ping: %.0f/%.0f. Time: %s.',fnamet,iPing,numel(fData.(sprintf('%s_1P_PingCounter',datagramSource))),datestr(fData.X_1P_pingSDN(iPing),'HH:MM:SS'));
 wc_tab_comp.wc_axes_tt.String = tt;
 
 end

@@ -114,7 +114,7 @@ if up_stacked_wc_bool
     nBeams = numel(iBeams);
     
     % For samples, it depends on stack mode
-    dr_samples = CFF_inter_sample_distance(fData);
+    interSamplesDistance = CFF_inter_sample_distance(fData,ip);
     stack_mode = disp_config.StackAngularMode;
     switch stack_mode
         case 'depth'
@@ -123,9 +123,9 @@ if up_stacked_wc_bool
             % actual depth in meters.
             depth = fData.X_BP_bottomUpDist(iBeams,iPings); % in m
             deepest = nanmin(depth(:)); % in m
-            idx_samples = 1:ceil(-deepest./dr_samples(ip));
+            idx_samples = 1:ceil(-deepest./interSamplesDistance);
             n_res = 2;
-            dr_res = n_res*dr_samples; % intersample distance per ping times. what is n_res for??
+            dr_res = n_res*interSamplesDistance; % intersample distance per ping times. what is n_res for??
         case'range'
             % for stacking in range, we extract down to the index of the
             % sample of the deepest bottom detect
@@ -141,7 +141,7 @@ if up_stacked_wc_bool
     
     % range for each sample in this ping
     startSampleNumber = fData.(sprintf('%s_BP_StartRangeSampleNumber',datagramSource))(iBeams,ip);
-    sampleRange = CFF_get_samples_range(idx_samples',startSampleNumber,dr_samples(ip));
+    sampleRange = CFF_get_samples_range(idx_samples',startSampleNumber,interSamplesDistance);
     
     % block processing setup
     [gpu_comp,g] = get_gpu_comp_stat();
@@ -181,7 +181,7 @@ if up_stacked_wc_bool
                 angleData = fData.(sprintf('%s_BP_BeamPointingAngle',datagramSource))(iBeams,iPings(blockPings))/180*pi;
                 
                 [~,sampleUpDist] = CFF_get_samples_dist(sampleRange,angleData);
-                idx_accum = ceil(-sampleUpDist/(dr_res(ip)));
+                idx_accum = ceil(-sampleUpDist/dr_res);
                 idx_accum(idx_accum>size(sampleUpDist,1)) = size(sampleUpDist,1);
                 idx_pings_mat = shiftdim(blockPings,-1);
                 idx_pings_mat = repmat(idx_pings_mat-blockPings(1)+1,size(idx_accum,1),size(idx_accum,2));
@@ -217,7 +217,7 @@ if up_stacked_wc_bool
     % distance down (in m)
     switch stack_mode
         case 'depth'
-            sampleUpDistAl = (0:(size(amp_al,1)-1))*dr_res(ip);
+            sampleUpDistAl = (0:(size(amp_al,1)-1))*dr_res;
         case 'range'
             sampleUpDistAl = nanmean(sampleRange(:,idx_angles(iBeams,ceil(nanmean(blockPings)))),2);
     end

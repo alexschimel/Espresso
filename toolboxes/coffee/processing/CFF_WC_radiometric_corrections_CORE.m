@@ -63,8 +63,7 @@ Xcorr = permute(Xcorr,[3,1,2]);
 
 % get sample range
 nSamples = size(data,1);
-interSamplesDistance = CFF_inter_sample_distance(fData);
-interSamplesDistance = interSamplesDistance(pings);
+interSamplesDistance = CFF_inter_sample_distance(fData,pings);
 datagramSource = fData.MET_datagramSource;
 ranges = CFF_get_samples_range( (1:nSamples)', fData.(sprintf('%s_BP_StartRangeSampleNumber',datagramSource))(:,pings), interSamplesDistance);
 

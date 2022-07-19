@@ -4,16 +4,17 @@ function ver = CFF_get_current_fData_version()
 %   The format of fData sometimes requires updating to implement novel
 %   features. Changes in the structure of fData imply that older fData may
 %   not be compatible with later versions of the code. This function
-%   returns the current version of the fData format. Make sure to increment
-%   it whenever we change the fData format, so that later versions of the
-%   code can recognize if fData on the disk is readable or needs to be
-%   reconverted. 
+%   returns the current version of the fData format. MAKE SURE TO MANUALLY
+%   INCREMENT THE NUMBER IN THIS FUNCTION WHENEVER YOU CHANGE THE FDATA
+%   FORMAT, SO THAT LATER VERSIONS OF THE CODE CAN RECOGNIZE IF FDATA ON
+%   THE DISK IS READABLE OR NEEDS TO BE RECONVERTED. Add the date and a
+%   quick summary of changes.
 %
 %   See also CFF_GET_FDATA_VERSION, ESPRESSO.
 
-%   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
+%   Authors: Alex Schimel (NGU, alexandre.schimel@ngu.no) and Yoann
 %   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
-%   2017-2021; Last revision: 27-07-2021
+%   2017-2022; Last revision: 19-07-2022
 
 ver = '0.3';
 
