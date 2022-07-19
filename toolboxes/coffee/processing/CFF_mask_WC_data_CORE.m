@@ -7,6 +7,8 @@ function data = CFF_mask_WC_data_CORE(data, fData, blockPings, varargin)
 %   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
 %   2017-2021; Last revision: 27-07-2021
 
+global DEBUG;
+
 % input parsing
 try mask_angle = varargin{1};
 catch
@@ -85,60 +87,122 @@ end
 %% MASK 3: BOTTOM RANGE REMOVAL
 if ~isinf(mask_bottomrange)
     
+    % some data needed
+    
     % beam pointing angle
     theta = deg2rad(fData.(sprintf('%s_BP_BeamPointingAngle',datagramSource))(:,blockPings));
     
     % beamwidth
     beamwidth = deg2rad(fData.Ru_1D_ReceiveBeamwidth(1));
     
-    %% original version starts
+    % Some development still needed here, so for now doing a switch. Best
+    % method so far is 3. Debug display after the switch.
+    method = 3;
     
-    % beamwidth including beam steering
-    psi = beamwidth./cos(abs(theta)).^2/2;
-    
-    % transition between normal and grazing incidence
-    %         theta_lim = psi/2;
-    %         idx_normal = abs(theta) < theta_lim;
-    %         idx_grazing = ~idx_normal;
-    %
-    % length of bottom echo? XXX1
-    % M = zeros(size(theta),'single');
-    % M(idx_normal)  = ( 1./cos(theta(idx_normal)+psi(idx_normal)/2)   - 1./cos(theta(idx_normal)) ) .* fData.X_BP_bottomRange(idx_normal,blockPings);
-    % M(idx_grazing) = 2*( sin(theta(idx_grazing)+psi(idx_grazing)/2) - sin(theta(idx_grazing)-psi(idx_grazing)/2) ) .* fData.X_BP_bottomRange(idx_grazing,blockPings);
-    
-    % Original equation looks like calculating horizontal distance of the
-    % beam footprint assuming flat seafloor. But why the 2x?
-    M_1 = abs( 2* (sin(abs(theta)+psi/2) - sin(abs(theta)-psi/2) ) ) .* fData.X_BP_bottomRange(:,blockPings);
-    
-    %% new version starts
-    
-    % actual beamwidth including beam steering
-    psi = beamwidth./cos(abs(theta));
-    
-    % assuming flat seafloor, actual horizontal distance between start of
-    % the beam footprint, and bottom.
-    M_2 = ( sin(abs(theta)) - sin(abs(theta)-psi/2) ) .* fData.X_BP_bottomRange(:,blockPings);
-    
-    %% let's try another approach.
-    % Let's approximate the range at which the beam footprint starts as the
-    % minimum range within +-X beams around beam of interest
-    M_3 = nan(size(fData.X_BP_bottomRange(:,blockPings)));
-    for ip = 1:length(blockPings)
+    switch method
         
-        bottomranges = fData.X_BP_bottomRange(:,blockPings(ip));
-        nbeams = size(theta,1);
-        X = 5;
-        
-        minrangefunc = @(ibeam) nanmin(bottomranges(max(1,ibeam-X):min(nbeams,ibeam+X)));
-        M_3(:,ip) = bottomranges - arrayfun(minrangefunc,[1:nbeams]');
-        
+        case 1
+            % first developped version, from Yoann
+            
+            % beamwidth including increase with beam steering
+            psi = beamwidth./cos(abs(theta)).^2/2;
+            
+            % transition between normal and grazing incidence
+            theta_lim = psi/2;
+            idx_normal = abs(theta) < theta_lim;
+            idx_grazing = ~idx_normal;
+            
+            % prep
+            R = fData.X_BP_bottomRange(:,blockPings); % range of bottom detect
+            R1 = zeros(size(theta),'single');   % range of echo start
+            
+            % compute range for each regime
+            R1(idx_normal)  = ( 1./cos(theta(idx_normal)+psi(idx_normal)/2)   - 1./cos(theta(idx_normal)) ) .* R(idx_normal);
+            R1(idx_grazing) = 2*( sin(theta(idx_grazing)+psi(idx_grazing)/2) - sin(theta(idx_grazing)-psi(idx_grazing)/2) ) .* R(idx_grazing);
+            
+            % Alex comments: First, the equation for beamwidth increase
+            % with beam steering is bizarre. I think it should be
+            % psi/cos(theta)... Next, I don't get the equation for the
+            % normal regime, but I can see the equation for the second
+            % regime is meant to be the horizontal  distance of the
+            % intercept of the beam on a flat seafloor... except I think
+            % it's missing the abs() function to deal with negative
+            % steering angles, and it's multiplied by two for some
+            % reason...
+            %
+            % The main issue is: why the horizontal distance? We want the
+            % RANGE at which the beam FIRST intercepts the seafloor.
+            %
+            % So let's not use that one, but keeping it because I don't
+            % fully understand this and I want to keep it until I'm 100%
+            % sure it is not correct
+            
+        case 2
+            % second version, from Alex
+            
+            % first, what I think is the actual beamwidth including beam
+            % steering:
+            psi = beamwidth./cos(abs(theta));
+            
+            % recalculating the normal/grazing incidence regimes
+            theta_lim = psi/2;
+            idx_normal = abs(theta) < theta_lim;
+            idx_grazing = ~idx_normal;
+            
+            % prep
+            R = fData.X_BP_bottomRange(:,blockPings); % range of bottom detect
+            R1 = zeros(size(theta),'single');   % range of echo start
+            
+            % in the grazing regime, assuming a depth D, the range at which
+            % the echo starts is R1 obtained from:
+            % cos(theta) = D/R and cos(theta-0.5*psi) = D/R1
+            % Aka: R1 = R*(cos(theta)/cos(theta-0.5*psi))
+            % Since we here want R-R1, then:
+            % R1 = R( 1 - (cos(theta)/cos(theta-0.5*psi)) )
+            R1(idx_grazing) = R(idx_grazing) .* ( 1 - (cos(abs(theta(idx_grazing)))./cos(abs(theta(idx_grazing))-0.5.*psi(idx_grazing))) );
+            
+            % in the normal regime, we just apply the value at the
+            % regime-transition aka: R1 = R( 1 - cos(theta) )
+            R1(idx_normal) = R(idx_normal) .* ( 1 - cos(abs(theta(idx_normal))) );
+            
+            % Alex comments: it's closer to the bottom echo, but on our
+            % test data, it looks like the bottom detection is not always
+            % at the same place in the bottom echo... did we forget some
+            % angular correction for the placement of the bottom??
+            
+        case 3
+            % third version, empirical
+            
+            % Since none of the two first versions work too well on our
+            % test data, we try an empirical approach: We try to
+            % approximate the range at which the beam footprint starts as
+            % the minimum range within +-X beams around beam of interest
+            X = 5;
+            nbeams = size(theta,1);
+            R1 = zeros(size(theta),'single');
+            for ip = 1:length(blockPings)
+                bottomranges = fData.X_BP_bottomRange(:,blockPings(ip));
+                minrangefunc = @(ibeam) nanmin(bottomranges(max(1,ibeam-X):min(nbeams,ibeam+X)));
+                R1(:,ip) = bottomranges - arrayfun(minrangefunc,[1:nbeams]');
+            end
+            
     end
     
-    %% select method here for now
-    M = M_3;
+    % DEBUG display...
+    DEBUG = 0;
+    if DEBUG
+    	WCD = CFF_get_WC_data(fData,'WC_SBP_SampleAmplitudes',blockPings);
+        WCD_x = 1:size(WCD,2);
+        WCD_y = interSamplesDistance(1).*[1:size(WCD,1)];
+        figure;imagesc(WCD_x,WCD_y,WCD(:,:,1)); colormap('jet'); grid on; hold on
+        plot(fData.X_BP_bottomRange(:,1),'k.-')
+        plot(fData.X_BP_bottomRange(:,1) - R1(:,1),'ko-');
+    end
+    
+    % continuing with the value found 
     
     % calculate max sample beyond which mask is to be applied
-    X_BP_maxRange  = fData.X_BP_bottomRange(:,blockPings) + mask_bottomrange - M;
+    X_BP_maxRange  = fData.X_BP_bottomRange(:,blockPings) + mask_bottomrange - R1;
     X_BP_maxSample = bsxfun(@rdivide,X_BP_maxRange,interSamplesDistance);
     X_BP_maxSample = round(X_BP_maxSample);
     X_BP_maxSample(X_BP_maxSample>nSamples|isnan(X_BP_maxSample)) = nSamples;
