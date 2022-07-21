@@ -134,7 +134,8 @@ for iDatag = datagToParse'
     fseek(fid, pif_recordstart+DRF_size, -1);
 
     % get recordName
-    recordName = listRecordTypeFieldname{recordTypeIdentifier == listRecordTypeIdentifier};
+    recordTypeText = S7Kfileinfo.recordTypeText{iDatag};
+    recordName = ['R' regexprep(replace(recordTypeText,' ',''),'\W','_')];
     
     % get record counter
     if isfield(S7Kdata, recordName)

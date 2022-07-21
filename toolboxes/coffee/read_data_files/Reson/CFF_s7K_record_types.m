@@ -1,17 +1,17 @@
-function listRecordTypeText = CFF_s7K_record_types()
-%CFF_S7K_RECORD_TYPES  List of s/k record types
+function [listRecordTypeText,s7kFormatVersion] = CFF_s7K_record_types()
+%CFF_S7K_RECORD_TYPES  List of s7k record types
 %
-%   See also ESPRESSO, CFF_S7K_FILE_INFO
+%   See also CFF_S7K_FILE_INFO
 
 %   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
 %   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
 %   2021; Last revision: 27-08-2021
 
+% The list of record types below was established from the s7k Data Format
+% documentation version 3.12 (May 2020). This may be updated but ensure the
+% first five characters make up the record type identifier.
+s7kFormatVersion = '3.12';
 
-% List of record types according to s7k Data Format documentation version
-% 3.12 (May 2020).
-% This may be updated but ensure the first five characters make up the
-% record type identifier.
 listRecordTypeText = {...
     '1000 – Reference Point';...
     '1001 – Sensor Offset Position';...

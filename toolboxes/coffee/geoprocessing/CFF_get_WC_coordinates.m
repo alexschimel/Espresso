@@ -22,16 +22,19 @@ function [sampleAcrossDist,sampleUpDist] = CFF_get_WC_coordinates(fData,iPing,nS
 
 %   Authors: Alex Schimel (NGU, alexandre.schimel@ngu.no) and Yoann Ladroit
 %   (NIWA, yoann.ladroit@niwa.co.nz) 
-%   2022-2022; Last revision: 19-07-2022
+%   2022-2022; Last revision: 20-07-2022
+
+% get source datagram
+datagramSource = CFF_get_datagramSource(fData);
 
 % get the range from sonar (in m) for each sample index
 idxSamples = (1:nSamples)';
-startSampleNumber = fData.WC_BP_StartRangeSampleNumber(:,iPing);
+startSampleNumber = fData.(sprintf('%s_BP_StartRangeSampleNumber',datagramSource))(:,iPing);
 interSamplesDistance = CFF_inter_sample_distance(fData,iPing);
 sampleRange = CFF_get_samples_range(idxSamples,startSampleNumber,interSamplesDistance);
 
 % get beam pointing angle (in rad)
-sampleAngle = deg2rad(fData.WC_BP_BeamPointingAngle(:,iPing));
+sampleAngle = deg2rad(fData.(sprintf('%s_BP_BeamPointingAngle',datagramSource))(:,iPing));
 
 % calculate and return swath coordinates
 [sampleAcrossDist,sampleUpDist] = CFF_get_samples_dist(sampleRange,sampleAngle);
