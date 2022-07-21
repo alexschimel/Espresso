@@ -2,24 +2,30 @@ function fData = CFF_convert_S7Kdata_to_fData(S7Kdata,varargin)
 %CFF_CONVERT_S7KDATA_TO_FDATA  Convert s7k data to the CoFFee format
 %
 %   Converts Teledyne-Reson data FROM the S7Kdata format (read by
-%   CFF_READ_S7K) TO the CoFFee fData format used in processing. NOTE THIS
-%   IS A PRELIMINARY VERSION THAT ONLY POPULATES STUFF ABSOLUTELY NECESSARY
-%   FOR ESPRESSO TO DISPLAY T50 DATA.
+%   CFF_READ_S7K) TO the CoFFee fData format used in processing. 
+%   IMPORTANT NOTE: THE FDATA FORMAT WAS NOT DESIGNED TO BE A GENERIC
+%   FORMAT BUT A MATLAB VERSION OF THE KONGSBERG *.ALL FORMAT. AS A RESULT,
+%   CONVERSION FROM S7K IS NOT OPTIMAL AND REQUIRES SOME TWEAKS. ALSO, WE
+%   ONLY POPULATE THE FDATA FIELDS THAT ARE ABSOLUTELY NECESSARY FOR
+%   WATER-COLUMN DISPLAY. YOU MIGHT EXPERIENCE ISSUES TRYING TO DO ANYTHING
+%   ELSE WITH THAT FDATA. CHECK CFF_CONVERT_ALLDATA_TO_FDATA TO GET AN IDEA
+%   OF WHAT ALL THOSE FIELDS ACTUALLY ARE.
 %
-%   fData = CFF_CONVERT_S7KDATA_TO_FDATA(S7Kdata) converts the contents of
-%   one S7Kdata structure to a structure in the fData format.
+%   FDATA = CFF_CONVERT_S7KDATA_TO_FDATA(S7KDATA) converts the contents of
+%   the S7KDATA structure to a structure in the fData format.
 %
-%   fData = CFF_CONVERT_S7KDATA_TO_FDATA(S7Kdata,dr_sub,db_sub) operates
+%   FDATA = CFF_CONVERT_S7KDATA_TO_FDATA(S7KDATA,DR_SUB,DB_SUB) operates
 %   the conversion with a sub-sampling of the water-column data in range
 %   and in beams. For example, to sub-sample range by a factor of 10 and
 %   beams by a factor of 2, use:
-%   fData = CFF_CONVERT_S7KDATA_TO_FDATA(S7Kdata,10,2).
+%   FDATA = CFF_CONVERT_S7KDATA_TO_FDATA(S7KDATA,10,2).
 %
-%   See also ESPRESSO.
+%   See also CFF_CONVERT_RAW_FILES, CFF_READ_S7K,
+%   CFF_CONVERT_ALLDATA_TO_FDATA 
 
-%   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
-%   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
-%   2017-2021; Last revision: 30-08-2021
+%   Authors: Alex Schimel (NGU, alexandre.schimel@ngu.no) and Yoann Ladroit
+%   (NIWA, yoann.ladroit@niwa.co.nz) 
+%   2017-2022; Last revision: 21-07-2022
 
 
 %% Input arguments management
@@ -178,7 +184,7 @@ if isfield(S7Kdata,'R7027_RawDetectionData')
     fData.X8_1P_TimeSinceMidnightInMilliseconds = S7Kdata.R7027_RawDetectionData.TimeSinceMidnightInMilliseconds;
     
     % record data per ping
-    fData.X8_1P_PingCounter              = NaN; % unused anyway
+    fData.X8_1P_PingCounter              = S7Kdata.R7027_RawDetectionData.PingNumber;
     fData.X8_1P_HeadingOfVessel          = NaN; % unused anyway
     fData.X8_1P_SoundSpeedAtTransducer   = NaN; % unused anyway
     fData.X8_1P_TransmitTransducerDepth  = NaN; % unused anyway
@@ -236,22 +242,43 @@ comms.progress(4,6);
 
 comms.step('Converting Water-column data (amplitude, phase)'); 
 
-if all(isfield(S7Kdata,{'R7018_BeamformedData', 'R7004_BeamGeometry', 'R7027_RawDetectionData'}))
+if all(isfield(S7Kdata,{'R7018_BeamformedData','R7000_SonarSettings','R7004_BeamGeometry', 'R7027_RawDetectionData'}))
     
-    % number of datagrams
-    nDatag = numel(S7Kdata.R7018_BeamformedData.SonarId);
-        
+    % I came across one file where not all pings are recorded, also with
+    % different records having different pings. Since we here combine data
+    % from different records, we first need to limit the recording to pings
+    % that are present in all records. To make it more complicated,
+    % R7004_BeamGeometry does not have a pingNumber field.
+    R7018pings = S7Kdata.R7018_BeamformedData.PingNumber;
+    R7000pings = S7Kdata.R7000_SonarSettings.PingNumber;
+    R7027pings = S7Kdata.R7027_RawDetectionData.PingNumber;
+    pingNumber = intersect(R7018pings,intersect(R7000pings,R7027pings));
+    [~,ipR7018] = ismember(pingNumber,R7018pings);
+    [~,ipR7000] = ismember(pingNumber,R7000pings);
+    [~,ipR7027] = ismember(pingNumber,R7027pings);
+    
+    % for R7004_BeamGeometry, we will have to assume its contents are the
+    % same as one of the other record types
+    if numel(S7Kdata.R7004_BeamGeometry.SonarID) == numel(R7000pings)
+        ipR7004 = ipR7000;
+    elseif numel(S7Kdata.R7004_BeamGeometry.SonarID) == numel(R7027pings)
+        ipR7004 = ipR7027;
+    elseif numel(S7Kdata.R7004_BeamGeometry.SonarID) == numel(R7018pings)
+        ipR7004 = ipR7018;
+    else
+        error('cannot proceed...')
+    end
+    
     % number of pings
-    nPings = nDatag;
-    pingNumber = 1:nDatag;
+    nPings = numel(pingNumber);
     
     % number of beams
-    dtg_nBeams = S7Kdata.R7018_BeamformedData.N; % number of beams per ping
+    dtg_nBeams = S7Kdata.R7018_BeamformedData.N(ipR7018); % number of beams per ping
     maxnBeams = nanmax(dtg_nBeams); % max number of beams in file
     maxnBeams_sub = ceil(maxnBeams/db_sub); % maximum number of beams TO READ per ping
         
     % number of samples
-    dtg_nSamples = S7Kdata.R7018_BeamformedData.S; % number of samples per ping
+    dtg_nSamples = S7Kdata.R7018_BeamformedData.S(ipR7018); % number of samples per ping
     [maxnSamples_groups,ping_group_start,ping_group_end] = CFF_group_pings(dtg_nSamples, pingNumber); % making groups of pings to limit size of memmaped files
     maxnSamples_groups = ceil(maxnSamples_groups/dr_sub); % maximum number of samples TO READ, per group.
     
@@ -260,20 +287,20 @@ if all(isfield(S7Kdata,{'R7018_BeamformedData', 'R7004_BeamGeometry', 'R7027_Raw
     fData.db_sub = db_sub;
    
     % data per ping
-    fData.AP_1P_Date                            = S7Kdata.R7018_BeamformedData.Date;
-    fData.AP_1P_TimeSinceMidnightInMilliseconds = S7Kdata.R7018_BeamformedData.TimeSinceMidnightInMilliseconds;
+    fData.AP_1P_Date                            = S7Kdata.R7018_BeamformedData.Date(ipR7018);
+    fData.AP_1P_TimeSinceMidnightInMilliseconds = S7Kdata.R7018_BeamformedData.TimeSinceMidnightInMilliseconds(ipR7018);
     fData.AP_1P_PingCounter                     = pingNumber;
     fData.AP_1P_NumberOfDatagrams               = NaN; % unused anyway
     fData.AP_1P_NumberOfTransmitSectors         = NaN; % unused anyway
     fData.AP_1P_TotalNumberOfReceiveBeams       = NaN; % unused anyway
-    fData.AP_1P_SoundSpeed                      = S7Kdata.R7000_SonarSettings.SoundVelocity;
-    fData.AP_1P_SamplingFrequencyHz             = S7Kdata.R7000_SonarSettings.SampleRate; % in Hz
+    fData.AP_1P_SoundSpeed                      = S7Kdata.R7000_SonarSettings.SoundVelocity(ipR7000);
+    fData.AP_1P_SamplingFrequencyHz             = S7Kdata.R7000_SonarSettings.SampleRate(ipR7000); % in Hz
     fData.AP_1P_TXTimeHeave                     = NaN; % unused anyway
     fData.AP_1P_TVGFunctionApplied              = nan(size(pingNumber)); % dummy values. to find XXX1
     fData.AP_1P_TVGOffset                       = zeros(size(pingNumber)); % dummy values. to find XXX1
     fData.AP_1P_ScanningInfo                    = NaN; % unused anyway
     
-    % data per transmit sector and ping
+    % initialize data per transmit sector and ping
     fData.AP_TP_TiltAngle            = NaN; % unused anyway
     fData.AP_TP_CenterFrequency      = NaN; % unused anyway
     fData.AP_TP_TransmitSectorNumber = NaN; % unused anyway
@@ -360,19 +387,19 @@ if all(isfield(S7Kdata,{'R7018_BeamformedData', 'R7004_BeamGeometry', 'R7027_Raw
         end
         
         % data per beam
-        nBeamsInR7004 = S7Kdata.R7004_BeamGeometry.N(iP);
-        fData.AP_BP_BeamPointingAngle(1:nBeamsInR7004,iP)       = S7Kdata.R7004_BeamGeometry.BeamHorizontalDirectionAngleRad{iP}/pi*180;
+        nBeamsInR7004 = S7Kdata.R7004_BeamGeometry.N(ipR7004(iP));
+        fData.AP_BP_BeamPointingAngle(1:nBeamsInR7004,iP)       = rad2deg(S7Kdata.R7004_BeamGeometry.BeamHorizontalDirectionAngleRad{ipR7004(iP)});
         fData.AP_BP_StartRangeSampleNumber(1:dtg_nBeams(iP),iP) = zeros(dtg_nBeams(iP),1);
         fData.AP_BP_NumberOfSamples(1:dtg_nBeams(iP),iP)        = dtg_nSamples(iP).*ones(dtg_nBeams(iP),1);
-        beamsInR7027 = S7Kdata.R7027_RawDetectionData.BeamDescriptor{iP}+1;
-        fData.AP_BP_DetectedRangeInSamples(beamsInR7027,iP) = S7Kdata.R7027_RawDetectionData.DetectionPoint{iP};
+        beamsInR7027 = S7Kdata.R7027_RawDetectionData.BeamDescriptor{ipR7027(iP)}+1;
+        fData.AP_BP_DetectedRangeInSamples(beamsInR7027,iP) = S7Kdata.R7027_RawDetectionData.DetectionPoint{ipR7027(iP)};
         
         % initialize the water column data matrix for that ping.
         pingMag = intmin('int16').*ones(maxnSamples_groups(iG),maxnBeams_sub,'int16');
         pingPh  = 200.*ones(maxnSamples_groups(iG),maxnBeams_sub,'int16');
         
         % read amplitude in original format and decode
-        fseek(fid,S7Kdata.R7018_BeamformedData.BeamformedDataPos(iP),'bof');
+        fseek(fid,S7Kdata.R7018_BeamformedData.BeamformedDataPos(ipR7018(iP)),'bof');
         Mag_tmp = (fread(fid,[dtg_nBeams(iP) dtg_nSamples(iP)],'uint16',2))';
         Mag_tmp(Mag_tmp==double(intmin('uint16'))) = NaN;
         Mag_tmp = 20*log10(Mag_tmp/double(intmax('uint16'))); % now in dB
@@ -382,7 +409,7 @@ if all(isfield(S7Kdata,{'R7018_BeamformedData', 'R7004_BeamGeometry', 'R7027_Raw
         Mag_tmp2(isnan(Mag_tmp)) = intmin('int16');
         
         % read phase in original format
-        fseek(fid,S7Kdata.R7018_BeamformedData.BeamformedDataPos(iP)+2,'bof');
+        fseek(fid,S7Kdata.R7018_BeamformedData.BeamformedDataPos(ipR7018(iP))+2,'bof');
         Ph_tmp = (fread(fid,[dtg_nBeams(iP) dtg_nSamples(iP)],'int16=>int16',2))';
 
         % debug graph
@@ -423,38 +450,59 @@ comms.step('Converting Water-column data (amplitude, phase)');
 
 if all(isfield(S7Kdata,{'R7042_CompressedWaterColumnData','R7000_SonarSettings','R7004_BeamGeometry','R7027_RawDetectionData'}))
         
-    % number of datagrams
-    nDatag = numel(S7Kdata.R7042_CompressedWaterColumnData.SonarId);
+    % I came across one file where not all pings are recorded, also with
+    % different records having different pings. Since we here combine data
+    % from different records, we first need to limit the recording to pings
+    % that are present in all records. To make it more complicated,
+    % R7004_BeamGeometry does not have a pingNumber field.
+    R7042pings = S7Kdata.R7042_CompressedWaterColumnData.PingNumber;
+    R7000pings = S7Kdata.R7000_SonarSettings.PingNumber;
+    R7027pings = S7Kdata.R7027_RawDetectionData.PingNumber;
+    pingNumber = intersect(R7042pings,intersect(R7000pings,R7027pings));
+    [~,ipR7042] = ismember(pingNumber,R7042pings);
+    [~,ipR7000] = ismember(pingNumber,R7000pings);
+    [~,ipR7027] = ismember(pingNumber,R7027pings);
+    
+    % for R7004_BeamGeometry, we will have to assume its contents are the
+    % same as one of the other record types
+    if numel(S7Kdata.R7004_BeamGeometry.SonarID) == numel(R7000pings)
+        ipR7004 = ipR7000;
+    elseif numel(S7Kdata.R7004_BeamGeometry.SonarID) == numel(R7027pings)
+        ipR7004 = ipR7027;
+    elseif numel(S7Kdata.R7004_BeamGeometry.SonarID) == numel(R7042pings)
+        ipR7004 = ipR7042;
+    else
+        error('cannot proceed...')
+    end
     
     % number of pings
-    nPings = nDatag;
-    pingNumber = 1:nDatag;
+    nPings = numel(pingNumber);
     
     % number of Tx sectors
     maxNTransmitSectors = 1;
     
     % number of beams
-    nBeams = cellfun(@numel,S7Kdata.R7042_CompressedWaterColumnData.BeamNumber); % number of beams per ping
+    nBeams = cellfun(@numel,S7Kdata.R7042_CompressedWaterColumnData.BeamNumber(ipR7042)); % number of beams per ping
     maxnBeams = nanmax(nBeams); % maximum number of beams in file
     
     % number of samples
-    % maxNSamples = nanmax(S7Kdata.R7042_CompressedWaterColumnData.FirstSample+cellfun(@nanmax,S7Kdata.R7042_CompressedWaterColumnData.NumberOfSamples));
-    dtg_nSamples = S7Kdata.R7042_CompressedWaterColumnData.NumberOfSamples; % number of samples per datagram and beam
+    % maxNSamples = nanmax(S7Kdata.R7042_CompressedWaterColumnData.FirstSample(ipR7042)+cellfun(@nanmax,S7Kdata.R7042_CompressedWaterColumnData.NumberOfSamples(ipR7042)));
+    dtg_nSamples = S7Kdata.R7042_CompressedWaterColumnData.NumberOfSamples(ipR7042); % number of samples per datagram and beam
     [maxNSamples_groups, ping_group_start, ping_group_end] = CFF_group_pings(dtg_nSamples,pingNumber,pingNumber); % making groups of pings to limit size of memmaped files
     
     % add the WCD decimation factors given here in input
     fData.dr_sub = dr_sub;
     fData.db_sub = db_sub;
     
-    % read data per ping from first datagram of each ping
-    fData.AP_1P_Date                            = S7Kdata.R7042_CompressedWaterColumnData.Date;
-    fData.AP_1P_TimeSinceMidnightInMilliseconds = S7Kdata.R7042_CompressedWaterColumnData.TimeSinceMidnightInMilliseconds;
+    % data per ping
+    fData.AP_1P_Date                            = S7Kdata.R7042_CompressedWaterColumnData.Date(ipR7042);
+    fData.AP_1P_TimeSinceMidnightInMilliseconds = S7Kdata.R7042_CompressedWaterColumnData.TimeSinceMidnightInMilliseconds(ipR7042);
     fData.AP_1P_PingCounter                     = pingNumber;
     fData.AP_1P_NumberOfDatagrams               = ones(size(pingNumber));
     fData.AP_1P_NumberOfTransmitSectors         = ones(size(pingNumber));
-    fData.AP_1P_TotalNumberOfReceiveBeams       = cellfun(@numel,S7Kdata.R7042_CompressedWaterColumnData.BeamNumber);
-    fData.AP_1P_SoundSpeed                      = S7Kdata.R7000_SonarSettings.SoundVelocity;
-    fData.AP_1P_SamplingFrequencyHz             = S7Kdata.R7042_CompressedWaterColumnData.SampleRate; % in Hz
+    fData.AP_1P_TotalNumberOfReceiveBeams       = cellfun(@numel,S7Kdata.R7042_CompressedWaterColumnData.BeamNumber(ipR7042));
+    fData.AP_1P_SoundSpeed                      = S7Kdata.R7000_SonarSettings.SoundVelocity(ipR7000);
+    fData.AP_1P_SamplingFrequencyHz             = S7Kdata.R7042_CompressedWaterColumnData.SampleRate(ipR7042); % in Hz
     fData.AP_1P_TXTimeHeave                     = nan(ones(size(pingNumber)));
     fData.AP_1P_TVGFunctionApplied              = nan(size(pingNumber));
     fData.AP_1P_TVGOffset                       = zeros(size(pingNumber));
@@ -462,10 +510,10 @@ if all(isfield(S7Kdata,{'R7042_CompressedWaterColumnData','R7000_SonarSettings',
     
     % initialize data per transmit sector and ping
     fData.AP_TP_TiltAngle            = nan(maxNTransmitSectors,nPings);
-    fData.AP_TP_CenterFrequency      = S7Kdata.R7000_SonarSettings.Frequency;
+    fData.AP_TP_CenterFrequency      = S7Kdata.R7000_SonarSettings.Frequency(ipR7000);
     fData.AP_TP_TransmitSectorNumber = nan(maxNTransmitSectors,nPings);
     
-    % initialize data per decimated beam and ping
+    % initialize data per (decimated) beam and ping
     fData.AP_BP_BeamPointingAngle      = nan(maxnBeams,nPings);
     fData.AP_BP_StartRangeSampleNumber = nan(maxnBeams,nPings);
     fData.AP_BP_NumberOfSamples        = nan(maxnBeams,nPings);
@@ -476,9 +524,8 @@ if all(isfield(S7Kdata,{'R7042_CompressedWaterColumnData','R7000_SonarSettings',
     % flags indicating what data are available
     [flags,sample_size,mag_fmt,phase_fmt] = CFF_get_R7042_flags(S7Kdata.R7042_CompressedWaterColumnData.Flags(1));
     
-    % The actual water-column data will not be saved in fData
-    % but in binary files. Get the output directory to store
-    % those files
+    % The actual water-column data will not be saved in fData but in binary
+    % files. Get the output directory to store those files
     wc_dir = CFF_converted_data_folder(S7Kfilename);
     
     % Clean up that folder first before adding anything to it
@@ -507,7 +554,6 @@ if all(isfield(S7Kdata,{'R7042_CompressedWaterColumnData','R7000_SonarSettings',
         'ping_group_start', ping_group_start, ...
         'ping_group_end', ping_group_end);
     
-    
     % do the same for phase if it's available
     if ~flags.magnitudeOnly
         
@@ -534,9 +580,8 @@ if all(isfield(S7Kdata,{'R7042_CompressedWaterColumnData','R7000_SonarSettings',
         
     end
     
-    % Also the samples data were not recorded in ALLdata, only
-    % their location in the source file, so we need to fopen
-    % the source file to grab the data.
+    % Also the samples data were not recorded, only their location in the
+    % source file, so we need to fopen the source file to grab the data. 
     fid = fopen(S7Kfilename,'r','l');
     
     % correct sampling frequency record
@@ -563,7 +608,8 @@ if all(isfield(S7Kdata,{'R7042_CompressedWaterColumnData','R7000_SonarSettings',
     % now get data for each ping
     for iP = 1:nPings
         
-        % update ping group counter if needed
+        % ping group number is the index of the memmaped file in which that
+        % swath's data will be saved.
         if iP > ping_group_end(iG)
             iG = iG+1;
         end
@@ -571,17 +617,17 @@ if all(isfield(S7Kdata,{'R7042_CompressedWaterColumnData','R7000_SonarSettings',
         % data per Tx sector
         nTransmitSectors = fData.AP_1P_NumberOfTransmitSectors(1,iP); % number of transmit sectors in this ping
         fData.AP_TP_TiltAngle(1:nTransmitSectors,iP)            = zeros(nTransmitSectors,1);
-        fData.AP_TP_CenterFrequency(1:nTransmitSectors,iP)      = S7Kdata.R7000_SonarSettings.Frequency(iP)*ones(nTransmitSectors,1);
+        fData.AP_TP_CenterFrequency(1:nTransmitSectors,iP)      = S7Kdata.R7000_SonarSettings.Frequency(ipR7000(iP))*ones(nTransmitSectors,1);
         fData.AP_TP_TransmitSectorNumber(1:nTransmitSectors,iP) = 1:nTransmitSectors;
         
         % data per beam
-        iBeam = S7Kdata.R7042_CompressedWaterColumnData.BeamNumber{iP}+1; % beam numbers in this ping
-        fData.AP_BP_BeamPointingAngle(iBeam,iP)      = S7Kdata.R7004_BeamGeometry.BeamHorizontalDirectionAngleRad{iP}/pi*180;
-        fData.AP_BP_StartRangeSampleNumber(iBeam,iP) = round(S7Kdata.R7042_CompressedWaterColumnData.FirstSample(iP));
-        fData.AP_BP_NumberOfSamples(iBeam,iP)        = round(S7Kdata.R7042_CompressedWaterColumnData.NumberOfSamples{iP});
-        fData.AP_BP_DetectedRangeInSamples(S7Kdata.R7027_RawDetectionData.BeamDescriptor{iP}+1,iP) = round(S7Kdata.R7027_RawDetectionData.DetectionPoint{iP}/flags.downsamplingDivisor);
+        iBeam = S7Kdata.R7042_CompressedWaterColumnData.BeamNumber{ipR7042(iP)}+1; % beam numbers in this ping
+        fData.AP_BP_BeamPointingAngle(iBeam,iP)      = S7Kdata.R7004_BeamGeometry.BeamHorizontalDirectionAngleRad{ipR7004(iP)}/pi*180;
+        fData.AP_BP_StartRangeSampleNumber(iBeam,iP) = round(S7Kdata.R7042_CompressedWaterColumnData.FirstSample(ipR7042(iP)));
+        fData.AP_BP_NumberOfSamples(iBeam,iP)        = round(S7Kdata.R7042_CompressedWaterColumnData.NumberOfSamples{ipR7042(iP)});
+        fData.AP_BP_DetectedRangeInSamples(S7Kdata.R7027_RawDetectionData.BeamDescriptor{ipR7027(iP)}+1,iP) = round(S7Kdata.R7027_RawDetectionData.DetectionPoint{ipR7027(iP)}/flags.downsamplingDivisor);
         fData.AP_BP_TransmitSectorNumber(iBeam,iP)   = 1;
-        fData.AP_BP_BeamNumber(iBeam,iP)             = S7Kdata.R7004_BeamGeometry.N(iP);
+        fData.AP_BP_BeamNumber(iBeam,iP)             = S7Kdata.R7004_BeamGeometry.N(ipR7004(iP));
         
         % initialize amplitude and phase matrices
         Mag_tmp = ones(maxNSamples_groups(iG),maxnBeams,mag_fmt)*eval([mag_fmt '(-inf)']);
@@ -590,27 +636,26 @@ if all(isfield(S7Kdata,{'R7042_CompressedWaterColumnData','R7000_SonarSettings',
         end
         
         % number of samples for each beam in this ping
-        nSamples = S7Kdata.R7042_CompressedWaterColumnData.NumberOfSamples{iP};
+        nSamples = S7Kdata.R7042_CompressedWaterColumnData.NumberOfSamples{ipR7042(iP)};
         
         % got to start of data in raw file, from here
         pos = ftell(fid);
-        fseek(fid,S7Kdata.R7042_CompressedWaterColumnData.SampleStartPositionInFile{iP}(1)-pos,'cof');
+        fseek(fid,S7Kdata.R7042_CompressedWaterColumnData.SampleStartPositionInFile{ipR7042(iP)}(1)-pos,'cof');
         
-        % read the ping's data as int8, between the start
-        % position for the first beam's data and the end
-        % position of the last beam's data
-        pos_start_ping = S7Kdata.R7042_CompressedWaterColumnData.SampleStartPositionInFile{iP}(1);
-        pos_end_ping = S7Kdata.R7042_CompressedWaterColumnData.SampleStartPositionInFile{iP}(end)+nSamples(end)*sample_size;
+        % read the ping's data as int8, between the start position for the
+        % first beam's data and the end position of the last beam's data 
+        pos_start_ping = S7Kdata.R7042_CompressedWaterColumnData.SampleStartPositionInFile{ipR7042(iP)}(1);
+        pos_end_ping = S7Kdata.R7042_CompressedWaterColumnData.SampleStartPositionInFile{ipR7042(iP)}(end)+nSamples(end)*sample_size;
         DataSamples_tot = fread(fid,pos_end_ping-pos_start_ping+1,'int8=>int8');
         
         % index of first sample
-        start_sample = S7Kdata.R7042_CompressedWaterColumnData.FirstSample(iP)+1;
+        start_sample = S7Kdata.R7042_CompressedWaterColumnData.FirstSample(ipR7042(iP))+1;
         
         % read beam by beam
-        for jj = 1:S7Kdata.R7004_BeamGeometry.N(iP)  % from R7004??? XXX1
+        for jj = 1:S7Kdata.R7004_BeamGeometry.N(ipR7004(iP))  % from R7004??? XXX1
             
             % get data for that beam
-            idx_pp = S7Kdata.R7042_CompressedWaterColumnData.SampleStartPositionInFile{iP}(jj):(S7Kdata.R7042_CompressedWaterColumnData.SampleStartPositionInFile{iP}(jj)+nSamples(jj)*sample_size-1);
+            idx_pp = S7Kdata.R7042_CompressedWaterColumnData.SampleStartPositionInFile{ipR7042(iP)}(jj):(S7Kdata.R7042_CompressedWaterColumnData.SampleStartPositionInFile{ipR7042(iP)}(jj)+nSamples(jj)*sample_size-1);
             idx_pp = idx_pp-pos_start_ping+1;
             DataSamples_tmp = DataSamples_tot(idx_pp);
             

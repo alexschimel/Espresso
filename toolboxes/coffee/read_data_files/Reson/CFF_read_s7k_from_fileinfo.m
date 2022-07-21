@@ -50,12 +50,11 @@ function S7Kdata = CFF_read_s7k_from_fileinfo(S7Kfilename,S7Kfileinfo,varargin)
 %   * The parsing code for some datagrams still need to be coded. To
 %   update.
 %
-%   See also ESPRESSO.
+%   See also CFF_READ_S7K.
 
-%   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
-%   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
-%   2017-2021; Last revision: 30-08-2021
-
+%   Authors: Alex Schimel (NGU, alexandre.schimel@ngu.no) and Yoann Ladroit
+%   (NIWA, yoann.ladroit@niwa.co.nz) 
+%   2017-2022; Last revision: 21-07-2022
 
 %% Input arguments management
 p = inputParser;
@@ -95,11 +94,6 @@ comms.start(sprintf('Reading records in file %s',filename));
 % store filename
 S7Kdata.S7Kfilename = S7Kfilename;
 
-% get record types, identifiers, and build corresponding fieldnames
-listRecordTypeText = CFF_s7K_record_types();
-listRecordTypeIdentifier = cellfun(@(x) str2double(x(1:5)), listRecordTypeText);
-listRecordTypeFieldname = cellfun(@(str) ['R' regexprep(replace(str,' ',''),'\W','_')], listRecordTypeText, 'UniformOutput', false);
-
 % open file
 [fid,~] = fopen(S7Kfilename, 'r');
 
@@ -135,7 +129,7 @@ for iDatag = datagToParse'
 
     % get recordName
     recordTypeText = S7Kfileinfo.recordTypeText{iDatag};
-    recordName = ['R' regexprep(replace(recordTypeText,' ',''),'\W','_')];
+    recordName = ['R' regexprep(replace(recordTypeText,' ',''),'\W','_')]; % remove problematic characters
     
     % get record counter
     if isfield(S7Kdata, recordName)
