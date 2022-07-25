@@ -1,9 +1,23 @@
 classdef CFF_Comms < handle
-    %CFF_COMMS Summary of this class goes here
-    %   Detailed explanation goes here
-    
-    %   Authors: Alex Schimel (NGU, alexandre.schimel@ngu.no)
-    %   2021-2021; Last revision: 28-10-2021
+    %CFF_COMMS Information communication object.
+    %
+    %   A CFF_COMMS object specifies if and how a function communicates on
+    %   its internal state (progress, info, warnings, errors). It is
+    %   initalized with a string specifying the type of communication: 
+    %   'disp' will display communication as its own line in the command
+    %   window. 
+    %   'textprogressbar' will display communication in a text progress bar
+    %   in the command window. 
+    %   'waitbar' will display communication in a Matlab waitbar figure.
+    %   'oneline' will display communication as a dynamic (changing) 
+    %   single line. 
+    %   'multilines' will display communication as dynamic (changing)
+    %   multiple lines. 
+    %   '' (default) will not display any communication.
+
+    %   Authors: Alex Schimel (NGU, alexandre.schimel@ngu.no) and Yoann
+    %   Ladroit (NIWA, yoann.ladroit@niwa.co.nz) 
+    %   2021-2022; Last revision: 22-07-2022
     
     properties
         Type (1,:) char {mustBeMember(Type,{'', 'disp','textprogressbar','waitbar','oneline','multilines'})} = ''

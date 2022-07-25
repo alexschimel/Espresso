@@ -1,18 +1,18 @@
 function wc_dir = CFF_converted_data_folder(rawfileslist)
-%CFF_CONVERTED_DATA_FOLDER  One-line description
+%CFF_CONVERTED_DATA_FOLDER  Returns converted data folder for file(s)
 %
 %   Gets the path to the folder for data converted by CoFFee from a raw
 %   filename.
 %
-%   wc_dir = CFF_CONVERTED_DATA_FOLDER(rawfileslist) returns the folder
+%   WC_DIR = CFF_CONVERTED_DATA_FOLDER(RAWFILESLIST) returns the folder
 %   path 'X/Coffee_files/filename/' for input filename 'X/filename.ext'.
 %   Also works with cell arrays of string filenames.
 %
-%   See also ESPRESSO.
+%   See also CFF_CONVERT_RAW_FILES, CFF_LOAD_CONVERTED_FILES.
 
-%   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
-%   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
-%   2017-2021; Last revision: 11-10-2018
+%   Authors: Alex Schimel (NGU, alexandre.schimel@ngu.no) and Yoann Ladroit
+%   (NIWA, yoann.ladroit@niwa.co.nz) 
+%   2022-2022; Last revision: 25-07-2022
 
 if isempty(rawfileslist)
     wc_dir = [];

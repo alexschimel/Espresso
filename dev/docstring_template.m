@@ -5,7 +5,7 @@ function [output1,output2] = function_name(input1,input2,input3)
 
 %   Authors: Alex Schimel (NGU, alexandre.schimel@ngu.no) and Yoann Ladroit
 %   (NIWA, yoann.ladroit@niwa.co.nz) 
-%   XXXX-XXXX; Last revision: XX-XX-XXXX
+%   2017-2022; Last revision: 25-07-2022
 
 
 

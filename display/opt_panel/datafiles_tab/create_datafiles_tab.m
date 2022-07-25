@@ -265,53 +265,61 @@ end
 
 % name of files to load
 files_to_load = files(idxFilesToLoad);
+nFiles = numel(files_to_load);
 if isempty(files_to_load)
    return
 end
 
-% OBSOLETE:
-% [fData, disp_config] = load_files(fData, files_to_load, disp_config);
-% /OBSOLETE
-
-% NEW CODE STARTS:
-fData_new = CFF_geoprocess_files(files_to_load,...
-    'datagramSource',disp_config.MET_datagramSource,...
-    'ellips',disp_config.MET_ellips,...
-    'tmproj',disp_config.MET_tmproj,...
-    'saveFDataToDrive',0,...
-    'outputFData',1,...
+% load files
+fData_new = CFF_load_converted_files(files_to_load,...
+    'fixPaths',1,...
     'abortOnError',0,...
     'comms','multilines');
 
-% by default, CFF_geoprocess_files outputs a struct for a single file. Turn
-% to cell array if a single file was loaded
-if isstruct(fData_new)
-    fData_new = {fData_new};
+% initialize navigation processing parameters
+navProcParams = struct(); 
+
+% reuse parameters in disp_config, if they exist. Those that don't exist
+% will be initialized in the first file
+if ~isempty(disp_config.MET_datagramSource)
+    navProcParams.datagramSource = disp_config.MET_datagramSource;
+end
+if ~isempty(disp_config.MET_ellips)
+    navProcParams.ellips = disp_config.MET_ellips;
+end
+if ~isempty(disp_config.MET_tmproj)
+    navProcParams.tmproj = disp_config.MET_tmproj;
 end
 
-% add geoprocessing parameters to disp_config
-if isempty(disp_config.MET_tmproj)
-    disp_config.MET_ellips = fData_new{1}.MET_ellips;
-    disp_config.MET_tmproj = fData_new{1}.MET_tmproj;
-end
+% chain process: 
+% 1) navigation processing
+% 2) georeference WC bottom detect
+procFun{1} = @CFF_compute_ping_navigation_v2;
+procMsg{1} = 'Processing navigation and heading';
+procParams{1} = navProcParams;
+procFun{2} = @CFF_georeference_WC_bottom_detect;
+procMsg{2} = 'Georeferencing the bottom detections';
+procParams{2} = struct(); % no parameters needed for that function
+[fData_new,outParams] = CFF_group_processing(procFun,fData_new,procParams,...
+    'procMsg',procMsg,...
+    'abortOnError',0,...
+    'saveFDataToDrive',1,...
+    'comms','multilines');
+navProcParams = outParams{1};
+
+% and save navigation processing parameters to disp_config
 if isempty(disp_config.MET_datagramSource)
-    disp_config.MET_datagramSource = fData_new{1}.MET_datagramSource;
+    disp_config.MET_datagramSource = navProcParams.datagramSource;
 end
-
-% fix fData paths if necessary
-fData_new = CFF_fix_fData_paths(fData_new, files_to_load);
-
-% Time-tag the individual fData structs
-for iF = 1:numel(fData_new)
-    fData_new{iF}.ID = str2double(datestr(now,'yyyymmddHHMMSSFFF'));
-    pause(1e-2); % pause here to ensure unique IDs
+if isempty(disp_config.MET_ellips)
+    disp_config.MET_ellips = navProcParams.ellips;
+end
+if isempty(disp_config.MET_tmproj)
+    disp_config.MET_tmproj = navProcParams.tmproj;
 end
 
 % add new fData to old one
 fData = [fData,fData_new];
-
-% NEW CODE ENDS.
-
 
 % add fData to appdata
 setappdata(main_figure,'fData',fData);

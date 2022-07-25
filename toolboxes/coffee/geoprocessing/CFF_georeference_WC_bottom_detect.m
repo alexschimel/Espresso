@@ -1,27 +1,21 @@
 function [fData] = CFF_georeference_WC_bottom_detect(fData)
-%CFF_GEOREFERENCE_WC_BOTTOM_DETECT  One-line description
+%CFF_GEOREFERENCE_WC_BOTTOM_DETECT  Geo-reference bottom detect
 %
 %   Get range, swathe coordinates (across and upwards distance from sonar),
 %   and projected coordinates (easting, northing, height) of the bottom
 %   detect samples
 %
-%   *INPUT VARIABLES*
-%   * |fData|: Required. Structure for the storage of kongsberg EM series
-%   multibeam data in a format more convenient for processing. The data is
-%   recorded as fields coded "a_b_c" where "a" is a code indicating data
-%   origing, "b" is a code indicating data dimensions, and "c" is the data
-%   name. See the help of function CFF_convert_ALLdata_to_fData.m for
-%   description of codes.
+%   FDATA = CFF_GEOREFERENCE_WC_BOTTOM_DETECT(FDATA) range, swathe
+%   coordinates (across and upwards distance from sonar), and projected
+%   coordinates (easting, northing, height) of the bottom detect samples in
+%   FDATA, then saves them as new fields in FDATA.
 %
-%   *OUTPUT VARIABLES*
-%   * |fData|: fData structure updated with bottom detect georeferencing
-%   fields
-%
-%   See also ESPRESSO.
+%   See also CFF_COMPUTE_PING_NAVIGATION_V2, CFF_FIX_FDATA_PATHS.
 
-%   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
-%   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
-%   2017-2021; Last revision: 11-11-2021
+%   Authors: Alex Schimel (NGU, alexandre.schimel@ngu.no) and Yoann Ladroit
+%   (NIWA, yoann.ladroit@niwa.co.nz) 
+%   2017-2022; Last revision: 22-07-2022
+
 
 %% info extraction
 

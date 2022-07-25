@@ -4,25 +4,25 @@ function name = CFF_file_name(filename, varargin)
 %   Optional argument allows returning the extension as well. See syntax
 %   examples.
 %
-%   name = CFF_FILE_NAME(filename) returns the STRING name of the input
-%   STRING filename, with no folder, and no extension. 
-%   CFF_FILE_NAME('C:\my_file.bin') returns 'my_file'
+%   NAME = CFF_FILE_NAME(FILENAME) returns the string name of the input
+%   string filename, with no folder, and no extension. For example, 
+%   CFF_FILE_NAME('C:\my_folder\my_file.bin') returns 'my_file'.
 %
-%   name = CFF_FILE_NAME(filename, 1) returns the STRING name, with
-%   extension, of the input STRING filename, with no folder.
-%   CFF_FILE_NAME('C:\my_file.bin',1) returns 'my_file.bin'
+%   CFF_FILE_NAME(FILENAME,FLAG) with FLAG = 1 returns the string name,
+%   with extension, of the input string filename, with no folder. For
+%   example, CFF_FILE_NAME('C:\my_folder\my_file.bin',1) returns
+%   'my_file.bin'.
 %
-%   names = CFF_FILE_NAME(filenames) returns the cell arrray of STRING
-%   names of the input cell array of STRING filenames, with no folder.
-%   CFF_file_extension({'C:\my_file.bin','C:\my_other_file.jpg'}) returns
-%   {'my_file','my_other_file'}
+%   NAMES = CFF_FILE_NAME(FILENAMES) returns the cell arrray of string
+%   names of the input cell array of string filenames, with no folder. For
+%   example, CFF_file_extension({'C:\my_file.bin','C:\my_other_file.jpg'})
+%   returns {'my_file','my_other_file'}.
 %   CFF_file_extension({'C:\my_file.bin','C:\my_other_file.jpg'},1) returns
 %   {'my_file.bin','my_other_file.jpg'}
 
-%   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
-%   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
-%   2021-2021; Last revision: 27-07-2021o,k.p.
-
+%   Authors: Alex Schimel (NGU, alexandre.schimel@ngu.no) and Yoann Ladroit
+%   (NIWA, yoann.ladroit@niwa.co.nz) 
+%   2021-2022; Last revision: 25-07-2022
 
 % input parser
 p = inputParser;
