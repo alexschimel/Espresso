@@ -44,11 +44,11 @@ function [fData,params] = CFF_compute_ping_navigation_v2(fData,varargin)
 %   the fData.MET fields and skip all the processing if they match.
 %
 %   See also CFF_LL2TM, CFF_LOAD_CONVERTED_FILES,
-%   CFF_GEOREFERENCE_WC_BOTTOM_DETECT.
+%   CFF_GEOREFERENCE_BOTTOM_DETECT, CFF_GROUP_PROCESSING.
 
 %   Authors: Alex Schimel (NGU, alexandre.schimel@ngu.no) and Yoann Ladroit
 %   (NIWA, yoann.ladroit@niwa.co.nz) 
-%   2017-2022; Last revision: 22-07-2022
+%   2017-2022; Last revision: 27-07-2022
 
 
 %% Input arguments management
@@ -68,7 +68,7 @@ end
 %% Prep
 
 % start message
-comms.start('Computing ping navigation');
+comms.start('Processing navigation and heading');
 
 % start progress
 comms.progress(0,6);
@@ -81,19 +81,15 @@ comms.progress(0,6);
 
 comms.step('Extract ping data');
 
-% get datagramSource from params, or define from fData 
-if isfield(params,'datagramSource')
-    datagramSource = params.datagramSource;
-else
-    datagramSource = CFF_get_datagramSource(fData);
-end
+% get datagramSource parameter
+if ~isfield(params,'datagramSource'), params.datagramSource = CFF_get_datagramSource(fData); end % default
+mustBeMember(params.datagramSource,{'AP','WC','X8','De'}); % validate
+datagramSource = params.datagramSource;
 
-% get navLat from params, or use 0
-if isfield(params,'navLat')
-    navLat = params.navLat;
-else
-    navLat = 0;
-end
+% get navLat parameter
+if ~isfield(params,'navLat'), params.navLat = 0; end % default
+mustBeNumeric(params.navLat); % validate
+navLat = params.navLat;
 
 % get data
 pingTSMIM    = fData.([datagramSource '_1P_TimeSinceMidnightInMilliseconds']);
@@ -185,21 +181,20 @@ comms.progress(3,6);
 
 comms.step('Processing navigation and heading');
 
-% get ellips from params, or use 'wgs84'
-if isfield(params,'ellips')
-    ellips = params.ellips;
-else
-    ellips = 'wgs84';
-end
+% get ellips parameter
+if ~isfield(params,'ellips'), params.ellips = 'wgs84'; end % default
+mustBeMember(params.ellips,{'wgs84','grs80'}); % validate
+ellips = params.ellips;
 
-% get tmproj from params, or use default UTM zone from first ping
-if isfield(params,'tmproj')
-    tmproj = params.tmproj;
-else
-    [~,~,~,~,tmproj] = CFF_ll2tm(posLongitude(1),posLatitude(1),ellips,'utm');
-    tmproj = ['utm' tmproj];
-    comms.info(['tmproj not specified in input. Defining it from first position fix: ''' tmproj '''']);
+% get tmproj parameter, or use default UTM zone from first ping
+if ~isfield(params,'tmproj')
+    % default
+    [~,~,~,~,params.tmproj] = CFF_ll2tm(posLongitude(1),posLatitude(1),ellips,'utm');
+    params.tmproj = ['utm' params.tmproj];
+    comms.info(['tmproj not specified in input. Defining it from first position fix: ''' params.tmproj '''']);
 end
+mustBeA(params.tmproj,'char'); % validate (too many cases to validate better)
+tmproj = params.tmproj;
 
 % convert posLatitude/posLongitude to easting/northing/grid convergence:
 [posE, posN, posGridConv] = CFF_ll2tm(posLongitude, posLatitude, ellips, tmproj);

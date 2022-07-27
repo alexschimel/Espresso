@@ -297,7 +297,7 @@ end
 procFun{1} = @CFF_compute_ping_navigation_v2;
 procMsg{1} = 'Processing navigation and heading';
 procParams{1} = navProcParams;
-procFun{2} = @CFF_georeference_WC_bottom_detect;
+procFun{2} = @CFF_georeference_bottom_detect;
 procMsg{2} = 'Georeferencing the bottom detections';
 procParams{2} = struct(); % no parameters needed for that function
 [fData_new,outParams] = CFF_group_processing(procFun,fData_new,procParams,...

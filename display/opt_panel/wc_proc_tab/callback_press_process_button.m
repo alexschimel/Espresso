@@ -80,7 +80,12 @@ if procpar.processing_flag
     
     % bottom filtering
     if procpar.bottomfilter_flag
-        fData_tot = filter_bottomdetect(fData_tot, idx_fData);
+        params = struct(); % default parameters
+        [fData_tot(idx_fData),params] = CFF_group_processing(...
+            @CFF_filter_bottom_detect,...
+            fData_tot(idx_fData),params,...
+            'procMsg','Filtering the bottom detections',...
+            'comms','multilines');
     end
     
     % data processing

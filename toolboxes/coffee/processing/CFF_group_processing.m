@@ -63,11 +63,12 @@ function [fDataGroup,params] = CFF_group_processing(procFun,fDataGroup,varargin)
 %   'oneline', 'multilines'. By default, using an empty CFF_COMMS object
 %   (i.e. no communication). See CFF_COMMS for more information.
 %
-%   See also CFF_COMPUTE_PING_NAVIGATION_V2.
+%   See also CFF_COMPUTE_PING_NAVIGATION_V2,
+%   CFF_GEOREFERENCE_BOTTOM_DETECT, CFF_FILTER_BOTTOM_DETECT. 
 
 %   Authors: Alex Schimel (NGU, alexandre.schimel@ngu.no) and Yoann Ladroit
 %   (NIWA, yoann.ladroit@niwa.co.nz) 
-%   2022-2022; Last revision: 25-07-2022
+%   2022-2022; Last revision: 27-07-2022
 
 
 %% Input arguments management
@@ -209,7 +210,16 @@ for iFD = 1:nFData
                 % processing function takes at least one argument
                 % (nargin>=2) or a varargin (nargin<0). In any case, give
                 % it parameters in input
-                [fData,params{iFun}] = feval(procFun{iFun},fData,params{iFun});
+                if nargout(procFun{iFun}) == 1
+                    % processing function has only one output (fData)
+                    fData = feval(procFun{iFun},fData,params{iFun});
+                else
+                    % processing function has at least one extra output
+                    % argument (nargout>=2) or a varargout (nargout<0). In
+                    % any case, assume the first is output parameters
+                    [fData,params{iFun}] = feval(procFun{iFun},fData,params{iFun});
+                end
+                
             end
         end
         
@@ -245,6 +255,16 @@ for iFD = 1:nFData
     comms.progress(iFD,nFData);
     
 end
+
+
+%% finalise
+
+% if we had a single function, output params as struct, not cell array of
+% one struct
+if nFun == 1
+    params = params{1};
+end
+
 
 %% end message
 comms.finish('Done');

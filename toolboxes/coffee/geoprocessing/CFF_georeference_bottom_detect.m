@@ -1,25 +1,51 @@
-function [fData] = CFF_georeference_WC_bottom_detect(fData)
-%CFF_GEOREFERENCE_WC_BOTTOM_DETECT  Geo-reference bottom detect
+function fData = CFF_georeference_bottom_detect(fData,varargin)
+%CFF_GEOREFERENCE_BOTTOM_DETECT  Geo-reference bottom detect
 %
 %   Get range, swathe coordinates (across and upwards distance from sonar),
 %   and projected coordinates (easting, northing, height) of the bottom
 %   detect samples
 %
-%   FDATA = CFF_GEOREFERENCE_WC_BOTTOM_DETECT(FDATA) range, swathe
+%   FDATA = CFF_GEOREFERENCE_BOTTOM_DETECT(FDATA) range, swathe
 %   coordinates (across and upwards distance from sonar), and projected
 %   coordinates (easting, northing, height) of the bottom detect samples in
 %   FDATA, then saves them as new fields in FDATA.
 %
-%   See also CFF_COMPUTE_PING_NAVIGATION_V2, CFF_FIX_FDATA_PATHS.
+%   CFF_GEOREFERENCE_BOTTOM_DETECT(...,'comms',COMMS) specifies if and how
+%   this function communicates on its internal state (progress, info,
+%   errors). COMMS can be either a CFF_COMMS object, or a text string to
+%   initiate a new CFF_COMMS object. Options are 'disp', 'textprogressbar',
+%   'waitbar', 'oneline', 'multilines'. By default, using an empty
+%   CFF_COMMS object (i.e. no communication). See CFF_COMMS for more
+%   information.  
+%
+%   See also CFF_COMPUTE_PING_NAVIGATION_V2, CFF_GROUP_PROCESSING.
 
 %   Authors: Alex Schimel (NGU, alexandre.schimel@ngu.no) and Yoann Ladroit
 %   (NIWA, yoann.ladroit@niwa.co.nz) 
-%   2017-2022; Last revision: 22-07-2022
+%   2017-2022; Last revision: 27-07-2022
 
 
-%% info extraction
+%% Input arguments management
+p = inputParser;
+addRequired(p,'fData',@(x) CFF_is_fData_version_current(x)); % line fData to process
+addParameter(p,'comms',CFF_Comms()); % information communication (none by default)
+parse(p,fData,varargin{:});
+comms = p.Results.comms;
+clear p
+if ischar(comms)
+    comms = CFF_Comms(comms);
+end
 
-% Extract needed ping info
+
+%% Prep
+
+% start message
+comms.start('Georeferencing the bottom detections');
+
+% start progress
+comms.progress(0,1);
+
+% extract needed ping info
 X_1P_sonarHeight          = fData.X_1P_pingH; %m
 X_1P_sonarEasting         = fData.X_1P_pingE; %m
 X_1P_sonarNorthing        = fData.X_1P_pingN; %m
@@ -27,7 +53,11 @@ X_1P_gridConvergenceDeg   = fData.X_1P_pingGridConv; %deg
 X_1P_vesselHeadingDeg     = fData.X_1P_pingHeading; %deg
 X_1_sonarHeadingOffsetDeg = fData.IP_ASCIIparameters.S1H; %deg
 
+% get datagramSource
 datagramSource = CFF_get_datagramSource(fData);
+
+
+%% Process
 switch datagramSource
     
     case {'WC' 'AP'}
@@ -103,3 +133,6 @@ end
 % sort fields by name
 fData = orderfields(fData);
 
+
+%% end message
+comms.finish('Done');
