@@ -1,103 +1,157 @@
-function data = CFF_mask_WC_data_CORE(data, fData, blockPings, varargin)
-%CFF_MASK_WC_DATA_CORE  One-line description
+function [data,params] = CFF_mask_WC_data_CORE(data, fData, iPings, varargin)
+%CFF_MASK_WC_DATA_CORE  Mask unwanted WCD 
 %
-%   See also ESPRESSO.
+%   This function masks unwanted data in specific pings of water-column
+%   data. 
+%
+%   DATA = CFF_MASK_WC_DATA_CORE(DATA,FDATA,IPINGS) takes input DATA (SBP
+%   tensor) and masks unwanted data in it, using the necessary information
+%   in FDATA for the relevant ping indices IPINGS. It returns the corrected
+%   DATA. 
+%
+%   CFF_MASK_WC_DATA_CORE(DATA,FDATA,IPINGS,PARAMS) uses
+%   processing parameters defined as the fields in the PARAMS structure.
+%   Possible parameters are:
+%   'maxAngle': angle (in degrees) from broadside beyond which data are to
+%   be discarded. Typically 50 to 60. Default is inf to KEEP all data.
+%   'minRange': range (in m) from sonar within which data are to be
+%   discarded. Typically 1 to 5. Default is 0 to KEEP all data. 
+%   'maxRangeBelowBottomEcho': range (in m) from the top of the bottom echo
+%   beyond which data are to be discarded. Typically 0 to remove just the
+%   echo, or -1 to -10 to be more conservative. Default is inf to KEEP all
+%   data. 
+%   'withinPolygon': vertices (in Easting and Northing) of the polygon
+%   outside of which data are to be discarded. Default is [] to KEEP all
+%   data. 
+%   'maxPercentFaultyDetects': proportion (in %) of faulty detects in a
+%   ping beyond which the entire ping is to be discarded. Typically ~7 to
+%   remove all but perfect pings, ~ 10 to 20 to allow pings with a few
+%   faulty detects, or >20 to remove only the most severly affected pings.
+%   Default is 100 to KEEP all data. 
+%   'maxRangeBelowMSR': range (in m) from the Minimum Slant Range (MSR)
+%   beyond which data are to be discarded. Typically 0 to remove all data
+%   past the MSR, or -1 to -10 to be more conservative. Default is inf to
+%   KEEP all data. 
+%
+%   CFF_MASK_WC_DATA_CORE(...,'comms',COMMS) specifies if
+%   and how this function communicates on its internal state (progress,
+%   info, errors). COMMS can be either a CFF_COMMS object, or a text string
+%   to initiate a new CFF_COMMS object. Options are 'disp',
+%   'textprogressbar', 'waitbar', 'oneline', 'multilines'. By default,
+%   using an empty CFF_COMMS object (i.e. no communication). See CFF_COMMS
+%   for more information.
+%
+%   [FDATA,PARAMS] = CFF_MASK_WC_DATA_CORE(...) also outputs
+%   the parameters used in processing.
+%
+%   Note: estimation of bottom echo to be improved
+%
+%   See also CFF_MASK_WC_DATA, CFF_WC_RADIOMETRIC_CORRECTIONS_CORE,
+%   CFF_FILTER_WC_SIDELOBE_ARTIFACT_CORE.
 
-%   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
-%   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
-%   2017-2021; Last revision: 27-07-2021
+%   Authors: Alex Schimel (NGU, alexandre.schimel@ngu.no) and Yoann Ladroit
+%   (NIWA, yoann.ladroit@niwa.co.nz) 
+%   2017-2022; Last revision: 28-07-2022
+
 
 global DEBUG;
 
-% input parsing
-try mask_angle = varargin{1};
-catch
-    mask_angle = inf; % default
+
+%% Input arguments management
+p = inputParser;
+addRequired(p,'data',@(x) isnumeric(x)); % data to process
+addRequired(p,'fData',@(x) CFF_is_fData_version_current(x)); % source fData
+addRequired(p,'iPings',@(x) isnumeric(x)); % indices of pings to process
+addOptional(p,'params',struct(),@(x) isstruct(x)); % processing parameters
+addParameter(p,'comms',CFF_Comms()); % information communication (none by default)
+parse(p,data,fData,iPings,varargin{:});
+params = p.Results.params;
+comms = p.Results.comms;
+clear p
+if ischar(comms)
+    comms = CFF_Comms(comms);
 end
-try mask_closerange = varargin{2};
-catch
-    mask_closerange = 0; % default
-end
-try mask_bottomrange = varargin{3};
-catch
-    mask_bottomrange = inf; % default
-end
-try mypolygon = varargin{4};
-catch
-    mypolygon = []; % default
-end
-try mask_ping = varargin{5};
-catch
-    mask_ping = 100; % default
-end
-try mask_minslantrange = varargin{6};
-catch
-    mask_minslantrange = 0; % default
-end
+
+
+%% Prep
+
+% start message
+comms.start('Masking unwanted data');
 
 % data size
-[nSamples, nBeams, ~] = size(data);
-
-nPings = numel(blockPings);
+[nSamples,nBeams,nPings] = size(data);
 
 % source datagram
 datagramSource = CFF_get_datagramSource(fData);
 
-% get inter-sample distance
-interSamplesDistance = CFF_inter_sample_distance(fData,blockPings);
+% get some variables needed in several masks
+interSamplesDistance = CFF_inter_sample_distance(fData,iPings);
+beamPointingAngleDeg = fData.(sprintf('%s_BP_BeamPointingAngle',datagramSource))(:,iPings);
+startRangeSampleNumber = fData.(sprintf('%s_BP_StartRangeSampleNumber',datagramSource))(:,iPings);
+sampleRange = CFF_get_samples_range((1:nSamples)', startRangeSampleNumber, interSamplesDistance);
 
+%% Mask 1: Removing beams beyond an angle from broadside
+%   'maxAngle': angle (in degrees) from broadside beyond which data are to
+%   be discarded. Typically 50 to 60. Default is inf to KEEP all data.
 
-%% MASK 1: OUTER BEAMS REMOVAL
-if ~isinf(mask_angle)
-    
-    % extract needed data
-    angles = fData.(sprintf('%s_BP_BeamPointingAngle',datagramSource))(:,blockPings);
-    
+% get maxAngle parameter
+if ~isfield(params,'maxAngle'), params.maxAngle = inf; end % default
+mustBeNumeric(params.maxAngle); % validate
+maxAngle = params.maxAngle;
+
+if ~isinf(maxAngle)
     % build mask: 1: to conserve, 0: to remove
-    X_BP_OuterBeamsMask = angles>=-abs(mask_angle) & angles<=abs(mask_angle);
-    
+    X_BP_OuterBeamsMask = beamPointingAngleDeg>=-abs(maxAngle) & beamPointingAngleDeg<=abs(maxAngle);
     X_1BP_OuterBeamsMask = permute(X_BP_OuterBeamsMask ,[3,1,2]);
-    
 else
-    
     % conserve all data
     X_1BP_OuterBeamsMask = true(1,nBeams,nPings);
-    
 end
 
 
-%% MASK 2: CLOSE RANGE REMOVAL
-if mask_closerange>0
-    
-    % extract needed data
-    ranges = CFF_get_samples_range( (1:nSamples)', fData.(sprintf('%s_BP_StartRangeSampleNumber',datagramSource))(:,blockPings), interSamplesDistance);
-    
+%% Mask 2: Removing samples within a range from sonar
+%   'minRange': range (in m) from sonar within which data are to be
+%   discarded. Typically 1 to 5. Default is 0 to KEEP all data. 
+
+% get minRange parameter
+if ~isfield(params,'minRange'), params.minRange = 0; end % default
+mustBeNumeric(params.minRange); % validate
+minRange = params.minRange;
+
+if minRange>0
     % build mask: 1: to conserve, 0: to remove
-    X_SBP_CloseRangeMask = ranges>=mask_closerange;
-    
+    X_SBP_CloseRangeMask = sampleRange>=minRange;
 else
-    
     % conserve all data
     X_SBP_CloseRangeMask = true(nSamples,nBeams,nPings);
-    
 end
 
 
-%% MASK 3: BOTTOM RANGE REMOVAL
-if ~isinf(mask_bottomrange)
+%% Mask 3: Removing samples beyond a range below the top of the seabed echo
+%   'maxRangeBelowBottomEcho': range (in m) from the top of the bottom echo
+%   beyond which data are to be discarded. Typically 0 to remove just the
+%   echo, or -1 to -10 to be more conservative. Default is inf to KEEP all
+%   data.
+
+% get maxRangeBelowBottomEcho parameter
+if ~isfield(params,'maxRangeBelowBottomEcho'), params.maxRangeBelowBottomEcho = inf; end % default
+mustBeNumeric(params.maxRangeBelowBottomEcho); % validate
+maxRangeBelowBottomEcho = params.maxRangeBelowBottomEcho;
+
+if ~isinf(maxRangeBelowBottomEcho)
     
-    % some data needed
+    % some data needed to find the top of the bottom echo
+    theta = deg2rad(beamPointingAngleDeg); % beam pointing angle in radians
+    beamwidth = deg2rad(fData.Ru_1D_ReceiveBeamwidth(1)); % beamwidth
     
-    % beam pointing angle
-    theta = deg2rad(fData.(sprintf('%s_BP_BeamPointingAngle',datagramSource))(:,blockPings));
-    
-    % beamwidth
-    beamwidth = deg2rad(fData.Ru_1D_ReceiveBeamwidth(1));
-    
-    % Some development still needed here, so for now doing a switch. Best
-    % method so far is 3. Debug display after the switch.
+    % the first part is to find the top of the bottom echo, i.e. the range
+    % in each beam where the echo starts. Some development is still needed
+    % so for now we're doing a method switch.
+    % Best method so far is 3. Debug display after the switch. Don't turn
+    % this into a parameter - the point is to find and retain the best
+    % method after development, but we keep the old ones just for reference
+    % for now. 
     method = 3;
-    
     switch method
         
         case 1
@@ -112,7 +166,7 @@ if ~isinf(mask_bottomrange)
             idx_grazing = ~idx_normal;
             
             % prep
-            R = fData.X_BP_bottomRange(:,blockPings); % range of bottom detect
+            R = fData.X_BP_bottomRange(:,iPings); % range of bottom detect
             R1 = zeros(size(theta),'single');   % range of echo start
             
             % compute range for each regime
@@ -149,7 +203,7 @@ if ~isinf(mask_bottomrange)
             idx_grazing = ~idx_normal;
             
             % prep
-            R = fData.X_BP_bottomRange(:,blockPings); % range of bottom detect
+            R = fData.X_BP_bottomRange(:,iPings); % range of bottom detect
             R1 = zeros(size(theta),'single');   % range of echo start
             
             % in the grazing regime, assuming a depth D, the range at which
@@ -179,18 +233,19 @@ if ~isinf(mask_bottomrange)
             X = 5;
             nbeams = size(theta,1);
             R1 = zeros(size(theta),'single');
-            for ip = 1:length(blockPings)
-                bottomranges = fData.X_BP_bottomRange(:,blockPings(ip));
+            for ip = 1:length(iPings)
+                bottomranges = fData.X_BP_bottomRange(:,iPings(ip));
                 minrangefunc = @(ibeam) nanmin(bottomranges(max(1,ibeam-X):min(nbeams,ibeam+X)));
                 R1(:,ip) = bottomranges - arrayfun(minrangefunc,[1:nbeams]');
             end
             
+            % Alex comment: works better overall, but still not perfect.
+            
     end
     
-    % DEBUG display...
-    DEBUG = 0;
+    % DEBUG display
     if DEBUG
-    	WCD = CFF_get_WC_data(fData,'WC_SBP_SampleAmplitudes',blockPings);
+    	WCD = CFF_get_WC_data(fData,'WC_SBP_SampleAmplitudes',iPings);
         WCD_x = 1:size(WCD,2);
         WCD_y = interSamplesDistance(1).*[1:size(WCD,1)];
         figure;imagesc(WCD_x,WCD_y,WCD(:,:,1)); colormap('jet'); grid on; hold on
@@ -198,10 +253,10 @@ if ~isinf(mask_bottomrange)
         plot(fData.X_BP_bottomRange(:,1) - R1(:,1),'ko-');
     end
     
-    % continuing with the value found 
+    % when we have that range, the rest is easy...
     
     % calculate max sample beyond which mask is to be applied
-    X_BP_maxRange  = fData.X_BP_bottomRange(:,blockPings) + mask_bottomrange - R1;
+    X_BP_maxRange  = fData.X_BP_bottomRange(:,iPings) - R1 + maxRangeBelowBottomEcho;
     X_BP_maxSample = bsxfun(@rdivide,X_BP_maxRange,interSamplesDistance);
     X_BP_maxSample = round(X_BP_maxSample);
     X_BP_maxSample(X_BP_maxSample>nSamples|isnan(X_BP_maxSample)) = nSamples;
@@ -224,93 +279,113 @@ else
 end
 
 
-%% MASK 4: OUTSIDE POLYGON REMOVAL
-if ~isempty(mypolygon)
-    
+%% Mask 4: Removing data outside an Easting & Northing polygon
+%   'withinPolygon': vertices (in Easting and Northing) of the polygon
+%   outside of which data are to be discarded. Default is [] to KEEP all
+%   data. 
+
+% get withinPolygon parameter
+if ~isfield(params,'withinPolygon'), params.withinPolygon = []; end % default
+mustBeNumeric(params.withinPolygon); % validate (can improve this)
+withinPolygon = params.withinPolygon;
+
+if ~isempty(withinPolygon)
+    % get easting and northing for all samples
+    idxSamples = (1:nSamples)';
+    sonarEasting = fData.X_1P_pingE(iPings);
+    sonarNorthing = fData.X_1P_pingN(iPings);
+    sonarHeight = fData.X_1P_pingH(iPings);
+    sonarHeading = fData.X_1P_pingHeading(iPings);
+    [E,N] = CFF_georeference_sample(idxSamples, startRangeSampleNumber, interSamplesDistance, deg2rad(beamPointingAngleDeg), ...
+        sonarEasting, sonarNorthing, sonarHeight, sonarHeading);
     % build mask: 1: to conserve, 0: to remove
-    X_SBP_PolygonMask = inpolygon( fData.X_SBP_sampleEasting.Data.val(:,:,blockPings), ...
-        fData.X_SBP_sampleNorthing.Data.val(:,:,blockPings), ...
-        mypolygon(:,1), ...
-        mypolygon(:,2));
-    
+    X_SBP_PolygonMask = inpolygon(E,N,...
+        withinPolygon(:,1), ...
+        withinPolygon(:,2));
 else
-    
     % conserve all data
     X_SBP_PolygonMask = true(nSamples,nBeams,nPings);
-    
 end
 
 
-%% MASK 5: PINGS REMOVAL
-if mask_ping<100
+%% Mask 5: Removing pings that have bad quality
+% for now we will use the percentage of faulty bottom detects as a
+% threshold to identify bad-quality pings. Aka, if mask_ping=10, then we 
+% will mask the ping if 10% or more of its bottom detects are faulty.
+% Quick data look-up shows that good pings can still have up to 6% faulty
+% bottom detects, usually on the outer beams. A ping with some missing
+% bottom detects in the data is around 8-15%, so good rule of thumb would be
+% to use:
+%   'maxPercentFaultyDetects': proportion (in %) of faulty detects in a
+%   ping beyond which the entire ping is to be discarded. Typically ~7 to
+%   remove all but perfect pings, ~ 10 to 20 to allow pings with a few
+%   faulty detects, or >20 to remove only the most severly affected pings.
+%   Default is 100 to KEEP all data. 
     
-    % for now we will use the percentage of faulty bottom detects as a
-    % threshold to mask the ping. Aka, if mask_ping=10, then we
-    % will mask the ping if 10% or more of its bottom detects are
-    % faulty.
-    % Quick data look up reveal show that good pings still misses up to 6%
-    % of detects on the outer beams. A ping with some missing bottom
-    % detects in the data is around 8-15%, so good rule of thumb would be
-    % to use:
-    % * mask_ping = 7 to remove all but perfect pings
-    % * mask_ping between 10 and 20 to allow pings with a few missing detect
-    % * mask_ping > 20 to remove only the most severly affected pings
-    
+% get maxPercentFaultyDetects parameter
+if ~isfield(params,'maxPercentFaultyDetects'), params.maxPercentFaultyDetects = []; end % default
+mustBeNumeric(params.maxPercentFaultyDetects); % validate (can improve this)
+maxPercentFaultyDetects = params.maxPercentFaultyDetects;
+
+if maxPercentFaultyDetects<100
     % extract needed data
-    faulty_bottom = fData.(sprintf('%s_BP_DetectedRangeInSamples',datagramSource))(:,blockPings)==0;
-    
-    proportion_faulty_detect = 100.*sum(faulty_bottom)./nBeams;
-    
+    faultyDetects = fData.(sprintf('%s_BP_DetectedRangeInSamples',datagramSource))(:,iPings)==0; % raw bottom detect
+    proportionFaultyDetects = 100.*sum(faultyDetects)./nBeams;
     % build mask: 1: to conserve, 0: to remove
-    X_1P_PingMask = proportion_faulty_detect<mask_ping;
+    X_1P_PingMask = proportionFaultyDetects<maxPercentFaultyDetects;
     X_11P_PingMask = permute(X_1P_PingMask ,[3,1,2]);
-    
 else
-    
     % conserve all data
     X_11P_PingMask = true(1,1,nPings);
-    
 end
 
 
-%% MASK 6: REMOVE DATA BEYOND MIN SLANT RANGE
-if mask_minslantrange
-   
-    % get range (in m) for all samples
-    samplesRange = CFF_get_samples_range( (1:nSamples)', fData.(sprintf('%s_BP_StartRangeSampleNumber',datagramSource))(:,blockPings), interSamplesDistance);
-    
-    % get bottom range (in m)
-    bottomRange = fData.X_BP_bottomRange(:,blockPings);
-    
+%% Mask 6: Removing samples beyond a range below the Minimum Slant Range (MSR)
+%   'maxRangeBelowMSR': range (in m) from the Minimum Slant Range (MSR)
+%   beyond which data are to be discarded. Typically 0 to remove all data
+%   past the MSR, or -1 to -10 to be more conservative. Default is inf to
+%   KEEP all data. 
+
+% get maxRangeBelowBottomEcho parameter
+if ~isfield(params,'maxRangeBelowMSR'), params.maxRangeBelowMSR = inf; end % default
+mustBeNumeric(params.maxRangeBelowMSR); % validate
+maxRangeBelowMSR = params.maxRangeBelowMSR;
+
+if ~isinf(maxRangeBelowMSR)
+    % get processed bottom range (in m)
+    bottomRange = fData.X_BP_bottomRange(:,iPings);
     % min slant range per ping
     bottomRange(bottomRange==0) = NaN;
     P1_minSlantRange = nanmin(bottomRange)';
     SBP_minSlantRange = repmat( permute(P1_minSlantRange,[3,2,1]),nSamples,nBeams);
-    
     % build mask: 1: to conserve, 0: to remove
-    X_SBP_MinSlantRangeMask = samplesRange < SBP_minSlantRange;
-    
+    X_SBP_MinSlantRangeMask = sampleRange < SBP_minSlantRange + maxRangeBelowMSR;
 else 
     % conserve all data
     X_SBP_MinSlantRangeMask = true(nSamples,nBeams,nPings);
 end
 
 
+%% Calculate total mask
+mask = X_1BP_OuterBeamsMask & X_SBP_CloseRangeMask & X_SBP_BottomRangeMask & X_SBP_PolygonMask & X_11P_PingMask & X_SBP_MinSlantRangeMask;
 
-%% MULTIPLYING ALL MASKS
-% for earlier versions of Matlab
-% if verLessThan('matlab','9.1')
-% mask_temp = X_SBP_CloseRangeMask & X_SBP_BottomRangeMask & X_SBP_PolygonMask;
-% mask_temp = bsxfun(@and,X_1BP_OuterBeamsMask,mask_temp);
-% mask = bsxfun(@and,X_11P_PingMask,mask_temp);
+% display results
+if DEBUG
+    ip = 1;
+    figure; tiledlayout(1,2);
+    ax1=nexttile();imagesc(data(:,:,ip));
+    grid on;colormap(jet);colorbar;title('raw');c=caxis;
+    dataOutTemp = data(:,:,ip);
+    dataOutTemp(~mask(:,:,ip)) = NaN;
+    ax2=nexttile();imagesc(dataOutTemp);
+    grid on;colormap(jet);colorbar;title('masked');caxis(c)
+    linkaxes([ax1,ax2]);
+end
 
-mask = X_11P_PingMask & X_1BP_OuterBeamsMask & X_SBP_CloseRangeMask & X_SBP_BottomRangeMask & X_SBP_PolygonMask & X_SBP_MinSlantRangeMask;
 
-% apply mask
+%% apply total mask
 data(~mask) = NaN;
 
 
-
-
-
-
+%% end message
+comms.finish('Done');

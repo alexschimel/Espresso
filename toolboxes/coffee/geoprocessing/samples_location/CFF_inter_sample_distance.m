@@ -10,21 +10,22 @@ function interSamplesDistance = CFF_inter_sample_distance(fData, varargin)
 %   INTERSAMPLESDISTANCE = CFF_INTER_SAMPLE_DISTANCE(FDATA) returns the
 %   inter-sample distance for all pings in FDATA.
 %
-%   INTERSAMPLESDISTANCE = CFF_INTER_SAMPLE_DISTANCE(FDATA,PINGS) returns
-%   the inter-sample distance only for specified PINGS indices in FDATA.
+%   INTERSAMPLESDISTANCE = CFF_INTER_SAMPLE_DISTANCE(FDATA,IPINGS) returns
+%   the inter-sample distance only for specified ping indices IPINGS in
+%   FDATA. 
 %
 %   See also CFF_GET_SAMPLES_RANGE
 
 %   Authors: Alex Schimel (NGU, alexandre.schimel@ngu.no) and Yoann Ladroit
 %   (NIWA, yoann.ladroit@niwa.co.nz)
-%   2017-2022; Last revision: 19-07-2022
+%   2017-2022; Last revision: 28-07-2022
 
 % input parsing
 p = inputParser;
 addRequired(p,'fData',@(x) CFF_is_fData_version_current(x));
-addOptional(p,'pings',[]);
+addOptional(p,'iPings',[]);
 parse(p,fData,varargin{:});
-pings = p.Results.pings;
+iPings = p.Results.iPings;
 clear p;
 
 % get sound speed and sampling frequency
@@ -42,7 +43,7 @@ end
 interSamplesDistance = sound_speed./(sampling_freq.*2); % in m
 
 % return only for desired pings
-if ~isempty(pings)
-    interSamplesDistance = interSamplesDistance(pings);
+if ~isempty(iPings)
+    interSamplesDistance = interSamplesDistance(iPings);
 end
 
