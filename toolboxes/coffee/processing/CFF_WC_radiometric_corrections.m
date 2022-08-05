@@ -35,14 +35,12 @@ wcdata_Nanval = fData.X_1_WaterColumnProcessed_Nanval;
 
 [nSamples, nBeams, nPings] = CFF_get_WC_size(fData);
 % block processing setup
-mem = CFF_memory_available;
-blockLength = ceil(mem/(nSamples*nBeams*8)/20);
-nBlocks = ceil(nPings./blockLength);
-blocks = [ 1+(0:nBlocks-1)'.*blockLength , (1:nBlocks)'.*blockLength ];
-blocks(end,2) = nPings;
+[blocks,info] = CFF_setup_optimized_block_processing(...
+    nPings,nSamples*nBeams*4,...
+    'desiredMaxMemFracToUse',0.1);
 
 % block processing
-for iB = 1:nBlocks
+for iB = 1:size(blocks,1)
     
     % list of pings in this block
     blockPings  = (blocks(iB,1):blocks(iB,2));

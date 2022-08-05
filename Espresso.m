@@ -62,13 +62,8 @@ if ~isdeployed
 end
 
 % check for possibility of GPU computation
-fprintf('Checking for GPU computation availability and compatibility...');
-[gpu_comp,~] = get_gpu_comp_stat();
-if gpu_comp > 0
-    fprintf(' Available.\n');
-else
-    fprintf(' Unavailable.\n');
-end
+[~,info] = CFF_is_parallel_computing_available();
+fprintf('%s\n',info);
 
 % create main_figure
 fprintf('Creating main figure...\n');

@@ -17,17 +17,17 @@ end
 data = cell(1,numel(field));
 L = cell(1,numel(field));
 
-gpu_comp = get_gpu_comp_stat();
-
 for ui = 1:numel(field)
     L{ui} = fData.(['X_NEH_' field{ui}]);
-    if ~gpu_comp
-        if isa(L{ui},'gpuArray')
-            L{ui} = gather(L{ui});
+    if CFF_is_parallel_computing_available()
+        if ~isa(L{ui},'gpuArray')
+            % use GPU processing, turn arrays to gpuArrays
+            L{ui} = gpuArray(L{ui});
         end
     else
-        if ~isa(L{ui},'gpuArray')
-            L{ui} = gpuArray(L{ui});
+        if isa(L{ui},'gpuArray')
+            % not using GPU processing, turn gpuArrays to arrays
+            L{ui} = gather(L{ui});
         end
     end
 end

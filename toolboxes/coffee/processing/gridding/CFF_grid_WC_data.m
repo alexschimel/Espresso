@@ -105,14 +105,6 @@ vesselHeading      = fData.X_1P_pingHeading; % deg
 sonarHeadingOffset = fData.IP_ASCIIparameters.S1H; % deg
 sonarHeading       = deg2rad(-mod(gridConvergence + vesselHeading + sonarHeadingOffset,360)); % rad
 
-
-%% Block processing setup
-mem = CFF_memory_available;
-blockLength = ceil(mem/(nSamples*nBeams*8)/40);
-nBlocks = ceil(nPings./blockLength);
-blocks = [ 1+(0:nBlocks-1)'.*blockLength , (1:nBlocks)'.*blockLength ];
-blocks(end,2) = nPings;
-
 switch grdlim_var
     case 'Bottom'
         %% Prepare the Height interpolant
@@ -123,6 +115,24 @@ switch grdlim_var
         idx_valid_bottom = idx_valid_bottom &(~isnan(fData.X_BP_bottomHeight) & ~isinf(fData.X_BP_bottomHeight));        
         HeightInterpolant = scatteredInterpolant(fData.X_BP_bottomNorthing(idx_valid_bottom),fData.X_BP_bottomEasting(idx_valid_bottom),fData.X_BP_bottomHeight(idx_valid_bottom),'linear','none');
 end
+
+
+%% GPU setup
+if CFF_is_parallel_computing_available()
+    useGpu = 1;
+    processingUnit = 'GPU';
+else
+    useGpu = 0;
+    processingUnit = 'CPU';
+end
+
+%% Block processing setup
+[blocks,info] = CFF_setup_optimized_block_processing(...
+    nPings,nSamples*nBeams*4,...
+    processingUnit,...
+    'desiredMaxMemFracToUse',0.2);
+nBlocks = size(blocks,1);
+%disp(info);
 
 %% find grid limits
 
@@ -204,19 +214,11 @@ switch grid_type
         gridMaxHorizDist =   nan(numElemGridN,numElemGridE,numElemGridH,'single');
 end
 
-
-%% GPU computation setup
-gpu_comp = get_gpu_comp_stat();
-if gpu_comp > 0
-    gpud = gpuDevice;
-    if gpud.AvailableMemory > numel(gridMaxHorizDist)*32*3
-        % all good, turn grids into gpuArrays
-        gridWeightedSum  = gpuArray(gridWeightedSum);
-        gridTotalWeight  = gpuArray(gridTotalWeight);
-        gridMaxHorizDist = gpuArray(gridMaxHorizDist);
-    else
-        gpu_comp = 0;
-    end
+if useGpu
+    % turn grids into gpuArrays
+    gridWeightedSum  = gpuArray(gridWeightedSum);
+    gridTotalWeight  = gpuArray(gridTotalWeight);
+    gridMaxHorizDist = gpuArray(gridMaxHorizDist);
 end
 
 
@@ -358,7 +360,7 @@ for iB = 1:nBlocks
     clear idx_keep
     
     % at this stage, pass blockL and blockW as GPU arrays if using GPUs
-    if gpu_comp > 0
+    if isa(gridWeightedSum,'gpuArray')
         blockL    = gpuArray(blockL);
         blockW    = gpuArray(blockW);
         blockAccD = gpuArray(blockAccD);
@@ -541,14 +543,13 @@ gridLevel = 10.*log10(gridWeightedSum./gridTotalWeight);
 clear gridWeightedSum
 
 
-%% revert gpuArrays back to regular arrays before storing
+%% if gridded data were gpuArrays, convert back to regular before storing
 % so that data can be used even without the parallel computing toolbox and
-% so that loading data don't overload the limited GPU memory
-if gpu_comp > 0
-    gridLevel        = gather(gridLevel);
-    gridTotalWeight  = gather(gridTotalWeight);
-    gridMaxHorizDist = gather(gridMaxHorizDist);
-end
+% so that loading data don't overload the limited GPU memory. Gather has no
+% effect if these were regular arrays
+gridLevel        = gather(gridLevel);
+gridTotalWeight  = gather(gridTotalWeight);
+gridMaxHorizDist = gather(gridMaxHorizDist);
 
 
 %% saving results:

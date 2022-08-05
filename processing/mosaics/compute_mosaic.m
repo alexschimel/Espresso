@@ -23,8 +23,7 @@ mosaicTotalWeight  = zeros(numElemGridN,numElemGridE,'single');
 mosaicMaxHorizDist =   nan(numElemGridN,numElemGridE,'single');
 
 % Test if GPU is available for computation and setup for it
-gpu_comp = get_gpu_comp_stat();
-if gpu_comp > 0
+if CFF_is_parallel_computing_available()
     mosaicWeightedSum  = gpuArray(mosaicWeightedSum);
     mosaicTotalWeight  = gpuArray(mosaicTotalWeight);
     mosaicMaxHorizDist = gpuArray(mosaicMaxHorizDist);

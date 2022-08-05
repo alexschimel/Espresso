@@ -92,11 +92,11 @@ for itt = idx_fData(:)'
             iPingsInMemMapfile = ping_gr_start(ig):ping_gr_end(ig);
             
             % block processing setup
-            mem = CFF_memory_available;
-            blockLength = ceil(mem/(nSamples(ig)*nBeams(ig)*8)/20);
-            nBlocks = ceil(nPings(ig)./blockLength);
-            blocks = [ 1+(0:nBlocks-1)'.*blockLength , (1:nBlocks)'.*blockLength ];
-            blocks(end,2) = nPings(ig);
+            [blocks,info] = CFF_setup_optimized_block_processing(...
+                nPings(ig),nSamples(ig)*nBeams(ig)*4,...
+                'desiredMaxMemFracToUse',0.1);
+            nBlocks = size(blocks,1);
+            %disp(info);
             
             % initialize encoding parameters for each data block
             minsrc_block = single(nan(1,nBlocks));
