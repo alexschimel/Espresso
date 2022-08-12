@@ -3,9 +3,9 @@ function create_datafiles_tab(main_figure,parent_tab_group)
 %
 %   See also UPDATE_DATAFILES_TAB, INITIALIZE_DISPLAY, ESPRESSO.
 
-%   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
-%   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
-%   2017-2021; Last revision: 11-11-2021
+%   Authors: Alex Schimel (NGU, alexandre.schimel@ngu.no) and Yoann Ladroit
+%   (NIWA, yoann.ladroit@niwa.co.nz) 
+%   2017-2022; Last revision: 12-08-2022
 
 %% create tab variable
 switch parent_tab_group.Type
@@ -32,14 +32,10 @@ file_tab_comp.path_choose = uicontrol(file_tab_comp.file_tab,'Style','pushbutton
 
 %% folder text field
 
-% define initial path from last data available (or root)
-fData = getappdata(main_figure,'fData');
-if isempty(fData)
-    path_init = whereisroot();
-else
-    [path_init,~,~] = fileparts(fData{end}.ALLfilename{1});
-    i = strfind(path_init,filesep);
-    path_init = path_init(1:i(end-1));
+% get initial data path from config file
+path_init = get_config_field('lastDataPath');
+if isempty(path_init) || ~isfolder(path_init)
+    path_init = whereisroot(); % default data path
 end
 
 % create text field
@@ -131,6 +127,8 @@ switch src.Style
             if isfolder(new_path)
                 % folder is valid, update the tab
                 update_datafiles_tab(main_figure);
+                % save it in config file
+                set_config_field('lastDataPath',new_path);
             end
         else
             return;
@@ -147,6 +145,8 @@ switch src.Style
         if new_path ~= 0
             set(file_tab_comp.path_box,'string',new_path);
             update_datafiles_tab(main_figure);
+            % save it in config file
+            set_config_field('lastDataPath',new_path);
         end
         
 end

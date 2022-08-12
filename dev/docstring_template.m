@@ -5,12 +5,7 @@ function [output1,output2] = function_name(input1,input2,input3)
 
 %   Authors: Alex Schimel (NGU, alexandre.schimel@ngu.no) and Yoann Ladroit
 %   (NIWA, yoann.ladroit@niwa.co.nz) 
-%   2017-2022; Last revision: 25-07-2022
-
-
-
-
-
+%   XXXX-XXXX; Last revision: XX-XX-XXXX
 
 
 
@@ -26,13 +21,19 @@ function [output1,output2] = function_name(input1,input2,input3)
 %   author(s) and information on last versions.
 %
 %   [X,Y] = FUNCTION_NAME(A,B,C) returns the sum of A+B as X, and C as Y.
+%   Note the input and output variables are also written in upper case.
+%   This first syntax should show the basic use.
 %
 %   X = FUNCTION_NAME(A,B) returns the sum of A+B as X, since the
-%   additional input and outputs in this example are unecessary.
+%   additional input and outputs in this example are unecessary. This other
+%   syntax shows alterative functioning.
 %
-%   X = FUNCTION_NAME(A) returns A
+%   FUNCTION_NAME(...,'parameter',VAL) is another syntax to introduce
+%   optional or paramter inputs. Since the basic inputs and outputs have
+%   already been discussed, they can be ommitted, so the text focuses
+%   exclusively on what the option does compared to the basic syntax.
 %
-%   See also OTHER_FUNCTION_NAME_1, OTHER_FUNCTION_NAME_2.
+%   See also OTHER_FUNCTION_NAME_1, OTHER_FUNCTION_NAME_2, ESPRESSO.
 
 %   Authors: Alex Schimel (NGU, alexandre.schimel@ngu.no) and Yoann Ladroit
 %   (NIWA, yoann.ladroit@niwa.co.nz) 
