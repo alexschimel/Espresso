@@ -4,9 +4,9 @@ function Espresso(varargin)
 %   ESPRESSO() starts an Espresso session or activates the main window if a
 %   session is already running.
 
-%   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
-%   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
-%   2017-2021; Last revision: 21-07-2021
+%   Authors: Alex Schimel (NGU, alexandre.schimel@ngu.no) and Yoann Ladroit
+%   (NIWA, yoann.ladroit@niwa.co.nz) 
+%   2017-2022; Last revision: 12-08-2022
 
 % Debug
 global DEBUG;
@@ -40,35 +40,70 @@ if ~isdeployed()
     end
 end
 
-% Starting diary
-if ~isfolder(Espresso_user_folder)
-    mkdir(Espresso_user_folder);
+% If on MATLAB, add relevant folders to path
+if ~isdeployed
+    appRootFolder = whereisroot();
+    update_path(appRootFolder);
 end
+
+% Starting message
+[espressoVer, coffeeVer] = espresso_version();
+fprintf('Starting Espresso v%s (powered by CoFFee v%s) at %s. Please wait...\n',espressoVer,coffeeVer,datestr(now));
+
+% Create Espresso user folder if needed
+espressoUserFolder = espresso_user_folder();
+if ~isfolder(espressoUserFolder)
+    mkdir(espressoUserFolder);
+end
+
+% Init config file if needed
+espressoConfigFile = espresso_config_file();
+if ~isfile(espressoConfigFile)
+    init_config_file();
+end
+
+% Setup diary
 logfile = generate_Espresso_diary_filename;
+if ~isfolder(fileparts(logfile))
+    mkdir(fileparts(logfile));
+end
 if isfile(logfile)
     delete(logfile);
 end
 diary(logfile);
-EspressoUserdata.logfile = logfile;
-
-% Starting messages
-fprintf('Starting Espresso at %s... \n',datestr(now));
+EspressoUserdata.logfile = logfile; % save to app in order to close diary at the end
 fprintf('Find a log of this output at %s.\n',logfile);
 
-% Add relevant subfolders to Matlab path
-main_path = whereisroot();
+% If on MATLAB, need to find and add CoFFee to the path
 if ~isdeployed
-    update_path(main_path);
+    % check coffee folder
+    coffeeFolder = get_config_field('coffeeFolder');
+    if ~is_coffee_folder(coffeeFolder)
+        % throw an alert to find manually a suitable coffee folder
+        coffeeFolder = uigetdir(appRootFolder,'Select suitable CoFFee folder');
+        % second check
+        if ~is_coffee_folder(coffeeFolder)
+            error('Not a CoFFee folder.');
+        end
+    end
+    % check coffee version is the one we need
+    isVersionOK = is_coffee_version(coffeeFolder,coffeeVer);
+    if ~isVersionOK
+        warning(['This version of Espresso (%s) was built with a version'...
+            ' of CoFFee (%s) that is different from that (%s) of the toolbox'...
+            ' you have specified (%s). Proceeding, but you may experience'...
+            ' issues. Consider checking out the correct CoFFee version.'],...
+            espressoVer,coffeeVer,get_coffee_version(coffeeFolder),coffeeFolder);
+    end
+    % add coffee to path
+    addpath(genpath(coffeeFolder));
+    % save that path in config file
+    set_config_field('coffeeFolder',coffeeFolder);
 end
 
 % check for possibility of GPU computation
-fprintf('Checking for GPU computation availability and compatibility...');
-[gpu_comp,~] = get_gpu_comp_stat();
-if gpu_comp > 0
-    fprintf(' Available.\n');
-else
-    fprintf(' Unavailable.\n');
-end
+[~,info] = CFF_is_parallel_computing_available();
+fprintf('%s\n',info);
 
 % create main_figure
 fprintf('Creating main figure...\n');

@@ -39,12 +39,15 @@ switch storing_precision
         % 2 bytes allow storage of 65535 different values, allowing
         % for example a dynamic range of 655.35 dB at 0.01 dB
         % resolution, or 65.535 dB at 0.001 dB resolution.
-        wcdataproc_Class = 'uint16';     
+        wcdataproc_Class = 'uint16';
 end
 
-% initialize processing per file
-u = 0;
-timer_start = now;
+% initiate comms
+comms = CFF_Comms('multilines');
+comms.start('Processing water-column data');
+iFD = 0;
+nFData = numel(idx_fData);
+comms.progress(iFD,nFData);
 
 for itt = idx_fData(:)'
     
@@ -52,13 +55,12 @@ for itt = idx_fData(:)'
     % continue even if one file fails.
     try
         
-        % disp
-        u = u+1;
-        fprintf('Processing data in file "%s" (%i/%i)...\n',fData_tot{itt}.ALLfilename{1},u,numel(idx_fData));
-        textprogressbar(sprintf('...Started at %s. Progress:',datestr(now)));
-        textprogressbar(0);
+        % start comms for this line
+        iFD = iFD+1;
+        filename = CFF_file_name(fData_tot{itt}.ALLfilename{1});
+        comms.step(sprintf('%i/%i: fData line %s',iFD,nFData,filename));
         
-        tic
+        comms.info('Initializing processed WCD');
         
         % number, dimensions, and pings of memmap files data
         datagramSource = CFF_get_datagramSource(fData_tot{itt});
@@ -86,22 +88,22 @@ for itt = idx_fData(:)'
         % apply processing per memmap file
         for ig = 1:nMemMapFiles
             
-            % pings in this memmap file
-            iPings = ping_gr_start(ig):ping_gr_end(ig);
+            % indices of the pings in this memmap file
+            iPingsInMemMapfile = ping_gr_start(ig):ping_gr_end(ig);
             
             % block processing setup
-            mem = CFF_memory_available;
-            blockLength = ceil(mem/(nSamples(ig)*nBeams(ig)*8)/20);
-            nBlocks = ceil(nPings(ig)./blockLength);
-            blocks = [ 1+(0:nBlocks-1)'.*blockLength , (1:nBlocks)'.*blockLength ];
-            blocks(end,2) = nPings(ig);
+            [blocks,info] = CFF_setup_optimized_block_processing(...
+                nPings(ig),nSamples(ig)*nBeams(ig)*4,...
+                'desiredMaxMemFracToUse',0.1);
+            nBlocks = size(blocks,1);
+            %disp(info);
             
             % initialize encoding parameters for each data block
             minsrc_block = single(nan(1,nBlocks));
             maxsrc_block = single(nan(1,nBlocks));
             encode_factor_block = nan(1,nBlocks);
             encode_offset_block = nan(1,nBlocks);
-
+            
             % destination values after encoding are fixed and only
             % dependent on precision byte chosen
             mindest = single(intmin(wcdataproc_Class)+1); % reserve min value for NaN
@@ -109,56 +111,43 @@ for itt = idx_fData(:)'
             
             % processing per block of pings in memmap file, in reverse
             % since the last block is the most likely to need updating
-            
-             params.avg_calc = 'mean'; % 'mean' or 'median'
-    
-             % reference level type of calculation: constant or from ping data
-             params.ref.type = 'from_ping_data'; % 'from_ping_data'; % 'cst' or 'from_ping_data'
-             params.ref.cst = -70;
-             params.ref.area = 'cleanWC'; % 'nadirWC' or 'cleanWC'
-             params.ref.val_calc = 'perc25'; % 'mean', 'median', 'mode', 'perc5', 'perc10', 'perc25'
-             
-             for iB = nBlocks:-1:1
+            for iB = nBlocks:-1:1
                 
                 % list of pings in this block
-                blockPings  = (blocks(iB,1):blocks(iB,2));
+                blockPings = (blocks(iB,1):blocks(iB,2));
                 
                 % corresponding pings in file
-                blockPings_f  = iPings(blocks(iB,1):blocks(iB,2));
+                iPings = iPingsInMemMapfile(blocks(iB,1):blocks(iB,2));
                 
                 % grab original data in dB
                 datagramSource = CFF_get_datagramSource(fData_tot{itt});
-                data = CFF_get_WC_data(fData_tot{itt},sprintf('%s_SBP_SampleAmplitudes',datagramSource),'iPing',blockPings_f,'iRange',1:nSamples(ig),'output_format','true');
+                data = CFF_get_WC_data(fData_tot{itt},sprintf('%s_SBP_SampleAmplitudes',datagramSource),'iPing',iPings,'iRange',1:nSamples(ig),'output_format','true');
                 
-                % BEGINNING OF PROCESSING %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                %
-                % PROCESSING STEP 1: radiometric corrections
+                % PROCESSING STEP 1/3: radiometric corrections
                 if procpar.radiomcorr_flag
-                    data = CFF_WC_radiometric_corrections_CORE(data,fData_tot{itt}, blockPings_f, procpar.radiomcorr_output);
+                    comms.info('Applying radiometric corrections');
+                    data = CFF_WC_radiometric_corrections_CORE(data, fData_tot{itt}, iPings, procpar.radiomcorr_params);
                 end
-                %
-                % PROCESSING STEP 2: filtering sidelobe artefact
-                if procpar.sidelobefilter_flag
-                    
-                    [data, correction,ref_level] = CFF_filter_WC_sidelobe_artifact_CORE(data, fData_tot{itt}, blockPings_f,params);
-
-                    % uncomment this for weighted gridding based on sidelobe correction
-                    % fData_tot{itt}.X_S1P_sidelobeArtifactCorrection(:,:,blockPings) = correction;
-                end
-                %
-                % PROCESSING STEP 3: masking data
-                if procpar.masking_flag
-                    data = CFF_mask_WC_data_CORE(data, fData_tot{itt}, blockPings_f, procpar.mask_angle, procpar.mask_closerange, procpar.mask_bottomrange, [], procpar.mask_ping, procpar.mask_minslantrange);
-                end
-                %
-                % END OF PROCESSING %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                 
+                % PROCESSING STEP 2/3: filtering sidelobe artefact
+                if procpar.sidelobefilter_flag
+                    comms.info('Filtering sidelobe artefact');
+                    data = CFF_filter_WC_sidelobe_artifact_CORE(data, fData_tot{itt}, iPings, procpar.sidelobefilter_params);
+                end
+                
+                % PROCESSING STEP 3/3: masking data
+                if procpar.masking_flag
+                    comms.info('Masking unwanted data');
+                    data = CFF_mask_WC_data_CORE(data, fData_tot{itt}, iPings, procpar.masking_params);
+                end
                 
                 % Next is data encoding for storage. For this we
                 % need to know the min and max value of all blocks, not
                 % just this one. We're going to operate an intermediate
                 % encoding using best available information, and
                 % perhaps later reencode.
+                
+                comms.info('Encoding processed data for storage');
                 
                 % min and max values in this block
                 minsrc = nanmin(data(:));
@@ -169,10 +158,10 @@ for itt = idx_fData(:)'
                 maxsrc = nanmax(nanmax(maxsrc_block),maxsrc);
                 
                 % optimal encoding parameters
-                encode_factor = (maxdest-mindest)./(maxsrc-minsrc); 
+                encode_factor = (maxdest-mindest)./(maxsrc-minsrc);
                 encode_offset = ((mindest.*maxsrc)-(maxdest.*minsrc))./(maxsrc-minsrc);
                 % dest_check_optimal = encode_factor.*[minsrc maxsrc] + encode_offset;
-
+                
                 % suboptimal encoding parameters (to minimize changes of
                 % recomputation in case there are several blocks of data).
                 % This is not ideal. To change eventually
@@ -181,7 +170,7 @@ for itt = idx_fData(:)'
                     encode_offset = ceil((mindest-encode_factor.*minsrc)./10).*10;
                     dest_check_suboptimal = encode_factor.*[minsrc maxsrc] + encode_offset;
                     if dest_check_suboptimal(1)<mindest || dest_check_suboptimal(2)>maxdest
-                        warning('encoding saturation')
+                        comms.info('warning: encoding saturation');
                     end
                 end
                 
@@ -200,13 +189,8 @@ for itt = idx_fData(:)'
                 encode_factor_block(iB) = encode_factor;
                 encode_offset_block(iB) = encode_offset;
                 
-                % disp processing progress
-                if nMemMapFiles == 1
-                    textprogressbar(round((nBlocks-iB+1).*100./nBlocks));
-                end
-                
             end
-           
+            
             % we may have to reencode some blocks if blocks were
             % encoded with different parameters
             
@@ -229,7 +213,7 @@ for itt = idx_fData(:)'
                 encode_offset_final = ceil((mindest-encode_factor_final.*minsrc)./10).*10;
                 dest_check_suboptimal = encode_factor.*[minsrc maxsrc] + encode_offset;
                 if dest_check_suboptimal(1)<mindest || dest_check_suboptimal(2)>maxdest
-                    warning('encoding saturation')
+                    comms.info('warning: encoding saturation');
                 end
                 
                 % look for blocks that didn't use those parameters and
@@ -270,23 +254,18 @@ for itt = idx_fData(:)'
             fData_tot{itt}.(sprintf('%s_Factor',p_field))(ig) = wcdataproc_Factor;
             fData_tot{itt}.(sprintf('%s_Offset',p_field))(ig) = wcdataproc_Offset;
             
-            % disp processing progress
-            if nMemMapFiles > 1
-                textprogressbar(round(ig.*100./nMemMapFiles)-1);
-            end
-            
         end
         
         % save the updated fData on the drive
+        comms.info('Saving fData on the disk');
         fData = fData_tot{itt};
         folder_for_converted_data = CFF_converted_data_folder(fData.ALLfilename{1});
         mat_fdata_file = fullfile(folder_for_converted_data,'fData.mat');
         save(mat_fdata_file,'-struct','fData','-v7.3');
         clear fData;
         
-        % disp
-        textprogressbar(100)
-        textprogressbar(sprintf(' done. Elapsed time: %f seconds.\n',toc));
+        % successful end of this iteration
+        comms.info('Done');
         
         % error catching
     catch err
@@ -296,11 +275,15 @@ for itt = idx_fData(:)'
         fprintf('%s\n\n',err.message);
     end
     
+    % communicate progress
+    comms.progress(iFD,nFData);
+    
 end
 
-% finalize
-timer_end = now;
-fprintf('Total time for processing: %f seconds (~%.2f minutes).\n\n',(timer_end-timer_start)*24*60*60,(timer_end-timer_start)*24*60);
+
+%% end message
+comms.finish('Done');
+
 
 end
 

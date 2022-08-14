@@ -27,30 +27,39 @@ end
 wc_proc_tab_comp = getappdata(main_figure,'wc_proc_tab');
 
 % main procession flag
-procpar.processing_flag     = wc_proc_tab_comp.proc_bool.Value;
+procpar.processing_flag = wc_proc_tab_comp.proc_bool.Value;
 
 % bottom filter
-procpar.bottomfilter_flag   = wc_proc_tab_comp.bot_filtering.Value;
+procpar.bottomfilter_flag = wc_proc_tab_comp.bot_filtering.Value;
 
 % grid bathy/BS
-procpar.gridbathyBS_flag    = wc_proc_tab_comp.bs_grid_bool.Value;
-procpar.gridbathyBS_res     = str2double(get(wc_proc_tab_comp.bs_grid_res,'String'));
-
-% masking parameters
-procpar.masking_flag       = wc_proc_tab_comp.masking.Value;
-procpar.mask_angle         = str2double(get(wc_proc_tab_comp.angle_mask,'String'));
-procpar.mask_closerange    = str2double(get(wc_proc_tab_comp.r_min,'String'));
-procpar.mask_bottomrange   = -str2double(get(wc_proc_tab_comp.r_bot,'String')); % NOTE inverting sign here.
-procpar.mask_ping          = str2double(get(wc_proc_tab_comp.mask_badpings,'String'));
-procpar.mask_minslantrange = wc_proc_tab_comp.mask_minslantrange.Value;
+procpar.gridbathyBS_flag = wc_proc_tab_comp.bs_grid_bool.Value;
+procpar.gridbathyBS_res = str2double(get(wc_proc_tab_comp.bs_grid_res,'String'));
 
 % radiometric correction parameters
-procpar.radiomcorr_flag     = wc_proc_tab_comp.radiomcorr.Value;
-procpar.radiomcorr_output   = wc_proc_tab_comp.radiomcorr_output.String{wc_proc_tab_comp.radiomcorr_output.Value};
+procpar.radiomcorr_flag = wc_proc_tab_comp.radiomcorr.Value;
+procpar.radiomcorr_params.outVal = wc_proc_tab_comp.radiomcorr_output.String{wc_proc_tab_comp.radiomcorr_output.Value};
 
 % sidelobe filtering parameters
 procpar.sidelobefilter_flag = wc_proc_tab_comp.sidelobe.Value;
-procpar.badpings_flag       = str2double(wc_proc_tab_comp.mask_badpings.String)<100;
+procpar.sidelobefilter_params.avgCalc = 'mean';
+procpar.sidelobefilter_params.refType = 'fromPingData';
+procpar.sidelobefilter_params.refArea = 'nadirWC';
+procpar.sidelobefilter_params.refCalc = 'perc25';
+
+% masking parameters
+procpar.masking_flag = wc_proc_tab_comp.masking.Value;
+procpar.masking_params.maxAngle = str2double(get(wc_proc_tab_comp.angle_mask,'String'));
+procpar.masking_params.minRange = str2double(get(wc_proc_tab_comp.r_min,'String'));
+procpar.masking_params.maxRangeBelowBottomEcho = -str2double(get(wc_proc_tab_comp.r_bot,'String')); % NOTE inverting sign here.
+procpar.masking_params.maxPercentFaultyDetects = str2double(get(wc_proc_tab_comp.mask_badpings,'String'));
+if wc_proc_tab_comp.mask_minslantrange.Value
+    % checked, remove beyond MSR
+    procpar.masking_params.maxRangeBelowMSR = 0;
+else
+    % unchecked, don't remove anythin
+    procpar.masking_params.maxRangeBelowMSR = inf;
+end
 
 % main water-column gridding flag
 procpar.WCgridding_flag     = wc_proc_tab_comp.grid_bool.Value;
@@ -82,7 +91,7 @@ if procpar.processing_flag
     if procpar.bottomfilter_flag
         params = struct(); % default parameters
         [fData_tot(idx_fData),params] = CFF_group_processing(...
-            @CFF_filter_bottom_detect,...
+            @CFF_filter_bottom_detect_v2,...
             fData_tot(idx_fData),params,...
             'procMsg','Filtering the bottom detections',...
             'comms','multilines');

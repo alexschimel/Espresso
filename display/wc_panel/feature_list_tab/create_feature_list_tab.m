@@ -63,7 +63,7 @@ setappdata(main_figure,'feature_list_tab',feature_list_tab_comp);
 % Load existing features
 features = getappdata(main_figure,'features');
 
-folder = fullfile(Espresso_user_folder,'feature_files');
+folder = fullfile(espresso_user_folder,'feature_files');
 listing = dir(folder);
 
 for ii = 1:numel(listing)
@@ -159,7 +159,7 @@ switch src.ColumnName{idx_data}
         end
 end
 
-features(idx_feature).feature_to_shapefile(fullfile(Espresso_user_folder,'feature_files'));
+features(idx_feature).feature_to_shapefile(fullfile(espresso_user_folder,'feature_files'));
 
 setappdata(main_figure,'features',features);
 
@@ -367,11 +367,11 @@ features_id = {features(:).Unique_ID};
 
 idx_rem = ismember(features_id,IDs);
 
-shp_files = dir(fullfile(Espresso_user_folder,'feature_files'));
+shp_files = dir(fullfile(espresso_user_folder,'feature_files'));
 
 idx_f_to_rem = contains({shp_files(:).name},features_id(idx_rem));
 
-files_to_rem = cellfun(@(x) fullfile(Espresso_user_folder,'feature_files',x),{shp_files(idx_f_to_rem).name},'un',0);
+files_to_rem = cellfun(@(x) fullfile(espresso_user_folder,'feature_files',x),{shp_files(idx_f_to_rem).name},'un',0);
 
 cellfun(@delete,files_to_rem);
 
@@ -426,7 +426,7 @@ nPoints = numel(E);
 for ii = 1:nPoints
     ID = ID+1;
     new_feature = feature_cl('Point',[E(ii) N(ii)],'Zone',zone,'ID',ID,'Description',desc{ii});
-    new_feature.feature_to_shapefile(fullfile(Espresso_user_folder,'feature_files'));
+    new_feature.feature_to_shapefile(fullfile(espresso_user_folder,'feature_files'));
     features = [features new_feature];
 end
 

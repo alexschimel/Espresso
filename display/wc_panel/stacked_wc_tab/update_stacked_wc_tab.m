@@ -45,7 +45,7 @@ ip = disp_config.Iping;
 map_tab_comp = getappdata(main_figure,'Map_tab');
 usrdata = get(map_tab_comp.ping_window,'UserData');
 iPings = usrdata.idx_pings;
-idx_angles = usrdata.idx_angles;
+subBeamKeep = usrdata.idx_angles;
 usrdata.StackAngularMode = disp_config.StackAngularMode; % add StackAngularMode
 
 % index of the current ping in the stack
@@ -76,7 +76,7 @@ else
     % otherwise, update only if we request anything different
     flag_diff_pings = ~isempty(setdiff(iPings,stacked_wc_tab_comp.wc_gh.UserData.idx_pings));
     flag_diff_line = ~(fData.ID==stacked_wc_tab_comp.wc_gh.UserData.ID);
-    flag_diff_beams = ~isempty(setxor(find(idx_angles),find(stacked_wc_tab_comp.wc_gh.UserData.idx_angles)));
+    flag_diff_beams = ~isempty(setxor(find(subBeamKeep),find(stacked_wc_tab_comp.wc_gh.UserData.idx_angles)));
     flag_diff_datatype = ~strcmpi(str_disp,stacked_wc_tab_comp.wc_gh.UserData.str_disp);
     flag_diff_mode = ~strcmpi(disp_config.StackAngularMode,stacked_wc_tab_comp.wc_gh.UserData.StackAngularMode);
     
@@ -86,8 +86,6 @@ end
 
 
 if up_stacked_wc_bool
-    
-    % profile on;
     
     % data type to grab
     datagramSource = CFF_get_datagramSource(fData);
@@ -103,128 +101,165 @@ if up_stacked_wc_bool
     % First, find the indices of pings, beams, and samples we need to
     % extract from the memmapped files.
     
-    % For pings, we'll just extract the indices of pings making up the
-    % stack.
+    % For pings, we will just extract those making up the stack
     nPings = numel(iPings);
     
-    % For beams, we'll extract the set of beams between the smallest index
-    % in the stack to the largest.
-    [iangles,~] = find(idx_angles);
-    iBeams = nanmin(iangles):nanmax(iangles);
+    % For beams, we will extract all beams between the smallest and largest
+    % index in the stack, as limited by the angles
+    [indBeamKeep,~] = find(subBeamKeep);
+    iBeams = nanmin(indBeamKeep):nanmax(indBeamKeep);
     nBeams = numel(iBeams);
     
     % For samples, it depends on stack mode
-    interSamplesDistance = CFF_inter_sample_distance(fData,ip);
-    stack_mode = disp_config.StackAngularMode;
-    switch stack_mode
+    stackMode = disp_config.StackAngularMode;
+    switch stackMode
+        case 'range'
+            % for stacking in range, we extract down to the furthest bottom
+            % detect sample (within the extracted pings and beams)
+            bottomSamples = CFF_get_bottom_sample(fData);
+            bottomSamples = bottomSamples(iBeams,iPings);
+            furthestSample = nanmax(bottomSamples(:));
         case 'depth'
-            % for stacking in depth, we will extract down to the index of
-            % the sample corresponding to the deepest bottom detect in
-            % actual depth in meters.
-            depth = fData.X_BP_bottomUpDist(iBeams,iPings); % in m
-            deepest = nanmin(depth(:)); % in m
-            idx_samples = 1:ceil(-deepest./interSamplesDistance);
-            n_res = 2;
-            dr_res = n_res*interSamplesDistance; % intersample distance per ping times. what is n_res for??
-        case'range'
-            % for stacking in range, we extract down to the index of the
-            % sample of the deepest bottom detect
-            botsamp = CFF_get_bottom_sample(fData);
-            botsamp = botsamp(iBeams,iPings);
-            idx_samples = 1:nanmax(botsamp(:));
-            n_res = 1;
+            % for stacking in depth, we extract down to the range of the
+            % deepest depth in the widest angle (within the extracted pings
+            % and beams)
+            depth = fData.X_BP_bottomUpDist(iBeams,iPings);
+            deepest = nanmin(depth(:));
+            angleRad = fData.X_BP_beamPointingAngleRad(iBeams,iPings);
+            rangeForDeepest = abs(deepest)./cos(angleRad);
+            interSamplesDistance = CFF_inter_sample_distance(fData,iPings);
+            furthestSample = ceil(max(rangeForDeepest./interSamplesDistance,[],'all'));
     end
-    nSamples = numel(idx_samples);
+    iSamples = 1:furthestSample;
+    nSamples = numel(iSamples);
     
-    % init stack WC data
-    amp_al = nan(ceil(nSamples/n_res),nPings);
+    % Initialize the stacked WC data, which is a Range (or Depth) by Pings
+    % array
+    switch stackMode
+        case 'range'
+            % for stacking in range, we will stack all samples that will be
+            % extracted. The rows are thus defined by iSamples, or in m:
+            stackY = iSamples.*CFF_inter_sample_distance(fData,ip);
+        case 'depth'
+            % for stacking in depth, we go from 0 to the deepest depth,
+            % with a depth resolution defined as a factor of the
+            % interSamplesDistance
+            fact = 2; % hard-coded factor (for now)
+            dRes = fact*min(interSamplesDistance);
+            stackY = 0:dRes:abs(deepest);            
+    end
+    stack = nan(numel(stackY),nPings,'single');
     
-    % range for each sample in this ping
-    startSampleNumber = fData.(sprintf('%s_BP_StartRangeSampleNumber',datagramSource))(iBeams,ip);
-    sampleRange = CFF_get_samples_range(idx_samples',startSampleNumber,interSamplesDistance);
-    
-    % block processing setup
-    [gpu_comp,g] = get_gpu_comp_stat();
-    if gpu_comp
-        blockLength = ceil(g.AvailableMemory/(nSamples*nBeams*8*4*8));
+    % setup GPU
+    if CFF_is_parallel_computing_available()
+        useGpu = 1;
+        processingUnit = 'GPU';
     else
-        mem = CFF_memory_available;
-        blockLength = ceil(mem/(nSamples/n_res*nBeams*8)/10);
+        useGpu = 0;
+        processingUnit = 'CPU';
     end
-    nBlocks = ceil(nPings/(blockLength));
-    blocks = [ 1+(0:nBlocks-1)'.*blockLength , (1:nBlocks)'.*blockLength ];
     
-    try
-        blocks(end,2) = nPings;
-    catch
-        XXX
+    % number of big block variables in each mode
+    switch stackMode
+        case 'range'
+            maxNumBlockVar = 1;
+        case 'depth'
+            maxNumBlockVar = 4;
     end
+    
+    % setup block processing
+    [blocks,info] = CFF_setup_optimized_block_processing(...
+        nPings,nSamples*nBeams*4,...
+        processingUnit,...
+        'desiredMaxMemFracToUse',0.1,...
+        'maxNumBlockVar',maxNumBlockVar);
+    % disp(info);
     
     % block processing
-    for iB = 1:nBlocks
+    for iB = 1:size(blocks,1)
         
         % list of pings in this block
         blockPings  = (blocks(iB,1):blocks(iB,2));
         
         % get WC data
-        WC_data = CFF_get_WC_data(fData,fieldN,'iPing',iPings(blockPings),'iBeam',iBeams,'iRange',idx_samples);
-        if isempty(WC_data)
+        blockWCD = CFF_get_WC_data(fData,fieldN,'iPing',iPings(blockPings),'iBeam',iBeams,'iRange',iSamples);
+        if isempty(blockWCD)
             continue;
         end
         
-        % set to nan the beams that are not part of the stack
-        WC_data(:,~idx_angles(iBeams,blockPings)) = NaN;
+        % set to NaN the beams that are not part of the stack
+        blockWCD(:,~subBeamKeep(iBeams,blockPings)) = NaN;
         
-        switch stack_mode
-            case 'depth'
-                % BP array of pointing angles in rad
-                angleData = fData.(sprintf('%s_BP_BeamPointingAngle',datagramSource))(iBeams,iPings(blockPings))/180*pi;
-                
-                [~,sampleUpDist] = CFF_get_samples_dist(sampleRange,angleData);
-                idx_accum = ceil(-sampleUpDist/dr_res);
-                idx_accum(idx_accum>size(sampleUpDist,1)) = size(sampleUpDist,1);
-                idx_pings_mat = shiftdim(blockPings,-1);
-                idx_pings_mat = repmat(idx_pings_mat-blockPings(1)+1,size(idx_accum,1),size(idx_accum,2));
-                
-                if gpu_comp>0 && g.AvailableMemory/8<=numel(WC_data)*4
-                    g = gpuDevice(1);
-                end
-                
-                if gpu_comp>0 && g.AvailableMemory/8>=numel(WC_data)*4
-                    idx_nan = isnan(WC_data);
-                    WC_data(idx_nan) = [];
-                    idx_accum(idx_nan) = [];
-                    idx_pings_mat(idx_nan) = [];
-                    
-                    tmp = accumarray(gpuArray([idx_accum(:) idx_pings_mat(:)]),gpuArray(10.^(WC_data(:)/10)),[],@sum,single(0))./...
-                        accumarray(gpuArray([idx_accum(:) idx_pings_mat(:)]),gpuArray(1),[],@sum);
-                    amp_al(1:size(tmp,1),blockPings) = gather(10*log10(tmp));
-                    
-                else
-                    tmp = accumarray([idx_accum(:) idx_pings_mat(:)],10.^(WC_data(:)/10),[],@nanmean,single(0));
-                    amp_al(1:size(tmp,1),blockPings) = 10*log10(tmp);
-                end
-                
+        if useGpu
+            blockWCD = gpuArray(blockWCD);
+        end
+        
+        switch stackMode
+            
             case 'range'
-                % average across range in natural and bring back to dB
-                block_stack = 10*log10(squeeze(nanmean(10.^(WC_data/10),2)));
+                
+                % average across beams in natural values, then back to dB
+                blockStack = 10*log10(squeeze(mean(10.^(blockWCD/10),2,'omitnan')));
                 
                 % add to final array
-                amp_al(:,blockPings) = block_stack;
+                stack(:,blockPings) = blockStack;
+                
+            case 'depth'
+                
+                % convert a couple variables here to gpuArrays so all
+                % computations downstream use the GPU and all variables
+                % become gpuArrays
+                if useGpu
+                    iSamples = gpuArray(iSamples);
+                    blockPings = gpuArray(blockPings);
+                end
+                
+                % distance upwards from sonar for each sample
+                blockStartSampleNumber = single(fData.(sprintf('%s_BP_StartRangeSampleNumber',datagramSource))(iBeams,iPings(blockPings)));
+                blockSampleRange = CFF_get_samples_range(single(iSamples'),blockStartSampleNumber,single(interSamplesDistance(blockPings)));
+                blockAngle = single(angleRad(:,blockPings));
+                [~,blockSampleUpDist] = CFF_get_samples_dist(blockSampleRange,blockAngle);
+                clear blockSampleRange % clear up memory
+                
+                % index of each sample in the depth (row) vector
+                blockIndRow = round(-blockSampleUpDist/dRes+1);
+                clear blockSampleUpDist % clear up memory
+                
+                % NaN those samples that fall outside of the desired array
+                % (typically, samples whose depth is below deepest) 
+                blockIndRow(blockIndRow<1) = NaN;
+                blockIndRow(blockIndRow>numel(stackY)) = NaN;
+                
+                % index of each sample in the ping (column) vector
+                blockIndCol = single(blockPings - blockPings(1) + 1);
+                blockIndCol = shiftdim(blockIndCol,-1); % 11P
+                blockIndCol = repmat(blockIndCol,nSamples,nBeams); %SBP
+                
+                % next: vectorize and remove any sample where we have NaNs
+                blockIndNaN = isnan(blockIndRow) | isnan(blockWCD);
+                blockIndRow(blockIndNaN) = [];
+                blockIndCol(blockIndNaN) = [];
+                blockWCD(blockIndNaN) = [];
+                clear blockIndNaN % clear up memory
+                
+                % The following used to be the only part done on gpu, using
+                % and if-then clause on: 
+                % gpuAvail>0 && g.AvailableMemory/8>=numel(block_WC_data)*4
+                
+                % average level in each stack grid cell, in natural values
+                blockStackSumVal = accumarray( [blockIndRow(:),blockIndCol(:)],...
+                    10.^(blockWCD(:)/10),[],@sum,single(0));
+                blockStackNumElem = accumarray( [blockIndRow(:),blockIndCol(:)],...
+                    single(1),[],@sum);
+                blockStackAvg = 10*log10(blockStackSumVal./blockStackNumElem);
+                clear blockIndRow blockIndCol % clear up memory
+                
+                % save in stacked array
+                stack(1:size(blockStackAvg,1),blockPings) = blockStackAvg;
+                
         end
     end
-    
-    % distance down (in m)
-    switch stack_mode
-        case 'depth'
-            sampleUpDistAl = (0:(size(amp_al,1)-1))*dr_res;
-        case 'range'
-            sampleUpDistAl = nanmean(sampleRange(:,idx_angles(iBeams,ceil(nanmean(blockPings)))),2);
-    end
-    
-    % profile off;
-    % profile viewer;
-    
+        
     % get colour extents
     cax_min = str2double(display_tab_comp.clim_min_wc.String);
     cax_max = str2double(display_tab_comp.clim_max_wc.String);
@@ -233,9 +268,9 @@ if up_stacked_wc_bool
     % alphadata
     switch str_disp
         case {'Original';'Processed'}
-            idx_keep_al = amp_al >= cax(1);
+            idx_keep_al = stack >= cax(1);
         case 'Phase'
-            idx_keep_al = amp_al ~= 0;
+            idx_keep_al = stack ~= 0;
     end
     
     usrdata.str_disp = str_disp;
@@ -243,9 +278,9 @@ if up_stacked_wc_bool
     % update stacked WC data
     set(stacked_wc_tab_comp.wc_gh,...
         'XData',iPings,...
-        'YData',sampleUpDistAl,...
-        'ZData',zeros(size(amp_al)),...
-        'CData',amp_al,...
+        'YData',stackY,...
+        'ZData',zeros(size(stack)),...
+        'CData',stack,...
         'AlphaData',idx_keep_al,...
         'Userdata',usrdata);
     
@@ -255,10 +290,10 @@ if up_stacked_wc_bool
         % in case only one ping in this view (file with 1 ping)
         xlim_stacked(2) = xlim_stacked(1)+1;
     end
-    idx_al_s = find(~isnan(nanmean(amp_al,2)),1,'first');
-    idx_al_e = find(~isnan(nanmean(amp_al,2)),1,'last');
+    idx_al_s = find(~isnan(nanmean(stack,2)),1,'first');
+    idx_al_e = find(~isnan(nanmean(stack,2)),1,'last');
     if ~isempty(idx_al_s)&&~isempty(idx_al_s)
-        ylim_stacked = [sampleUpDistAl(idx_al_s)*0.9 sampleUpDistAl(idx_al_e)*1.1];
+        ylim_stacked = [stackY(idx_al_s)*0.9 stackY(idx_al_e)*1.1];
         set(stacked_wc_tab_comp.wc_axes,...
             'XLim',xlim_stacked,...
             'Ylim',ylim_stacked,...
@@ -271,6 +306,15 @@ if up_stacked_wc_bool
     [~,fnamet,~] = fileparts(fname);
     tt = sprintf('File: %s.',fnamet);
     stacked_wc_tab_comp.wc_axes.Title.String = tt;
+    
+    % Y Label
+    switch stackMode
+        case 'range'
+            stacked_wc_tab_comp.wc_axes.YLabel.String = 'Range (m)';
+        case 'depth'
+            stacked_wc_tab_comp.wc_axes.YLabel.String = 'Depth (m)';
+    end
+    
     
 end
 
