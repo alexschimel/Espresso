@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi" xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
   <?define MajorVersion="0" ?>
-  <?define MinorVersion="19" ?>
+  <?define MinorVersion="29" ?>
   <?define BuildVersion="0" ?>
   <!-- Revision is NOT used by WiX in the upgrade procedure -->
   <?define Revision="0" ?>
@@ -171,7 +171,7 @@
     <UI>
       <Dialog Id="MCRWarningDlg" Width="300" Height="100" Title="MCR" NoMinimize="yes">
         <Control Id="Text" Type="Text" X="10" Y="10" Width="260" Height="40" TabSkip="no">
-          <Text>MCR version 9.7 (2019b) is required. You may proceed with installation, but be sure to install MCR later! You can find it here:  </Text>
+          <Text>MCR version 9.9 (2020b) is required. You may proceed with installation, but be sure to install MCR later! You can find it here:  </Text>
         </Control>
         <Control Id="MyHyperlinkControl1" Height="20" Width="60" Type="Hyperlink" X="70" Y="40">
           <Text><![CDATA[<a href="https://au.mathworks.com/products/compiler/matlab-runtime.html">Matlab MCR</a>]]></Text>

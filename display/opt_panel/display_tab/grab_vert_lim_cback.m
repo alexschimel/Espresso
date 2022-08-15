@@ -1,6 +1,11 @@
-
-%% Function
 function grab_vert_lim_cback(src,~,main_figure,ref)
+%GRAB_VERT_LIM_CBACK  One-line description
+%
+%   See also ESPRESSO.
+
+%   Authors: Yoann Ladroit (NIWA, yoann.ladroit@niwa.co.nz) and Alex
+%   Schimel (NIWA, alexandre.schimel@niwa.co.nz)
+%   2017-2021; Last revision: 27-07-2021
 
 fData_tot = getappdata(main_figure,'fData');
 

@@ -1,91 +1,15 @@
-%% this_function_name.m
+function mosaic = compute_mosaic(mosaic, fData_tot, d_lim_sonar_ref, d_lim_bottom_ref)
+%COMPUTE_MOSAIC  One-line description
 %
-% _This section contains a very short description of the function, for the
-% user to know this function is part of the software and what it does for
-% it. Example below to replace. Delete these lines XXX._
-%
-% Template of ESP3 function header. XXX
-%
-%% Help
-%
-% *USE*
-%
-% _This section contains a more detailed description of what the function
-% does and how to use it, for the interested user to have an overall
-% understanding of its function. Example below to replace. Delete these
-% lines XXX._
-%
-% This is a text file containing the basic comment template to add at the
-% start of any new ESP3 function to serve as function help. XXX
-%
-% *INPUT VARIABLES*
-%
-% _This section contains bullet points of input variables with description
-% and information. Put input variable and other valid entries or defaults
-% between | symbols so it shows as monospace. Information section to
-% contain, in order: requirement (i.e. Required/Optional/Paramter), valid
-% type (e.g. Num, Positive num, char, 1xN cell array, etc.) and default
-% value if there is one (e.g. Default: '10'). Example below to replace.
-% Delete these lines XXX._
-%
-% * |input_variable_1|: Description (Information). XXX
-% * |input_variable_2|: Description (Information). XXX
-% * |input_variable_3|: Description (Information). XXX
-%
-% *OUTPUT VARIABLES*
-%
-% _This section contains bullet points of output variables with description
-% and information. See input variables for template. Example below to
-% replace. Delete these lines XXX._
-%
-% * |output_variable_1|: Description (Information). XXX
-% * |output_variable_2|: Description (Information). XXX
-%
-% *DEVELOPMENT NOTES*
-%
-% _This section describes what features are temporary, needed future
-% developments and paper references. Example below to replace. Delete these
-% lines XXX._
-%
-% * research point 1. XXX
-% * research point 2. XXX
-%
-% *NEW FEATURES*
-%
-% _This section contains dates and descriptions of major updates. Example
-% below to replace. Delete these lines XXX._
-%
-% * YYYY-MM-DD: second version. Describes the update. XXX
-% * YYYY-MM-DD: first version. XXX
-%
-% *EXAMPLE*
-%
-% _This section contains examples of valid function calls. Note that
-% example lines start with 3 white spaces so that the publish function
-% shows them correctly as matlab code. Example below to replace. Delete
-% these lines XXX._
-%
-%   example_use_1; % comment on what this does. XXX
-%   example_use_2: % comment on what this line does. XXX
-%
-% *AUTHOR, AFFILIATION & COPYRIGHT*
-%
-% _This last section contains at least author name and affiliation. Delete
-% these lines XXX._
-%
-% Yoann Ladroit, Alexandre Schimel, NIWA. XXX
+%   See also ESPRESSO.
 
-%% Function
-function mosaic = compute_mosaic(mosaic,fData_tot)
+%   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
+%   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
+%   2017-2021; Last revision: 27-07-2021
 
 E_lim = mosaic.E_lim;
 N_lim = mosaic.N_lim;
 res   = mosaic.res;
-
-if res<mosaic.best_res
-    warning('Cannot mosaic data at higher resolution than coarsest constituent grid. Best resolution possible is %.2g m.', mosaic.best_res);
-    return
-end
 
 %% initalize the mosaic:
 % * weighted sum and total sum of weights. In absence of weights, the total
@@ -98,9 +22,8 @@ mosaicWeightedSum  = zeros(numElemGridN,numElemGridE,'single');
 mosaicTotalWeight  = zeros(numElemGridN,numElemGridE,'single');
 mosaicMaxHorizDist =   nan(numElemGridN,numElemGridE,'single');
 
-% Test if GPU is avaialble for computation and setup for it
-gpu_comp = get_gpu_comp_stat();
-if gpu_comp > 0
+% Test if GPU is available for computation and setup for it
+if CFF_is_parallel_computing_available()
     mosaicWeightedSum  = gpuArray(mosaicWeightedSum);
     mosaicTotalWeight  = gpuArray(mosaicTotalWeight);
     mosaicMaxHorizDist = gpuArray(mosaicMaxHorizDist);
@@ -111,44 +34,18 @@ for iF = 1:numel(fData_tot)
     
     % get data
     fData = fData_tot{iF};
+    if ~all(isfield(fData,{'X_1E_gridEasting' 'X_N1_gridNorthing'}))
+        continue;
+    end
     E = fData.X_1E_gridEasting;
     N = fData.X_N1_gridNorthing;
-    L = fData.X_NEH_gridLevel;
-    W = fData.X_NEH_gridDensity;
-    D = fData.X_NEH_gridMaxHorizDist;
-    if ~gpu_comp
-        if isa(L,'gpuArray')
-            L = gather(L);
-        end
-        if isa(W,'gpuArray')
-            W = gather(W);
-        end
-        if isa(D,'gpuArray')
-            D = gather(D);
-        end
-    else
-        if ~isa(L,'gpuArray')
-            L = gpuArray(L);
-        end
-        if ~isa(W,'gpuArray')
-            W = gpuArray(W);
-        end
-        if ~isa(D,'gpuArray')
-            D = gpuArray(D);
-        end
+    data = CFF_get_fData_wc_grid(fData,{'gridLevel' 'gridDensity' 'gridMaxHorizDist'}, d_lim_sonar_ref, d_lim_bottom_ref);
+    L = data{1};
+    W = data{2};
+    D = data{3};
+    if isempty(L)
+        continue;
     end
-    
-    % if L has a height dimension, average through the water-column
-    if size(L,3) > 1
-        L = nanmean(L,3);
-    end
-    if size(W,3) > 1
-        W = nansum(W,3);
-    end
-    if size(D,3) > 1
-        D = nanmax(D,3);
-    end
-    
     % remove all data outside of mosaic boundaries
     idx_keep_E = E>E_lim(1) & E<E_lim(2);
     idx_keep_N = N>N_lim(1) & N<N_lim(2);
@@ -180,12 +77,12 @@ for iF = 1:numel(fData_tot)
     D(indNan) = [];
     
     % This should not happen as it's been checked already but if no data
-    % within mosaic bounds, continue to next file 
+    % within mosaic bounds, continue to next file
     if isempty(L)
         continue;
     end
     
-    % pass grid level in natural before gridding. 
+    % pass grid level in natural before gridding.
     L = 10.^(L./10);
     
     % data indices in the mosaic
@@ -211,7 +108,7 @@ for iF = 1:numel(fData_tot)
     sz   = single([N_N N_E]);     % size of ouptut
     
     % calculate the sum of weights per mosaic cell, and the sum of weighted
-    % levels per mosaic cell 
+    % levels per mosaic cell
     mosaicTotalWeightTemp = accumarray(subs,W',sz,@sum,single(0));
     mosaicWeightedSumTemp = accumarray(subs,W'.*L',sz,@sum,single(0));
     

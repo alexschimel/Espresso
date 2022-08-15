@@ -1,108 +1,29 @@
-%% this_function_name.m
-%
-% _This section contains a very short description of the function, for the
-% user to know this function is part of the software and what it does for
-% it. Example below to replace. Delete these lines XXX._
-%
-% Template of ESP3 function header. XXX
-%
-%% Help
-%
-% *USE*
-%
-% _This section contains a more detailed description of what the function
-% does and how to use it, for the interested user to have an overall
-% understanding of its function. Example below to replace. Delete these
-% lines XXX._
-%
-% This is a text file containing the basic comment template to add at the
-% start of any new ESP3 function to serve as function help. XXX
-%
-% *INPUT VARIABLES*
-%
-% _This section contains bullet points of input variables with description
-% and information. Put input variable and other valid entries or defaults
-% between | symbols so it shows as monospace. Information section to
-% contain, in order: requirement (i.e. Required/Optional/Paramter), valid
-% type (e.g. Num, Positive num, char, 1xN cell array, etc.) and default
-% value if there is one (e.g. Default: '10'). Example below to replace.
-% Delete these lines XXX._
-%
-% * |input_variable_1|: Description (Information). XXX
-% * |input_variable_2|: Description (Information). XXX
-% * |input_variable_3|: Description (Information). XXX
-%
-% *OUTPUT VARIABLES*
-%
-% _This section contains bullet points of output variables with description
-% and information. See input variables for template. Example below to
-% replace. Delete these lines XXX._
-%
-% * |output_variable_1|: Description (Information). XXX
-% * |output_variable_2|: Description (Information). XXX
-%
-% *DEVELOPMENT NOTES*
-%
-% _This section describes what features are temporary, needed future
-% developments and paper references. Example below to replace. Delete these
-% lines XXX._
-%
-% * research point 1. XXX
-% * research point 2. XXX
-%
-% *NEW FEATURES*
-%
-% _This section contains dates and descriptions of major updates. Example
-% below to replace. Delete these lines XXX._
-%
-% * YYYY-MM-DD: second version. Describes the update. XXX
-% * YYYY-MM-DD: first version. XXX
-%
-% *EXAMPLE*
-%
-% _This section contains examples of valid function calls. Note that
-% example lines start with 3 white spaces so that the publish function
-% shows them correctly as matlab code. Example below to replace. Delete
-% these lines XXX._
-%
-%   example_use_1; % comment on what this does. XXX
-%   example_use_2: % comment on what this line does. XXX
-%
-% *AUTHOR, AFFILIATION & COPYRIGHT*
-%
-% _This last section contains at least author name and affiliation. Delete
-% these lines XXX._
-%
-% Yoann Ladroit, Alexandre Schimel, NIWA. XXX
-
-%% Function
 function up_wc = update_map_tab(main_figure,varargin)
+%UPDATE_MAP_TAB  Updates map tab in Espresso Map panel
+%
+%   See also CREATE_MAP_TAB, INITIALIZE_DISPLAY, ESPRESSO
 
+%   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
+%   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
+%   2017-2021; Last revision: 11-11-2021
 
-%% INTRO
+%% INIT
 
-% input parser
 p = inputParser;
 addOptional(p,'new_grid_flag',0);
 addOptional(p,'new_mosaic_flag',0);
 addOptional(p,'auto_zoom_extent_flag',0);
 addOptional(p,'update_line_index',[]); % if empty update all lines
 addOptional(p,'update_poly',0); % if empty update all lines
-
 parse(p,varargin{:});
-new_grid_flag = p.Results.new_grid_flag;
-new_mosaic_flag = p.Results.new_mosaic_flag;
+new_grid_flag         = p.Results.new_grid_flag;
+new_mosaic_flag       = p.Results.new_mosaic_flag;
 auto_zoom_extent_flag = p.Results.auto_zoom_extent_flag;
-update_line_index = p.Results.update_line_index;
-update_poly = p.Results.update_poly;
-
-% display on devpt version
-if ~isdeployed()
-    disp('Update Map Tab');
-end
+update_line_index     = p.Results.update_line_index;
+update_poly           = p.Results.update_poly;
 
 % up_wc will be 0 if the function finishes before updating all objects (ie.
-% sliding windows etc), so that we not open wc tabs in that case.
+% sliding windows etc), so that we do not open wc tabs in that case.
 up_wc = 0;
 
 % exit if no data loaded
@@ -132,7 +53,6 @@ if ip > numel(fData.X_1P_pingE)
     return;
 end
 
-
 % get map axes
 map_tab_comp = getappdata(main_figure,'Map_tab');
 ax = map_tab_comp.map_axes;
@@ -140,7 +60,6 @@ ax = map_tab_comp.map_axes;
 % initialize xlim and ylim for zoom extent
 xlim = [nan nan];
 ylim = [nan nan];
-
 
 
 %% DISPLAY LINES' NAVIGATION AND GRIDS
@@ -156,8 +75,10 @@ update_line_index = unique(update_line_index);
 % set of active lines
 fdata_tab_comp = getappdata(main_figure,'fdata_tab');
 idx_active_lines = cell2mat(fdata_tab_comp.table.Data(:,3));
-cax=[nan nan];
-update_cax=0;
+
+cax = [nan nan];
+update_cax = 0;
+
 for i = update_line_index(:)'
     
     % settings for navigation lines
@@ -174,37 +95,54 @@ for i = update_line_index(:)'
     % get data
     fData = fData_tot{i};
     
-    %% Navigation
+    
+    %% Navigation tracks
     tag_id_nav = num2str(fData.ID,'%.0f_nav');
     obj = findobj(ax,'Tag',tag_id_nav);
     
     if isempty(obj)
-        % line to be drawn for the first time
+        % line doesn't exist. To be drawn for the first time
+        
         [~,fname,ext] = fileparts(fData.ALLfilename{1});
         user_data.Filename = [fname ext];
         
-        % draw line navigation and ID it
-        handle_plot_1 = plot(ax,fData.X_1P_pingE,fData.X_1P_pingN,'Tag',tag_id_nav,...
-            'Visible','on','Color',nav_col,'ButtonDownFcn',{@disp_wc_ping_cback,main_figure},'UserData',user_data);
+        % draw line navigation, with filename, ID, and callback when
+        % clicking on it
+        handle_plot_1 = plot(ax,fData.X_1P_pingE,fData.X_1P_pingN,...
+            'Tag',tag_id_nav,...
+            'Visible','on',...
+            'Color',nav_col,...
+            'ButtonDownFcn',{@disp_wc_ping_cback,main_figure},...
+            'UserData',user_data);
         
-        % draw dots as subsampled navigation
-        df = 50;
-        handle_plot_2 = plot(ax,[fData.X_1P_pingE(1:df:end),fData.X_1P_pingE(end)],[fData.X_1P_pingN(1:df:end),fData.X_1P_pingN(end)],'.','Tag',tag_id_nav,...
-            'Visible','on','Color',nav_col,'ButtonDownFcn',{@disp_wc_ping_cback,main_figure},'UserData',user_data);
+        % draw points every dt seconds as subsampled navigation
+        dt = 120; % in seconds
+        % tt = nanmean(diff(fData.X_1P_pingTSMIM/1e3));
+        idx_f = mod(floor(fData.X_1P_pingTSMIM/1e2)/10,dt)==0;
+        idx_f(1) = 1;
+        idx_f(end) = 1;
         
+        handle_plot_2 = plot(ax,fData.X_1P_pingE(idx_f),fData.X_1P_pingN(idx_f),'.',...
+            'Tag',tag_id_nav,...
+            'Visible','on',...
+            'Color',nav_col,...
+            'ButtonDownFcn',{@disp_wc_ping_cback,main_figure},...
+            'UserData',user_data);
+        
+        % combine the two
         handle_plot = [handle_plot_1 handle_plot_2];
         
-        % set hand pointer when on that line
-        pointerBehavior.enterFcn    = [];
-        pointerBehavior.exitFcn     = @(src, evt) exit_plot_fcn(src, evt,handle_plot);
-        pointerBehavior.traverseFcn = @(src, evt) traverse_plot_fcn(src, evt,handle_plot);
+        % set pointer interaction with the line
+        pointerBehavior.enterFcn    = []; % Called when the mouse pointer moves over the object.
+        pointerBehavior.exitFcn     = @(src, evt) exit_plot_fcn(src, evt,handle_plot); % Called when the mouse pointer leaves the object.
+        pointerBehavior.traverseFcn = @(src, evt) traverse_plot_fcn(src, evt,handle_plot); % Called once when the mouse pointer moves over the object, and called again each time the mouse moves within the object.
         iptSetPointerBehavior(handle_plot,pointerBehavior);
         
         % draw circle as start of line
         plot(ax,fData.X_1P_pingE(1),fData.X_1P_pingN(1),'o','Tag',tag_id_nav,'Visible','on','Color',nav_col);
         
         % draw end of line
-        % plot(ax,fData.X_1P_pingE(end),fData.X_1P_pingN(end),'s','Tag',tag_id_nav,'Visible','on','Color',nav_col);
+        plot(ax,fData.X_1P_pingE(end),fData.X_1P_pingN(end),'s','Tag',tag_id_nav,'Visible','on','Color',nav_col);
         
     else
         % line already exists, just set to proper color
@@ -215,7 +153,7 @@ for i = update_line_index(:)'
     end
     
     
-    %% Processed water column grid
+    %% Data being displayed
     tag_id_wc = num2str(fData.ID,'%.0f_wc');
     obj_wc = findobj(ax,'Tag',tag_id_wc);
     
@@ -227,90 +165,70 @@ for i = update_line_index(:)'
     end
     
     if isempty(obj_wc) && ...
-            isfield(fData,'X_1E_gridEasting')
-        % grid to be drawn for the first time
-        % get vertical mean whether data is in 2D already or in 3D
-        E = fData.X_1E_gridEasting;
-        N = fData.X_N1_gridNorthing;
+            ((isfield(fData,'X_1E_gridEasting')&&strcmpi(disp_config.Var_disp,'wc_int'))||...
+            ((isfield(fData,'X_1E_2DgridEasting')&&strcmpi(disp_config.Var_disp,'bs')))||...
+            ((isfield(fData,'X_1E_2DgridEasting')&&strcmpi(disp_config.Var_disp,'bathy'))))
         
+        % grab and adjust data to be displayed
         switch disp_config.Var_disp
+            
             case 'wc_int'
-                % grab data
                 
-                L = fData.X_NEH_gridLevel;
+                E = fData.X_1E_gridEasting;
+                N = fData.X_N1_gridNorthing;
                 
-                if isa(L,'gpuArray')
-                    L = gather(L);
+                % get vertical extent of 3D grid displayed
+                display_tab_comp = getappdata(main_figure,'display_tab');
+                d_lim_sonar_ref = [sscanf(display_tab_comp.d_line_min.Label,'%fm') sscanf(display_tab_comp.d_line_max.Label,'%fm')];
+                d_lim_bottom_ref = [sscanf(display_tab_comp.d_line_bot_min.Label,'%fm') sscanf(display_tab_comp.d_line_bot_max.Label,'%fm')];
+                
+                % get data
+                data = CFF_get_fData_wc_grid(fData,{'gridLevel'},d_lim_sonar_ref,d_lim_bottom_ref);
+                data = data{1};
+                if isa(data,'gpuArray')
+                    data = gather(data);
                 end
                 
-                if size(L,3)>1
-                    display_tab_comp=getappdata(main_figure,'display_tab');
-                    
-                    
-                    switch fData.X_grid_reference
-                        case {'depth below sonar' 'Sonar'}
-                            d_max=0;
-                            d_min=nanmin(fData.X_BP_bottomHeight(:));
-                            d_line_max=nanmin(sscanf(display_tab_comp.d_line_max.Label,'%fm'),d_max);
-                            d_line_min=nanmax(sscanf(display_tab_comp.d_line_min.Label,'%fm'),d_min);
-                            idx_rem=(squeeze(fData.X_11H_gridHeight)+fData.X_1_gridVerticalResolution/2<d_line_min)|(squeeze(fData.X_11H_gridHeight)-fData.X_1_gridVerticalResolution/2>d_line_max);
-                        case {'height above bottom' 'Bottom'}
-                            d_max=nanmax(abs(nanmin(fData.X_BP_bottomHeight(:))));
-                            d_min=0;
-                            d_line_max=nanmin(sscanf(display_tab_comp.d_line_bot_max.Label,'%fm'),d_max);
-                            d_line_min=nanmax(sscanf(display_tab_comp.d_line_bot_min.Label,'%fm'),d_min);
-                            
-                            idx_rem=(squeeze(fData.X_11H_gridHeight)+fData.X_1_gridVerticalResolution/2<d_line_min)|(squeeze(fData.X_11H_gridHeight)-fData.X_1_gridVerticalResolution/2>d_line_max);
-                    end
-                    
-                         if ~all(idx_rem)
-                             L(:,:,idx_rem)=nan;
-                             data = 20*log10(nanmean(10.^(L(:,:,:)/20),3));
-                         else
-                            [~,id_keep]=nanmin(abs(squeeze(fData.X_11H_gridHeight)-d_line_min));
-                            data = L(:,:,id_keep);
-                        end
-                            
-                    
-                    
-                    
-                    
-                else
-                    data = L;
-                end
-                
-                % other cases perhaps for later devpt
             case 'bathy'
+                
+                E = fData.X_1E_2DgridEasting;
+                N = fData.X_N1_2DgridNorthing;
                 data = fData.X_NE_bathy;
+                
             case 'bs'
+                
+                E = fData.X_1E_2DgridEasting;
+                N = fData.X_N1_2DgridNorthing;
                 data = fData.X_NE_bs;
+                
             otherwise
-                data=nan(numel(N),numel(E));
+                % other cases perhaps for later devpt
+                E = fData.X_1E_2DgridEasting;
+                N = fData.X_N1_2DgridNorthing;
+                data = nan(numel(N),numel(E));
+                
         end
         
-        obj_wc = imagesc(ax,E,N,data,'Visible',wc_vis,'Tag',tag_id_wc);
-        % draw grid as imagesc. Tag appropriately
+        % data display
+        if ~isempty(E)
+            obj_wc = imagesc(ax,E,N,data,'Visible',wc_vis,'Tag',tag_id_wc);
+        end
+        
         % NOTE: used to allow clicking on a grid to select a line/ping for
         % display but this conflicts with panning
         % obj_wc = imagesc(ax,E,N,data,'Visible',wc_vis,'Tag',tag_id_wc,'ButtonDownFcn',{@disp_wc_ping_cback,main_figure});
         
-       update_cax=1;
+        update_cax = 1;
         
     else
-        % grid already exists, just make visible if disp is checked
+        % data already exists, just make visible if disp is checked
         
         set(obj_wc,'Visible',wc_vis);
         
     end
     
-    
-    
-    
     % push grid to the bottom of the display stack so navigation is ontop
     uistack(obj_wc,'bottom');
-    
-    
-    
     
     %% Calculate zoom extents
     if idx_active_lines(i)
@@ -335,32 +253,40 @@ for i = update_line_index(:)'
     
 end
 
-if update_cax >0
+%% update map colour scale
+if update_cax > 0
+    
     switch disp_config.Var_disp
+        
         case 'wc_int'
-            cax= disp_config.get_cax();
+            cax = disp_config.get_cax();
+            
         case {'bathy' 'bs'}
             obj_wc_img = findobj(ax,'Type','image');
             if ~isempty(obj_wc_img)
-                for uii=1:numel(obj_wc_img)
-                    if contains(obj_wc_img(uii).Tag,'_wc')&&strcmpi(obj_wc_img(uii).Visible,'On')
-                        data=obj_wc_img(uii).CData;
-                        cax= [nanmin(prctile(data(:),5),cax(1)) nanmax(prctile(data(:),95),cax(2))];
+                for uii = 1:numel(obj_wc_img)
+                    if contains(obj_wc_img(uii).Tag,'_wc') && strcmpi(obj_wc_img(uii).Visible,'On')
+                        data = obj_wc_img(uii).CData;
+                        cax = [nanmin(prctile(data(:),2),cax(1)) nanmax(prctile(data(:),95),cax(2))];
+                        if all(cax==0)
+                            cax = [0 1];
+                        end
                     end
                 end
                 
             end
     end
+    
 end
 
 if all(~isnan(cax))
     switch disp_config.Var_disp
         case 'wc_int'
-            disp_config.Cax_wc_int=cax;
+            disp_config.Cax_wc_int = cax;
         case 'bs'
-            disp_config.Cax_bs= cax;
+            disp_config.Cax_bs = cax;
         case 'bathy'
-            disp_config.Cax_bathy= cax;
+            disp_config.Cax_bathy = cax;
     end
 end
 
@@ -448,57 +374,50 @@ end
 %% SLIDING WINDOW POLYGON
 
 IDs = cellfun(@(c) c.ID,fData_tot);
-
-if ~ismember(disp_config.Fdata_ID , IDs)
+if ~ismember(disp_config.Fdata_ID,IDs)
     return;
 end
-
 fData = fData_tot{disp_config.Fdata_ID==IDs};
 
-% save info in usrdata as an ID
-usrdata.ID = fData.ID;
-%wc_tab_comp  = getappdata(main_figure,'wc_tab');
-display_tab_comp = getappdata(main_figure,'display_tab');
-wc_str = display_tab_comp.data_disp.String;
-str_disp = wc_str{display_tab_comp.data_disp.Value};
-usrdata.str_disp = str_disp;
-
-
-% if isempty(new_vert)
-%     return;
-% end
-if isfield(map_tab_comp.ping_window.UserData,'idx_pings')
-    idx_pings_ori=map_tab_comp.ping_window.UserData.idx_pings;
-    ID_ori=map_tab_comp.ping_window.UserData.ID;
-else
-    idx_pings_ori=[];
-end
-
-if ~any(ip==idx_pings_ori)||disp_config.Fdata_ID~=ID_ori||update_poly
+% update sliding window polygon only if...
+if update_poly || ... % forcing update
+        ~isfield(map_tab_comp.ping_window.UserData,'idx_pings') || ... % polygon doesn't exist yet
+        disp_config.Fdata_ID~=map_tab_comp.ping_window.UserData.ID || ... % we changed line
+        ~any(ip==map_tab_comp.ping_window.UserData.idx_pings) % ping is outside current polygon
+    
+    % data type
+    display_tab_comp = getappdata(main_figure,'display_tab');
+    wc_str = display_tab_comp.data_disp.String;
+    str_disp = wc_str{display_tab_comp.data_disp.Value};
+    
+    % get polygon vertices and indeices of pings and beams
     [new_vert,idx_pings,idx_angles] = poly_vertices_from_fData(fData,disp_config,[]);
     
-    
-    % save all of these in usrdata for later retrieval in stacked view
-    usrdata.idx_pings  = idx_pings;
-    usrdata.idx_angles = idx_angles;
+    % save all of these in UserData for later retrieval in stacked view
+    UserData = struct();
+    UserData.ID = fData.ID;
+    UserData.str_disp = str_disp;
+    UserData.idx_pings  = idx_pings;
+    UserData.idx_angles = idx_angles;
+    map_tab_comp.ping_window.UserData = UserData;
     
     % update vertices and tag in sliding window polygon
     map_tab_comp.ping_window.Shape.Vertices = new_vert;
     map_tab_comp.ping_window.Tag = sprintf('%.0f0_pingwindow',fData.ID);
     
-    % add usrdata for later retrieval in stacked view
-    map_tab_comp.ping_window.UserData = usrdata;
-    
     % update xlim and ylim
-    xlim(1) = nanmin(xlim(1),nanmin(new_vert(:,1)));
-    xlim(2) = nanmax(xlim(2),nanmax(new_vert(:,1)));
-    ylim(1) = nanmin(ylim(1),nanmin(new_vert(:,2)));
-    ylim(2) = nanmax(ylim(2),nanmax(new_vert(:,2)));
+    if ~isempty(new_vert)
+        xlim(1) = nanmin(xlim(1),nanmin(new_vert(:,1)));
+        xlim(2) = nanmax(xlim(2),nanmax(new_vert(:,1)));
+        ylim(1) = nanmin(ylim(1),nanmin(new_vert(:,2)));
+        ylim(2) = nanmax(ylim(2),nanmax(new_vert(:,2)));
+    end
 end
 
-%% CURRENT PING SWATH LINE
-set(map_tab_comp.ping_swathe,'XData',fData.X_BP_bottomEasting(:,ip),'YData',fData.X_BP_bottomNorthing(:,ip));
 
+%% CURRENT PING SWATH LINE
+
+set(map_tab_comp.ping_swathe,'XData',fData.X_BP_bottomEasting(:,ip),'YData',fData.X_BP_bottomNorthing(:,ip));
 
 % update xlim and ylim
 xlim(1) = nanmin(xlim(1),nanmin(fData.X_BP_bottomEasting(:,ip)));
@@ -508,7 +427,6 @@ ylim(2) = nanmax(ylim(2),nanmax(fData.X_BP_bottomNorthing(:,ip)));
 
 % set ping swathe back ontop so it can be grabbed
 uistack(map_tab_comp.ping_swathe,'top');
-
 
 
 %% ZOOM VIEW ADJUST
@@ -558,32 +476,42 @@ end
 
 %% SUBFUNCTIONS
 
+%%
 function traverse_plot_fcn(src,~,hplot)
+%TRAVERSE_PLOT_FCN Called when mouse pointer on a line
+
 set(src, 'Pointer', 'hand');
 ax = ancestor(hplot(1),'axes');
 cp = ax.CurrentPoint;
 objt = findobj(ax,'Tag','tooltipt');
 xlim = get(ax,'XLim');
 dx = diff(xlim)/1e2;
+
+txt = hplot(1).UserData.Filename; % tooltip text
+ttpos = [cp(1,1)+dx,cp(1,2)]; % tooltip position
+
 if isempty(objt)
-    text(ax,cp(1,1)+dx,cp(1,2),hplot(1).UserData.Filename,'Tag','tooltipt','EdgeColor','k','BackgroundColor','y','VerticalAlignment','Bottom','Interpreter','none');
+    % tip doesn't exist yet, create it
+    text(ax,ttpos(1),ttpos(2),txt,...
+        'Tag','tooltipt',...
+        'EdgeColor','k',...
+        'BackgroundColor','y',...
+        'VerticalAlignment','Bottom',...
+        'Interpreter','none');
 else
-    set(objt,'Position',[cp(1,1)+dx,cp(1,2)],'String',hplot(1).UserData.Filename);
-end
-% obj = findobj(ax,'Tag','tooltip');
-% if isempty(obj)
-%
-%     plot(ax,cp(1,1),cp(1,2),'Marker','o','MarkerEdgeColor','r','MarkerFaceColor','k','MarkerSize',6,'Tag','tooltip');
-% else
-%      set(obj,'XData',cp(1,1),'YData',cp(1,2));
-% end
+    % update existing tip's position and text
+    set(objt,'Position',ttpos,...
+        'String',txt);
 end
 
+end
+
+%%
 function exit_plot_fcn(src,~,hplot)
-set(src, 'Pointer', 'hand');
+%EXIT_PLOT_FCN Called when mouse pointer leaves a line
+
+set(src, 'Pointer', 'arrow');
 ax = ancestor(hplot(1),'axes');
-% obj = findobj(ax,'Tag','tooltip');
-% delete(obj);
 objt = findobj(ax,'Tag','tooltipt');
 delete(objt);
 end

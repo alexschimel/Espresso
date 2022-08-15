@@ -1,40 +1,13 @@
-%% remove_interactions.m
-%
-% Initialize user interactions with ESP3 main figure, new version, in
-% developpement
-%
-%% Help
-%
-% *USE*
-%
-% TODO
-%
-% *INPUT VARIABLES*
-%
-% * |main_figure|: Handle to main ESP3 window (Required).
-%
-% *OUTPUT VARIABLES*
-%
-% NA
-%
-% *RESEARCH NOTES*
-%
-% TODO
-%
-% *NEW FEATURES*
-%
-% * 2017-06-29: first version (Yoann Ladroit)
-%
-% *EXAMPLE*
-%
-% TODO
-%
-% *AUTHOR, AFFILIATION & COPYRIGHT*
-%
-% Yoann Ladroit, NIWA. Type |help EchoAnalysis.m| for copyright information.
-
-%% Function
 function remove_interactions(main_figure)
+%REMOVE_INTERACTIONS  Initialize user interactions with Espresso
+%
+%   New version, in development
+%
+%   See also ESPRESSO.
+
+%   Authors: Yoann Ladroit (NIWA, yoann.ladroit@niwa.co.nz) and Alex
+%   Schimel (NIWA, alexandre.schimel@niwa.co.nz)
+%   2017-2021; Last revision: 29-06-2017
 
 interactions = getappdata(main_figure,'interactions_id');
 

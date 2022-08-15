@@ -1,24 +1,11 @@
-%% compile_espresso.m
-%
-% Compiles Espresso
-%
-%% Help
-%
-% *USE*
-%
-% Just specify path and name of the .m file of the main function (normally
-% "Espresso.m") 
-%
-% *EXAMPLE*
-%
-%  compile_espresso(pwd,'Espresso.m'); % if in the right folder
-%
-% *AUTHOR, AFFILIATION & COPYRIGHT*
-%
-% Yoann Ladroit, Alexandre Schimel, NIWA.
-
-%% Function
 function compile_espresso(root_folder,nomFunc)
+%COMPILE_ESPRESSO  Compile Espresso into an executable
+%
+%   See also ESPRESSO. 
+
+%   Authors: Alex Schimel (NGU, alexandre.schimel@ngu.no) and Yoann Ladroit
+%   (NIWA, yoann.ladroit@niwa.co.nz)
+%   2017-2022; Last revision: 12-08-2022
 
 folders = folders_list(root_folder);
 
@@ -49,11 +36,12 @@ end
 
 function folders = folders_list(path)
 
-folders{1} = fullfile(path, 'toolboxes');
-folders{2} = fullfile(path, 'processing');
-folders{3} = fullfile(path, 'classes');
-folders{4} = fullfile(path, 'display');
-folders{5} = fullfile(path, 'io');
+folders{1} = fullfile(path, 'general');
+folders{2} = fullfile(path, 'toolboxes');
+folders{3} = fullfile(path, 'processing');
+folders{4} = fullfile(path, 'classes');
+folders{5} = fullfile(path, 'display');
+folders{6} = fullfile(path, 'io');
 
 folders(cellfun(@isempty, folders)) = [];
 

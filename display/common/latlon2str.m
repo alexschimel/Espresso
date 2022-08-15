@@ -1,98 +1,35 @@
-%% this_function_name.m
+function [lat_str,lon_str] = latlon2str(lat,lon)
+%LATLON2STR  Convert lat long from numeric to string
 %
-% _This section contains a very short description of the function, for the
-% user to know this function is part of the software and what it does for
-% it. Example below to replace. Delete these lines XXX._
-%
-% Template of ESP3 function header. XXX
-%
-%% Help
-%
-% *USE*
-%
-% _This section contains a more detailed description of what the function
-% does and how to use it, for the interested user to have an overall
-% understanding of its function. Example below to replace. Delete these
-% lines XXX._
-%
-% This is a text file containing the basic comment template to add at the
-% start of any new ESP3 function to serve as function help. XXX
-%
-% *INPUT VARIABLES*
-%
-% _This section contains bullet points of input variables with description
-% and information. Put input variable and other valid entries or defaults
-% between | symbols so it shows as monospace. Information section to
-% contain, in order: requirement (i.e. Required/Optional/Paramter), valid
-% type (e.g. Num, Positive num, char, 1xN cell array, etc.) and default
-% value if there is one (e.g. Default: '10'). Example below to replace.
-% Delete these lines XXX._
-%
-% * |input_variable_1|: Description (Information). XXX
-% * |input_variable_2|: Description (Information). XXX
-% * |input_variable_3|: Description (Information). XXX
-%
-% *OUTPUT VARIABLES*
-%
-% _This section contains bullet points of output variables with description
-% and information. See input variables for template. Example below to
-% replace. Delete these lines XXX._
-%
-% * |output_variable_1|: Description (Information). XXX
-% * |output_variable_2|: Description (Information). XXX
-%
-% *DEVELOPMENT NOTES*
-%
-% _This section describes what features are temporary, needed future
-% developments and paper references. Example below to replace. Delete these
-% lines XXX._
-%
-% * research point 1. XXX
-% * research point 2. XXX
-%
-% *NEW FEATURES*
-%
-% _This section contains dates and descriptions of major updates. Example
-% below to replace. Delete these lines XXX._
-%
-% * YYYY-MM-DD: second version. Describes the update. XXX
-% * YYYY-MM-DD: first version. XXX
-%
-% *EXAMPLE*
-%
-% _This section contains examples of valid function calls. Note that
-% example lines start with 3 white spaces so that the publish function
-% shows them correctly as matlab code. Example below to replace. Delete
-% these lines XXX._
-%
-%   example_use_1; % comment on what this does. XXX
-%   example_use_2: % comment on what this line does. XXX
-%
-% *AUTHOR, AFFILIATION & COPYRIGHT*
-%
-% _This last section contains at least author name and affiliation. Delete
-% these lines XXX._
-%
-% Yoann Ladroit, Alexandre Schimel, NIWA. XXX
+%   See also ESPRESSO.
 
-%% Function
-function [lat_str,lon_str] = latlon2str(lat,lon,prec)
+%   Authors: Yoann Ladroit (NIWA, yoann.ladroit@niwa.co.nz) and Alex
+%   Schimel (NIWA, alexandre.schimel@niwa.co.nz)
+%   2017-2021; Last revision: 27-07-2021
 
-lon(lon>180) = lon(lon>180)-360;
+if lon>180||lon<0
+    e0w='W';
+    if lon>180
+        lon=abs(lon-360);
+    end
+else
+    e0w='E';
+end
 
 if lat>0
-    str_lat = 'N';
+    n0s='N';
 else
-    str_lat = 'S';
+    n0s='S';
+    lat=abs(lat);
 end
 
-if lon>180 || lon<0
-    str_lon = 'W';
-else
-    str_lon = 'E';
-end
+lat_deg=floor(abs(lat));
+lon_deg=floor(abs(lon));
+lat_min=(abs(lat)-abs(lat_deg))*60;
 
-lat_str = sprintf(['%.0f^\\circ' prec ' %s'],abs(lat),(abs(lat)-floor(abs(lat)))*1e2,str_lat);
-lon_str = sprintf(['%.0f^\\circ' prec ' %s'],abs(lon),(abs(lon)-floor(abs(lon)))*1e2,str_lon);
+lon_min=(abs(lon)-abs(lon_deg))*60;
+
+lat_str=sprintf('%d%c %05.2f'' %s',lat_deg,char(hex2dec('00BA')),lat_min,n0s);
+lon_str=sprintf('%d%c %05.2f'' %s',lon_deg,char(hex2dec('00BA')),lon_min,e0w);
 
 end

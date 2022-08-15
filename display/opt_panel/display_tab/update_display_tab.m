@@ -1,4 +1,11 @@
 function update_display_tab(main_figure)
+%UPDATE_DISPLAY_TAB  Updates display tab in Espresso Control panel
+%
+%   See also CREATE_DISPLAY_TAB, INITIALIZE_DISPLAY, ESPRESSO.
+
+%   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
+%   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
+%   2017-2021; Last revision: 21-07-2021
 
 fData_tot = getappdata(main_figure,'fData');
 
@@ -14,7 +21,7 @@ d_min=nan;
 d_max_bot=nan;
 d_min_bot=0;
 
-for ui=1:numel(fData_tot)    
+for ui=1:numel(fData_tot)
     d_min=nanmin(nanmin(fData_tot{ui}.X_BP_bottomHeight(:),d_min));
     d_max_bot=nanmax(d_max_bot,abs(d_min));
 end

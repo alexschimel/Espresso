@@ -1,152 +1,64 @@
-%% this_function_name.m
-%
-% _This section contains a very short description of the function, for the
-% user to know this function is part of the software and what it does for
-% it. Example below to replace. Delete these lines XXX._
-%
-% Template of ESP3 function header. XXX
-%
-%% Help
-%
-% *USE*
-%
-% _This section contains a more detailed description of what the function
-% does and how to use it, for the interested user to have an overall
-% understanding of its function. Example below to replace. Delete these
-% lines XXX._
-%
-% This is a text file containing the basic comment template to add at the
-% start of any new ESP3 function to serve as function help. XXX
-%
-% *INPUT VARIABLES*
-%
-% _This section contains bullet points of input variables with description
-% and information. Put input variable and other valid entries or defaults
-% between | symbols so it shows as monospace. Information section to
-% contain, in order: requirement (i.e. Required/Optional/Paramter), valid
-% type (e.g. Num, Positive num, char, 1xN cell array, etc.) and default
-% value if there is one (e.g. Default: '10'). Example below to replace.
-% Delete these lines XXX._
-%
-% * |input_variable_1|: Description (Information). XXX
-% * |input_variable_2|: Description (Information). XXX
-% * |input_variable_3|: Description (Information). XXX
-%
-% *OUTPUT VARIABLES*
-%
-% _This section contains bullet points of output variables with description
-% and information. See input variables for template. Example below to
-% replace. Delete these lines XXX._
-%
-% * |output_variable_1|: Description (Information). XXX
-% * |output_variable_2|: Description (Information). XXX
-%
-% *DEVELOPMENT NOTES*
-%
-% _This section describes what features are temporary, needed future
-% developments and paper references. Example below to replace. Delete these
-% lines XXX._
-%
-% * research point 1. XXX
-% * research point 2. XXX
-%
-% *NEW FEATURES*
-%
-% _This section contains dates and descriptions of major updates. Example
-% below to replace. Delete these lines XXX._
-%
-% * YYYY-MM-DD: second version. Describes the update. XXX
-% * YYYY-MM-DD: first version. XXX
-%
-% *EXAMPLE*
-%
-% _This section contains examples of valid function calls. Note that
-% example lines start with 3 white spaces so that the publish function
-% shows them correctly as matlab code. Example below to replace. Delete
-% these lines XXX._
-%
-%   example_use_1; % comment on what this does. XXX
-%   example_use_2: % comment on what this line does. XXX
-%
-% *AUTHOR, AFFILIATION & COPYRIGHT*
-%
-% _This last section contains at least author name and affiliation. Delete
-% these lines XXX._
-%
-% Yoann Ladroit, Alexandre Schimel, NIWA. XXX
-
-%% Function
 function disp_wc_ping_cback(src,evt,main_figure)
+%DISP_WC_PING_CBACK  Called when clicking on a navigation line on the map
+%
+%   See also UPDATE_MAP_TAB, ESPRESSO
+
+%   Authors: Yoann Ladroit (NIWA, yoann.ladroit@niwa.co.nz) and Alex
+%   Schimel (NIWA, alexandre.schimel@niwa.co.nz)
+%   2017-2021; Last revision: 27-07-2021
 
 current_figure = gcf;
 
 switch current_figure.SelectionType
     
-    case 'alt'
+    case 'normal' % left-click
         
-        map_tab_comp = getappdata(main_figure,'Map_tab');
-        ax = map_tab_comp.map_axes;
-        xlim = ax.XLim;
-        ylim = ax.YLim;
-        
-        pt0 = ax.CurrentPoint;
-        
-        replace_interaction(current_figure,'interaction','WindowButtonMotionFcn','id',2,'interaction_fcn',@wbmcb,'Pointer','hand');
-        replace_interaction(current_figure,'interaction','WindowButtonUpFcn','id',2,'interaction_fcn',@wbucb);
-        
-    case 'normal'
-        
+        % get ID of all lines
         fData_tot = getappdata(main_figure,'fData');
-        
         if isempty(fData_tot)
             return;
         end
+        IDs_tot = cellfun(@(c) c.ID,fData_tot);
         
-        IDs_tot=cellfun(@(c) c.ID,fData_tot);
+        % get ID of selection
         switch src.Type
             case 'line'
+                % clicking on nav line
                 ID = str2double(src.Tag(1:end-4));
             case 'image'
+                % clicking on grid
                 ID = str2double(src.Tag(1:end-3));
         end
         
-        idx_fData = (IDs_tot==ID);
+        % check if line is active
+        idx_fData = find(IDs_tot==ID);
+        fdata_tab_comp = getappdata(main_figure,'fdata_tab');
+        idx_active_lines = cell2mat(fdata_tab_comp.table.Data(:,3));
+        if ~idx_active_lines(idx_fData)
+            return
+        end
         
+        % get fdata of selected line
         fData = fData_tot{idx_fData};
         
+        % find nearest ping, and calculate horizontal distance from
+        % selection to line
         E = fData.X_1P_pingE;
         N = fData.X_1P_pingN;
         pt = evt.IntersectionPoint;
         [across_dist,ip] = min(sqrt((E-pt(1)).^2+(N-pt(2)).^2));
         
-        %z = E(ip)*pt(1)+ N(ip)*pt(2);
+        % correct sign of across_dist
         heading = fData.X_1P_pingHeading(ip)/180*pi;
         heading = -heading+pi/2;
         z = cross([cos(heading) sin(heading) 0], [pt(1)-E(ip) pt(2)-N(ip) 0]);
         z = -z(3);
+        across_dist = sign(z)*across_dist;
         
+        % get and update disp_config
         disp_config = getappdata(main_figure,'disp_config');
+        disp_config.AcrossDist = across_dist;
+        disp_config.Fdata_ID = ID;
+        disp_config.Iping = ip; % calls listenIping
         
-        disp_config.AcrossDist = sign(z)*across_dist;
-        disp_config.Fdata_ID = IDs_tot(idx_fData);
-        fprintf('Line %s Ping %d of %d\n',fData.ALLfilename{1},ip,numel(E));
-        disp_config.Iping = ip;
-        
-        
-end
-
-    function wbmcb(~,~)
-        pt = ax.CurrentPoint;
-        
-    end
-
-    function wbucb(~,~)
-        xlim_n = xlim-(pt(1,1)-pt0(1,1));
-        ylim_n = ylim-(pt(1,2)-pt0(1,2));
-        set(ax,'XLim',xlim_n,'YLim',ylim_n);
-        replace_interaction(current_figure,'interaction','WindowButtonMotionFcn','id',2,'Pointer','arrow');
-        replace_interaction(current_figure,'interaction','WindowButtonUpFcn','id',2);
-        
-    end
-
 end
