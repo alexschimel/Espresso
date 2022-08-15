@@ -17,7 +17,7 @@ function [ver, coffeeVer] = espresso_version()
 %   https://interrupt.memfault.com/blog/release-versioning
 %
 %   See also IS_COFFEE_FOLDER, GET_COFFEE_VERSION, IS_COFFEE_VERSION,
-%   ESPRESSO. 
+%   ESPRESSO.
 
 %   Authors: Alex Schimel (NGU, alexandre.schimel@ngu.no) and Yoann Ladroit
 %   (NIWA, yoann.ladroit@niwa.co.nz) 
@@ -26,6 +26,7 @@ function [ver, coffeeVer] = espresso_version()
 % RUN CFF_coffee_version() TO GET THE CURRENT VERSION, BUT WRITE IT
 % HARD-CODED HERE
 
-ver = '0.20'; coffeeVer = '2.0.0-alpha.2'; % 12/08/2022
+ver = '0.20.1'; coffeeVer = '2.0.0-alpha.3'; % 15/08/2022
+% ver = '0.20'; coffeeVer = '2.0.0-alpha.2'; % 12/08/2022
 
 end
