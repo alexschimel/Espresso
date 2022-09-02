@@ -87,8 +87,6 @@ end
 
 if up_stacked_wc_bool
     
-    params = struct();
-    
     % data type to grab
     datagramSource = CFF_get_datagramSource(fData);
     switch str_disp
@@ -100,19 +98,19 @@ if up_stacked_wc_bool
             fieldN = sprintf('%s_SBP_SamplePhase',datagramSource);
     end
     
+    % create parameters structure for CFF_stack_WCD
+    params = struct(); 
     params.dataField = fieldN;
     params.stackMode = disp_config.StackAngularMode;
-    
-    params.iPingLims = [iPings(1),iPings(end)];
-    params.iBeamLims = [1,inf];
-    params.iSampleLims = [1,inf];
-    
     params.angleDegLims = disp_config.StackAngularWidth;
+    % params.minStackY = 0; % should be default value
+    % params.maxStackY = 0; % should be default value
+    % params.resDepthStackY = 0; % should be default value
+    params.iPingLims = [iPings(1),iPings(end)];
+    % params.iBeamLims = [1,inf]; % should be default value
+    % params.iSampleLims = [1,inf]; % should be default value
     
-    params.minStackY = 5;
-    params.maxStackY = 14;
-    params.resStackY = 0;
-    
+    % stack it baby
     [stack,stackY,params] = CFF_stack_WCD(fData,params);
     
     % get colour extents
