@@ -390,7 +390,7 @@ if update_poly || ... % forcing update
     wc_str = display_tab_comp.data_disp.String;
     str_disp = wc_str{display_tab_comp.data_disp.Value};
     
-    % get polygon vertices and indeices of pings and beams
+    % get polygon vertices and indices of pings and beams
     [new_vert,idx_pings,idx_angles] = poly_vertices_from_fData(fData,disp_config,[]);
     
     % save all of these in UserData for later retrieval in stacked view
