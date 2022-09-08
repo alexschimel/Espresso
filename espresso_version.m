@@ -26,7 +26,8 @@ function [ver, coffeeVer] = espresso_version()
 % RUN CFF_coffee_version() TO GET THE CURRENT VERSION, BUT WRITE IT
 % HARD-CODED HERE
 
-ver = '0.20.2'; coffeeVer = '2.0.0-alpha.4'; % 02/09/2022
+ver = '0.20.3'; coffeeVer = '2.0.0-alpha.5'; % 08/09/2022
+% ver = '0.20.2'; coffeeVer = '2.0.0-alpha.4'; % 02/09/2022
 % ver = '0.20.1'; coffeeVer = '2.0.0-alpha.3'; % 15/08/2022
 % ver = '0.20'; coffeeVer = '2.0.0-alpha.2'; % 12/08/2022
 
