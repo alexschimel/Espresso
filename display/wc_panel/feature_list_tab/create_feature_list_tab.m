@@ -11,19 +11,19 @@ function create_feature_list_tab(main_figure,parent_tab_group)
 
 switch parent_tab_group.Type
     case 'uitabgroup'
+        % create new Feature List tab
         feature_list_tab_comp.feature_list_tab = uitab(parent_tab_group,'Title','Feature List','Tag','feature_list_tab','BackGroundColor','w');
         tab_menu = uicontextmenu(ancestor(feature_list_tab_comp.feature_list_tab,'figure'));
         uimenu(tab_menu,'Label','Undock to External Window','Callback',{@undock_tab_callback,main_figure,'feature_list','new_fig'});
         feature_list_tab_comp.feature_list_tab.UIContextMenu = tab_menu;
     case 'figure'
+        % return existing Features List tab
         feature_list_tab_comp.feature_list_tab = parent_tab_group;
 end
 
-% pos = getpixelposition(feature_list_tab_comp.wc_tab);
-
-columnname =   {'ID',     'Class',          'Description','Type',             'Min depth','Max depth','Unique_ID'};
+% create table
+columnname =   {'ID',     'Class',           'Description','Type',             'Min depth','Max depth','Unique_ID'};
 columnformat = {'numeric',init_feature_class,'char',       {'Point','Polygon'},'numeric',  'numeric',  'char'};
-
 feature_list_tab_comp.table = uitable('Parent', feature_list_tab_comp.feature_list_tab,...
     'Data', [],...
     'ColumnName', columnname,...
@@ -33,64 +33,54 @@ feature_list_tab_comp.table = uitable('Parent', feature_list_tab_comp.feature_li
     'Position',[0 0 1 1],...
     'RowName',[]);
 
+% adjust columns width
 pos_t = getpixelposition(feature_list_tab_comp.table);
-
 set(feature_list_tab_comp.table,'ColumnWidth',...
     num2cell(pos_t(3)*[0.5/10 2.5/10 2.5/10 1.5/10 1.5/10 1.5/10 0]));
 
+% add interactions and callbacks
 set(feature_list_tab_comp.table,'CellEditCallback',{@edit_features_callback,main_figure});
 set(feature_list_tab_comp.table,'CellSelectionCallback',{@activate_features_callback,main_figure});
 set(feature_list_tab_comp.feature_list_tab,'SizeChangedFcn',{@resize_table,feature_list_tab_comp.table});
 set(feature_list_tab_comp.table,'KeyPressFcn','');
 
-%% Define right-click menu
+% define right-click menu
 rc_menu = uicontextmenu(ancestor(parent_tab_group,'figure'));
-
 feature_list_tab_comp.table.UIContextMenu = rc_menu;
-
 str_importLatLong = '<HTML><center><FONT color="Black">Import Lat/Long as Point Feature(s)</Font> ';
 uimenu(rc_menu,'Label',str_importLatLong,'Callback',{@import_features_callback,main_figure});
-
 str_export = '<HTML><center><FONT color="Black">Export Selected Feature(s)</Font> ';
 uimenu(rc_menu,'Label',str_export,'Callback',{@export_features_callback,main_figure,{}});
-
 str_delete = '<HTML><center><FONT color="Red"><b>Delete Selected Feature(s)</b></Font> ';
 uimenu(rc_menu,'Label',str_delete,'Callback',{@delete_features_callback,main_figure,{}});
 
 % add all those contents to appdata
 setappdata(main_figure,'feature_list_tab',feature_list_tab_comp);
 
-% Load existing features
+% load features saved on drive from a prior Espresso session
 features = getappdata(main_figure,'features');
-
 folder = fullfile(espresso_user_folder,'feature_files');
 listing = dir(folder);
-
 for ii = 1:numel(listing)
     if ~listing(ii).isdir
-        
         filename = fullfile(listing(ii).folder, listing(ii).name);
         [~,Unique_ID,extension] = fileparts(filename);
-        
         if strcmp(extension,'.shp')
-            
+            % create new feature from shapefile
             new_feature = feature_cl('shapefile',filename,'Unique_ID',Unique_ID);
-            
             % add new feature to the list of features
             if isempty(features)
                 features = new_feature;
             else
                 features = [features new_feature];
             end
-            
         end
-        
     end
 end
 
-
+% if features were loaded, a few checks and actions are necessary
 if ~isempty(features)
-    
+
     % verify that all features have consistent UTM zone
     utmzone = unique([features.Zone]);
     if numel(utmzone)>1
@@ -118,40 +108,43 @@ update_feature_list_tab(main_figure);
 
 end
 
-%%
-% Callback when table is edited
-%
+
+%% Callback when table is edited
 function edit_features_callback(src,evt,main_figure)
 
+% get all features
 features = getappdata(main_figure,'features');
-
 if isempty(features)
     return;
 end
 
+% get selected feature/property
 if isempty(evt.Indices)
     selected_features = {};
 else
     selected_features = src.Data(evt.Indices(:,1),end);
     idx_data = evt.Indices(:,2);
 end
-
-nData = evt.NewData;
-
 idx_feature = contains({features(:).Unique_ID},selected_features);
 
+% get edited property value
+nData = evt.NewData;
+
+% saved edited property
 switch src.ColumnName{idx_data}
     case 'Class'
         features(idx_feature).Class = nData;
     case 'Description'
         features(idx_feature).Description = nData;
     case 'Min depth'
+        % save only if value acceptable
         if isnan(nData) || nData > features(idx_feature).Depth_max
             src.Data(evt.Indices(:,1),evt.Indices(:,2)) = {evt.PreviousData};
         else
             features(idx_feature).Depth_min = nData;
         end
     case 'Max depth'
+        % save only if value acceptable
         if isnan(nData) || nData < features(idx_feature).Depth_min
             src.Data(evt.Indices(:,1),evt.Indices(:,2)) = {evt.PreviousData};
         else
@@ -159,38 +152,38 @@ switch src.ColumnName{idx_data}
         end
 end
 
+% save edited feature to drive
 features(idx_feature).feature_to_shapefile(fullfile(espresso_user_folder,'feature_files'));
 
+% udpate list of features in app
 setappdata(main_figure,'features',features);
 
+% update display of feature
 display_features(main_figure,selected_features,[]);
 
-% trigger a callback to display the selected feature as active
+% trigger a select callback to display the selected feature as active on
+% map
 activate_features_callback(src,evt,main_figure)
 
 end
 
-%%
-% Callback when element in table is selected
-%
+
+%% Callback when elements in table are selected
 function activate_features_callback(src,evt,main_figure)
+% make the features active on map
 
 if isempty(evt.Indices)
     selected_features = {};
 else
     selected_features = src.Data(evt.Indices(:,1),end);
 end
-
 disp_config = getappdata(main_figure,'disp_config');
-
 disp_config.Act_features = selected_features;
 
 end
 
 
-%%
-% Callback when calling for exporting selected features
-%
+%% Callback for menu request to export features
 function export_features_callback(~,~,main_figure,IDs)
 
 disp_config = getappdata(main_figure,'disp_config');
@@ -214,10 +207,9 @@ if isempty(features)
 end
 
 % select directory for export
-file_tab_comp = getappdata(main_figure,'file_tab');
-path_ori = get(file_tab_comp.path_box,'string');
-folder_name = uigetdir(path_ori,'Select folder for features to export');
-if folder_name==0
+getDirDefPath = espresso_user_folder;
+folder_name = uigetdir(getDirDefPath,'Select folder where to export features');
+if folder_name == 0
     return;
 end
 
@@ -307,6 +299,8 @@ end
 fprintf('Export to %s finished\n',folder_name);
 end
 
+
+%%
 function [idx_pings,bot_depth] = interesect_feature_with_lines(feature,fData)
 
 idx_pings=[];
@@ -340,17 +334,17 @@ else
 end
 end
 
-%%
+
+%% Callback for menu request to delete features
 function delete_features_callback(~,~,main_figure,IDs)
 
-disp_config = getappdata(main_figure,'disp_config');
-
-features = getappdata(main_figure,'features');
-
+% if feature ID in input, ensure it's cell
 if ~iscell(IDs)
     IDs = {IDs};
 end
 
+% get active feature
+disp_config = getappdata(main_figure,'disp_config');
 if isempty(IDs)
     IDs = disp_config.Act_features;
 end
@@ -359,6 +353,8 @@ if isempty(IDs)
     return;
 end
 
+% get all features
+features = getappdata(main_figure,'features');
 if isempty(features)
     return;
 end
@@ -387,41 +383,61 @@ disp_config.Act_features = {};
 
 end
 
-%%
+
+%% Callback for menu request to import features
 function import_features_callback(~,~,main_figure)
 
+% get display config and features
 disp_config = getappdata(main_figure,'disp_config');
 features = getappdata(main_figure,'features');
 
-[file, path] = uigetfile('*.csv','Select .csv files with "Lat" and "Long" headers to import as point features');
+% prompt user for .csv file to import
+getFileDefPath = fullfile(espresso_user_folder,'*.csv');
+getFileTitle = 'Select .csv files with "Lat" and "Lon" headers to import as point features';
+[file, path] = uigetfile(getFileDefPath,getFileTitle);
+if isequal(file,0)
+    return
+end
+
+% read .csv file
 filename = fullfile(path, file);
 T = readtable(filename,'delimiter',',');
-
-% to keep just for that one project
-[~,ia] = unique(T.event_name); % first per transect
-%ia =ismember(T.event_name,{'BUN_TV33','BUN_TV39','BUN_TV76','BUN_TV72','BUN_TV39','BUN_TV24'}); % select transects
-ia =ismember(T.event_name,{'BUN_TV41','BUN_TV52'}); % select transects
-
-T = T(ia,:);
-desc = T.event_name;
-
 varnames = T.Properties.VariableNames;
+
+% get lat/long for each feature and project
 idxLat = find(startsWith(varnames,'lat','IgnoreCase',true));
 idxLon = find(startsWith(varnames,'lon','IgnoreCase',true));
-
 lat = table2array(T(:,idxLat));
 lon = table2array(T(:,idxLon));
-
 [E, N] = CFF_ll2tm(lon, lat, disp_config.MET_ellips, disp_config.MET_tmproj);
 
+% get description
+idxDesc = find(startsWith(varnames,'desc','IgnoreCase',true));
+if ~isempty(idxDesc)
+    desc = table2cell(T(:,idxDesc));
+    for ii = 1:numel(desc)
+        % description must be cell array of char
+        if isnumeric(desc{ii})
+            if isnan(desc{ii})
+                desc{ii} = '';
+            else
+                desc{ii} = num2str(desc{ii});
+            end
+        end
+    end
+else
+    desc = repmat({''},numel(lat),1);
+end
+
+% get max ID of current features
 if ~isempty(features)
     ID = nanmax([features(:).ID]);
 else
     ID = 0;
 end
 
+% save features
 zone = disp_config.get_zone();
-
 nPoints = numel(E);
 for ii = 1:nPoints
     ID = ID+1;
@@ -438,6 +454,5 @@ display_features(main_figure,{},[]);
 
 % trigger an update of the feature list tab
 update_feature_list_tab(main_figure);
-
 
 end
