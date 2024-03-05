@@ -1,13 +1,13 @@
-function cdata = iconRead(filename,guessalpha)
+function cdata = read_icon(filename,guessalpha)
 % ICONREAD read an image file and convert it to CData for a HG icon.
 %
-% CDATA = ICONREAD(FILENAME)
+% CDATA = READ_ICON(FILENAME)
 %   Read an image file and convert it to CData with automatic transparency
 %   handling. If the image has transparency data, PNG files sometimes do,
 %   the transparency data is used. If the image has no CData, the top left
 %   pixel is treated as the transparent color.
 %
-% CDATA = ICONREAD(FILENAME, FALSE)
+% CDATA = READ_ICON(FILENAME, FALSE)
 %   Same as above but supress the usage of the top left pixel for images
 %   with no transparency data. This may require the caller to handle the
 %   transparency explicitly. View the contents of this m-file for an
@@ -16,7 +16,7 @@ function cdata = iconRead(filename,guessalpha)
 % Example:
 %
 % icon = fullfile(matlabroot,'toolbox','matlab','icons','matlabicon.gif');
-% uitoggletool('CData',iconread(icon));
+% uitoggletool('CData',read_icon(icon));
 %
 % See also IMREAD.
 

@@ -7,6 +7,5 @@ function cmap = ek60_colormap()
 %   Schimel (NIWA, alexandre.schimel@niwa.co.nz)
 %   2017-2021; Last revision: 27-07-2021
 
-load(fullfile(whereisroot,'private','ek60_cmap.mat'));
-
+load('EK60_colormap.mat');
 cmap = double(ek60_cmap)/255;

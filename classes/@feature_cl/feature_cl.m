@@ -5,10 +5,10 @@ classdef feature_cl
     
     %   Authors: Yoann Ladroit (NIWA, yoann.ladroit@niwa.co.nz) and Alex
     %   Schimel (NIWA, alexandre.schimel@niwa.co.nz)
-    %   2017-2021; Last revision: 27-07-2021
+    %   2017-2024
     
     properties
-        Class = 'unidentified'; % Class of object as per types xml file
+        Class = 'unidentified'; % Feature class name
         Depth_min = 0; % Minimum depth
         Depth_max = 1e4; % Maximum depth
         Description = ' '; % Free text
@@ -27,7 +27,7 @@ classdef feature_cl
             
             % input parser
             p = inputParser;
-            check_class = @(class) ismember(class,init_feature_class());
+            check_class = @(class) ismember(class,get_feature_class_list());
             addParameter(p,'Class','unidentified',check_class);
             addParameter(p,'Depth_min',0,@isnumeric);
             addParameter(p,'Depth_max',1e4,@isnumeric);

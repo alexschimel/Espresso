@@ -5,7 +5,7 @@ function create_datafiles_tab(main_figure,parent_tab_group)
 
 %   Authors: Alex Schimel (NGU, alexandre.schimel@ngu.no) and Yoann Ladroit
 %   (NIWA, yoann.ladroit@niwa.co.nz) 
-%   2017-2022; Last revision: 12-08-2022
+%   2017-2024
 
 %% create tab variable
 switch parent_tab_group.Type
@@ -18,15 +18,12 @@ end
 
 %% folder push button
 
-% get icon
-icon = get_icons_cdata(fullfile(whereisroot(),'icons'));
-
 % create button
 file_tab_comp.path_choose = uicontrol(file_tab_comp.file_tab,'Style','pushbutton',...
     'units','normalized',...
     'pos',[0.0 0.91 0.1 0.08],...
     'String','',...
-    'Cdata',icon.folder,...
+    'Cdata',read_icon('iconFolder.gif'),...
     'callback',{@callback_select_folder,main_figure});
 
 

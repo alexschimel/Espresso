@@ -1,0 +1,301 @@
+<deployment-project plugin="plugin.ezdeploy" plugin-version="1.0">
+  <configuration build-checksum="3557758591" file="C:\Users\Schimel_Alexandre\Code\MATLAB\Espresso\Espresso.prj" location="C:\Users\Schimel_Alexandre\Code\MATLAB\Espresso" name="Espresso" preferred-package-location="C:\Users\Schimel_Alexandre\Code\MATLAB\Espresso\bin\for_redistribution" preferred-package-type="package.type.exe" target="target.ezdeploy.standalone" target-name="Application Compiler">
+    <param.appname>Espresso</param.appname>
+    <param.icon>${PROJECT_ROOT}\Espresso_resources\icon.ico</param.icon>
+    <param.icons>
+      <file>${PROJECT_ROOT}\Espresso_resources\icon_48.png</file>
+      <file>${PROJECT_ROOT}\Espresso_resources\icon_32.png</file>
+      <file>${PROJECT_ROOT}\Espresso_resources\icon_24.png</file>
+      <file>${PROJECT_ROOT}\Espresso_resources\icon_16.png</file>
+    </param.icons>
+    <param.version>0.20.4</param.version>
+    <param.authnamewatermark>Alexandre Schimel</param.authnamewatermark>
+    <param.email>alexandre.schimel@ngu.no</param.email>
+    <param.company>NIWA</param.company>
+    <param.summary>Multibeam water-column data visualization/processing</param.summary>
+    <param.description />
+    <param.screenshot>${PROJECT_ROOT}\Espresso_resources\splash.png</param.screenshot>
+    <param.guid />
+    <param.installpath.string>\Espresso\v0.20.4</param.installpath.string>
+    <param.installpath.combo>option.installpath.programfiles</param.installpath.combo>
+    <param.logo>${PROJECT_ROOT}\Espresso_resources\splash_half.png</param.logo>
+    <param.install.notes />
+    <param.target.install.notes />
+    <param.intermediate>${PROJECT_ROOT}\bin\for_testing</param.intermediate>
+    <param.files.only>${PROJECT_ROOT}\bin\for_redistribution_files_only</param.files.only>
+    <param.output>${PROJECT_ROOT}\bin\for_redistribution</param.output>
+    <param.logdir>${PROJECT_ROOT}\bin</param.logdir>
+    <param.enable.clean.build>false</param.enable.clean.build>
+    <param.user.defined.mcr.options />
+    <param.target.type>subtarget.standalone</param.target.type>
+    <param.support.packages />
+    <param.web.mcr>true</param.web.mcr>
+    <param.package.mcr>false</param.package.mcr>
+    <param.no.mcr>false</param.no.mcr>
+    <param.web.mcr.name>espresso_v0204_setup</param.web.mcr.name>
+    <param.package.mcr.name>MyAppInstaller_mcr</param.package.mcr.name>
+    <param.no.mcr.name>MyAppInstaller_app</param.no.mcr.name>
+    <param.windows.command.prompt>false</param.windows.command.prompt>
+    <param.create.log>false</param.create.log>
+    <param.log.file>espresso_logfile</param.log.file>
+    <param.native.matlab>false</param.native.matlab>
+    <param.checkbox>false</param.checkbox>
+    <param.example />
+    <param.help.text>Syntax 
+	 Espresso -? 
+	 Espresso varargin 
+ Input Arguments 
+	 -?  print help on how to use the application 
+	 varargin  input arguments</param.help.text>
+    <unset>
+      <param.authnamewatermark />
+      <param.email />
+      <param.description />
+      <param.guid />
+      <param.installpath.combo />
+      <param.install.notes />
+      <param.target.install.notes />
+      <param.enable.clean.build />
+      <param.user.defined.mcr.options />
+      <param.target.type />
+      <param.support.packages />
+      <param.web.mcr />
+      <param.package.mcr />
+      <param.no.mcr />
+      <param.package.mcr.name />
+      <param.no.mcr.name />
+      <param.create.log />
+      <param.native.matlab />
+      <param.checkbox />
+      <param.example />
+    </unset>
+    <fileset.main>
+      <file>${PROJECT_ROOT}\Espresso.m</file>
+    </fileset.main>
+    <fileset.resources>
+      <file>${PROJECT_ROOT}\assets</file>
+      <file>${PROJECT_ROOT}\Espresso_resources</file>
+    </fileset.resources>
+    <fileset.package>
+      <file>${PROJECT_ROOT}\Espresso_resources\icon_24.png</file>
+    </fileset.package>
+    <fileset.depfun>
+      <file>${MATLAB_ROOT}\toolbox\local\userpath.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\CFF_coffee_version.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\custom_validation_functions\CFF_mustBeField.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\custom_validation_functions\CFF_mustBeTwoIncreasingIntegers.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\custom_validation_functions\CFF_mustBeTwoIncreasingNumerics.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\custom_validation_functions\CFF_mustBeTwoNonnegativeIntegers.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\custom_validation_functions\CFF_mustBeTwoPositiveIncreasingIntegers.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\display\CFF_add_cat_array_legend.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\fData_tools\CFF_fix_fData_paths.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\fData_tools\CFF_get_datagramSource.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\fData_tools\CFF_set_bottom_sample.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\fData_tools\fData_version\CFF_get_current_fData_version.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\fData_tools\fData_version\CFF_get_fData_version.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\fData_tools\fData_version\CFF_is_fData_version_current.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\general\CFF_Comms.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\general\CFF_get_bottom_sample.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\general\CFF_is_parallel_computing_available.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\general\CFF_memory_available.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\geoprocessing\CFF_compute_ping_navigation_v2.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\geoprocessing\CFF_georeference_bottom_detect.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\geoprocessing\CFF_get_WC_coordinates.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\geoprocessing\CFF_ll2tm.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\geoprocessing\samples_location\CFF_georeference_sample.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\geoprocessing\samples_location\CFF_get_samples_dist.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\geoprocessing\samples_location\CFF_get_samples_ENH.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\geoprocessing\samples_location\CFF_get_samples_range.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\geoprocessing\samples_location\CFF_inter_sample_distance.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\mosaic\CFF_init_mosaic.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\processing\CFF_filter_bottom_detect_v2.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\processing\CFF_group_processing.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\processing\CFF_setup_block_processing.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\processing\CFF_setup_optimized_block_processing.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\processing\gridding\CFF_create_blank_grid.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\processing\gridding\CFF_grid_2D_data.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\read_data_files\CFF_are_raw_files_converted.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\read_data_files\CFF_are_raw_files_loaded.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\read_data_files\CFF_check_filename.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\read_data_files\CFF_clean_delete_fdata.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\read_data_files\CFF_convert_raw_files.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\read_data_files\CFF_converted_data_folder.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\read_data_files\CFF_file_extension.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\read_data_files\CFF_file_name.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\read_data_files\CFF_fileparts_as_cell.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\read_data_files\CFF_is_folder_empty.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\read_data_files\CFF_list_raw_files_in_dir.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\read_data_files\CFF_load_converted_files.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\read_data_files\CFF_onerawfileonly.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\read_data_files\Kongsberg\format_all\CFF_all_file_info.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\read_data_files\Kongsberg\format_all\CFF_all_time_to_datetime.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\read_data_files\Kongsberg\format_all\CFF_check_ALLfilename.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\read_data_files\Kongsberg\format_all\CFF_convert_ALLdata_to_fData.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\read_data_files\Kongsberg\format_all\CFF_datetime_to_all_time.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\read_data_files\Kongsberg\format_all\CFF_decode_RuntimeParameters.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\read_data_files\Kongsberg\format_all\CFF_read_all.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\read_data_files\Kongsberg\format_all\CFF_read_all_from_fileinfo.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\read_data_files\Kongsberg\format_kmall\CFF_check_KMALLfilename.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\read_data_files\Kongsberg\format_kmall\CFF_convert_KMALLdata_to_fData.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\read_data_files\Kongsberg\format_kmall\CFF_decode_IOP.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\read_data_files\Kongsberg\format_kmall\CFF_get_kmall_revision.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\read_data_files\Kongsberg\format_kmall\CFF_getKM.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\read_data_files\Kongsberg\format_kmall\CFF_kmall_file_info.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\read_data_files\Kongsberg\format_kmall\CFF_kmall_time_to_all_time.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\read_data_files\Kongsberg\format_kmall\CFF_kmall_time_to_datetime.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\read_data_files\Kongsberg\format_kmall\CFF_read_kmall.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\read_data_files\Kongsberg\format_kmall\CFF_read_kmall_from_fileinfo.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\read_data_files\Kongsberg\format_kmall\kmall_struct\CFF_read_EMdgmCHE.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\read_data_files\Kongsberg\format_kmall\kmall_struct\CFF_read_EMdgmCPO.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\read_data_files\Kongsberg\format_kmall\kmall_struct\CFF_read_EMdgmHeader.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\read_data_files\Kongsberg\format_kmall\kmall_struct\CFF_read_EMdgmIIP.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\read_data_files\Kongsberg\format_kmall\kmall_struct\CFF_read_EMdgmIOP.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\read_data_files\Kongsberg\format_kmall\kmall_struct\CFF_read_EMdgmMbody.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\read_data_files\Kongsberg\format_kmall\kmall_struct\CFF_read_EMdgmMpartition.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\read_data_files\Kongsberg\format_kmall\kmall_struct\CFF_read_EMdgmMRZ.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\read_data_files\Kongsberg\format_kmall\kmall_struct\CFF_read_EMdgmMWC.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\read_data_files\Kongsberg\format_kmall\kmall_struct\CFF_read_EMdgmSCL.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\read_data_files\Kongsberg\format_kmall\kmall_struct\CFF_read_EMdgmScommon.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\read_data_files\Kongsberg\format_kmall\kmall_struct\CFF_read_EMdgmSKM.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\read_data_files\Kongsberg\format_kmall\kmall_struct\CFF_read_EMdgmSPO.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\read_data_files\Kongsberg\format_kmall\kmall_struct\CFF_read_EMdgmSVP.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\read_data_files\Reson\CFF_check_S7Kfilename.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\read_data_files\Reson\CFF_convert_S7Kdata_to_fData.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\read_data_files\Reson\CFF_get_R7012_flags.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\read_data_files\Reson\CFF_get_R7042_flags.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\read_data_files\Reson\CFF_read_s7k.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\read_data_files\Reson\CFF_read_s7k_from_fileinfo.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\read_data_files\Reson\CFF_s7k_file_info.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\read_data_files\Reson\CFF_s7K_record_types.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\stats\CFF_invpercentile.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\toolboxes\dispstat\dispstat.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\toolboxes\inpaint_nans\inpaint_nans.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\toolboxes\textprogressbar\textprogressbar.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\watercolumn_general\CFF_get_fData_wc_grid.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\watercolumn_general\CFF_get_WC_data.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\watercolumn_general\CFF_get_WC_size.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\watercolumn_general\CFF_init_memmapfiles.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\watercolumn_processing\CFF_filter_WC_sidelobe_artifact_CORE.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\watercolumn_processing\CFF_grid_WC_data.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\watercolumn_processing\CFF_group_pings.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\watercolumn_processing\CFF_mask_WC_data_CORE.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\watercolumn_processing\CFF_stack_WCD.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\watercolumn_processing\CFF_WC_radiometric_corrections_CORE.m</file>
+      <file>${PROJECT_ROOT}\classes\@display_config_cl\display_config_cl.m</file>
+      <file>${PROJECT_ROOT}\classes\@feature_cl\feature_cl.m</file>
+      <file>${PROJECT_ROOT}\display\colormaps\asl_colormap.m</file>
+      <file>${PROJECT_ROOT}\display\colormaps\ek500_colormap.m</file>
+      <file>${PROJECT_ROOT}\display\colormaps\ek60_colormap.m</file>
+      <file>${PROJECT_ROOT}\display\colormaps\esp2_colormap.m</file>
+      <file>${PROJECT_ROOT}\display\colormaps\init_cmap.m</file>
+      <file>${PROJECT_ROOT}\display\common\feature_intersect_polygon.m</file>
+      <file>${PROJECT_ROOT}\display\common\latlon2str.m</file>
+      <file>${PROJECT_ROOT}\display\common\poly_vertices_from_fData.m</file>
+      <file>${PROJECT_ROOT}\display\common\undock_tab_callback.m</file>
+      <file>${PROJECT_ROOT}\display\general\check_fmt_box.m</file>
+      <file>${PROJECT_ROOT}\display\general\closefcn_clean_espresso.m</file>
+      <file>${PROJECT_ROOT}\display\general\initialize_display.m</file>
+      <file>${PROJECT_ROOT}\display\general\no_data_clear_all_displays.m</file>
+      <file>${PROJECT_ROOT}\display\general\question_dialog_fig.m</file>
+      <file>${PROJECT_ROOT}\display\general\resize_espresso.m</file>
+      <file>${PROJECT_ROOT}\display\general\resize_table.m</file>
+      <file>${PROJECT_ROOT}\display\icons\read_icon.m</file>
+      <file>${PROJECT_ROOT}\display\icons\set_icon_espresso.m</file>
+      <file>${PROJECT_ROOT}\display\info_panel\create_info_panel.m</file>
+      <file>${PROJECT_ROOT}\display\interactions\disp_cursor_info.m</file>
+      <file>${PROJECT_ROOT}\display\interactions\draw_box.m</file>
+      <file>${PROJECT_ROOT}\display\interactions\draw_new_feature.m</file>
+      <file>${PROJECT_ROOT}\display\interactions\init_box_drawing_mode.m</file>
+      <file>${PROJECT_ROOT}\display\interactions\initialize_interactions_v2.m</file>
+      <file>${PROJECT_ROOT}\display\interactions\move_map_cback.m</file>
+      <file>${PROJECT_ROOT}\display\interactions\replace_interaction.m</file>
+      <file>${PROJECT_ROOT}\display\interactions\scroll_fcn_callback.m</file>
+      <file>${PROJECT_ROOT}\display\interactions\shortcuts_func.m</file>
+      <file>${PROJECT_ROOT}\display\listeners\init_listeners.m</file>
+      <file>${PROJECT_ROOT}\display\listeners\listenAct_features.m</file>
+      <file>${PROJECT_ROOT}\display\listeners\listenCax.m</file>
+      <file>${PROJECT_ROOT}\display\listeners\listenCmap.m</file>
+      <file>${PROJECT_ROOT}\display\listeners\listenIping.m</file>
+      <file>${PROJECT_ROOT}\display\listeners\listenMode.m</file>
+      <file>${PROJECT_ROOT}\display\listeners\listenVar_disp.m</file>
+      <file>${PROJECT_ROOT}\display\map_panel\create_map_tab.m</file>
+      <file>${PROJECT_ROOT}\display\map_panel\disp_wc_ping_cback.m</file>
+      <file>${PROJECT_ROOT}\display\map_panel\display_features.m</file>
+      <file>${PROJECT_ROOT}\display\map_panel\grab_ping_line_cback.m</file>
+      <file>${PROJECT_ROOT}\display\map_panel\update_map_tab.m</file>
+      <file>${PROJECT_ROOT}\display\opt_panel\datafiles_tab\create_datafiles_tab.m</file>
+      <file>${PROJECT_ROOT}\display\opt_panel\datafiles_tab\update_datafiles_tab.m</file>
+      <file>${PROJECT_ROOT}\display\opt_panel\display_tab\create_display_tab.m</file>
+      <file>${PROJECT_ROOT}\display\opt_panel\display_tab\grab_vert_lim_cback.m</file>
+      <file>${PROJECT_ROOT}\display\opt_panel\display_tab\update_display_tab.m</file>
+      <file>${PROJECT_ROOT}\display\opt_panel\loadedlines_tab\create_loadedlines_tab.m</file>
+      <file>${PROJECT_ROOT}\display\opt_panel\loadedlines_tab\update_loadedlines_tab.m</file>
+      <file>${PROJECT_ROOT}\display\opt_panel\mosaic_tab\create_mosaic_tab.m</file>
+      <file>${PROJECT_ROOT}\display\opt_panel\mosaic_tab\update_mosaic_tab.m</file>
+      <file>${PROJECT_ROOT}\display\opt_panel\wc_proc_tab\callback_press_process_button.m</file>
+      <file>${PROJECT_ROOT}\display\opt_panel\wc_proc_tab\create_wc_proc_tab.m</file>
+      <file>${PROJECT_ROOT}\display\opt_panel\wc_proc_tab\grid_watercolumn.m</file>
+      <file>${PROJECT_ROOT}\display\opt_panel\wc_proc_tab\gridbathyBS.m</file>
+      <file>${PROJECT_ROOT}\display\opt_panel\wc_proc_tab\process_watercolumn.m</file>
+      <file>${PROJECT_ROOT}\display\wc_panel\feature_list_tab\create_feature_list_tab.m</file>
+      <file>${PROJECT_ROOT}\display\wc_panel\feature_list_tab\update_feature_list_tab.m</file>
+      <file>${PROJECT_ROOT}\display\wc_panel\stacked_wc_tab\create_stacked_wc_tab.m</file>
+      <file>${PROJECT_ROOT}\display\wc_panel\stacked_wc_tab\grab_vert_ping_line_cback.m</file>
+      <file>${PROJECT_ROOT}\display\wc_panel\stacked_wc_tab\update_stacked_wc_tab.m</file>
+      <file>${PROJECT_ROOT}\display\wc_panel\wc_tab\create_wc_tab.m</file>
+      <file>${PROJECT_ROOT}\display\wc_panel\wc_tab\update_wc_tab.m</file>
+      <file>${PROJECT_ROOT}\espresso_version.m</file>
+      <file>${PROJECT_ROOT}\general\coffee_checks\get_coffee_version.m</file>
+      <file>${PROJECT_ROOT}\general\coffee_checks\is_coffee_folder.m</file>
+      <file>${PROJECT_ROOT}\general\coffee_checks\is_coffee_version.m</file>
+      <file>${PROJECT_ROOT}\general\config\espresso_config_file.m</file>
+      <file>${PROJECT_ROOT}\general\config\get_config_field.m</file>
+      <file>${PROJECT_ROOT}\general\config\init_config_file.m</file>
+      <file>${PROJECT_ROOT}\general\config\set_config_field.m</file>
+      <file>${PROJECT_ROOT}\general\espresso_user_folder.m</file>
+      <file>${PROJECT_ROOT}\general\generate_Espresso_diary_filename.m</file>
+      <file>${PROJECT_ROOT}\io\generate_valid_filename.m</file>
+      <file>${PROJECT_ROOT}\io\get_feature_class_list.m</file>
+      <file>${PROJECT_ROOT}\processing\mosaics\compute_and_add_mosaic.m</file>
+      <file>${PROJECT_ROOT}\processing\mosaics\compute_mosaic.m</file>
+      <file>${PROJECT_ROOT}\toolboxes\findjobj\findjobj.m</file>
+      <file>${PROJECT_ROOT}\toolboxes\prettyjson\prettyjson.m</file>
+      <file>${PROJECT_ROOT}\toolboxes\utm2ll\Codes\matlab\ll2utm.m</file>
+      <file>${PROJECT_ROOT}\toolboxes\utm2ll\Codes\matlab\utm2ll.m</file>
+      <file>${PROJECT_ROOT}\update_path.m</file>
+      <file>${PROJECT_ROOT}\whereisroot.m</file>
+    </fileset.depfun>
+    <build-deliverables>
+      <file location="${PROJECT_ROOT}\bin\for_testing" name="Espresso.exe" optional="false">C:\Users\Schimel_Alexandre\Code\MATLAB\Espresso\bin\for_testing\Espresso.exe</file>
+      <file location="${PROJECT_ROOT}\bin\for_testing" name="readme.txt" optional="true">C:\Users\Schimel_Alexandre\Code\MATLAB\Espresso\bin\for_testing\readme.txt</file>
+      <file location="${PROJECT_ROOT}\bin\for_testing" name="splash.png" optional="false">C:\Users\Schimel_Alexandre\Code\MATLAB\Espresso\bin\for_testing\splash.png</file>
+    </build-deliverables>
+    <workflow />
+    <matlab>
+      <root>C:\Program Files\MATLAB\R2020b</root>
+      <toolboxes>
+        <toolbox name="neuralnetwork" />
+      </toolboxes>
+      <toolbox>
+        <neuralnetwork>
+          <enabled>true</enabled>
+        </neuralnetwork>
+      </toolbox>
+    </matlab>
+    <platform>
+      <unix>false</unix>
+      <mac>false</mac>
+      <windows>true</windows>
+      <win2k>false</win2k>
+      <winxp>false</winxp>
+      <vista>false</vista>
+      <linux>false</linux>
+      <solaris>false</solaris>
+      <osver>10.0</osver>
+      <os32>false</os32>
+      <os64>true</os64>
+      <arch>win64</arch>
+      <matlab>true</matlab>
+    </platform>
+  </configuration>
+</deployment-project>

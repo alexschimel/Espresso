@@ -5,7 +5,7 @@ function create_feature_list_tab(main_figure,parent_tab_group)
 
 %   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
 %   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
-%   2017-2021; Last revision: 11-11-2021
+%   2017-2024
 
 % disp_config = getappdata(main_figure,'disp_config');
 
@@ -21,9 +21,12 @@ switch parent_tab_group.Type
         feature_list_tab_comp.feature_list_tab = parent_tab_group;
 end
 
+% get list of feature classes
+featureClassList = get_feature_class_list();
+
 % create table
-columnname =   {'ID',     'Class',           'Description','Type',             'Min depth','Max depth','Unique_ID'};
-columnformat = {'numeric',init_feature_class,'char',       {'Point','Polygon'},'numeric',  'numeric',  'char'};
+columnname =   {'ID',     'Class',         'Description','Type',             'Min depth','Max depth','Unique_ID'};
+columnformat = {'numeric',featureClassList,'char',       {'Point','Polygon'},'numeric',  'numeric',  'char'};
 feature_list_tab_comp.table = uitable('Parent', feature_list_tab_comp.feature_list_tab,...
     'Data', [],...
     'ColumnName', columnname,...

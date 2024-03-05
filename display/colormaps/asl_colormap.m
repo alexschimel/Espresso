@@ -7,6 +7,4 @@ function cmap = asl_colormap()
 %   Schimel (NIWA, alexandre.schimel@niwa.co.nz)
 %   2017-2021; Last revision: 27-07-2021
 
-load(fullfile(whereisEcho,'private','AZFPColormap'));
-
-cmap = double(myNewMap);
+load('AZFP_colormap');

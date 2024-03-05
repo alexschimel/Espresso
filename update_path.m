@@ -8,9 +8,9 @@ function update_path(path)
 %   2017-2022; Last revision: 12-08-2022
 
 addpath(path);
+addpath(genpath(fullfile(path,'assets')));
 addpath(genpath(fullfile(path,'classes')));
 addpath(genpath(fullfile(path,'display')));
-addpath(genpath(fullfile(path,'icons')));
 addpath(genpath(fullfile(path,'io')));
 addpath(genpath(fullfile(path,'processing')));
 addpath(genpath(fullfile(path,'toolboxes')));
