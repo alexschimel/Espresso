@@ -1,4 +1,4 @@
-Alex 5 March 2024
+Alex 6 March 2024
 
 To compile Espresso in an executable:
 * Start from a clean slate:
@@ -13,16 +13,16 @@ To compile Espresso in an executable:
   * Add folders `assets` and `Espresso_resources` to the list.
   * Make sure the file `icon_24.png` is in the list of "Files installed for your end user". Otherwise add it (it is in the `Espresso_resources` folder).
 * Update the version number:
-  * In the setup file name ("Packaging Options" panel, "Runtime downloaded from web" field)
-  * In the "application information" panel
+  * In the setup file name ("Packaging Options" panel, "Runtime downloaded from web" field).
+  * In the "application information" panel.
   * In the "Default installation folder" field.
 * Details:
   * All paths in "Settings" should be in the "Espresso\bin" folder.
   * Icon, splash screen and half-splash image are all in the `Espresso_resources` folder.
   * If anything is missing from the "Application information", copy contents of README file.
-  * In "Additional runtime settings", uncheck "Create log file"
+  * In "Additional runtime settings", uncheck "Create log file".
 * Finalize:
   * Click on "Save".
   * Click on "Package".
 
-Note: material for old compiling approach (before using the Application Compiler) are backed up in the `obsolete\old_compiling` folder
+Note: material for old compiling approach (before using the Application Compiler) are backed up in the `obsolete\old_compiling` folder.
