@@ -1,10 +1,10 @@
-![](https://github.com/alexschimel/Espresso/blob/main/Espresso_resources/banner.png)
+![](https://github.com/alexschimel/Espresso/blob/master/Espresso_resources/banner.png)
 
 # *Espresso* 
 
 Multibeam water-column visualization and processing.
 
-[![](https://github.com/alexschimel/Espresso/blob/main/Espresso_resources/download.png)](https://github.com/alexschimel/Espresso/releases/download/v1/espresso_v1_setup.exe)
+[![](https://github.com/alexschimel/Espresso/blob/master/Espresso_resources/download.png)](https://github.com/alexschimel/Espresso/releases/download/v1/espresso_v1_setup.exe)
 
 ## Description
 
@@ -21,7 +21,7 @@ Relevant features:
 * Export echo-integration mosaics.
 * Geopicking features as polygons or points, and export as shapefiles.
 
- ![](https://github.com/alexschimel/Espresso/blob/main/Espresso_resources/screenshot.png)
+ ![](https://github.com/alexschimel/Espresso/blob/master/Espresso_resources/screenshot.png)
 
 ## Getting Started
 
