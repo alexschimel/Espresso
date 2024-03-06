@@ -1,3 +1,5 @@
 *.asv
+*.exe
+*.msi
 bin/
 feature_files/
