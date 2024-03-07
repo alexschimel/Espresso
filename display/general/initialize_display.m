@@ -67,8 +67,9 @@ create_map_tab(main_figure,map_panel);
 create_info_panel(main_figure);
 
 
-%% TOP MENU -- OBSOLETE
-% create_menu(main_figure);
+%% TOP MENU
+create_menu(main_figure);
+% not sur what the following is about. Commented when top menu was obsolete
 % obj_enable = findobj(main_figure,'Enable','on','-not','Type','uimenu');
 % set(obj_enable,'Enable','off');
 
