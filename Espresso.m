@@ -46,10 +46,6 @@ if ~isdeployed
     update_path(appRootFolder);
 end
 
-% Starting message
-[espressoVer, coffeeVer] = espresso_version();
-fprintf('Starting Espresso v%s (powered by CoFFee v%s) at %s. Please wait...\n',espressoVer,coffeeVer,datestr(now));
-
 % Create Espresso user folder if needed
 espressoUserFolder = espresso_user_folder();
 if ~isfolder(espressoUserFolder)
@@ -62,7 +58,8 @@ if ~isfile(espressoConfigFile)
     init_config_file();
 end
 
-% Setup diary
+% Setup log file
+startTime = now;
 logfile = generate_Espresso_diary_filename;
 if ~isfolder(fileparts(logfile))
     mkdir(fileparts(logfile));
@@ -72,7 +69,34 @@ if isfile(logfile)
 end
 diary(logfile);
 EspressoUserdata.logfile = logfile; % save to app in order to close diary at the end
-fprintf('Find a log of this output at %s.\n',logfile);
+
+% Getting software info for start-up message
+[espressoVer, coffeeVer] = espresso_version();
+licenseFilename = 'LICENSE';
+licenseLines = readlines(licenseFilename);
+espressoLicense = licenseLines(find(contains(licenseLines,"license",'IgnoreCase',true),1));
+espressoCopyright = licenseLines(find(contains(licenseLines,"copyright",'IgnoreCase',true),1));
+if isdeployed
+    licenseLocation = 'About section';
+else
+    licenseLocation = sprintf('%s file',licenseFilename);
+end
+
+% Start-up message
+introText = {};
+introText{1,1} = sprintf('ESPRESSO v%s (powered by CoFFee v%s)\n',espressoVer,coffeeVer);
+introText{2,1} = sprintf('%s\n',espressoCopyright);
+introText{3,1} = sprintf('Licensed under the %s. See %s for details.\n',espressoLicense,licenseLocation);
+introText{4,1} = sprintf('If you use this software, please acknowledge all authors listed above.\n');
+introLimsText = {char([61.*ones(1,max(cellfun(@length,introText))-1),10])};
+introText = [introLimsText;introText;introLimsText];
+cellfun(@fprintf,introText);
+
+% Session start messages
+fprintf('New session start at %s. Please wait...\n',datestr(startTime));
+fprintf('Espresso user folder: %s.\n',espressoUserFolder);
+fprintf('Espresso config file: %s.\n',espressoConfigFile);
+fprintf('Log file for this session: %s.\n',logfile);
 
 % If on MATLAB, need to find and add CoFFee to the path
 if ~isdeployed
@@ -80,14 +104,18 @@ if ~isdeployed
     coffeeFolder = get_config_field('coffeeFolder');
     if ~is_coffee_folder(coffeeFolder)
         % throw an alert to find manually a suitable coffee folder
+        fprintf('USER INPUT NEEDED. Select suitable CoFFee folder.\n');
         coffeeFolder = uigetdir(appRootFolder,'Select suitable CoFFee folder');
         % second check
         if ~is_coffee_folder(coffeeFolder)
             error('Not a CoFFee folder.');
         end
     end
+    fprintf('CoFFee folder: %s.\n',coffeeFolder);
     % check coffee version is the one we need
+    fprintf('Checking CoFFee version... ');
     isVersionOK = is_coffee_version(coffeeFolder,coffeeVer);
+    fprintf('CoFFee v%s found.\n',get_coffee_version(coffeeFolder));
     if ~isVersionOK
         warning(['This version of Espresso (%s) was built with a version'...
             ' of CoFFee (%s) that is different from that (%s) of the toolbox'...
