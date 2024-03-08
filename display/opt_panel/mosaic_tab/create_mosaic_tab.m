@@ -5,7 +5,7 @@ function create_mosaic_tab(main_figure,parent_tab_group)
 
 %   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
 %   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
-%   2017-2021; Last revision: 21-07-2021
+%   2017-2024
 
 %% create tab variable
 switch parent_tab_group.Type
@@ -86,10 +86,11 @@ map_tab_comp = getappdata(main_figure,'Map_tab');
 mosaic_tab_comp = getappdata(main_figure,'mosaic_tab');
 ax = map_tab_comp.map_axes;
 file_tab_comp = getappdata(main_figure,'file_tab');
-path_tmp = file_tab_comp.path_box.String;
 disp_config = getappdata(main_figure,'disp_config');
 
 zone = disp_config.get_zone();
+
+defaultExportFolder = espresso_export_folder();
 
 for i = mosaic_tab_comp.selected_idx(:)'
     
@@ -97,9 +98,13 @@ for i = mosaic_tab_comp.selected_idx(:)'
     % tag_id_box = num2str(mosaics(i).ID,'%.0f_box');
     % mosaic_obj = findobj(ax,'Tag',tag_id_mosaic);
     
-    [fileN, pathname] = uiputfile({'*.tif'},...
-        'Export to GeoTiff',...
-        fullfile(path_tmp,sprintf('%s_mosaic_%d.tif',mosaics(i).name,mosaics(i).res)));
+    mosaicName = mosaics(i).name;
+    mosaicRes = mosaics(i).res;
+    mosaicResString = sprintf('%gm',mosaicRes);
+    defaultExportFile = sprintf('mosaic_%s_res_%s.tif',mosaicName,mosaicResString);
+    defaultExportFullFile = fullfile(defaultExportFolder,defaultExportFile);
+    
+    [fileN, pathname] = uiputfile({'*.tif'}, 'Export mosaic to GeoTiff',defaultExportFullFile);
     if isequal(pathname,0)||isequal(fileN,0)
         return;
     end
@@ -113,12 +118,13 @@ for i = mosaic_tab_comp.selected_idx(:)'
     % [latlim,lonlim] = utm2ll(mosaics(i).E_lim,mosaics(i).N_lim,zone);
     % lonlim(lonlim>180) = lonlim(lonlim>180)-360;
     %
-    R = makerefmat(mosaics(i).E_lim(1),mosaics(i).N_lim(1),mosaics(i).res,mosaics(i).res);
+    R = makerefmat(mosaics(i).E_lim(1),mosaics(i).N_lim(1),mosaicRes,mosaicRes);
     % R = [[mosaics(i).E_lim(1) mosaics(i).N_lim(1)];[mosaics(i).res mosaics(i).res];[size(mosaics(i).mosaic_level)]];
     % levels = mosaics(i).mosaic_level;
     % levels(isnan(levels)) = -999;
-    geotiffwrite(fullfile(pathname,fileN),mosaics(i).mosaic_level,R,'CoordRefSysCode',sprintf('EPSG:%d',z));
-    fprintf('...Done.\n');
+    exportFile = fullfile(pathname,fileN);
+    geotiffwrite(exportFile,mosaics(i).mosaic_level,R,'CoordRefSysCode',sprintf('EPSG:%d',z));
+    fprintf('Mosaic %s exported as %s.\n',mosaicName,exportFile);
     
 end
 

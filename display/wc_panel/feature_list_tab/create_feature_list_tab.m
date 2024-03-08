@@ -210,7 +210,7 @@ if isempty(features)
 end
 
 % select directory for export
-getDirDefPath = espresso_user_folder;
+getDirDefPath = espresso_export_folder();
 folder_name = uigetdir(getDirDefPath,'Select folder where to export features');
 if folder_name == 0
     return;

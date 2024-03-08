@@ -6,7 +6,7 @@ function Espresso(varargin)
 
 %   Authors: Alex Schimel (NGU, alexandre.schimel@ngu.no) and Yoann Ladroit
 %   (NIWA, yoann.ladroit@niwa.co.nz) 
-%   2017-2022; Last revision: 12-08-2022
+%   2017-2024
 
 % Debug
 global DEBUG;
@@ -56,6 +56,12 @@ end
 espressoConfigFile = espresso_config_file();
 if ~isfile(espressoConfigFile)
     init_config_file();
+end
+
+% Init export folder if needed
+espressoExportFolder = espresso_export_folder();
+if ~isfolder(espressoExportFolder)
+    mkdir(espressoExportFolder);
 end
 
 % Setup log file
