@@ -3,9 +3,8 @@ function grab_vert_lim_cback(src,~,main_figure,ref)
 %
 %   See also ESPRESSO.
 
-%   Authors: Yoann Ladroit (NIWA, yoann.ladroit@niwa.co.nz) and Alex
-%   Schimel (NIWA, alexandre.schimel@niwa.co.nz)
-%   2017-2021; Last revision: 27-07-2021
+%   Copyright 2017-2021 Alexandre Schimel, Yoann Ladroit, NIWA
+%   Licensed under MIT. Details on https://github.com/alexschimel/Espresso/
 
 fData_tot = getappdata(main_figure,'fData');
 

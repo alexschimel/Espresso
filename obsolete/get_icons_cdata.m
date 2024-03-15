@@ -3,9 +3,8 @@ function icon = get_icons_cdata(icon_dir)
 %
 %   See also ESPRESSO.
 
-%   Authors: Yoann Ladroit (NIWA, yoann.ladroit@niwa.co.nz) and Alex
-%   Schimel (NIWA, alexandre.schimel@niwa.co.nz)
-%   2017-2024
+%   Copyright 2017-2024 Alexandre Schimel, Yoann Ladroit, NIWA
+%   Licensed under MIT. Details on https://github.com/alexschimel/Espresso/
 
 icon.pointer  = read_icon(fullfile(icon_dir,'iconModeNormal.png'));
 icon.edit_bot = read_icon(fullfile(icon_dir,'iconModeFeature.png'));

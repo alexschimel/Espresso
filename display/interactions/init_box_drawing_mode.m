@@ -16,9 +16,8 @@ function init_box_drawing_mode(main_figure,endFunction,endFunctionInputVar,point
 %
 %   See also ESPRESSO, DRAW_BOX
 
-%   Authors: Yoann Ladroit (NIWA, yoann.ladroit@niwa.co.nz) and Alex
-%   Schimel (NIWA, alexandre.schimel@niwa.co.nz)
-%   2021-2022; Last revision: 16-03-2022
+%   Copyright 2017-2022 Alexandre Schimel, Yoann Ladroit, NIWA
+%   Licensed under MIT. Details on https://github.com/alexschimel/Espresso/
 
 replace_interaction(main_figure,'interaction','WindowButtonDownFcn',  'id',1,'interaction_fcn',{@draw_box,main_figure,endFunction,endFunctionInputVar},'pointer',pointerStyle);
 replace_interaction(main_figure,'interaction','WindowButtonMotionFcn','id',1,'interaction_fcn',{@disp_cursor_info,main_figure},'pointer',pointerStyle);

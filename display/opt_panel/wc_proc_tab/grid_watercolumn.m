@@ -3,9 +3,8 @@ function fData_tot = grid_watercolumn(fData_tot, idx_fData, procpar)
 %
 %   See also ESPRESSO.
 
-%   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
-%   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
-%   2017-2021; Last revision: 27-07-2021
+%   Copyright 2017-2021 Alexandre Schimel, Yoann Ladroit, NIWA
+%   Licensed under MIT. Details on https://github.com/alexschimel/Espresso/
 
 % init counter
 u = 0;

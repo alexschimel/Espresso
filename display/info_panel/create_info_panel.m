@@ -3,9 +3,8 @@ function create_info_panel(main_figure)
 %
 %   See also INITIALIZE_DISPLAY, ESPRESSO.
 
-%   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
-%   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
-%   2017-2021; Last revision: 21-07-2021
+%   Copyright 2017-2021 Alexandre Schimel, Yoann Ladroit, NIWA
+%   Licensed under MIT. Details on https://github.com/alexschimel/Espresso/
 
 if isappdata(main_figure,'info_panel')
     % if info panel already exist, grab it and clean it

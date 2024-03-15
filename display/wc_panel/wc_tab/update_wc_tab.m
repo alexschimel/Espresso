@@ -3,9 +3,8 @@ function update_wc_tab(main_figure)
 %
 %   See also CREATE_WC_TAB, INITIALIZE_DISPLAY, ESPRESSO.
 
-%   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
-%   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
-%   2017-2021; Last revision: 11-11-2021
+%   Copyright 2017-2021 Alexandre Schimel, Yoann Ladroit, NIWA
+%   Licensed under MIT. Details on https://github.com/alexschimel/Espresso/
 
 
 %% prep

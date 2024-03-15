@@ -3,9 +3,8 @@ function set_icon_espresso(fig)
 %
 %   See also ESPRESSO.
 
-%   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
-%   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
-%   2017-202
+%   Copyright 2017-2024 Alexandre Schimel, Yoann Ladroit, NIWA
+%   Licensed under MIT. Details on https://github.com/alexschimel/Espresso/
 
 % find icon file
 if isdeployed

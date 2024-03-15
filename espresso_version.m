@@ -1,4 +1,4 @@
-function [ver, coffeeVer] = espresso_version()
+function [ver, coffeeVer, aknowledgments] = espresso_version()
 %ESPRESSO_VERSION  Get version of Espresso
 %
 %   Get version of Espresso.
@@ -19,14 +19,17 @@ function [ver, coffeeVer] = espresso_version()
 %   See also IS_COFFEE_FOLDER, GET_COFFEE_VERSION, IS_COFFEE_VERSION,
 %   ESPRESSO.
 
-%   Authors: Alex Schimel (NGU, alexandre.schimel@ngu.no) and Yoann Ladroit
-%   (NIWA, yoann.ladroit@niwa.co.nz) 
-%   2022-2022; Last revision: 12-08-2022
+%   Copyright 2022-2024 Alexandre Schimel, Yoann Ladroit, NIWA
+%   Licensed under MIT. Details on https://github.com/alexschimel/Espresso/
 
 % RUN CFF_coffee_version() TO GET THE CURRENT VERSION, BUT WRITE IT
 % HARD-CODED HERE
 
-ver = '0.22'; coffeeVer = '2.0.0-alpha.15'; % 07/03/2024
+
+aknowledgments = 'Alexandre Schimel (The Geological Survey of Norway), Yoann Ladroit (Kongsberg Discovery), and Sally Watson (NIWA)';
+
+ver = '1.0.0-alpha.1'; coffeeVer = '2.0.0-alpha.15'; % 15/03/2024
+% ver = '0.22'; coffeeVer = '2.0.0-alpha.15'; % 07/03/2024
 % ver = '0.21'; coffeeVer = '2.0.0-alpha.15'; % 05/03/2024
 % ver = '0.20.4'; coffeeVer = '2.0.0-alpha.15'; % 01/03/2024
 % ver = '0.20.3'; coffeeVer = '2.0.0-alpha.5'; % 08/09/2022

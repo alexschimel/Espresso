@@ -4,13 +4,13 @@
 
 Multibeam water-column visualization and processing.
 
-[![](https://github.com/alexschimel/Espresso/blob/master/Espresso_resources/download.png)](https://github.com/alexschimel/Espresso/releases/download/v1/espresso_v1_setup.exe)
+[![](https://github.com/alexschimel/Espresso/blob/master/Espresso_resources/download.png)](https://github.com/alexschimel/Espresso/releases/download/v1.0.0-alpha.1/espresso_v1a1_setup.exe)
 
 ## Description
 
-*Espresso* is a free and open-source app to visualize and process water-column data acquired by multibeam echosounders. The main feature of this tool is the possibility to vertically echo-integrate water-column data so as to visualize and examine anomalies.
+*Espresso* is a free and open-source app to visualize and process water-column data acquired by multibeam echosounders. The main feature of this tool is the possibility to vertically echo-integrate water-column data so as to visualize and examine acoustic anomalies.
 
-*Espresso* uses the [CoFFee multibeam data processing toolbox](https://github.com/alexschimel/CoFFee) (hence the name). It is coded in [MATLAB](https://www.mathworks.com/products/matlab.html), but is also available as a standalone application that does not require a MATLAB licence (see the Dependencies and Installing sections).
+*Espresso* uses the [CoFFee multibeam data processing toolbox](https://github.com/alexschimel/CoFFee) (hence the name). It is coded in [MATLAB](https://www.mathworks.com/products/matlab.html), but is also available as a standalone application that does not require a MATLAB licence (see the [Dependencies](#dependencies) and [Installing](#installing) sections).
 
 Relevant features:
 * Support Kongsberg .all/.wcd, Kongsberg .kmall/.kmwcd, and Reson-Teledyne .s7k formats.
@@ -49,49 +49,57 @@ Relevant features:
 ### Executing program
 
 * For the source code: Start MATLAB, navigate to the root directory of the *Espresso* code, and type `Espresso` in the Command Window.
-  * Note: The first time you run *Espresso* from the source code, you will be prompted to provide the location of a folder containing the *CoFFee* toolbox. *Espresso* will check if the version of that toolbox is the one with which the app was built. If the version of *CoFFee* is not the one expected, you will receive a warning letting you know you might experience issues, and recommending you download (or check out) the appropriate version.
+  * Note: The first time you run *Espresso* from the source code, you will be prompted to provide the location of a folder containing the *CoFFee* toolbox. *Espresso* will check if the version of that toolbox is the one with which the app was built. If the version of *CoFFee* is not the one expected, you will receive a warning message letting you know you might experience issues and recommending you download (or check out) the appropriate version.
 * For the compiled executable: Execute the installed program.
   * Note: The first time you run *Espresso* after installation, it might take a while for the app to appear. Be patient. It will be faster the next times.
 
-Note: At start-up, *Espresso* creates a `Espresso` user folder (normally, C:\Users\USERNAME\Documents\Espresso). This folder contains a configuration file for the app, and is the default folder for any exports from the app. This folder or any of its contents can be deleted safely (although if you delete the configuration file, this will reset the app configuration).
+Note: At start-up, *Espresso* creates an `Espresso` user folder (normally, C:\Users\USERNAME\Documents\Espresso). This folder contains a configuration file for the app, and is the default folder for any exports from the app. It is safe to delete this folder or any of its contents (although if you delete the configuration file, this will reset the app configuration).
 
 ## Help
 
 Head over to the [wiki](https://github.com/alexschimel/Espresso/wiki) for documentation (to do).
 
-For more information, contact the authors.
+For more help, contact the [authors](#authors).
 
-## Updates
+## Past versions and updates
+
+See the [releases](https://github.com/alexschimel/Espresso/releases) page for past released versions. 
 
 If you want to receive notifications of future releases (recommended), you may create a github account, and on this repository click on 'Watch', then 'Custom', and choose 'Releases'. Verify in your GitHub settings that you are set to receive 'Watching' notifications.
 
-## Authors
-
-* Alexandre Schimel ([The Geological Survey of Norway](https://www.ngu.no), alexandre.schimel@ngu.no)
-* Yoann Ladroit (Kongsberg Discovery)
-* Sally Watson (NIWA)
-
-## Version History
-
-[See the releases page](https://github.com/alexschimel/Espresso/releases)
-
 ## License
 
-Distributed under the MIT License. See `LICENSE` file for details.
-If you use the software, you must acknowledge all authors listed. An article is in preparation for reference. 
+### Authors
+
+* Alexandre Schimel (The Geological Survey of Norway, alexandre.schimel@ngu.no)
+* Yoann Ladroit (Kongsberg Discovery)
+
+### Copyright
+
+* Alexandre Schimel (The Geological Survey of Norway)
+* Yoann Ladroit (Kongsberg Discovery)
+* The National Institute of Water and Atmospheric Research (NIWA), New Zealand
+
+### License
+
+The Espresso software and source code is distributed under the MIT License. See `LICENSE` file for details.
+
+Espresso uses several pieces of third-party code, each being distributed under its own license. Each piece of code is contained in a separate sub-folder of the 'toolboxes' folder and includes the corresponding license file.
+
+### Citation/Credit
+
+If you use the software, please acknowledge Alexandre Schimel (The Geological Survey of Norway), Yoann Ladroit (Kongsberg Discovery), and Sally Watson (NIWA). 
+
+An article is in preparation for reference. 
 
 ## See Also
 
-All apps based on CoFFee:
+### Apps based on CoFFee
 * [*Grounds*](https://github.com/alexschimel/Grounds): Elevation Change Analysis
 * [*Espresso*](https://github.com/alexschimel/Espresso): Multibeam water-column visualization and processing
 * [*Iskaffe*](https://github.com/alexschimel/Iskaffe): Multibeam backscatter quality control
 
-## Acknowledgments
-
-None to date.
-
-## References 
+### References 
 
 * Turco, F., Ladroit, Y., Watson, S. J., Seabrook, S., Law, C. S., Crutchley, G. J., Mountjoy, J., Pecher, I. A., Hillman, J. I. T., Woelz, S., & Gorman, A. R. (2022). Estimates of Methane Release From Gas Seeps at the Southern Hikurangi Margin, New Zealand. Frontiers in Earth Science, 10(March), 1–20. https://doi.org/10.3389/feart.2022.834047
 * Porskamp, P., Schimel, A. C. G., Young, M., Rattray, A., Ladroit, Y., & Ierodiaconou, D. (2022). Integrating multibeam echosounder water‐column data into benthic habitat mapping. Limnology and Oceanography, 1–13. https://doi.org/10.1002/lno.12160

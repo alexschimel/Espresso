@@ -3,9 +3,9 @@ function [cmap,col_ax,col_lab,col_grid,col_bot,col_txt] = init_cmap(cmap_name)
 %
 %   See also ESPRESSO.
 
-%   Authors: Yoann Ladroit (NIWA, yoann.ladroit@niwa.co.nz) and Alex
-%   Schimel (NIWA, alexandre.schimel@niwa.co.nz)
-%   2017-2021; Last revision: 27-07-2021
+%   Copyright 2017-2024 Alexandre Schimel, Yoann Ladroit, NIWA
+%   Licensed under MIT. Details on https://github.com/alexschimel/Espresso/
+
 
 switch lower(cmap_name)
     case {'parula' 'jet' 'hsv' 'winter' 'autumn' 'spring' 'hot' 'cool' 'gray'}

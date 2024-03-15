@@ -20,7 +20,9 @@ function cdata = read_icon(filename,guessalpha)
 %
 % See also IMREAD.
 
-% Copyright 1984-2007 The MathWorks, Inc.
+% Copyright 1984-2007 The MathWorks, Inc. 
+% Modifications copyright 2017-2021 Alexandre Schimel, Yoann Ladroit, NIWA
+%   Licensed under MIT. Details on https://github.com/alexschimel/Espresso/
 
 if nargin < 2
     guessalpha = true;

@@ -4,9 +4,8 @@ function Espresso(varargin)
 %   ESPRESSO() starts an Espresso session or activates the main window if a
 %   session is already running.
 
-%   Authors: Alex Schimel (NGU, alexandre.schimel@ngu.no) and Yoann Ladroit
-%   (NIWA, yoann.ladroit@niwa.co.nz) 
-%   2017-2024
+%   Copyright 2017-2024 Alexandre Schimel, Yoann Ladroit, NIWA
+%   Licensed under MIT. Details on https://github.com/alexschimel/Espresso/
 
 % Debug
 global DEBUG;
@@ -77,23 +76,25 @@ diary(logfile);
 EspressoUserdata.logfile = logfile; % save to app in order to close diary at the end
 
 % Getting software info for start-up message
-[espressoVer, coffeeVer] = espresso_version();
-licenseFilename = 'LICENSE';
-licenseLines = readlines(licenseFilename);
+[espressoVer, coffeeVer, aknowledgments] = espresso_version();
+licenseFile = espresso_license_file();
+licenseLines = readlines(licenseFile);
 espressoLicense = licenseLines(find(contains(licenseLines,"license",'IgnoreCase',true),1));
 espressoCopyright = licenseLines(find(contains(licenseLines,"copyright",'IgnoreCase',true),1));
 if isdeployed
     licenseLocation = 'About section';
 else
+    [~,licenseFilename] = fileparts(licenseFile);
     licenseLocation = sprintf('%s file',licenseFilename);
 end
 
 % Start-up message
 introText = {};
-introText{1,1} = sprintf('ESPRESSO v%s (powered by CoFFee v%s)\n',espressoVer,coffeeVer);
-introText{2,1} = sprintf('%s\n',espressoCopyright);
-introText{3,1} = sprintf('Licensed under the %s. See %s for details.\n',espressoLicense,licenseLocation);
-introText{4,1} = sprintf('If you use this software, please acknowledge all authors listed in copyright.\n');
+introText{end+1,1} = sprintf('ESPRESSO v%s (powered by CoFFee v%s)\n',espressoVer,coffeeVer);
+introText{end+1,1} = sprintf('%s\n',espressoCopyright);
+introText{end+1,1} = sprintf('Licensed under the %s. See %s for details.\n',espressoLicense,licenseLocation);
+introText{end+1,1} = sprintf('If you use this software, please acknowledge:\n');
+introText{end+1,1} = sprintf('%s.\n',aknowledgments);
 introLimsText = {char([61.*ones(1,max(cellfun(@length,introText))-1),10])};
 introText = [introLimsText;introText;introLimsText];
 cellfun(@fprintf,introText);

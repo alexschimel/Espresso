@@ -14,9 +14,8 @@ function draw_box(~,~,main_figure,endFunction,endFunctionInputVar)
 %   
 %   See also ESPRESSO.
 
-%   Authors: Yoann Ladroit (NIWA, yoann.ladroit@niwa.co.nz) and Alex
-%   Schimel (NIWA, alexandre.schimel@niwa.co.nz)
-%   2017-2022; Last revision: 14-03-2022
+%   Copyright 2017-2022 Alexandre Schimel, Yoann Ladroit, NIWA
+%   Licensed under MIT. Details on https://github.com/alexschimel/Espresso/
 
 map_tab_comp = getappdata(main_figure,'Map_tab');
 

@@ -3,9 +3,8 @@ classdef feature_cl
     %
     %   See also ESPRESSO.
     
-    %   Authors: Yoann Ladroit (NIWA, yoann.ladroit@niwa.co.nz) and Alex
-    %   Schimel (NIWA, alexandre.schimel@niwa.co.nz)
-    %   2017-2024
+    %   Copyright 2017-2024 Alexandre Schimel, Yoann Ladroit, NIWA
+    %   Licensed under MIT. Details on https://github.com/alexschimel/Espresso/
     
     properties
         Class = 'unidentified'; % Feature class name

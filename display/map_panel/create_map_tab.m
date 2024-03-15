@@ -3,9 +3,8 @@ function create_map_tab(main_figure,map_tab_group)
 %
 %   See also UPDATE_MAP_TAB, INITIALIZE_DISPLAY, ESPRESSO.
 
-%   Authors: Yoann Ladroit (NIWA, yoann.ladroit@niwa.co.nz) and Alex
-%   Schimel (NIWA, alexandre.schimel@niwa.co.nz)
-%   2017-2024
+%   Copyright 2017-2024 Alexandre Schimel, Yoann Ladroit, NIWA
+%   Licensed under MIT. Details on https://github.com/alexschimel/Espresso/
 
 if isappdata(main_figure,'Map_tab')
     map_tab_comp = getappdata(main_figure,'Map_tab');

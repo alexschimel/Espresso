@@ -1,5 +1,5 @@
 <deployment-project plugin="plugin.ezdeploy" plugin-version="1.0">
-  <configuration build-checksum="3557758591" file="C:\Users\Schimel_Alexandre\Code\MATLAB\ESPRESSO_MIGRATE_3\Espresso\Espresso.prj" location="C:\Users\Schimel_Alexandre\Code\MATLAB\ESPRESSO_MIGRATE_3\Espresso" name="Espresso" preferred-package-location="C:\Users\Schimel_Alexandre\Code\MATLAB\Espresso\bin\for_redistribution" preferred-package-type="package.type.exe" target="target.ezdeploy.standalone" target-name="Application Compiler">
+  <configuration build-checksum="3557758591" file="C:\Users\Schimel_Alexandre\Code\MATLAB\Espresso\Espresso.prj" location="C:\Users\Schimel_Alexandre\Code\MATLAB\Espresso" name="Espresso" preferred-package-location="C:\Users\Schimel_Alexandre\Code\MATLAB\Espresso\bin\for_redistribution" preferred-package-type="package.type.exe" target="target.ezdeploy.standalone" target-name="Application Compiler">
     <param.appname>Espresso</param.appname>
     <param.icon>${PROJECT_ROOT}\Espresso_resources\icon.ico</param.icon>
     <param.icons>
@@ -8,15 +8,24 @@
       <file>${PROJECT_ROOT}\Espresso_resources\icon_24.png</file>
       <file>${PROJECT_ROOT}\Espresso_resources\icon_16.png</file>
     </param.icons>
-    <param.version>0.21</param.version>
-    <param.authnamewatermark>Alexandre Schimel</param.authnamewatermark>
+    <param.version>1.0.0.1</param.version>
+    <param.authnamewatermark>Alexandre Schimel, Yoann Ladoit, NIWA</param.authnamewatermark>
     <param.email>alexandre.schimel@ngu.no</param.email>
-    <param.company>NIWA</param.company>
+    <param.company />
     <param.summary>Multibeam water-column data visualization/processing</param.summary>
-    <param.description />
+    <param.description>Espresso is a free and open-source app to visualize and process water-column data acquired by multibeam echosounders. The main feature of this tool is the possibility to vertically echo-integrate water-column data so as to visualize and examine anomalies.
+
+Relevant features:
+* Support Kongsberg .all/.wcd, Kongsberg .kmall/.kmwcd, and Reson-Teledyne .s7k formats.
+* Mask unwanted data (seafloor echo and below, outer-beams, inner-range, outer-range).
+*  Filter the sidelobe artefact.
+*  Vertical echo-integration over the whole water-column, or in horizontal slices defined relative to the water-surface (i.e. in depth) or to the bottom (i.e. in height).
+*  Visualize data stacked in range or depth.
+*  Export echo-integration mosaics.
+*  Geopicking features as polygons or points, and export as shapefiles.</param.description>
     <param.screenshot>${PROJECT_ROOT}\Espresso_resources\splash.png</param.screenshot>
     <param.guid />
-    <param.installpath.string>\Espresso\v0.21</param.installpath.string>
+    <param.installpath.string>\Espresso\v1.0.0-alpha.1</param.installpath.string>
     <param.installpath.combo>option.installpath.programfiles</param.installpath.combo>
     <param.logo>${PROJECT_ROOT}\Espresso_resources\splash_half.png</param.logo>
     <param.install.notes />
@@ -34,7 +43,7 @@
     <param.web.mcr>true</param.web.mcr>
     <param.package.mcr>false</param.package.mcr>
     <param.no.mcr>false</param.no.mcr>
-    <param.web.mcr.name>espresso_v021_setup</param.web.mcr.name>
+    <param.web.mcr.name>espresso_v1a1_setup</param.web.mcr.name>
     <param.package.mcr.name>MyAppInstaller_mcr</param.package.mcr.name>
     <param.no.mcr.name>MyAppInstaller_app</param.no.mcr.name>
     <param.windows.command.prompt>false</param.windows.command.prompt>
@@ -48,11 +57,20 @@
 	 Espresso varargin 
  Input Arguments 
 	 -?  print help on how to use the application 
-	 varargin  input arguments</param.help.text>
+	 varargin  input arguments 
+ Description 
+ 	 Espresso is a free and open-source app to visualize and process water-column data acquired by multibeam echosounders. The main feature of this tool is the possibility to vertically echo-integrate water-column data so as to visualize and examine anomalies.
+
+Relevant features:
+* Support Kongsberg .all/.wcd, Kongsberg .kmall/.kmwcd, and Reson-Teledyne .s7k formats.
+* Mask unwanted data (seafloor echo and below, outer-beams, inner-range, outer-range).
+*  Filter the sidelobe artefact.
+*  Vertical echo-integration over the whole water-column, or in horizontal slices defined relative to the water-surface (i.e. in depth) or to the bottom (i.e. in height).
+*  Visualize data stacked in range or depth.
+*  Export echo-integration mosaics.
+*  Geopicking features as polygons or points, and export as shapefiles.</param.help.text>
     <unset>
-      <param.authnamewatermark />
       <param.email />
-      <param.description />
       <param.guid />
       <param.installpath.combo />
       <param.install.notes />
@@ -79,6 +97,7 @@
     </fileset.resources>
     <fileset.package>
       <file>${PROJECT_ROOT}\Espresso_resources\icon_24.png</file>
+      <file>${PROJECT_ROOT}\LICENSE</file>
     </fileset.package>
     <fileset.depfun>
       <file>${MATLAB_ROOT}\toolbox\local\userpath.m</file>
@@ -224,6 +243,7 @@
       <file>${PROJECT_ROOT}\display\map_panel\display_features.m</file>
       <file>${PROJECT_ROOT}\display\map_panel\grab_ping_line_cback.m</file>
       <file>${PROJECT_ROOT}\display\map_panel\update_map_tab.m</file>
+      <file>${PROJECT_ROOT}\display\menu\create_menu.m</file>
       <file>${PROJECT_ROOT}\display\opt_panel\datafiles_tab\create_datafiles_tab.m</file>
       <file>${PROJECT_ROOT}\display\opt_panel\datafiles_tab\update_datafiles_tab.m</file>
       <file>${PROJECT_ROOT}\display\opt_panel\display_tab\create_display_tab.m</file>
@@ -245,6 +265,7 @@
       <file>${PROJECT_ROOT}\display\wc_panel\stacked_wc_tab\update_stacked_wc_tab.m</file>
       <file>${PROJECT_ROOT}\display\wc_panel\wc_tab\create_wc_tab.m</file>
       <file>${PROJECT_ROOT}\display\wc_panel\wc_tab\update_wc_tab.m</file>
+      <file>${PROJECT_ROOT}\espresso_license_file.m</file>
       <file>${PROJECT_ROOT}\espresso_version.m</file>
       <file>${PROJECT_ROOT}\general\coffee_checks\get_coffee_version.m</file>
       <file>${PROJECT_ROOT}\general\coffee_checks\is_coffee_folder.m</file>
@@ -253,6 +274,7 @@
       <file>${PROJECT_ROOT}\general\config\get_config_field.m</file>
       <file>${PROJECT_ROOT}\general\config\init_config_file.m</file>
       <file>${PROJECT_ROOT}\general\config\set_config_field.m</file>
+      <file>${PROJECT_ROOT}\general\espresso_export_folder.m</file>
       <file>${PROJECT_ROOT}\general\espresso_user_folder.m</file>
       <file>${PROJECT_ROOT}\general\generate_Espresso_diary_filename.m</file>
       <file>${PROJECT_ROOT}\io\generate_valid_filename.m</file>
@@ -267,9 +289,9 @@
       <file>${PROJECT_ROOT}\whereisroot.m</file>
     </fileset.depfun>
     <build-deliverables>
-      <file location="${PROJECT_ROOT}\bin\for_testing" name="readme.txt" optional="true">C:\Users\Schimel_Alexandre\Code\MATLAB\ESPRESSO_MIGRATE_3\Espresso\bin\for_testing\readme.txt</file>
-      <file location="${PROJECT_ROOT}\bin\for_testing" name="Espresso.exe" optional="false">C:\Users\Schimel_Alexandre\Code\MATLAB\ESPRESSO_MIGRATE_3\Espresso\bin\for_testing\Espresso.exe</file>
-      <file location="${PROJECT_ROOT}\bin\for_testing" name="splash.png" optional="false">C:\Users\Schimel_Alexandre\Code\MATLAB\ESPRESSO_MIGRATE_3\Espresso\bin\for_testing\splash.png</file>
+      <file location="${PROJECT_ROOT}\bin\for_testing" name="Espresso.exe" optional="false">C:\Users\Schimel_Alexandre\Code\MATLAB\Espresso\bin\for_testing\Espresso.exe</file>
+      <file location="${PROJECT_ROOT}\bin\for_testing" name="readme.txt" optional="true">C:\Users\Schimel_Alexandre\Code\MATLAB\Espresso\bin\for_testing\readme.txt</file>
+      <file location="${PROJECT_ROOT}\bin\for_testing" name="splash.png" optional="false">C:\Users\Schimel_Alexandre\Code\MATLAB\Espresso\bin\for_testing\splash.png</file>
     </build-deliverables>
     <workflow />
     <matlab>

@@ -5,9 +5,8 @@ function remove_interactions(main_figure)
 %
 %   See also ESPRESSO.
 
-%   Authors: Yoann Ladroit (NIWA, yoann.ladroit@niwa.co.nz) and Alex
-%   Schimel (NIWA, alexandre.schimel@niwa.co.nz)
-%   2017-2021; Last revision: 29-06-2017
+%   Copyright 2017-2021 Alexandre Schimel, Yoann Ladroit, NIWA
+%   Licensed under MIT. Details on https://github.com/alexschimel/Espresso/
 
 interactions = getappdata(main_figure,'interactions_id');
 

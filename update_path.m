@@ -3,9 +3,8 @@ function update_path(path)
 %
 %   See also ESPRESSO.
 
-%   Authors: Alex Schimel (NGU, alexandre.schimel@ngu.no) and Yoann Ladroit
-%   (NIWA, yoann.ladroit@niwa.co.nz) 
-%   2017-2022; Last revision: 12-08-2022
+%   Copyright 2017-2024 Alexandre Schimel, Yoann Ladroit, NIWA
+%   Licensed under MIT. Details on https://github.com/alexschimel/Espresso/
 
 addpath(path);
 addpath(genpath(fullfile(path,'assets')));

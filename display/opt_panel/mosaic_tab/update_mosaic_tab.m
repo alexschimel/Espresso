@@ -3,9 +3,8 @@ function update_mosaic_tab(main_figure)
 %
 %   See also CREATE_MOSAIC_TAB, INITIALIZE_DISPLAY, ESPRESSO.
 
-%   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
-%   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
-%   2017-2021; Last revision: 21-07-2021
+%   Copyright 2017-2021 Alexandre Schimel, Yoann Ladroit, NIWA
+%   Licensed under MIT. Details on https://github.com/alexschimel/Espresso/
 
 mosaic_tab_comp = getappdata(main_figure,'mosaic_tab');
 mosaics = getappdata(main_figure,'mosaics');

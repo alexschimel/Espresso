@@ -1,13 +1,12 @@
 function create_menu(main_figure)
 %CREATE_MENU  Create menu on Espresso main window
 %
-%   Obsolete
+%   Create menu on Espresso main window
 %
 %   See also ESPRESSO.
 
-%   Authors: Yoann Ladroit (NIWA, yoann.ladroit@niwa.co.nz) and Alex
-%   Schimel (NIWA, alexandre.schimel@niwa.co.nz)
-%   2017-2024
+%   Copyright 2024 Alexandre Schimel, Yoann Ladroit, NIWA
+%   Licensed under MIT. Details on https://github.com/alexschimel/Espresso/
 
 uimenu(main_figure,'Label','About','Callback',{@callback_about,main_figure});
 
@@ -18,14 +17,17 @@ end
 function callback_about(~,~,main_figure)
 
 % about text
+[ver, coffeeVer, aknowledgments] = espresso_version();
 aboutText = {};
-aboutText{end+1,1} = sprintf('Espresso v%s\n\n',espresso_version());
-aboutText{end+1,1} = sprintf('If you use this software, please acknowledge all authors listed in copyright.\n\n');
+aboutText{end+1,1} = sprintf('Espresso v%s\n',ver);
+aboutText{end+1,1} = sprintf('(powered by CoFFee v%s)\n\n',coffeeVer);
+aboutText{end+1,1} = sprintf('If you use this software, please acknowledge:\n');
+aboutText{end+1,1} = sprintf('%s.\n\n',aknowledgments);
 aboutText{end+1,1} = sprintf('License:\n');
 
 % license text
-licenseFilename = 'LICENSE';
-licenseText = readlines(licenseFilename);
+licenseFile = espresso_license_file();
+licenseText = readlines(licenseFile);
 
 % text parameters
 fontSizeInPoints = 10;

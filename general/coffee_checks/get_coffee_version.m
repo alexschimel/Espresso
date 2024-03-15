@@ -4,9 +4,8 @@ function coffeeVer = get_coffee_version(folder)
 %   See also ESPRESSO_VERSION, IS_COFFEE_FOLDER, IS_COFFEE_VERSION,
 %   ESPRESSO. 
 
-%   Authors: Alex Schimel (NGU, alexandre.schimel@ngu.no) and Yoann Ladroit
-%   (NIWA, yoann.ladroit@niwa.co.nz)
-%   2022-2022; Last revision: 12-08-2022
+%   Copyright 2012-2022 Alexandre Schimel, Yoann Ladroit, NIWA
+%   Licensed under MIT. Details on https://github.com/alexschimel/Espresso/
 
 % first, check that it is a coffee folder
 if ~is_coffee_folder(folder)

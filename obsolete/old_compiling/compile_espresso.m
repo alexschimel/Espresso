@@ -3,9 +3,8 @@ function compile_espresso(root_folder,nomFunc)
 %
 %   See also ESPRESSO. 
 
-%   Authors: Alex Schimel (NGU, alexandre.schimel@ngu.no) and Yoann Ladroit
-%   (NIWA, yoann.ladroit@niwa.co.nz)
-%   2017-2022; Last revision: 12-08-2022
+%   Copyright 2017-2022 Alexandre Schimel, Yoann Ladroit, NIWA
+%   Licensed under MIT. Details on https://github.com/alexschimel/Espresso/
 
 folders = folders_list(root_folder);
 

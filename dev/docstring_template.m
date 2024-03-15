@@ -3,10 +3,8 @@ function [output1,output2] = function_name(input1,input2,input3)
 %
 %   See also ESPRESSO.
 
-%   Authors: Alex Schimel (NGU, alexandre.schimel@ngu.no) and Yoann Ladroit
-%   (NIWA, yoann.ladroit@niwa.co.nz) 
-%   XXXX-XXXX; Last revision: XX-XX-XXXX
-
+%   Copyright 20XX Alexandre Schimel, Yoann Ladroit, NIWA
+%   Licensed under MIT. Details on https://github.com/alexschimel/Espresso/
 
 
 %FUNCTION_NAME  One-line description of what the function performs
@@ -35,6 +33,5 @@ function [output1,output2] = function_name(input1,input2,input3)
 %
 %   See also OTHER_FUNCTION_NAME_1, OTHER_FUNCTION_NAME_2, ESPRESSO.
 
-%   Authors: Alex Schimel (NGU, alexandre.schimel@ngu.no) and Yoann Ladroit
-%   (NIWA, yoann.ladroit@niwa.co.nz) 
-%   XXXX-XXXX; Last revision: XX-XX-XXXX
+%   Copyright 20XX Alexandre Schimel, Yoann Ladroit, NIWA
+%   Licensed under MIT. Details on https://github.com/alexschimel/Espresso/

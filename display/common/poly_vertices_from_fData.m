@@ -3,9 +3,8 @@ function [new_vert,idx_pings,idx_angles] = poly_vertices_from_fData(fData,disp_c
 %
 %   See also UPDATE_MAP_TAB, ESPRESSO.
 
-%   Authors: Yoann Ladroit (NIWA, yoann.ladroit@niwa.co.nz) and Alex
-%   Schimel (NIWA, alexandre.schimel@niwa.co.nz)
-%   2017-2021; Last revision: 27-07-2021
+%   Copyright 2017-2021 Alexandre Schimel, Yoann Ladroit, NIWA
+%   Licensed under MIT. Details on https://github.com/alexschimel/Espresso/
 
 nPings = size(fData.X_BP_bottomEasting,2);
 new_vert = [];

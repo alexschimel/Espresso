@@ -3,9 +3,8 @@ function create_feature_list_tab(main_figure,parent_tab_group)
 %
 %   See also UPDATE_FEATURE_LIST_TAB, INITIALIZE_DISPLAY, ESPRESSO.
 
-%   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
-%   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
-%   2017-2024
+%   Copyright 2017-2024 Alexandre Schimel, Yoann Ladroit, NIWA
+%   Licensed under MIT. Details on https://github.com/alexschimel/Espresso/
 
 % disp_config = getappdata(main_figure,'disp_config');
 

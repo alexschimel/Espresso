@@ -1,4 +1,4 @@
-Alex 6 March 2024
+Alex 15 March 2024
 
 To compile Espresso in an executable:
 * Start from a clean slate:
@@ -11,7 +11,8 @@ To compile Espresso in an executable:
   * Remove any remaining files and folders in the list of files required.
   * Add `Espresso.m` again as a "main file" and wait for the application compiler to find all required files. This might take a few seconds.
   * Add folders `assets` and `Espresso_resources` to the list.
-  * Make sure the file `icon_24.png` is in the list of "Files installed for your end user". Otherwise add it (it is in the `Espresso_resources` folder).
+  * Uncheck the "Hyperspectral Imaging Library Support Package" from the list of "Suggested Support Packages".
+  * Remove the files `icon_24.png` and `LICENSE` from the list of "Files installed for your end user", then add them again (respectively from the `Espresso_resources` folder and the root folder).
 * Update the version number:
   * In the setup file name ("Packaging Options" panel, "Runtime downloaded from web" field).
   * In the "application information" panel.

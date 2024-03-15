@@ -3,9 +3,8 @@ function create_datafiles_tab(main_figure,parent_tab_group)
 %
 %   See also UPDATE_DATAFILES_TAB, INITIALIZE_DISPLAY, ESPRESSO.
 
-%   Authors: Alex Schimel (NGU, alexandre.schimel@ngu.no) and Yoann Ladroit
-%   (NIWA, yoann.ladroit@niwa.co.nz) 
-%   2017-2024
+%   Copyright 2017-2024 Alexandre Schimel, Yoann Ladroit, NIWA
+%   Licensed under MIT. Details on https://github.com/alexschimel/Espresso/
 
 %% create tab variable
 switch parent_tab_group.Type

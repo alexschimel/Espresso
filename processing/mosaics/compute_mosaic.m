@@ -3,9 +3,8 @@ function mosaic = compute_mosaic(mosaic, fData_tot, d_lim_sonar_ref, d_lim_botto
 %
 %   See also ESPRESSO.
 
-%   Authors: Alex Schimel (NIWA, alexandre.schimel@niwa.co.nz) and Yoann
-%   Ladroit (NIWA, yoann.ladroit@niwa.co.nz)
-%   2017-2021; Last revision: 27-07-2021
+%   Copyright 2017-2021 Alexandre Schimel, Yoann Ladroit, NIWA
+%   Licensed under MIT. Details on https://github.com/alexschimel/Espresso/
 
 E_lim = mosaic.E_lim;
 N_lim = mosaic.N_lim;
