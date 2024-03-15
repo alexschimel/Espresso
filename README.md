@@ -76,6 +76,7 @@ If you want to receive notifications of future releases (recommended), you may c
 
 ### Copyright
 
+2017-2024
 * Alexandre Schimel (The Geological Survey of Norway)
 * Yoann Ladroit (Kongsberg Discovery)
 * The National Institute of Water and Atmospheric Research (NIWA), New Zealand
