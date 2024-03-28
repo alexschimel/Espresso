@@ -71,7 +71,7 @@ end
 
 
 %% get WCD coordinates in the swath frame
-[sampleAcrossDist,sampleUpDist] = CFF_get_WC_coordinates(fData,iPing,size(WC_data,1));
+[sampleAcrossDist,sampleUpDist] = CFF_get_WCD_swathe_coordinates(fData,iPing,size(WC_data,1));
 
 
 %% display
