@@ -39,11 +39,11 @@ fdata_tab_comp.selected_idx = [];
 % right click menu
 rc_menu = uicontextmenu(ancestor(fdata_tab_comp.table,'figure'));
 fdata_tab_comp.table.UIContextMenu = rc_menu;
-uimenu(rc_menu,'Label','Select All','Callback',{@selection_callback,main_figure},'Tag','se');
-uimenu(rc_menu,'Label','De-Select All','Callback',{@selection_callback,main_figure},'Tag','de');
-uimenu(rc_menu,'Label','Inverse Selection','Callback',{@selection_callback,main_figure},'Tag','inv');
-uimenu(rc_menu,'Label','Remove Selected Lines','Callback',{@remove_lines_cback,main_figure});
-uimenu(rc_menu,'Label','Zoom to Highlighted Lines','Callback',{@go_to_lines_cback,main_figure});
+uimenu(rc_menu,'Label','Display All','Callback',{@selection_callback,main_figure},'Tag','se');
+uimenu(rc_menu,'Label','Display None','Callback',{@selection_callback,main_figure},'Tag','de');
+uimenu(rc_menu,'Label','Inverse Display','Callback',{@selection_callback,main_figure},'Tag','inv');
+uimenu(rc_menu,'Label','Unload Displayed Lines','Callback',{@remove_lines_cback,main_figure});
+uimenu(rc_menu,'Label','Zoom to Selected Lines','Callback',{@go_to_lines_cback,main_figure});
 
 % save and update the figure
 setappdata(main_figure,'fdata_tab',fdata_tab_comp);
