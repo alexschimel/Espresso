@@ -1,7 +1,7 @@
 function fDataGroup = gridbathyBS(fDataGroup, idx_fData, procpar)
 %GRIDBATHYBS  Grid bottom height field, and backscatter if possible
 %
-%   Grid in geographical coordinates (Easting, Northing) the
+%   Grid in projected coordinates (Easting, Northing) the
 %   X_BP_bottomHeight field, which is obtained after applying
 %   CFF_GEOREFERENCE_WC_BOTTOM_DETECT. If the datagram source was X8, then
 %   the backscatter is also available with the same dimensions and can also
