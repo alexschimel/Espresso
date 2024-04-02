@@ -57,7 +57,7 @@ Note: At start-up, *Espresso* creates an `Espresso` user folder (normally, C:\Us
 
 ## Help
 
-Head over to the [wiki](https://github.com/alexschimel/Espresso/wiki) for documentation (to do).
+Head over to the [wiki](https://github.com/alexschimel/Espresso/wiki) for documentation (in progress).
 
 For more help, contact the [authors](#authors).
 
@@ -67,7 +67,7 @@ See the [releases](https://github.com/alexschimel/Espresso/releases) page for pa
 
 If you want to receive notifications of future releases (recommended), you may create a github account, and on this repository click on 'Watch', then 'Custom', and choose 'Releases'. Verify in your GitHub settings that you are set to receive 'Watching' notifications.
 
-## License
+## About
 
 ### Authors
 
@@ -83,9 +83,9 @@ If you want to receive notifications of future releases (recommended), you may c
 
 ### License
 
-The Espresso software and source code is distributed under the MIT License. See `LICENSE` file for details.
+The _Espresso_ software and source code is distributed under the MIT License. See `LICENSE` file for details.
 
-Espresso uses several pieces of third-party code, each being distributed under its own license. Each piece of code is contained in a separate sub-folder of the 'toolboxes' folder and includes the corresponding license file.
+_Espresso_ uses several pieces of third-party code, each being distributed under its own license. Each piece of code is contained in a separate sub-folder of the 'toolboxes' folder and includes the corresponding license file.
 
 ### Citation/Credit
 
