@@ -52,6 +52,8 @@ if ip > numel(fData.X_1P_pingE)
     return;
 end
 
+fprintf('Updating Map view... ');
+
 % get map axes
 map_tab_comp = getappdata(main_figure,'Map_tab');
 ax = map_tab_comp.map_axes;
@@ -365,6 +367,7 @@ end
 if ~any(idx_active_lines)
     map_tab_comp.ping_window.Visible = 'off';
     set(map_tab_comp.ping_swathe,'XData',nan,'YData',nan);
+    fprintf('Done.\n');
     return;
 else
     map_tab_comp.ping_window.Visible = 'on';
@@ -374,6 +377,7 @@ end
 
 IDs = cellfun(@(c) c.ID,fData_tot);
 if ~ismember(disp_config.Fdata_ID,IDs)
+    fprintf('Done.\n');
     return;
 end
 fData = fData_tot{disp_config.Fdata_ID==IDs};
@@ -469,6 +473,8 @@ end
 % set(ax,'xticklabel',x_labels);
 
 up_wc = 1;
+drawnow;
+fprintf('Done.\n');
 
 end
 

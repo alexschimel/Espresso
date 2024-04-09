@@ -6,6 +6,7 @@ function update_loadedlines_tab(main_figure)
 %   Copyright 2017-2021 Alexandre Schimel, Yoann Ladroit, NIWA
 %   Licensed under MIT. Details on https://github.com/alexschimel/Espresso/
 
+fprintf('Updating list of loaded lines... ');
 
 % get relevant stuff
 fdata_tab_comp = getappdata(main_figure,'fdata_tab');
@@ -13,6 +14,7 @@ fData = getappdata(main_figure,'fData');
 
 if isempty(fData)
     fdata_tab_comp.table.Data = {};
+    fprintf('Done.\n');
     return;
 end
 
@@ -38,5 +40,7 @@ new_entry(~idxHasWCD, 1) = cellfun(@(x) strcat('<html><FONT color="Red">',x,'</h
 % update table contents
 fdata_tab_comp.table.Data = new_entry;
 fdata_tab_comp.selected_idx = find([new_entry{:,end-1}]);
+
+fprintf('Done.\n');
 
 end

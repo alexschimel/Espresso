@@ -6,6 +6,7 @@ function update_datafiles_tab(main_figure)
 %   Copyright 2017-2021 Alexandre Schimel, Yoann Ladroit, NIWA
 %   Licensed under MIT. Details on https://github.com/alexschimel/Espresso/
 
+fprintf('Updating list of files... ');
 
 % get relevant stuff from main figure
 file_tab_comp = getappdata(main_figure,'file_tab');
@@ -52,5 +53,7 @@ file_tab_comp.table_main.Data = new_entry;
 file_tab_comp.files = rawfileslist;
 file_tab_comp.idx_converted = idx_converted;
 setappdata(main_figure,'file_tab',file_tab_comp);
+
+fprintf('Done.\n');
 
 end
