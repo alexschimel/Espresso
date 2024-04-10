@@ -6,25 +6,25 @@ function fData_tot = process_watercolumn(fData_tot, idx_fData, procpar)
 %   Copyright 2017-2021 Alexandre Schimel, Yoann Ladroit, NIWA
 %   Licensed under MIT. Details on https://github.com/alexschimel/Espresso/
 
-% Water-column data takes A LOT of space. Because of this, the original
-% data are limited in resolution so that they could be stored with less
-% bytes, aka use less storage space. The issue with this is that it also
-% limits the range available. For example, Kongsberg data have 0.5dB
-% resolution in order to be coded directly in 1 byte (int8). The range of
-% values stored are -63.5dB to 64dB.
+% Water-column data takes A LOT of space. Because of this, the original data are
+% limited in resolution so that they could be stored with less bytes, aka use
+% less storage space. The issue with this is that it also limits the range
+% available. For example, Kongsberg data have 0.5dB resolution in order to be
+% coded directly in 1 byte (int8). The range of values stored are -63.5dB to
+% 64dB.
 %
-% After processing, data may have increased resolution (e.g. the average of
-% -30dB and -30.5dB is a value of -30.25, so if you want to use the
-% original data precision, you will have to code this as either -30 or
-% -30.5. Additionally, processed values may fall outside of the bounds
-% (e.g. -80 dB), which will be encoded with the minimum value of the
-% encoding (-63.5dB). Massive risks of saturation.
+% After processing, data may need increased resolution (e.g. the average of
+% -30dB and -30.5dB is a value of -30.25, so if you want to use the original
+% data precision, you will have to code this as either -30 or -30.5).
+% Additionally, processed values may fall outside of the bounds (e.g. -80 dB),
+% which will be encoded with the minimum value of the encoding (-63.5dB).
+% This is a risk of saturation.
 %
-% So we are going to encode processed results with a different system than
-% the original data. We're letting user decide the byte precision and then
-% we will dynamically choose encoding parameters to obtain optimal
-% precision given the processed data dynamic range, for each memmapfile.
-% Those parameters are stored so data can be decoded using them.
+% So we are going to encode processed results with a different format than the
+% original data. We're letting user decide the byte precision and then we will
+% dynamically choose encoding parameters to obtain optimal precision given the
+% processed data dynamic range, for each memmapfile. Those parameters are stored
+% so data can be decoded using them.
 
 % Specify here the number of bytes to use:
 storing_precision = '1 byte'; % '1 byte' or '2 bytes'
@@ -124,29 +124,28 @@ for itt = idx_fData(:)'
                 
                 % PROCESSING STEP 1/3: radiometric corrections
                 if procpar.radiomcorr_flag
-                    comms.info('Applying radiometric corrections');
+                    comms.info(sprintf('Block %i/%i. Applying radiometric corrections...',nBlocks-iB+1,nBlocks));
                     data = CFF_WC_radiometric_corrections_CORE(data, fData_tot{itt}, iPings, procpar.radiomcorr_params);
                 end
                 
                 % PROCESSING STEP 2/3: filtering sidelobe artefact
                 if procpar.sidelobefilter_flag
-                    comms.info('Filtering sidelobe artefact');
+                    comms.info(sprintf('Block %i/%i. Filtering sidelobe artefact...',nBlocks-iB+1,nBlocks));
                     data = CFF_filter_WC_sidelobe_artifact_CORE(data, fData_tot{itt}, iPings, procpar.sidelobefilter_params);
                 end
                 
                 % PROCESSING STEP 3/3: masking data
                 if procpar.masking_flag
-                    comms.info('Masking unwanted data');
+                    comms.info(sprintf('Block %i/%i. Masking unwanted data...',nBlocks-iB+1,nBlocks));
                     data = CFF_mask_WC_data_CORE(data, fData_tot{itt}, iPings, procpar.masking_params);
                 end
                 
-                % Next is data encoding for storage. For this we
-                % need to know the min and max value of all blocks, not
-                % just this one. We're going to operate an intermediate
-                % encoding using best available information, and
-                % perhaps later reencode.
+                % Next is data encoding for storage. For this we need to know
+                % the min and max value of all blocks, not just this one. We're
+                % going to operate an intermediate  encoding using best
+                % available information, and perhaps later reencode.
                 
-                comms.info('Encoding processed data for storage');
+                comms.info(sprintf('Block %i/%i. Encoding processed data for storage...',nBlocks-iB+1,nBlocks));
                 
                 % min and max values in this block
                 minsrc = nanmin(data(:));
@@ -190,8 +189,8 @@ for itt = idx_fData(:)'
                 
             end
             
-            % we may have to reencode some blocks if blocks were
-            % encoded with different parameters
+            % we may have to reencode some blocks if blocks were encoded with
+            % different parameters 
             
             if nBlocks == 1
                 % no need here. Just save the parameters
@@ -256,7 +255,7 @@ for itt = idx_fData(:)'
         end
         
         % save the updated fData on the drive
-        comms.info('Saving fData on the disk');
+        comms.info('Updating fData on the drive...');
         fData = fData_tot{itt};
         folder_for_converted_data = CFF_converted_data_folder(fData.ALLfilename{1});
         mat_fdata_file = fullfile(folder_for_converted_data,'fData.mat');
@@ -264,7 +263,7 @@ for itt = idx_fData(:)'
         clear fData;
         
         % successful end of this iteration
-        comms.info('Done');
+        comms.info('Done.');
         
         % error catching
     catch err
@@ -281,7 +280,7 @@ end
 
 
 %% end message
-comms.finish('Done');
+comms.finish('Done.');
 
 
 end
