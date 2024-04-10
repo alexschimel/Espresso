@@ -215,6 +215,8 @@ if folder_name == 0
     return;
 end
 
+fprintf('Exporting features to %s... ', folder_name);
+
 % features to export
 features_id = {features(:).Unique_ID};
 idx_feature_to_export = ismember(features_id,IDs);
@@ -224,10 +226,10 @@ fData_tot = getappdata(main_figure,'fData');
 table_out=[];
 for ii = 1:numel(idx_exp)
     
-    output_file = [sprintf('%s_%i_%s',features(idx_exp(ii)).Class,features(idx_exp(ii)).ID,features(idx_exp(ii)).Description) '.shp'];
+    % export feature as basic geostruct
+    geostruct = features(idx_exp(ii)).feature_to_geostruct();
     
-    geostruct=features(idx_exp(ii)).feature_to_geostruct();
-    
+    % additional fields to export
     geostruct.Files={};
     geostruct.PingStart=[];
     geostruct.PingEnd=[];
@@ -274,12 +276,28 @@ for ii = 1:numel(idx_exp)
     geostruct.DateTimeStart=strjoin(geostruct.DateTimeStart,';');
     geostruct.DateTimeEnd=strjoin(geostruct.DateTimeEnd,';');
     
-    output_file=generate_valid_filename(output_file);
-    output_file=fullfile(folder_name,output_file);
-    %output_file='D:\test.shp';
-    shapewrite(geostruct,output_file);
+    % output shapefile name
+    featureID = features(idx_exp(ii)).ID;
+    featureClass = features(idx_exp(ii)).Class;
+    featureDescription = features(idx_exp(ii)).Description;
+    if isempty(strtrim(featureDescription))
+        outputFileBaseName = sprintf('%i_%s',featureID,featureClass);
+    else
+        outputFileBaseName = sprintf('%i_%s_%s',featureID,featureClass,featureDescription);
+    end
+    outputFileBaseName = generate_valid_filename(outputFileBaseName);
+    outputFileBaseName = fullfile(folder_name,outputFileBaseName);
     
-    geostruct=rmfield(geostruct,'BoundingBox');
+    % write shapefile
+    shapewrite(geostruct,outputFileBaseName);
+    
+    % write projection file 
+    wkt = 'GEOGCS["GCS_WGS_1984",DATUM["D_WGS_1984",SPHEROID["WGS_1984",6378137.0,298.257223563]],PRIMEM["Greenwich",0.0],UNIT["Degree",0.0174532925199433]]';
+    outputPrjFile = [outputFileBaseName '.prj'];
+    writematrix(wkt,outputPrjFile,'FileType','text','QuoteStrings',false);
+    
+    % modify geostruct to be able to save as csv
+    geostruct = rmfield(geostruct,'BoundingBox');
     switch geostruct.Geometry
         case 'Polygon'
             geostruct.Lat=nanmean(geostruct.Lat(:));
@@ -298,7 +316,9 @@ if ~isempty(table_out)
     output_file_csv = fullfile(folder_name,[sprintf('%s_saved_features_%s',datestr(now,'yyyymmddHHMMSS')) '.csv']);
     writetable(table_out,output_file_csv);
 end
-fprintf('Export to %s finished\n',folder_name);
+
+fprintf('Done.\n');
+
 end
 
 

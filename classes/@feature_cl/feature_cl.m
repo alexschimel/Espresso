@@ -87,29 +87,22 @@ classdef feature_cl
         end
         
         function geostruct = feature_to_geostruct(obj)
-            % save feature as shapefile
+            % export feature to geostruct format
             
+            % get geometry and coordinates
             if ~isempty(obj.Polygon)
-                % feature is a polygon. Set polygon-specific properties
-                
-                [lat,lon] = utm2ll(obj.Polygon.Vertices(:,1),obj.Polygon.Vertices(:,2),obj.Zone);
-                
                 geostruct.Geometry = 'Polygon';
-                geostruct.Lat = [lat;lat(1)];
-                geostruct.Lon = [lon ;lon(1)];
-                
+                [lat,lon] = utm2ll(obj.Polygon.Vertices(:,1),obj.Polygon.Vertices(:,2),obj.Zone);
+                geostruct.Lat = [lat; lat(1)];
+                geostruct.Lon = [lon; lon(1)];
             else
-                % feature is a point. Set point-specific properties
-                
-                [lat,lon] = utm2ll(obj.Point(1),obj.Point(2),obj.Zone);
-                
                 geostruct.Geometry = 'Point';
+                [lat,lon] = utm2ll(obj.Point(1),obj.Point(2),obj.Zone);
                 geostruct.Lat = lat;
                 geostruct.Lon = lon;
-                
             end
             
-            % common porperties
+            % other properties
             geostruct.BoundingBox = [[min(lon) min(lat)];[max(lon) max(lon)]];
             geostruct.Depth_min = obj.Depth_min;
             geostruct.Depth_max = obj.Depth_max;
@@ -117,7 +110,6 @@ classdef feature_cl
             geostruct.Class = obj.Class;
             geostruct.ID = obj.ID;
             geostruct.Zone = obj.Zone;
-            
         end
         
         function feature_to_shapefile(obj,folder)
