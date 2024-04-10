@@ -1,29 +1,31 @@
 function fData_tot = grid_watercolumn(fData_tot, idx_fData, procpar)
-%GRID_WATERCOLUMN  One-line description
+%GRID_WATERCOLUMN  grid water-column data
 %
 %   See also ESPRESSO.
 
-%   Copyright 2017-2021 Alexandre Schimel, Yoann Ladroit, NIWA
+%   Copyright 2017-2024 Alexandre Schimel, Yoann Ladroit, NIWA
 %   Licensed under MIT. Details on https://github.com/alexschimel/Espresso/
 
-% init counter
-u = 0;
-
-% general timer
-timer_start = now;
+% initiate comms
+comms = CFF_Comms('multilines');
+comms.start('Gridding water-column data');
+iFD = 0;
+nFData = numel(idx_fData);
+comms.progress(iFD,nFData);
 
 for itt = idx_fData(:)'
     
+    % processing using a try-catch so that processing left overnight can
+    % continue even if one file fails.
     try
         
-        % disp
-        u = u+1;
-        fprintf('Gridding file "%s" (%i/%i)...\n',fData_tot{itt}.ALLfilename{1},u,numel(idx_fData));
-        fprintf('...Started at %s...',datestr(now));
-        
-        tic
+        % start comms for this line
+        iFD = iFD+1;
+        filename = CFF_file_name(fData_tot{itt}.ALLfilename{1});
+        comms.step(sprintf('%i/%i: fData line %s',iFD,nFData,filename));
         
         % gridding
+        comms.info('Gridding data...');
         fData_tot{itt} = CFF_grid_WC_data(fData_tot{itt},...
             'grid_horz_res',procpar.grid_horz_res,...
             'grid_vert_res',procpar.grid_vert_res,...
@@ -37,15 +39,17 @@ for itt = idx_fData(:)'
             'data_type',procpar.data_type);
                
         % save the updated fData on the drive
+        comms.info('Updating fData on the drive...');
         fData = fData_tot{itt};
         folder_for_converted_data = CFF_converted_data_folder(fData.ALLfilename{1});
         mat_fdata_file = fullfile(folder_for_converted_data,'fData.mat');
         save(mat_fdata_file,'-struct','fData','-v7.3');
         clear fData;
         
-        % disp
-        fprintf(' done. Elapsed time: %f seconds.\n',toc);
+        % successful end of this iteration
+        comms.info('Done.');
         
+        % error catching
     catch err
         [~,f_temp,e_temp] = fileparts(err.stack(1).file);
         err_str = sprintf('Error in file %s, line %d',[f_temp e_temp],err.stack(1).line);
@@ -53,10 +57,13 @@ for itt = idx_fData(:)'
         fprintf('%s\n\n',err.message);
     end
     
+    % communicate progress
+    comms.progress(iFD,nFData);
+    
 end
 
-% finalize
-timer_end = now;
-fprintf('Total time for gridding: %f seconds (~%.2f minutes).\n\n',(timer_end-timer_start)*24*60*60,(timer_end-timer_start)*24*60);
+%% end message
+comms.finish('Done.');
+
 
 end
