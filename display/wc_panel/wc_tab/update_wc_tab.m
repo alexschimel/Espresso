@@ -30,6 +30,8 @@ if ~ismember(disp_config.MET_datagramSource, {'WC','AP'})
     return
 end
 
+fprintf('Updating WC view... ');
+
 % get ping and across-dist to be displayed
 iPing          = disp_config.Iping;
 across_dist = disp_config.AcrossDist;
@@ -112,5 +114,8 @@ fname = fData.ALLfilename{1};
 [~,fnamet,~] = fileparts(fname);
 tt = sprintf('File: %s. Ping: %.0f/%.0f. Time: %s.',fnamet,iPing,numel(fData.(sprintf('%s_1P_PingCounter',datagramSource))),datestr(fData.X_1P_pingSDN(iPing),'HH:MM:SS'));
 wc_tab_comp.wc_axes_tt.String = tt;
+
+drawnow;
+fprintf('Done.\n');
 
 end

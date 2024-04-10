@@ -86,6 +86,8 @@ end
 
 if up_stacked_wc_bool
     
+    fprintf('Updating Stacked WC view... ');
+
     % data type to grab
     datagramSource = CFF_get_datagramSource(fData);
     switch str_disp
@@ -167,7 +169,9 @@ if up_stacked_wc_bool
             stacked_wc_tab_comp.wc_axes.YLabel.String = 'Depth (m)';
     end
     
-    
+    drawnow;
+    fprintf('Done.\n');
+
 end
 
 % Current ping display as vertical line
