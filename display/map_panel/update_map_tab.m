@@ -3,7 +3,7 @@ function up_wc = update_map_tab(main_figure,varargin)
 %
 %   See also CREATE_MAP_TAB, INITIALIZE_DISPLAY, ESPRESSO
 
-%   Copyright 2017-2021 Alexandre Schimel, Yoann Ladroit, NIWA
+%   Copyright 2017-2024 Alexandre Schimel, Yoann Ladroit, NIWA
 %   Licensed under MIT. Details on https://github.com/alexschimel/Espresso/
 
 %% INIT

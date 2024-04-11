@@ -3,7 +3,7 @@ function grab_vert_lim_cback(src,~,main_figure,ref)
 %
 %   See also ESPRESSO.
 
-%   Copyright 2017-2021 Alexandre Schimel, Yoann Ladroit, NIWA
+%   Copyright 2017-2024 Alexandre Schimel, Yoann Ladroit, NIWA
 %   Licensed under MIT. Details on https://github.com/alexschimel/Espresso/
 
 fData_tot = getappdata(main_figure,'fData');
@@ -46,7 +46,18 @@ d_line_min_val=d_line_min_h.Value;
 
 if strcmp(current_fig.SelectionType,'normal')
     
-    replace_interaction(main_figure,'interaction','WindowButtonMotionFcn','id',2,'interaction_fcn',@wbmcb,'Pointer','fleur');
+    % define aspect of pointer when grabbing a grabbable part of the slider
+    switch src.Tag
+        case 'd_line_max'
+            sliderGrabPointerAspect = 'top';
+        case 'd_line_min'
+            sliderGrabPointerAspect = 'top';
+        case 'd_line_mean'
+            sliderGrabPointerAspect = 'fleur';
+    end
+    
+    % replace pointer interactions when grabbing/releasing slider
+    replace_interaction(main_figure,'interaction','WindowButtonMotionFcn','id',2,'interaction_fcn',@wbmcb,'Pointer',sliderGrabPointerAspect);
     replace_interaction(main_figure,'interaction','WindowButtonUpFcn','id',2,'interaction_fcn',@wbucb);
     
 end
