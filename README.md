@@ -4,7 +4,7 @@
 
 Multibeam water-column visualization and processing.
 
-[![](https://github.com/alexschimel/Espresso/blob/master/Espresso_resources/download.png)](https://github.com/alexschimel/Espresso/releases/download/v1.0.0-alpha.1/espresso_v1a1_setup.exe)
+[![](https://github.com/alexschimel/Espresso/blob/master/Espresso_resources/download.png)](https://github.com/alexschimel/Espresso/releases/download/v1.0.0/espresso_v1_setup.exe)
 
 ## Description
 
