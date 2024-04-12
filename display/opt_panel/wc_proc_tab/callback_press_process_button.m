@@ -35,17 +35,6 @@ procpar.bottomfilter_flag = wc_proc_tab_comp.bot_filtering.Value;
 procpar.gridbathyBS_flag = wc_proc_tab_comp.bs_grid_bool.Value;
 procpar.gridbathyBS_res = str2double(get(wc_proc_tab_comp.bs_grid_res,'String'));
 
-% radiometric correction parameters
-procpar.radiomcorr_flag = wc_proc_tab_comp.radiomcorr.Value;
-procpar.radiomcorr_params.outVal = wc_proc_tab_comp.radiomcorr_output.String{wc_proc_tab_comp.radiomcorr_output.Value};
-
-% sidelobe filtering parameters
-procpar.sidelobefilter_flag = wc_proc_tab_comp.sidelobe.Value;
-procpar.sidelobefilter_params.avgCalc = 'mean';
-procpar.sidelobefilter_params.refType = 'fromPingData';
-procpar.sidelobefilter_params.refArea = 'nadirWC';
-procpar.sidelobefilter_params.refCalc = 'perc25';
-
 % masking parameters
 procpar.masking_flag = wc_proc_tab_comp.masking.Value;
 procpar.masking_params.maxAngle = str2double(get(wc_proc_tab_comp.angle_mask,'String'));
@@ -59,6 +48,17 @@ else
     % unchecked, don't remove anythin
     procpar.masking_params.maxRangeBelowMSR = inf;
 end
+
+% radiometric correction parameters
+procpar.radiomcorr_flag = wc_proc_tab_comp.radiomcorr.Value;
+procpar.radiomcorr_params.outVal = wc_proc_tab_comp.radiomcorr_output.String{wc_proc_tab_comp.radiomcorr_output.Value};
+
+% sidelobe filtering parameters
+procpar.sidelobefilter_flag = wc_proc_tab_comp.sidelobe.Value;
+procpar.sidelobefilter_params.avgCalc = 'mean';
+procpar.sidelobefilter_params.refType = 'fromPingData';
+procpar.sidelobefilter_params.refArea = 'nadirWC';
+procpar.sidelobefilter_params.refCalc = 'perc25';
 
 % main water-column gridding flag
 procpar.WCgridding_flag     = wc_proc_tab_comp.grid_bool.Value;
@@ -97,12 +97,10 @@ if procpar.processing_flag
     end
     
     % data processing
-    if procpar.masking_flag || procpar.sidelobefilter_flag || procpar.badpings_flag || procpar.radiomcorr_flag
-        
-        % this includes saving fDatas on the drive
+    % this includes saving fDatas on the drive
+    if procpar.masking_flag || procpar.radiomcorr_flag || procpar.sidelobefilter_flag
         fData_tot = process_watercolumn(fData_tot, idx_fData, procpar);
         update_stackview_flag = 1;
-        
     end
     
     % bathy/BS gridding
