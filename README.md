@@ -41,7 +41,9 @@ Relevant features:
 ### Installing
 
 * For the source code: 
-  * Clone or download this repository, as well as the repository of [*CoFFee*](https://github.com/alexschimel/CoFFee), onto your machine.
+  * Clone this repository, as well as the repository of [*CoFFee*](https://github.com/alexschimel/CoFFee), with [git](https://git-scm.com/) or a git client such as [GitHub Desktop](https://desktop.github.com/).
+  * Note that a few files are managed with [git-lfs](https://git-lfs.com/) so you will need to have this installed too.
+  * Simply downloading the source code will not work since you will miss the files that require git-lef.
 * For the compiled executable: 
   * Preferably, [download the binary installer from the releases page](https://github.com/alexschimel/Espresso/releases), execute the installer, and follow the instructions of the setup wizard. The setup wizard will check if you have the appropriate version of MATLAB Runtime installed and, if not, let you download and install it. Note that the setup wizard requires an internet connection.
   * Alternatively, you can simply [download the binary executable and accompanying files from the releases page](https://github.com/alexschimel/Espresso/releases) and double-click the .exe file to run the application without installing it. Note that you still need to have the appropriate version of MATLAB Runtime installed.
