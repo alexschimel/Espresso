@@ -41,7 +41,7 @@ Relevant features:
 ### Installing
 
 * For the source code: 
-  * Clone this repository, as well as the repository of [*CoFFee*](https://github.com/alexschimel/CoFFee), with [git](https://git-scm.com/) or a git client such as [GitHub Desktop](https://desktop.github.com/).
+  * Clone this repository, as well as the repository of [*CoFFee*](https://github.com/alexschimel/CoFFee), with [git or a git client](https://git-scm.com/).
   * Note that a few files are managed with [git-lfs](https://git-lfs.com/) so you will need to have this installed too.
   * Simply downloading the source code will not work since you will miss the files that require git-lef.
 * For the compiled executable: 
