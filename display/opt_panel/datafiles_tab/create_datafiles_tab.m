@@ -348,8 +348,8 @@ function callback_press_convertloadprocess_button(src,evt,main_figure)
 
 % Write a pop-up window asking to confirm
 % to do
-dlg_title = 'Processing ahead';
-dlg_text = 'After conversion and loading, selected files will be processed using parameters as currently set in the "Data Processing" tab. Proceed?';
+dlg_title = 'Have you set the processing parameters?';
+dlg_text = 'The selected files will be converted, loaded, then processed using the parameters as currently set in the "Data Processing" tab. Proceed?';
 answer = question_dialog_fig(main_figure,dlg_title,dlg_text);
 
 switch answer
