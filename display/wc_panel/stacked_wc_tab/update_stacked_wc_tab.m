@@ -3,7 +3,7 @@ function update_stacked_wc_tab(main_figure,varargin)
 %
 %   See also CREATE_STACKED_WC_TAB, INITIALIZE_DISPLAY, ESPRESSO.
 
-%   Copyright 2017-2021 Alexandre Schimel, Yoann Ladroit, NIWA
+%   Copyright 2017-2024 Alexandre Schimel, Yoann Ladroit, NIWA
 %   Licensed under MIT. Details on https://github.com/alexschimel/Espresso/
 
 
@@ -164,9 +164,9 @@ if up_stacked_wc_bool
     % Y Label
     switch disp_config.StackAngularMode
         case 'range'
-            stacked_wc_tab_comp.wc_axes.YLabel.String = 'Range (m)';
+            stacked_wc_tab_comp.wc_axes.YLabel.String = 'Range from sonar (m)';
         case 'depth'
-            stacked_wc_tab_comp.wc_axes.YLabel.String = 'Depth (m)';
+            stacked_wc_tab_comp.wc_axes.YLabel.String = 'Depth from sonar (m)';
     end
     
     drawnow;
