@@ -257,7 +257,7 @@ for ii = 1:nFiles
         drawnow;
         
         % print and save to default export folder
-        outFilename = sprintf('stack_file_%i-%i_ping-block_%i-%i.png',ii,nFiles,iB,nBlocks);
+        outFilename = sprintf('%s_WCD_%i-%i.png',fnamet,blocks(iB,1),blocks(iB,2));
         outFile = fullfile(exportFolder,outFilename);
         print(dest_fig,'-r300',outFile,'-dpng');
         
