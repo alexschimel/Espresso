@@ -81,8 +81,9 @@ for ii = idx_fData(:)'
             fDataGroup{ii}.X8_BP_ReflectivityBS,...
             procpar.gridbathyBS_res);
     else
-        gridBS = zeros(size(gridE),'single');
-        gridBS(isnan(gridZ)) = NaN;
+        comms.info('Cannot grid seafloor backscatter');
+        gridBS = gridZ;
+        gridBS(~isnan(gridZ)) = 0;
     end
     
     % save
