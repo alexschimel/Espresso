@@ -8,7 +8,7 @@
       <file>${PROJECT_ROOT}\Espresso_resources\icon_24.png</file>
       <file>${PROJECT_ROOT}\Espresso_resources\icon_16.png</file>
     </param.icons>
-    <param.version>1.0.0</param.version>
+    <param.version>1.1.0</param.version>
     <param.authnamewatermark>Alexandre Schimel, Yoann Ladoit, NIWA</param.authnamewatermark>
     <param.email>alexandre.schimel@ngu.no</param.email>
     <param.company />
@@ -25,7 +25,7 @@ Relevant features:
 *  Geopicking features as polygons or points, and export as shapefiles.</param.description>
     <param.screenshot>${PROJECT_ROOT}\Espresso_resources\splash.png</param.screenshot>
     <param.guid />
-    <param.installpath.string>\Espresso\v1.0.0</param.installpath.string>
+    <param.installpath.string>\Espresso\v1.1.0</param.installpath.string>
     <param.installpath.combo>option.installpath.programfiles</param.installpath.combo>
     <param.logo>${PROJECT_ROOT}\Espresso_resources\splash_half.png</param.logo>
     <param.install.notes />
@@ -43,7 +43,7 @@ Relevant features:
     <param.web.mcr>true</param.web.mcr>
     <param.package.mcr>false</param.package.mcr>
     <param.no.mcr>false</param.no.mcr>
-    <param.web.mcr.name>espresso_v1_setup</param.web.mcr.name>
+    <param.web.mcr.name>espresso_v110_setup</param.web.mcr.name>
     <param.package.mcr.name>MyAppInstaller_mcr</param.package.mcr.name>
     <param.no.mcr.name>MyAppInstaller_app</param.no.mcr.name>
     <param.windows.command.prompt>false</param.windows.command.prompt>
@@ -118,6 +118,7 @@ Relevant features:
       <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\general\CFF_get_bottom_sample.m</file>
       <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\general\CFF_is_parallel_computing_available.m</file>
       <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\general\CFF_memory_available.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\general\CFF_offset_array.m</file>
       <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\geoprocessing\CFF_compute_ping_navigation_v2.m</file>
       <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\geoprocessing\CFF_georeference_bottom_detect.m</file>
       <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\geoprocessing\CFF_get_WCD_swathe_coordinates.m</file>
@@ -125,6 +126,7 @@ Relevant features:
       <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\geoprocessing\samples_location\CFF_georeference_sample.m</file>
       <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\geoprocessing\samples_location\CFF_get_samples_dist.m</file>
       <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\geoprocessing\samples_location\CFF_get_samples_ENH.m</file>
+      <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\geoprocessing\samples_location\CFF_get_samples_index_from_range.m</file>
       <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\geoprocessing\samples_location\CFF_get_samples_range.m</file>
       <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\geoprocessing\samples_location\CFF_inter_sample_distance.m</file>
       <file>C:\Users\Schimel_Alexandre\Code\MATLAB\CoFFee\mosaic\CFF_init_mosaic.m</file>
