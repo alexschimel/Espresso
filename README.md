@@ -4,7 +4,7 @@
 
 Multibeam water-column visualization and processing.
 
-[![](https://github.com/alexschimel/Espresso/blob/master/Espresso_resources/download.png)](https://github.com/alexschimel/Espresso/releases/download/v1.0.0/espresso_v1_setup.exe)
+[![](https://github.com/alexschimel/Espresso/blob/master/Espresso_resources/download.png)](https://github.com/alexschimel/Espresso/releases/download/v1.1.0/espresso_v110_setup.exe)
 
 ## Description
 
@@ -13,7 +13,7 @@ Multibeam water-column visualization and processing.
 *Espresso* uses the [CoFFee multibeam data processing toolbox](https://github.com/alexschimel/CoFFee) (hence the name). It is coded in [MATLAB](https://www.mathworks.com/products/matlab.html), but is also available as a standalone application that does not require a MATLAB licence (see the [Dependencies](#dependencies) and [Installing](#installing) sections).
 
 Relevant features:
-* Support Kongsberg .all/.wcd, Kongsberg .kmall/.kmwcd, and Reson-Teledyne .s7k formats.
+* Support Kongsberg .all/.wcd, Kongsberg .kmall/.kmwcd, and Teledyne .s7k (Reson, Norbit) formats.
 * Mask unwanted data (seafloor echo and below, outer-beams, inner-range, outer-range).
 * Filter the sidelobe artefact.
 * Vertical echo-integration over the whole water-column, or in horizontal slices defined relative to the water-surface (i.e. in depth) or to the bottom (i.e. in height).
