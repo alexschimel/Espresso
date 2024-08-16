@@ -28,7 +28,8 @@ function [ver, coffeeVer, aknowledgments] = espresso_version()
 
 aknowledgments = 'Alexandre Schimel (The Geological Survey of Norway), Yoann Ladroit (Kongsberg Discovery), and Sally Watson (NIWA)';
 
-ver = '1.1.0'; coffeeVer = '2.0.0-alpha.20'; % 13/06/2024
+ver = '1.1.1'; coffeeVer = '2.0.0-alpha.21'; % 16/08/2024
+% ver = '1.1.0'; coffeeVer = '2.0.0-alpha.20'; % 13/06/2024
 % ver = '1.0.0'; coffeeVer = '2.0.0-alpha.17'; % 12/04/2024
 % ver = '1.0.0-alpha.4'; coffeeVer = '2.0.0-alpha.17'; % 11/04/2024
 % ver = '1.0.0-alpha.3'; coffeeVer = '2.0.0-alpha.17'; % 10/04/2024
