@@ -345,7 +345,12 @@ set(batchStackFig,'Visible','on');
                 delete(dest_fig);
                 return;
             end
-
+            
+        end
+        
+        % delete converted file?
+        if flagKeepConvertedFiles
+            update_datafiles_tab(main_figure);
         end
         
         % close stack figure
