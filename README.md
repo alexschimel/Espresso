@@ -71,10 +71,11 @@ If you want to receive notifications of future releases (recommended), you may c
 
 ## About
 
-### Authors
+### Authors and contributors
 
 * Alexandre Schimel (The Geological Survey of Norway, alexandre.schimel@ngu.no)
 * Yoann Ladroit (Kongsberg Discovery)
+* Shyam Chand (The Geological Survey of Norway)
 
 ### Copyright
 
