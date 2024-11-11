@@ -61,9 +61,11 @@ Note: At start-up, *Espresso* creates an `Espresso` user folder (normally, C:\Us
 
 Head over to the [wiki](https://github.com/alexschimel/Espresso/wiki) for documentation (in progress).
 
+There is also [a playlist of tutorials on Alex Schimel's Youtube channel](https://youtube.com/playlist?list=PLWo0Tmonl7YAuzV8f2Zr39_zUw-wmLD_H&si=TG0jZskuOc-B-fOH) (in progress).
+
 If you have any issues, first check the project's [Issues](https://github.com/alexschimel/Espresso/issues) to search for a fix. Otherwise, let the authors know by [creating a new issue](https://github.com/alexschimel/Espresso/issues/new). Ideally, share the Espresso log to provide insight in the issue. 
 
-For more help, contact the [authors](#authors).
+For more help, contact the [authors](#authors-and-contributors).
 
 ## Past versions and updates
 
