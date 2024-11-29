@@ -98,7 +98,7 @@ _Espresso_ uses several pieces of third-party code, each being distributed under
 
 If you use the software, please acknowledge Alexandre Schimel (The Geological Survey of Norway), Yoann Ladroit (Kongsberg Discovery), and Sally Watson (NIWA). 
 
-An article is in preparation for reference. 
+For citation, a dedicated article is in preparation. In the meantime, preferably cite [Schimel et al. (2024a)](https://doi.org/10.5194/egusphere-egu24-11043), [Turco et al. (2022)](https://doi.org/10.3389/feart.2022.834047), and [Porskamp et al. (2022)](https://doi.org/10.1002/lno.12160).
 
 ## See Also
 
@@ -110,9 +110,10 @@ An article is in preparation for reference.
 ### References 
 
 Articles about or using _Espresso_:
-* Schimel, A., Ladroit, Y., & Watson, S. (2024). Espresso: An Open-Source Software Tool for Visualizing and Analysing Multibeam Water-Column Data. EGU General Assembly 2024, Vienna, Austria, 14–19 Apr 2024, EGU24-11043. https://doi.org/10.5194/egusphere-egu24-11043. [Download the poster](https://github.com/alexschimel/Espresso/files/14979881/EGU24_Espresso_poster.pdf)
-* Turco, F., Ladroit, Y., Watson, S. J., Seabrook, S., Law, C. S., Crutchley, G. J., Mountjoy, J., Pecher, I. A., Hillman, J. I. T., Woelz, S., & Gorman, A. R. (2022). Estimates of Methane Release From Gas Seeps at the Southern Hikurangi Margin, New Zealand. Frontiers in Earth Science, 10(March), 1–20. https://doi.org/10.3389/feart.2022.834047
+* Turco, F., Ladroit, Y., Watson, S. J., Seabrook, S., Law, C. S., Crutchley, G. J., Mountjoy, J., Pecher, I. A., Hillman, J. I. T., Woelz, S., & Gorman, A. R. (2022). Estimates of Methane Release From Gas Seeps at the Southern Hikurangi Margin, New Zealand. Frontiers in Earth Science, 10, 1–20. https://doi.org/10.3389/feart.2022.834047
 * Porskamp, P., Schimel, A. C. G., Young, M., Rattray, A., Ladroit, Y., & Ierodiaconou, D. (2022). Integrating multibeam echosounder water‐column data into benthic habitat mapping. Limnology and Oceanography, 1–13. https://doi.org/10.1002/lno.12160
+* Schimel, A., Ladroit, Y., & Watson, S. (2024a). Espresso: Open source software for the visualization of multibeam water column data. HYDRO International, 28(3), 22–25. [Link to online version of article](https://www.hydro-international.com/content/article/espresso-open-source-software-for-the-visualization-of-multibeam-water-column-data)
+* Schimel, A., Ladroit, Y., & Watson, S. (2024b). Espresso: An Open-Source Software Tool for Visualizing and Analysing Multibeam Water-Column Data. EGU General Assembly 2024, Vienna, Austria, 14–19 Apr 2024, EGU24-11043. https://doi.org/10.5194/egusphere-egu24-11043. [Download the poster](https://github.com/alexschimel/Espresso/files/14979881/EGU24_Espresso_poster.pdf)
 
 ## For developers
 
