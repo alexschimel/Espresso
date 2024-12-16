@@ -22,7 +22,6 @@ if isempty(idx_fData)
 end
 
 % get needed info from data processing tab
-
 wc_proc_tab_comp = getappdata(main_figure,'wc_proc_tab');
 
 % main procession flag
@@ -89,17 +88,29 @@ if procpar.processing_flag
     % bottom filtering
     if procpar.bottomfilter_flag
         params = struct(); % default parameters
-        fData_tot(idx_fData) = CFF_group_processing(...
-            @CFF_filter_bottom_detect_v2,...
-            fData_tot(idx_fData),params,...
+        fData_tot(idx_fData) = CFF_group_processing(fData_tot(idx_fData),...
+            @CFF_filter_bottom_detect_v2,params,...
             'procMsg','Filtering the bottom detections',...
+            'continueOnError',1,...
             'comms','multilines');
     end
     
-    % data processing
-    % this includes saving fDatas on the drive
-    if procpar.masking_flag || procpar.radiomcorr_flag || procpar.sidelobefilter_flag
-        fData_tot = process_watercolumn(fData_tot, idx_fData, procpar);
+    % WCD processing
+    iProc = logical([procpar.radiomcorr_flag, procpar.sidelobefilter_flag, procpar.masking_flag]);
+    wcProcFun = {@CFF_WC_radiometric_corrections_CORE,@CFF_filter_WC_sidelobe_artifact_CORE,@CFF_mask_WC_data_CORE};
+    wcProcPar = {procpar.radiomcorr_params,procpar.sidelobefilter_params,procpar.masking_params};
+    if any(iProc)
+        % EDIT ------------------------------------------------------------
+        % Done Dec16 2024. If you read this a long time from this date, you
+        % can remove the old code and corresponding function.
+        % NEW:
+        fData_tot(idx_fData) = CFF_process_WC(fData_tot(idx_fData),...
+            wcProcFun(iProc),wcProcPar(iProc),...
+            'continueOnError',1,...
+            'comms','multilines');
+        % OLD:
+        % fData_tot = process_watercolumn(fData_tot, idx_fData, procpar);
+        % END EDIT --------------------------------------------------------
         update_stackview_flag = 1;
     end
     
