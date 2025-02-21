@@ -77,14 +77,14 @@ If you want to receive notifications of future releases (recommended), you may c
 
 ### Authors and contributors
 
-* Alexandre Schimel (The Geological Survey of Norway, alexandre.schimel@ngu.no)
+* Alexandre Schimel (alex.schimel@proton.me)
 * Yoann Ladroit (Kongsberg Discovery)
 * Shyam Chand (The Geological Survey of Norway)
 
 ### Copyright
 
-2017-2024
-* Alexandre Schimel (The Geological Survey of Norway)
+2017-2025
+* Alexandre Schimel
 * Yoann Ladroit (Kongsberg Discovery)
 * The National Institute of Water and Atmospheric Research (NIWA), New Zealand
 
