@@ -9,7 +9,7 @@ Multibeam water-column visualization and processing.
 [![Language](https://img.shields.io/badge/MATLAB-R2020b-orange)](#)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Release](https://img.shields.io/github/v/release/alexschimel/Espresso)](https://github.com/alexschimel/Espresso/releases)
-[![Last Commit](https://img.shields.io/github/last-commit/alexschimel/Espresso)](https://github.com/alexschimel/Espresso/commits/main)
+[![Last Commit](https://img.shields.io/github/last-commit/alexschimel/Espresso)](https://github.com/alexschimel/Espresso/commits/master)
 [![Docs](https://img.shields.io/badge/Docs-Wiki-blue)](https://github.com/alexschimel/Espresso/wiki)
 
 [![Sponsor](https://img.shields.io/badge/Sponsor-GitHub-ea4aaa.svg)](https://github.com/sponsors/alexschimel)
