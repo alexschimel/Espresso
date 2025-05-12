@@ -63,7 +63,7 @@ Head over to the [wiki](https://github.com/alexschimel/Espresso/wiki) for docume
 
 There is also [a playlist of tutorials on Alex Schimel's Youtube channel](https://youtube.com/playlist?list=PLWo0Tmonl7YAuzV8f2Zr39_zUw-wmLD_H&si=TG0jZskuOc-B-fOH) (in progress).
 
-If you have any issues, please first check the project's [issues](https://github.com/alexschimel/Espresso/issues) section to search for a fix. Otherwise, let the authors know by [creating a new issue](https://github.com/alexschimel/Espresso/issues/new). Ideally, share the Espresso log to provide insight in the issue. 
+If you have any issues, first check the project's [Issues](https://github.com/alexschimel/Espresso/issues) to search for a fix. Otherwise, let the authors know by [creating a new issue](https://github.com/alexschimel/Espresso/issues/new). Ideally, share the Espresso log to provide insight in the issue. 
 
 For more help, contact the [authors](#authors-and-contributors).
 
@@ -102,10 +102,12 @@ For citation, a dedicated article is in preparation. In the meantime, preferably
 
 ### Support This Project 💖
 
-If you use _Espresso_ in your research, teaching, or professional work, please consider supporting its development. Your support helps cover development time, MATLAB license costs, and ensures continued availability of free, open-source tools for multibeam sonar data analysis.
+If you use *Espresso* in your research, teaching, or professional work, please consider supporting its development. Your support helps cover development time, MATLAB license costs, and ensures continued availability of free, open-source tools for multibeam sonar data analysis.
 
-[![Donate via PayPal](https://img.shields.io/badge/Donate-PayPal-blue.svg)](https://paypal.me/alexschimel)
+For **monthly support**, consider [sponsoring on GitHub](https://github.com/sponsors/alexschimel). For **one-time donations**, you can use [PayPal](https://paypal.me/alexschimel).
+
 [![Sponsor on GitHub](https://img.shields.io/badge/Sponsor-GitHub-ea4aaa.svg)](https://github.com/sponsors/alexschimel)
+[![Donate via PayPal](https://img.shields.io/badge/Donate-PayPal-blue.svg)](https://paypal.me/alexschimel)
 
 ## See Also
 
