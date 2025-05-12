@@ -6,7 +6,7 @@ Multibeam water-column visualization and processing.
 
 [![](https://github.com/alexschimel/Espresso/blob/master/Espresso_resources/download.png)](https://github.com/alexschimel/Espresso/releases/download/v1.2/espresso_v120_setup.exe)
 
-## Description
+### Description
 
 *Espresso* is a free and open-source app to visualize and process water-column data acquired by multibeam echosounders. The main feature of this tool is the possibility to vertically echo-integrate water-column data so as to visualize and examine acoustic anomalies.
 
@@ -63,11 +63,11 @@ Head over to the [wiki](https://github.com/alexschimel/Espresso/wiki) for docume
 
 There is also [a playlist of tutorials on Alex Schimel's Youtube channel](https://youtube.com/playlist?list=PLWo0Tmonl7YAuzV8f2Zr39_zUw-wmLD_H&si=TG0jZskuOc-B-fOH) (in progress).
 
-If you have any issues, first check the project's [Issues](https://github.com/alexschimel/Espresso/issues) to search for a fix. Otherwise, let the authors know by [creating a new issue](https://github.com/alexschimel/Espresso/issues/new). Ideally, share the Espresso log to provide insight in the issue. 
+If you have any issues, please first check the project's [issues](https://github.com/alexschimel/Espresso/issues) section to search for a fix. Otherwise, let the authors know by [creating a new issue](https://github.com/alexschimel/Espresso/issues/new). Ideally, share the Espresso log to provide insight in the issue. 
 
 For more help, contact the [authors](#authors-and-contributors).
 
-## Past versions and updates
+### Past versions and updates
 
 See the [releases](https://github.com/alexschimel/Espresso/releases) page for past released versions. 
 
@@ -99,6 +99,13 @@ _Espresso_ uses several pieces of third-party code, each being distributed under
 If you use the software, please acknowledge Alexandre Schimel (The Geological Survey of Norway), Yoann Ladroit (Kongsberg Discovery), and Sally Watson (NIWA). 
 
 For citation, a dedicated article is in preparation. In the meantime, preferably cite [Schimel et al. (2024a)](https://doi.org/10.5194/egusphere-egu24-11043), [Turco et al. (2022)](https://doi.org/10.3389/feart.2022.834047), and [Porskamp et al. (2022)](https://doi.org/10.1002/lno.12160).
+
+### Support This Project 💖
+
+If you use _Espresso_ in your research, teaching, or professional work, please consider supporting its development. Your support helps cover development time, MATLAB license costs, and ensures continued availability of free, open-source tools for multibeam sonar data analysis.
+
+[![Donate via PayPal](https://img.shields.io/badge/Donate-PayPal-blue.svg)](https://paypal.me/alexschimel)
+[![Sponsor on GitHub](https://img.shields.io/badge/Sponsor-GitHub-ea4aaa.svg)](https://github.com/sponsors/alexschimel)
 
 ## See Also
 
