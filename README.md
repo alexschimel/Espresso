@@ -12,7 +12,7 @@ Multibeam water-column visualization and processing.
 
 *Espresso* uses the [CoFFee multibeam data processing toolbox](https://github.com/alexschimel/CoFFee) (hence the name). It is coded in [MATLAB](https://www.mathworks.com/products/matlab.html), but is also available as a standalone application that does not require a MATLAB licence (see the [Dependencies](#dependencies) and [Installing](#installing) sections).
 
-Relevant features:
+### Relevant features
 * Support Kongsberg .all/.wcd, Kongsberg .kmall/.kmwcd, and Teledyne .s7k (Reson, Norbit) formats.
 * Mask unwanted data (seafloor echo and below, outer-beams, inner-range, outer-range).
 * Filter the sidelobe artefact.
@@ -90,13 +90,13 @@ If you want to receive notifications of future releases (recommended), you may c
 
 ### License
 
-The _Espresso_ software and source code are distributed under the MIT License. See `LICENSE` file for details.
+The *Espresso* software and source code are distributed under the MIT License. See `LICENSE` file for details.
 
-_Espresso_ uses several pieces of third-party code, each being distributed under its own license. Each piece of code is contained in a separate sub-folder of the 'toolboxes' folder and includes the corresponding license file.
+*Espresso* uses several pieces of third-party code, each being distributed under its own license. Each piece of code is contained in a separate sub-folder of the 'toolboxes' folder and includes the corresponding license file.
 
 ### Citation/Credit
 
-If you use the software, please acknowledge Alexandre Schimel (The Geological Survey of Norway), Yoann Ladroit (Kongsberg Discovery), and Sally Watson (NIWA). 
+If you use *Espresso*, please acknowledge Alexandre Schimel (The Geological Survey of Norway), Yoann Ladroit (Kongsberg Discovery), and Sally Watson (NIWA). 
 
 For citation, a dedicated article is in preparation. In the meantime, preferably cite [Schimel et al. (2024a)](https://doi.org/10.5194/egusphere-egu24-11043), [Turco et al. (2022)](https://doi.org/10.3389/feart.2022.834047), and [Porskamp et al. (2022)](https://doi.org/10.1002/lno.12160).
 
@@ -110,9 +110,9 @@ If you use _Espresso_ in your research, teaching, or professional work, please c
 ## See Also
 
 ### Apps based on CoFFee
-* [*Grounds*](https://github.com/alexschimel/Grounds): Elevation Change Analysis
 * [*Espresso*](https://github.com/alexschimel/Espresso): Multibeam water-column visualization and processing
 * [*Iskaffe*](https://github.com/alexschimel/Iskaffe): Multibeam backscatter quality control
+* [*Grounds*](https://github.com/alexschimel/Grounds): Elevation Change Analysis
 
 ### References 
 
