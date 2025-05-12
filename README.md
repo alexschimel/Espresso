@@ -6,6 +6,15 @@ Multibeam water-column visualization and processing.
 
 [![](https://github.com/alexschimel/Espresso/blob/master/Espresso_resources/download.png)](https://github.com/alexschimel/Espresso/releases/download/v1.2/espresso_v120_setup.exe)
 
+[![Language](https://img.shields.io/badge/MATLAB-R2020b-orange)](#)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Release](https://img.shields.io/github/v/release/alexschimel/Espresso)](https://github.com/alexschimel/Espresso/releases)
+[![Last Commit](https://img.shields.io/github/last-commit/alexschimel/Espresso)](https://github.com/alexschimel/Espresso/commits/main)
+[![Docs](https://img.shields.io/badge/Docs-Wiki-blue)](https://github.com/alexschimel/Espresso/wiki)
+
+[![Sponsor](https://img.shields.io/badge/Sponsor-GitHub-ea4aaa.svg)](https://github.com/sponsors/alexschimel)
+[![Donate](https://img.shields.io/badge/Donate-PayPal-blue.svg)](https://paypal.me/alexschimel)
+
 ### Description
 
 *Espresso* is a free and open-source app to visualize and process water-column data acquired by multibeam echosounders. The main feature of this tool is the possibility to vertically echo-integrate water-column data so as to visualize and examine acoustic anomalies.
@@ -105,9 +114,6 @@ For citation, a dedicated article is in preparation. In the meantime, preferably
 If you use *Espresso* in your research, teaching, or professional work, please consider supporting its development. Your support helps cover development time, MATLAB license costs, and ensures continued availability of free, open-source tools for multibeam sonar data analysis.
 
 For **monthly support**, consider [sponsoring on GitHub](https://github.com/sponsors/alexschimel). For **one-time donations**, you can use [PayPal](https://paypal.me/alexschimel).
-
-[![Sponsor on GitHub](https://img.shields.io/badge/Sponsor-GitHub-ea4aaa.svg)](https://github.com/sponsors/alexschimel)
-[![Donate via PayPal](https://img.shields.io/badge/Donate-PayPal-blue.svg)](https://paypal.me/alexschimel)
 
 ## See Also
 
