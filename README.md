@@ -68,13 +68,21 @@ Note: At start-up, *Espresso* creates an `Espresso` user folder (normally, C:\Us
 
 ## Help
 
+### Documentation
+
 Head over to the [wiki](https://github.com/alexschimel/Espresso/wiki) for documentation (in progress).
 
 There is also [a playlist of tutorials on Alex Schimel's Youtube channel](https://youtube.com/playlist?list=PLWo0Tmonl7YAuzV8f2Zr39_zUw-wmLD_H&si=TG0jZskuOc-B-fOH) (in progress).
 
-If you have any issues, first check the project's [Issues](https://github.com/alexschimel/Espresso/issues) to search for a fix. Otherwise, let the authors know by [creating a new issue](https://github.com/alexschimel/Espresso/issues/new). Ideally, share the Espresso log to provide insight in the issue. 
+### Issues 
+
+If you have any issues you wish to report, please use the [Issues](https://github.com/alexschimel/Espresso/issues) section in priority. Search both open and closed issues to see if any applies to your case, and comment if you are experiencing it too. [Create a new issue](https://github.com/alexschimel/Espresso/issues/new) if your issue is new. Provide as much information as possible and share the Espresso log showing the error. Send example of the raw data causing the issue to the [authors](#authors-and-contributors) (send the smallest files possible).
 
 For more help, contact the [authors](#authors-and-contributors).
+
+### Feature request
+
+If you wish to suggest a new feature or enhancement, use the [Issues](https://github.com/alexschimel/Espresso/issues) section. Search the current [issues labeled "enhancement"](https://github.com/alexschimel/Espresso/issues?q=label%3Aenhancement) and react or comment to listed features & enhancements you wish to see, in order to improve their visibility. Otherwise, create a new issue and apply the "enhancement" label.
 
 ### Past versions and updates
 
