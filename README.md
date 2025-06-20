@@ -17,7 +17,7 @@ Multibeam water-column visualization and processing.
 
 ### Description
 
-*Espresso* is a free and open-source app to visualize and process water-column data acquired by multibeam echosounders. The main feature of this tool is the possibility to vertically echo-integrate water-column data so as to visualize and examine acoustic anomalies.
+*Espresso* is a free and open-source app to visualize and process water-column data acquired by multibeam echosounders. The main feature of this tool is the possibility to vertically echo-integrate water-column data so as to visualize and examine acoustic anomalies "from above".
 
 *Espresso* uses the [CoFFee multibeam data processing toolbox](https://github.com/alexschimel/CoFFee) (hence the name). It is coded in [MATLAB](https://www.mathworks.com/products/matlab.html), but is also available as a standalone application that does not require a MATLAB licence (see the [Dependencies](#dependencies) and [Installing](#installing) sections).
 
@@ -44,24 +44,26 @@ Multibeam water-column visualization and processing.
     * Statistics and Machine Learning Toolbox
     * Signal Processing Toolbox
   * [The *CoFFee* toolbox](https://github.com/alexschimel/CoFFee)
-* For the compiled executable: [MATLAB Runtime v9.9](https://www.mathworks.com/products/compiler/matlab-runtime.html).
+* For the compiled executable:
+  * [MATLAB Runtime v9.9](https://www.mathworks.com/products/compiler/matlab-runtime.html)
   * Note: if you install the app using the binary installer, the setup wizard will automatically detect whether you have the correct version of MATLAB Runtime installed and, if not, allow you to download and install it then.
 
 ### Installing
 
 * For the source code: 
   * Clone this repository, as well as the repository of [*CoFFee*](https://github.com/alexschimel/CoFFee), with [git or a git client](https://git-scm.com/).
-  * Note that a few files are managed with [git-lfs](https://git-lfs.com/) so you will need to have this installed before you clone this repository.
-  * Simply downloading the source code will not work since you will miss the files that require git-lfs.
+  * Note that a few files are managed with [git-lfs](https://git-lfs.com/) so you will need to have this installed before you clone this repository. Simply downloading the source code will not work since you will miss the files that require git-lfs.
 * For the compiled executable: 
   * Preferably, [download the binary installer from the releases page](https://github.com/alexschimel/Espresso/releases), execute the installer, and follow the instructions of the setup wizard. The setup wizard will check if you have the appropriate version of MATLAB Runtime installed and, if not, let you download and install it. Note that the setup wizard requires an internet connection.
   * Alternatively, you can simply [download the binary executable and accompanying files from the releases page](https://github.com/alexschimel/Espresso/releases) and double-click the .exe file to run the application without installing it. Note that you still need to have the appropriate version of MATLAB Runtime installed.
 
 ### Executing program
 
-* For the source code: Start MATLAB, navigate to the root directory of the *Espresso* code, and type `Espresso` in the Command Window.
+* For the source code:
+  * Start MATLAB, navigate to the root directory of the *Espresso* code, and type `Espresso` in the Command Window.
   * Note: The first time you run *Espresso* from the source code, you will be prompted to provide the location of a folder containing the *CoFFee* toolbox. *Espresso* will check if the version of that toolbox is the one with which the app was built. If the version of *CoFFee* is not the one expected, you will receive a warning message letting you know you might experience issues and recommending you download (or check out) the appropriate version.
-* For the compiled executable: Execute the installed program.
+* For the compiled executable:
+  * Execute the installed program.
   * Note: The first time you run *Espresso* after installation, it might take a while for the app to appear. Be patient. It will be faster the next times.
 
 Note: At start-up, *Espresso* creates an `Espresso` user folder (normally, C:\Users\USERNAME\Documents\Espresso). This folder contains a configuration file for the app, and is the default folder for any exports from the app. It is safe to delete this folder or any of its contents (although if you delete the configuration file, this will reset the app configuration).
@@ -74,21 +76,21 @@ Head over to the [wiki](https://github.com/alexschimel/Espresso/wiki) for docume
 
 There is also [a playlist of tutorials on Alex Schimel's Youtube channel](https://youtube.com/playlist?list=PLWo0Tmonl7YAuzV8f2Zr39_zUw-wmLD_H&si=TG0jZskuOc-B-fOH) (in progress).
 
-### Issues 
+### Support
 
-If you have any issues you wish to report, please use the [Issues](https://github.com/alexschimel/Espresso/issues) section in priority. Search both open and closed issues to see if any applies to your case, and comment if you are experiencing it too. [Create a new issue](https://github.com/alexschimel/Espresso/issues/new) if your issue is new. Provide as much information as possible and share the Espresso log showing the error. Send example of the raw data causing the issue to the [authors](#authors-and-contributors) (send the smallest files possible).
+Unfortunately, there is little support available at present. If you experience any error or malfunctioning, please start with the [Issues](https://github.com/alexschimel/Espresso/issues) section. Search both open and closed Issues to see if your experience has already been addressed or reported. If you find a match, please comment on that Issue. [Create a new Issue](https://github.com/alexschimel/Espresso/issues/new) if your problem has not yet been reported. In both cases, provide as much information as possible (sonar model and data format, screenshots, sequence leading to the problem, etc.) and share the Espresso log showing the error. You can also send an example of raw data causing the problem to the [authors](#authors-and-contributors). Send the smallest files possible.
 
 For more help, contact the [authors](#authors-and-contributors).
 
 ### Feature request
 
-If you wish to suggest a new feature or enhancement, use the [Issues](https://github.com/alexschimel/Espresso/issues) section. Search the current [issues labeled "enhancement"](https://github.com/alexschimel/Espresso/issues?q=label%3Aenhancement) and react or comment to listed features & enhancements you wish to see, in order to improve their visibility. Otherwise, create a new issue and apply the "enhancement" label.
+If you wish to suggest a new feature or enhancement, also use the [Issues](https://github.com/alexschimel/Espresso/issues) section. Search the current [Issues labeled "enhancement"](https://github.com/alexschimel/Espresso/issues?q=label%3Aenhancement) and react or comment to listed features and enhancements you wish to see, in order to improve their visibility. Otherwise, [create a new Issue](https://github.com/alexschimel/Espresso/issues/new) and apply the "enhancement" label.
 
 ### Past versions and updates
 
 See the [releases](https://github.com/alexschimel/Espresso/releases) page for past released versions. 
 
-If you want to receive notifications of future releases (recommended), you may create a github account, and on this repository click on 'Watch', then 'Custom', and choose 'Releases'. Verify in your GitHub settings that you are set to receive 'Watching' notifications.
+If you want to receive notifications of future releases (recommended), click on 'Watch', then 'Custom', and choose 'Releases'. Verify in your GitHub settings that you are set to receive 'Watching' notifications.
 
 ## About
 
@@ -113,7 +115,7 @@ The *Espresso* software and source code are distributed under the MIT License. S
 
 ### Citation/Credit
 
-If you use *Espresso*, please acknowledge Alexandre Schimel (The Geological Survey of Norway), Yoann Ladroit (Kongsberg Discovery), and Sally Watson (NIWA). 
+If you use *Espresso*, please acknowledge the copyright holders: Alexandre Schimel, Yoann Ladroit (Kongsberg Discovery), and Sally Watson (NIWA). 
 
 For citation, a dedicated article is in preparation. In the meantime, preferably cite [Schimel et al. (2024a)](https://doi.org/10.5194/egusphere-egu24-11043), [Turco et al. (2022)](https://doi.org/10.3389/feart.2022.834047), and [Porskamp et al. (2022)](https://doi.org/10.1002/lno.12160).
 
@@ -140,4 +142,6 @@ Articles about or using *Espresso*:
 
 ## For developers
 
-[See the 'For developers' section on the *CoFFee* page](https://github.com/alexschimel/CoFFee)
+[See the 'For developers' section on the *CoFFee* page](https://github.com/alexschimel/CoFFee?tab=readme-ov-file#for-developers).
+
+See additional information for compiling *Espresso* in [espresso_compile_readme.md](https://github.com/alexschimel/Espresso/blob/master/espresso_compile_readme.md).
