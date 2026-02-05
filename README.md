@@ -135,6 +135,7 @@ For **monthly support**, consider [sponsoring on GitHub](https://github.com/spon
 ### References 
 
 Articles about or using *Espresso*:
+* Zainal, M. Z., Hasan, R. C., Husain, M. K. A., Schimel, A. C. G., Zaki, N. A. M., & Zakariya, R. (2026). Improving the Mapping of Coral Reefs with Multibeam Echosounder Water Column Data. Estuarine, Coastal and Shelf Science. https://doi.org/10.1016/j.ecss.2026.109744
 * Turco, F., Ladroit, Y., Watson, S. J., Seabrook, S., Law, C. S., Crutchley, G. J., Mountjoy, J., Pecher, I. A., Hillman, J. I. T., Woelz, S., & Gorman, A. R. (2022). Estimates of Methane Release From Gas Seeps at the Southern Hikurangi Margin, New Zealand. Frontiers in Earth Science, 10, 1–20. https://doi.org/10.3389/feart.2022.834047
 * Porskamp, P., Schimel, A. C. G., Young, M., Rattray, A., Ladroit, Y., & Ierodiaconou, D. (2022). Integrating multibeam echosounder water‐column data into benthic habitat mapping. Limnology and Oceanography, 1–13. https://doi.org/10.1002/lno.12160
 * Schimel, A., Ladroit, Y., & Watson, S. (2024a). Espresso: Open source software for the visualization of multibeam water column data. HYDRO International, 28(3), 22–25. [Link to online version of article](https://www.hydro-international.com/content/article/espresso-open-source-software-for-the-visualization-of-multibeam-water-column-data)
