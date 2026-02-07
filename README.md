@@ -135,12 +135,13 @@ For **monthly support**, consider [sponsoring on GitHub](https://github.com/spon
 ### References 
 
 Articles about or using *Espresso*:
-* Zainal, M. Z., Hasan, R. C., Husain, M. K. A., Schimel, A. C. G., Zaki, N. A. M., & Zakariya, R. (2026). Improving the Mapping of Coral Reefs with Multibeam Echosounder Water Column Data. Estuarine, Coastal and Shelf Science. https://doi.org/10.1016/j.ecss.2026.109744
+* Zainal, M. Z., Che Hasan, R., Abu Husain, M. K., Schimel, A. C. G., Mohd Zaki, N. A., & Zakariya, R. (2026). Improving the mapping of coral reefs with multibeam echosounder water column data. Estuarine, Coastal and Shelf Science, 332, 109744. https://doi.org/10.1016/j.ecss.2026.109744
 * Berry, J., & Nanlal, C. (2025). Assessment of the application of each multibeam echosounder data product for monitoring of Laminaria digitata in the UK. Frontiers in Remote Sensing, 6. https://doi.org/10.3389/frsen.2025.1521958
-* Turco, F., Ladroit, Y., Watson, S. J., Seabrook, S., Law, C. S., Crutchley, G. J., Mountjoy, J., Pecher, I. A., Hillman, J. I. T., Woelz, S., & Gorman, A. R. (2022). Estimates of Methane Release From Gas Seeps at the Southern Hikurangi Margin, New Zealand. Frontiers in Earth Science, 10, 1–20. https://doi.org/10.3389/feart.2022.834047
-* Porskamp, P., Schimel, A. C. G., Young, M., Rattray, A., Ladroit, Y., & Ierodiaconou, D. (2022). Integrating multibeam echosounder water‐column data into benthic habitat mapping. Limnology and Oceanography, 1–13. https://doi.org/10.1002/lno.12160
-* Schimel, A., Ladroit, Y., & Watson, S. (2024a). Espresso: Open source software for the visualization of multibeam water column data. HYDRO International, 28(3), 22–25. [Link to online version of article](https://www.hydro-international.com/content/article/espresso-open-source-software-for-the-visualization-of-multibeam-water-column-data)
+* Bäcklin, V. (2025). Identification of gas seeps associated with fracture zones in the southwestern Baltic Sea using open-source software. Bachelor Thesis, Stockholm University.
 * Schimel, A., Ladroit, Y., & Watson, S. (2024b). Espresso: An Open-Source Software Tool for Visualizing and Analysing Multibeam Water-Column Data. EGU General Assembly 2024, Vienna, Austria, 14–19 Apr 2024, EGU24-11043. https://doi.org/10.5194/egusphere-egu24-11043. [Download the poster](https://github.com/alexschimel/Espresso/files/14979881/EGU24_Espresso_poster.pdf)
+* Schimel, A. C. G., Ladroit, Y., & Watson, S. (2024). Espresso: Open source software for the visualization of multibeam water column data. HYDRO International, 28(3), 22–25. [Link to online version of article](https://www.hydro-international.com/content/article/espresso-open-source-software-for-the-visualization-of-multibeam-water-column-data)
+* Turco, F., Ladroit, Y., Watson, S. J., Seabrook, S., Law, C. S., Crutchley, G. J., Mountjoy, J., Pecher, I. A., Hillman, J. I. T., Woelz, S., & Gorman, A. R. (2022). Estimates of Methane Release From Gas Seeps at the Southern Hikurangi Margin, New Zealand. Frontiers in Earth Science, 10(March), 1–20. https://doi.org/10.3389/feart.2022.834047
+* Porskamp, P., Schimel, A. C. G., Young, M., Rattray, A., Ladroit, Y., & Ierodiaconou, D. (2022). Integrating multibeam echosounder water‐column data into benthic habitat mapping. Limnology and Oceanography, 67(8), 1701–1713. https://doi.org/10.1002/lno.12160
 
 ## For developers
 
